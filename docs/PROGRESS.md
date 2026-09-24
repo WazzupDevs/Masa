@@ -20,7 +20,7 @@ Otonom çalışma: M2'den M7'ye taşlar sırayla uygulanıyor. Her taş typechec
 
 - M0: Android fiziksel cihazda açılış.
 - M1: Türkiye'ye gerçek SMS teslimatı; cihazda giriş.
-- M2: Gerçek mekan listesi (`overpass-api.de` container'dan engelli); cihazda check-in.
+- M2: Cihazda check-in. Gerçek mekan listesi çekildi (43 kafe, 33'ü aktif); pilot öncesi sahada ya da haritada elle doğrulanmalı.
 - M3: İki cihazda istek ve kabul uçtan uca; push (EAS/Firebase hesabı yok, yapılandırma env'den).
 - M4: Cihazda sohbet, şikayet, engelleme ve bağlantı durumu (sunucu tarafı kabul kriterleri container'da doğrulandı).
 - M5: İki cihazda iki masalı Tabu baştan sona (sunucu akışı ve kelime sızmaması container'da doğrulandı); cihazda tek masa Tabu ve Sohbet.
