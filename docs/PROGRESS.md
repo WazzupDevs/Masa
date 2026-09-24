@@ -13,7 +13,7 @@ Otonom çalışma: M2'den M7'ye taşlar sırayla uygulanıyor. Her taş typechec
 | M4 Sohbet ve güvenlik        | ✅ Bitti                    | `b054c3c`                       |
 | M5 Konseptler                | ✅ Bitti                    | `8ccf6da`                       |
 | M6 Oda sonu ve tanışma       | ✅ Bitti                    | `4a0b84b`                       |
-| M7 Analitik ve mağaza        | ✅ Bitti (mağaza hariç)     | "M7: …" commit'i                |
+| M7 Analitik ve mağaza        | ✅ Bitti (mağaza hariç)     | `713dcfd`                       |
 
 ## Container'da doğrulanamayan kabul kriterleri
 
