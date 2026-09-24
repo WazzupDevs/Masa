@@ -11,21 +11,48 @@ Tüm ürün kararları, kapsam ve kilometre taşları `MVP_SPEC.md` içinde. Spe
 - Monorepo, paket yöneticisi pnpm
 
 ## Komutlar
-Node 22, pnpm 10, Docker (yerel Supabase için). Supabase CLI root devDependency'dir; global kurulum gerekmez.
+Node 22, pnpm 10, Docker (yerel Supabase için). Supabase CLI ve Deno root devDependency'dir; global kurulum gerekmez.
 - `pnpm install`
-- `pnpm typecheck` — mobil + scripts + `_shared/pure` (Deno/Node tipleri olmadan) + root testleri
-- `pnpm lint` — ESLint, uyarı toleransı sıfır
-- `pnpm test` — vitest (`scripts/**`, `_shared/pure/**` altındaki `*.test.ts`)
+- `pnpm typecheck` — mobil + scripts + `_shared/pure` (Deno/Node tipleri olmadan) + Edge Function'lar (`deno check`) + root testleri
+- `pnpm lint` — ESLint (uyarı toleransı sıfır) + `deno lint supabase/functions`
+- `pnpm test` — birim testleri, vitest (`scripts/**`, `_shared/pure/**` altındaki `*.test.ts`)
+- `pnpm test:integration` — `supabase/tests/**`, yerel stack'e karşı (önce `pnpm supabase start` ve `pnpm supabase functions serve`)
 - `pnpm format` / `pnpm format:check` — Prettier
-- `pnpm supabase start` / `pnpm supabase stop`
-- `pnpm supabase db reset` — migration'lar + `supabase/seed.sql`
+- `pnpm supabase start` / `pnpm supabase stop` — `config.toml` değişince stop + start gerekir
+- `pnpm supabase db reset` — migration'lar + `seed.sql` + `seed.local.sql` (yalnızca yerel dev sırları)
+- `pnpm supabase functions serve` — Edge Function'ları yerelde çalıştırır
 - `pnpm seed` — `content/*.json` → `supabase/seed.sql` (çıktı commit'lenir)
 - `pnpm gen:types` — çalışan yerel DB'den `supabase/functions/_shared/pure/database.ts` üretir; her migration'dan sonra çalıştır
-- `pnpm supabase functions serve` — M1'de ilk fonksiyonla birlikte doğrulanacak
-- Mobil (Android fiziksel cihaz, USB hata ayıklama açık):
-  1. `cp apps/mobile/.env.example apps/mobile/.env` ve URL'e bilgisayarın LAN IP'sini, anahtara `pnpm supabase status` çıktısındaki publishable key'i yaz
-  2. `pnpm --filter mobile android` — `expo run:android`, dev build'i derleyip cihaza kurar (Android SDK + JDK 17 gerekir)
-  3. Sonraki çalıştırmalarda `pnpm --filter mobile start` — Metro'yu dev client için başlatır
+- Yerel test numaraları (`config.toml` → `[auth.sms.test_otp]`): `+905550000001` … `+905550000003`, kod `123456`
+
+## Ortamlar
+- **Yerel (container, CI, entegrasyon testleri):** `pnpm supabase start`. SMS gönderilmez, yalnızca test numaraları çalışır.
+- **Barındırılan dev projesi (cihaz testleri):** mobil `.env` bu projeyi gösterir. Dağıtımı proje sahibi yapar.
+- Edge Function bağımlılıkları `supabase/functions/_shared/deps.ts` içinde sabit sürümlü `npm:` import'larıdır (import map yok). Deno 24 saatten yeni sürümleri reddeder; yeni yayımlanmış bir sürüme hemen geçme.
+
+### Barındırılan dev projesi kurulumu (tek seferlik)
+1. **Supabase:** yeni proje aç (bölge: Frankfurt `eu-central-1`). Proje ref'ini not et.
+2. `pnpm supabase login` ve `pnpm supabase link --project-ref <ref>`
+3. **Vault anahtarı:** `openssl rand -hex 32` ile üret, parola yöneticisine kaydet, SQL Editor'da çalıştır:
+   `select vault.create_secret('<anahtar>', 'phone_hash_key');`
+   Anahtar asla değişmez (rotasyon yok; değişirse `banned_phones` geçersiz olur). `seed.local.sql`'i barındırılan projede asla çalıştırma.
+4. `pnpm supabase db push` — migration'lar
+5. `pnpm supabase functions deploy account` — `verify_jwt = false` ayarı `config.toml`'dan gelir; token'ı fonksiyon kendisi doğrular.
+6. **Twilio:**
+   - Verify servisi oluştur; Account SID, Auth Token ve Verify Service SID'i al.
+   - **Verify → Settings → Geo permissions: yalnızca Türkiye** açık (SMS pumping dolandırıcılığına karşı). Fraud Guard açık kalsın.
+7. **Supabase paneli → Authentication:**
+   - Sign In / Providers → **Email: kapalı**. **Phone: açık**, SMS sağlayıcı **Twilio Verify** (6. adımdaki değerler), telefonla kayıt açık.
+   - Phone → test numaraları: `905550000001=123456` (yalnızca dev projesinde; pilot projesinde olmaz).
+   - Rate Limits: saatlik SMS **100**; aynı numaraya tekrar gönderim aralığı **60 sn**.
+   - Hooks → **Before User Created** → Postgres → şema `private`, fonksiyon `before_user_created`.
+8. **Mobil:** `cp apps/mobile/.env.example apps/mobile/.env`; URL `https://<ref>.supabase.co`, anahtar Settings → API Keys'teki publishable key.
+9. Sonraki değişikliklerde: yeni migration → `pnpm supabase db push`; fonksiyon değişikliği → `pnpm supabase functions deploy <ad>`.
+
+### Mobil (Android fiziksel cihaz, USB hata ayıklama açık)
+1. `apps/mobile/.env` barındırılan dev projesini göstermeli (yukarıdaki 8. adım).
+2. `pnpm --filter mobile android` — `expo run:android`, dev build'i derleyip cihaza kurar (Android SDK + JDK 17 gerekir)
+3. Sonraki çalıştırmalarda `pnpm --filter mobile start` — Metro'yu dev client için başlatır
 
 ## Değişmez kurallar
 1. İstemci hiçbir tabloya doğrudan yazmaz. Tüm yazmalar Edge Function üzerinden yapılır. İstemci okumaları RLS ile sınırlıdır. İstemcinin çağırdığı security definer RPC'ler yalnızca okur ve `set search_path = ''` ile tanımlanır.

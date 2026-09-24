@@ -28,7 +28,54 @@ export type Database = {
   };
   public: {
     Tables: {
-      [_ in never]: never;
+      banned_phones: {
+        Row: {
+          created_at: string;
+          phone_hash: string;
+        };
+        Insert: {
+          created_at?: string;
+          phone_hash: string;
+        };
+        Update: {
+          created_at?: string;
+          phone_hash?: string;
+        };
+        Relationships: [];
+      };
+      profiles: {
+        Row: {
+          age_confirmed_at: string;
+          created_at: string;
+          id: string;
+          is_banned: boolean;
+          kvkk_accepted_at: string;
+          kvkk_version: string;
+          terms_accepted_at: string;
+          terms_version: string;
+        };
+        Insert: {
+          age_confirmed_at: string;
+          created_at?: string;
+          id: string;
+          is_banned?: boolean;
+          kvkk_accepted_at: string;
+          kvkk_version: string;
+          terms_accepted_at: string;
+          terms_version: string;
+        };
+        Update: {
+          age_confirmed_at?: string;
+          created_at?: string;
+          id?: string;
+          is_banned?: boolean;
+          kvkk_accepted_at?: string;
+          kvkk_version?: string;
+          terms_accepted_at?: string;
+          terms_version?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
