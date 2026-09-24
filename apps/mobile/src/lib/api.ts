@@ -1,5 +1,6 @@
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import type { AccountRequest, AccountResponse } from '@shared/api/account.ts';
+import type { CheckInRequest, CheckInResponse, LeaveResponse } from '@shared/api/checkin.ts';
 import { type ErrorCode, isApiErrorBody } from '@shared/errors.ts';
 
 import { supabase } from './supabase';
@@ -27,4 +28,12 @@ async function invoke<T>(fn: string, body: Record<string, unknown>): Promise<T> 
 
 export function callAccount(body: AccountRequest): Promise<AccountResponse> {
   return invoke<AccountResponse>('account', body);
+}
+
+export function callCheckIn(body: CheckInRequest): Promise<CheckInResponse> {
+  return invoke<CheckInResponse>('checkin', body);
+}
+
+export function callLeave(): Promise<LeaveResponse> {
+  return invoke<LeaveResponse>('checkin', { action: 'leave' });
 }

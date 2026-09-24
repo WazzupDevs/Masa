@@ -1,0 +1,81 @@
+import { CURRENT_LOCATION_CONSENT_VERSION } from '@shared/consent.ts';
+import * as Location from 'expo-location';
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { Linking, Text, View } from 'react-native';
+
+import { Button } from '@/components/Button';
+import { Checkbox } from '@/components/Checkbox';
+import { Screen } from '@/components/Screen';
+import { useProfile } from '@/features/account/useProfile';
+import { useCheckinDraft } from '@/features/checkin/draft';
+import { tr } from '@/i18n/tr';
+
+type Problem = 'denied' | 'failed' | null;
+
+export default function LocationScreen() {
+  const profile = useProfile();
+  const setPosition = useCheckinDraft((s) => s.setPosition);
+  const consentGiven = profile.data?.location_consent_version === CURRENT_LOCATION_CONSENT_VERSION;
+  const [consent, setConsent] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [problem, setProblem] = useState<Problem>(null);
+
+  async function locate() {
+    setProblem(null);
+    const permission = await Location.requestForegroundPermissionsAsync();
+    if (!permission.granted) {
+      setProblem('denied');
+      return;
+    }
+    setLocating(true);
+    try {
+      const { coords } = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+      setPosition({ lat: coords.latitude, lng: coords.longitude, accuracyM: coords.accuracy });
+      router.push('/checkin/venues');
+    } catch {
+      setProblem('failed');
+    } finally {
+      setLocating(false);
+    }
+  }
+
+  return (
+    <Screen>
+      <Text className="text-3xl font-bold text-black">{tr.checkin.locationTitle}</Text>
+      <Text className="mt-4 text-base leading-6 text-neutral-700">{tr.checkin.locationBody}</Text>
+      {consentGiven ? null : (
+        <View className="mt-6">
+          <Checkbox
+            label={tr.checkin.locationConsent}
+            checked={consent}
+            onToggle={() => setConsent((v) => !v)}
+          />
+        </View>
+      )}
+      {problem === 'denied' ? (
+        <View className="mt-4 gap-3">
+          <Text className="text-sm text-red-600">{tr.checkin.permissionDenied}</Text>
+          <Button
+            variant="secondary"
+            label={tr.checkin.openSettings}
+            onPress={() => void Linking.openSettings()}
+          />
+        </View>
+      ) : null}
+      {problem === 'failed' ? (
+        <Text className="mt-4 text-sm text-red-600">{tr.checkin.locationFailed}</Text>
+      ) : null}
+      <View className="mt-auto pt-8">
+        <Button
+          label={locating ? tr.checkin.locating : tr.checkin.useLocation}
+          onPress={() => void locate()}
+          disabled={!(consentGiven || consent)}
+          loading={locating}
+        />
+      </View>
+    </Screen>
+  );
+}

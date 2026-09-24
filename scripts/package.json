@@ -6,13 +6,16 @@
   "scripts": {
     "build-seed": "node --experimental-strip-types build-seed.ts",
     "typecheck": "tsc --noEmit",
-    "admin:ban": "node --experimental-strip-types admin-ban.ts"
+    "admin:ban": "node --experimental-strip-types admin-ban.ts",
+    "apply-local-secrets": "node --experimental-strip-types apply-local-secrets.ts",
+    "fetch:venues": "node --experimental-strip-types fetch-venues.ts"
   },
   "devDependencies": {
     "@types/node": "^22.18.0",
     "typescript": "~6.0.3"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.117.1"
+    "@supabase/supabase-js": "^2.117.1",
+    "postgres": "^3.4.9"
   }
 }

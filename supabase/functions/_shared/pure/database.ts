@@ -28,6 +28,21 @@ export type Database = {
   };
   public: {
     Tables: {
+      alias_words: {
+        Row: {
+          kind: string;
+          word: string;
+        };
+        Insert: {
+          kind: string;
+          word: string;
+        };
+        Update: {
+          kind?: string;
+          word?: string;
+        };
+        Relationships: [];
+      };
       banned_phones: {
         Row: {
           created_at: string;
@@ -50,6 +65,8 @@ export type Database = {
           id: string;
           kvkk_accepted_at: string;
           kvkk_version: string;
+          location_consent_at: string | null;
+          location_consent_version: string | null;
           terms_accepted_at: string;
           terms_version: string;
         };
@@ -59,6 +76,8 @@ export type Database = {
           id: string;
           kvkk_accepted_at: string;
           kvkk_version: string;
+          location_consent_at?: string | null;
+          location_consent_version?: string | null;
           terms_accepted_at: string;
           terms_version: string;
         };
@@ -68,8 +87,90 @@ export type Database = {
           id?: string;
           kvkk_accepted_at?: string;
           kvkk_version?: string;
+          location_consent_at?: string | null;
+          location_consent_version?: string | null;
           terms_accepted_at?: string;
           terms_version?: string;
+        };
+        Relationships: [];
+      };
+      table_sessions: {
+        Row: {
+          alias: string;
+          created_at: string;
+          ended_at: string | null;
+          expires_at: string;
+          gps_accuracy_m: number | null;
+          headcount: number;
+          id: string;
+          status: string;
+          user_id: string;
+          venue_id: string;
+        };
+        Insert: {
+          alias: string;
+          created_at?: string;
+          ended_at?: string | null;
+          expires_at: string;
+          gps_accuracy_m?: number | null;
+          headcount: number;
+          id?: string;
+          status?: string;
+          user_id: string;
+          venue_id: string;
+        };
+        Update: {
+          alias?: string;
+          created_at?: string;
+          ended_at?: string | null;
+          expires_at?: string;
+          gps_accuracy_m?: number | null;
+          headcount?: number;
+          id?: string;
+          status?: string;
+          user_id?: string;
+          venue_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'table_sessions_venue_id_fkey';
+            columns: ['venue_id'];
+            isOneToOne: false;
+            referencedRelation: 'venues';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      venues: {
+        Row: {
+          city: string;
+          district: string;
+          id: string;
+          is_active: boolean;
+          location: unknown;
+          name: string;
+          source: string;
+          source_ref: string;
+        };
+        Insert: {
+          city: string;
+          district: string;
+          id?: string;
+          is_active?: boolean;
+          location: unknown;
+          name: string;
+          source: string;
+          source_ref: string;
+        };
+        Update: {
+          city?: string;
+          district?: string;
+          id?: string;
+          is_active?: boolean;
+          location?: unknown;
+          name?: string;
+          source?: string;
+          source_ref?: string;
         };
         Relationships: [];
       };
@@ -78,9 +179,51 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      end_table_session: { Args: { target_user_id: string }; Returns: boolean };
+      nearby_venues: {
+        Args: { lat: number; lng: number };
+        Returns: {
+          distance_m: number;
+          district: string;
+          id: string;
+          name: string;
+        }[];
+      };
       record_banned_phone: {
         Args: { target_user_id: string };
         Returns: undefined;
+      };
+      start_table_session: {
+        Args: {
+          accuracy_m?: number;
+          consent_version: string;
+          new_alias: string;
+          new_headcount: number;
+          target_user_id: string;
+          target_venue_id: string;
+        };
+        Returns: {
+          alias: string;
+          created_at: string;
+          ended_at: string | null;
+          expires_at: string;
+          gps_accuracy_m: number | null;
+          headcount: number;
+          id: string;
+          status: string;
+          user_id: string;
+          venue_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'table_sessions';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      venue_distance_m: {
+        Args: { lat: number; lng: number; target_venue_id: string };
+        Returns: number;
       };
     };
     Enums: {

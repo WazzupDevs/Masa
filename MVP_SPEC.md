@@ -44,11 +44,13 @@ Aynı mekandaki insanların, konsept üzerine kurulu odalarda birlikte oyun oyna
 3. Kullanıcı takma adı yoktur: diğer kullanıcılara hiçbir şey gösterilmediği ve hiçbir akışta kullanılmadığı için MVP'den çıkarıldı. Diğer masalar yalnızca masa takma adını görür (§4.2).
 
 ### 4.2 Check-in ve masa
-1. Konum izni istenir (sadece "uygulama kullanılırken"). Arka planda konum takibi yok.
-2. Konum bir kez alınır. `nearby_venues` RPC'si 300 m içindeki mekanları mesafeye göre sıralı döner.
-3. Kullanıcı mekanı seçer. Sunucu mesafeyi tekrar kontrol eder (300 m). Koordinat saklanmaz. `checkin` fonksiyonu koordinatı loglamaz ve hata mesajlarında da döndürmez.
+1. Konum için açık rıza alınır (açıklama ekranı, ilk check-in'de `profiles.location_consent_at` ve `location_consent_version` yazılır; sürüm `draft-0`). Konum izni istenir (sadece "uygulama kullanılırken"). Arka planda konum takibi yok.
+2. Konum yüksek doğrulukla bir kez alınır. `nearby_venues` RPC'si 300 m içindeki mekanları mesafeye göre sıralı döner. Listenin altında "© OpenStreetMap katkıda bulunanlar" atfı görünür (ODbL).
+3. Kullanıcı mekanı seçer. Sunucu mesafeyi tekrar kontrol eder (katı 300 m; doğruluk payı yok). Koordinat saklanmaz. Yalnızca cihazın bildirdiği doğruluk yarıçapı (metre) `table_sessions.gps_accuracy_m` olarak saklanır; sahada eşiği ayarlamak için. `checkin` fonksiyonu koordinatı loglamaz ve hata mesajlarında da döndürmez.
+   - Kabul edilmiş risk: sahte GPS ile uzaktan check-in yapılabilir. Mekanda bulunmayı doğrulama (BLE) v2'de.
 4. Kişi sayısı girilir, masa oluşur, takma ad atanır. Takma ad `content/aliases-tr.json` içindeki sıfat ve hayvan listelerinden üretilir ve mekandaki aktif masalar arasında benzersizdir.
 5. Masa 4 saat sonra ya da kullanıcı "Mekandan ayrıl" dediğinde biter. Biten masanın odaları kapanır.
+6. Kullanıcının aynı anda tek aktif masası olur. Aktif masası varken yeniden check-in yaparsa eski masa biter (odaları kapanır) ve yenisi açılır.
 
 ### 4.3 Oda kurma ve lobi
 1. Masa, konsept (Tabu / Sohbet) ve görünürlük (Sadece masam / Mekana açık) seçerek oda kurar.
@@ -148,7 +150,8 @@ Zamanlama: `normalize` ve `profanity.ts` ilk kez sohbette kullanıldığı için
 │  ├─ config.toml
 │  ├─ migrations/
 │  ├─ seed.sql               scripts/ tarafından üretilir
-│  ├─ seed.local.sql         yalnızca yerel dev sırları (Vault anahtarı), barındırılan projede çalışmaz
+│  ├─ local/secrets.sql      yalnızca yerel dev sırları (Vault anahtarı); seed yolunda değil, `pnpm db:reset`
+│  │                         uygular ve yerel olmayan DB'yi reddeder
 │  ├─ tests/                 entegrasyon testleri (vitest, yerel stack'e karşı)
 │  └─ functions/
 │     ├─ _shared/            deps.ts (sabit sürümlü npm: import'ları), http.ts, auth.ts,
@@ -164,20 +167,23 @@ Zamanlama: `normalize` ve `profanity.ts` ilk kez sohbette kullanıldığı için
 │     └─ account/            complete-onboarding, register-push, delete
 ├─ content/                  tabu-cards.json, sohbet-cards.json, profanity-tr.json, venues-pilot.json,
 │                            aliases-tr.json
-└─ scripts/                  içerikten seed üretimi (seed.sql commit'lenir)
+└─ scripts/                  içerikten seed üretimi (seed.sql commit'lenir), fetch-venues (Overpass),
+                             admin-ban, apply-local-secrets
 ```
 
 ### Veri modeli
 ```
 profiles          id (= auth.users.id), push_token,
                   age_confirmed_at, terms_accepted_at, terms_version,
-                  kvkk_accepted_at, kvkk_version, location_consent_at, created_at
-                  (push_token M3'te, location_consent_at M2'de kendi migration'ıyla gelir;
+                  kvkk_accepted_at, kvkk_version, location_consent_at,
+                  location_consent_version, created_at
+                  (push_token M3'te kendi migration'ıyla gelir;
                    profil satırı onboarding tamamlanınca account/complete-onboarding ile oluşur)
 venues            id, name, city, district, location geography(Point),
                   source, source_ref, is_active
+alias_words       kind (adjective|animal), word           (aliases-tr.json'dan seed; yalnızca sunucu okur)
 table_sessions    id, user_id, venue_id, alias, headcount, status (active|ended),
-                  created_at, expires_at
+                  gps_accuracy_m, created_at, expires_at, ended_at
 rooms             id, venue_id, owner_session_id, guest_session_id (nullable),
                   concept (tabu|sohbet), visibility (private|open),
                   status (waiting|active|ending|closed), game_state jsonb,
@@ -242,9 +248,10 @@ banned_phones     phone_hash (HMAC, sunucu gizli anahtarı) PK, created_at
 ## 11. İçerik
 - `tabu-cards.json`: en az 500 kart, format `{ word, forbidden: [5] }`. Yasaklar tek kelime olmalı ve hedefle aynı kökten gelmemeli. Argo ya da cinsel içerik yok.
 - `sohbet-cards.json`: en az 150 kart, 4 temaya dağılmış.
-- `venues-pilot.json`: pilot bölgedeki mekanlar (ad, koordinat, ilçe). Google Places ya da OpenStreetMap'ten tek seferlik çekilir ve elle kontrol edilir. Çalışma anında harita API'si çağrılmaz.
+- `venues-pilot.json`: pilot bölgedeki (İstanbul Beylikdüzü) mekanlar (ad, koordinat, ilçe). `pnpm fetch:venues` OpenStreetMap Overpass API'den `amenity=cafe` ve `amenity=hookah_lounge` kayıtlarını tek seferlik çeker; elle kontrol edilir (`is_active: false` ile kapatılabilir). Çalışma anında harita API'si çağrılmaz. OSM verisi ODbL lisanslıdır: atıf check-in listesinde (M2) ve hakkında ekranında (M7) gösterilir.
+- Testler gerçek mekan verisi kullanmaz: `supabase/tests/fixtures/venues.ts`, sabit bir çapa noktasından (41.0000, 28.6400) hesaplanmış mesafelerde sahte mekanlar içerir.
 - `profanity-tr.json`: Türkçe küfür ve hakaret listesi.
-- `aliases-tr.json`: masa takma adları için sıfat ve hayvan listeleri (`{ adjectives: [], animals: [] }`).
+- `aliases-tr.json`: masa takma adları için sıfat ve hayvan listeleri (`{ adjectives: [], animals: [] }`). Sıfatlar olumlu ya da nötr; Türkçede hakaret olarak kullanılan hayvanlar (domuz, eşek, öküz, it, köpek, inek, maymun, ayı, keçi vb.) yok; hiçbir birleşim alay ya da hakaret gibi okunmaz.
 - İçerik Claude ile üretilir, elle ayıklanır ve seed script'iyle yüklenir.
 
 ## 12. Analitik
@@ -269,8 +276,8 @@ Kapsam: telefon OTP, onaylar (yer tutucu metinler, sürüm `draft-0`), hesap sil
 Kabul: test numarasıyla giriş yapılabiliyor. Onaylar zaman damgası ve metin sürümüyle kayıtlı. Hesap silme kullanıcının tüm verisini siliyor. Türkiye'ye gerçek SMS teslimatı denendi.
 
 **M2 — Mekan ve masa**
-Kapsam: `nearby_venues`, `checkin` fonksiyonu, takma ad üretimi (`aliases-tr.json`), masa süresi.
-Kabul: pilot seed ile 300 m listesi doğru. 300 m dışından check-in reddediliyor. Koordinat hiçbir tabloda saklanmıyor.
+Kapsam: `nearby_venues`, `checkin` fonksiyonu, takma ad üretimi (`aliases-tr.json`), masa süresi, konum rızası, `pnpm fetch:venues`. Doğrulama container'da birim ve entegrasyon testleriyle; cihaz testi M3 öncesinde.
+Kabul: test fixture'ıyla 300 m listesi doğru. 300 m dışından check-in reddediliyor. Koordinat hiçbir tabloda saklanmıyor.
 
 **M3 — Oda, lobi ve katılma isteği**
 Kapsam: `rooms` fonksiyonu, `venue_lobby` RPC, lobi yayını, 60 saniyelik istek akışı, push (`eas init`, Firebase/FCM, bildirim izni, `account/register-push`, gönderim), engelleme filtresi.
@@ -296,6 +303,6 @@ Tahmini süre: tek geliştirici ve Claude Code ile yaklaşık 8 hafta. Ardından
 
 ## 14. Açık kararlar
 - Uygulama adı
-- Pilot bölgesi ve mekan listesi
+- Pilot mekan listesi: bölge İstanbul Beylikdüzü; liste `pnpm fetch:venues` ile pilottan önce üretilip elle kontrol edilecek.
 - Kullanım Koşulları ve KVKK aydınlatma metinleri: M1'de yer tutucu (`draft-0`); gerçek metinler ve hukuki kontrol pilot öncesinde (M7).
 - Yurt dışı veri aktarımı: Supabase'in Türkiye bölgesi yok. Pilot öncesi KVKK kapsamında hukuki görüş alınacak.

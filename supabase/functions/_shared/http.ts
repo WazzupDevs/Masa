@@ -4,6 +4,10 @@ import { AppError, type ErrorCode, toErrorBody } from './pure/errors.ts';
 const STATUS: Record<ErrorCode, number> = {
   bad_request: 400,
   consent_outdated: 409,
+  onboarding_required: 403,
+  venue_not_found: 404,
+  too_far: 403,
+  alias_exhausted: 409,
   unauthorized: 401,
   method_not_allowed: 405,
   internal: 500,

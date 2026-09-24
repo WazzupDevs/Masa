@@ -16,12 +16,13 @@ Node 22, pnpm 10, Docker (yerel Supabase için). Supabase CLI ve Deno root devDe
 - `pnpm typecheck` — mobil + scripts + `_shared/pure` (Deno/Node tipleri olmadan) + Edge Function'lar (`deno check`) + root testleri
 - `pnpm lint` — ESLint (uyarı toleransı sıfır) + `deno lint supabase/functions`
 - `pnpm test` — birim testleri, vitest (`scripts/**`, `_shared/pure/**` altındaki `*.test.ts`)
-- `pnpm test:integration` — `supabase/tests/**`, yerel stack'e karşı (önce `pnpm supabase start` ve `pnpm supabase functions serve`)
+- `pnpm test:integration` — `supabase/tests/**`, yerel stack'e karşı (önce `pnpm supabase start`, `pnpm db:reset` ve `pnpm supabase functions serve`). Mekan testleri gerçek veri değil `supabase/tests/fixtures/venues.ts` kullanır.
 - `pnpm format` / `pnpm format:check` — Prettier
 - `pnpm supabase start` / `pnpm supabase stop` — `config.toml` değişince stop + start gerekir. İlk seferde `cp supabase/.env.example supabase/.env` (`config.toml`'daki `env()` değerleri; yerel placeholder'lar)
-- `pnpm supabase db reset` — migration'lar + `seed.sql` + `seed.local.sql` (yalnızca yerel dev sırları)
+- `pnpm db:reset` — yerel DB'yi sıfırlar: migration'lar + `seed.sql`, ardından `supabase/local/secrets.sql` (yerel dev sırları; script yerel olmayan DB'ye uygulamayı reddeder). Çıplak `supabase db reset` Vault anahtarını kurmaz.
 - `pnpm supabase functions serve` — Edge Function'ları yerelde çalıştırır
 - `pnpm seed` — `content/*.json` → `supabase/seed.sql` (çıktı commit'lenir)
+- `pnpm fetch:venues` — OpenStreetMap Overpass API'den Beylikdüzü kafeleri ve nargile kafeleri → `content/venues-pilot.json`. Sonucu elle kontrol et (`isActive: false` ile kapat; tekrar çekişte korunur), sonra `pnpm seed`. `overpass-api.de` erişimi gerekir.
 - `pnpm gen:types` — çalışan yerel DB'den `supabase/functions/_shared/pure/database.ts` üretir; her migration'dan sonra çalıştır
 - Yerel test numaraları (`config.toml` → `[auth.sms.test_otp]`): `+905550000001` … `+905550000003`, kod `123456`
 - `pnpm admin:ban <userId>` — ban = telefon hash'ini `banned_phones`'a yazar, sonra hesabı siler (tüm veri cascade ile gider). Yalnızca geliştirici makinesinde, `SUPABASE_URL` ve `SUPABASE_SECRET_KEY` ortam değişkenleriyle çalışır. Secret key hiçbir dosyaya yazılmaz, uygulamaya girmez.
@@ -37,9 +38,9 @@ Node 22, pnpm 10, Docker (yerel Supabase için). Supabase CLI ve Deno root devDe
 2. `pnpm supabase login` ve `pnpm supabase link --project-ref <ref>`
 3. **Vault anahtarı:** `openssl rand -hex 32` ile üret, parola yöneticisine kaydet, SQL Editor'da çalıştır:
    `select vault.create_secret('<anahtar>', 'phone_hash_key');`
-   Anahtar asla değişmez (rotasyon yok; değişirse `banned_phones` geçersiz olur). `seed.local.sql`'i barındırılan projede asla çalıştırma.
-4. `pnpm supabase db push` — migration'lar
-5. `pnpm supabase functions deploy account` — `verify_jwt = false` ayarı `config.toml`'dan gelir; token'ı fonksiyon kendisi doğrular.
+   Anahtar asla değişmez (rotasyon yok; değişirse `banned_phones` geçersiz olur). `supabase/local/secrets.sql`'i barındırılan projede asla çalıştırma.
+4. `pnpm supabase db push --include-seed` — migration'lar + `seed.sql` (takma ad kelimeleri, mekanlar; tekrar çalıştırılabilir). Yerel sırlar seed yolunda değildir, buradan barındırılan projeye gidemez.
+5. `pnpm supabase functions deploy account` ve `pnpm supabase functions deploy checkin` — `verify_jwt = false` ayarı `config.toml`'dan gelir; token'ı fonksiyon kendisi doğrular.
 6. **Twilio:**
    - Verify servisi oluştur; Account SID, Auth Token ve Verify Service SID'i al.
    - **Verify → Settings → Geo permissions: yalnızca Türkiye** açık (SMS pumping dolandırıcılığına karşı). Fraud Guard açık kalsın.
@@ -49,7 +50,7 @@ Node 22, pnpm 10, Docker (yerel Supabase için). Supabase CLI ve Deno root devDe
    - Rate Limits: saatlik SMS **100**; aynı numaraya tekrar gönderim aralığı **60 sn**.
    - Hooks → **Before User Created** → Postgres → şema `private`, fonksiyon `before_user_created`.
 8. **Mobil:** `cp apps/mobile/.env.example apps/mobile/.env`; URL `https://<ref>.supabase.co`, anahtar Settings → API Keys'teki publishable key.
-9. Sonraki değişikliklerde: yeni migration → `pnpm supabase db push`; fonksiyon değişikliği → `pnpm supabase functions deploy <ad>`.
+9. Sonraki değişikliklerde: yeni migration ya da içerik → `pnpm supabase db push --include-seed`; fonksiyon değişikliği → `pnpm supabase functions deploy <ad>`.
 
 ### Mobil (Android fiziksel cihaz, USB hata ayıklama açık)
 1. `apps/mobile/.env` barındırılan dev projesini göstermeli (yukarıdaki 8. adım).

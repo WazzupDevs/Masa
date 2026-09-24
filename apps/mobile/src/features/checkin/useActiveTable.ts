@@ -3,17 +3,20 @@ import { useQuery } from '@tanstack/react-query';
 import { useSessionStore } from '@/features/auth/session';
 import { supabase } from '@/lib/supabase';
 
-export const profileQueryKey = (userId: string | undefined) => ['profile', userId] as const;
+export const activeTableQueryKey = (userId: string | undefined) => ['activeTable', userId] as const;
 
-export function useProfile() {
+// The user's open table, if any (RLS: own rows only).
+export function useActiveTable() {
   const userId = useSessionStore((s) => s.session?.user.id);
   return useQuery({
-    queryKey: profileQueryKey(userId),
+    queryKey: activeTableQueryKey(userId),
     enabled: userId !== undefined,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('terms_version, kvkk_version, location_consent_version')
+        .from('table_sessions')
+        .select('id, alias, headcount, expires_at, venue:venues(name)')
+        .eq('status', 'active')
+        .gt('expires_at', new Date().toISOString())
         .maybeSingle();
       if (error) throw error;
       return data;
