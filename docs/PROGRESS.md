@@ -29,7 +29,7 @@ Otonom çalışma: M2'den M7'ye taşlar sırayla uygulanıyor. Her taş typechec
 
 ## İnceleme düzeltmeleri (PR #3)
 
-Tanışma sonucunun zamanlaması (yalnızca karşılıklı Evet hemen, 30 sn pencere), Tabu bitince oda açık kalır ("Tekrar oyna"), küfür filtresi katlamasız, Engellenenler listesinde hesap id'si yok, özel Realtime kanalları. Ayrıntılar: [DECISIONS.md](DECISIONS.md) → "İnceleme düzeltmeleri". Açık soru: diğer masanın oturum id'lerinin de gizlenmesi isteniyor mu?
+Tanışma sonucunun zamanlaması (yalnızca karşılıklı Evet hemen, 30 sn pencere), Tabu bitince oda açık kalır ("Tekrar oyna"), küfür filtresi katlamasız, Engellenenler listesinde hesap id'si yok, özel Realtime kanalları. Ardından: pencere sırasında açılan açık odalar `reveal_ends_at`'e kadar lobide görünmüyor ve lobi yayını üretmiyor; kural 4 masa oturum id'lerini takma kimlik olarak kabul ediyor. Ayrıntılar: [DECISIONS.md](DECISIONS.md) → "İnceleme düzeltmeleri".
 
 ## Sıradaki adım
 

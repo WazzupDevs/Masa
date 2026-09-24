@@ -749,34 +749,7 @@ export type Database = {
       };
       reveal_finalize: {
         Args: { target_room_id: string; target_user_id: string };
-        Returns: {
-          closed_at: string | null;
-          concept: string;
-          created_at: string;
-          game_state: Json;
-          guest_alias: string | null;
-          guest_headcount: number | null;
-          guest_joined_at: string | null;
-          guest_session_id: string | null;
-          id: string;
-          last_activity_at: string;
-          owner_alias: string;
-          owner_headcount: number;
-          owner_session_id: string;
-          reveal_ends_at: string | null;
-          reveal_result: string | null;
-          reveal_token: Json | null;
-          status: string;
-          venue_id: string;
-          visibility: string;
-          waiting_since: string;
-        };
-        SetofOptions: {
-          from: '*';
-          to: 'rooms';
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
+        Returns: string;
       };
       rooms_create: {
         Args: {
@@ -875,6 +848,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      rooms_lobby_held: { Args: { target_room_id: string }; Returns: boolean };
       rooms_request_join: {
         Args: {
           max_per_hour: number;

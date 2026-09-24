@@ -53,8 +53,16 @@ async function pushTokenOfSession(sessionId: string): Promise<string | null> {
   return profile.data?.push_token ?? null;
 }
 
-function lobbyChanged(venueId: string): void {
-  inBackground(broadcast(venueChannel(venueId), BROADCAST.lobbyChanged));
+// Announces a lobby change, except for a room still held out of the lobby after its owner's
+// reveal window (MVP_SPEC §4.6): the venue channel must not tell that the other table went on.
+function lobbyChanged(room: { id: string; venue_id: string }): void {
+  inBackground(
+    (async () => {
+      const held = await db.rpc('rooms_lobby_held', { target_room_id: room.id });
+      if (held.error) throw dbError('rooms_lobby_held', held.error);
+      if (!held.data) await broadcast(venueChannel(room.venue_id), BROADCAST.lobbyChanged);
+    })(),
+  );
 }
 
 Deno.serve(
@@ -70,7 +78,7 @@ Deno.serve(
           new_visibility: body.visibility,
         });
         if (error) throw dbError('rooms_create', error);
-        if (data.visibility === 'open') lobbyChanged(data.venue_id);
+        if (data.visibility === 'open') lobbyChanged(data);
         return { roomId: data.id };
       }
 
@@ -113,9 +121,13 @@ Deno.serve(
 
         // A decline sends nothing anywhere (rule 5): the requester learns at expires_at.
         if (data.status === 'accepted') {
-          const room = await db.from('rooms').select('venue_id').eq('id', data.room_id).single();
+          const room = await db
+            .from('rooms')
+            .select('id, venue_id')
+            .eq('id', data.room_id)
+            .single();
           if (room.error) throw dbError('rooms', room.error);
-          lobbyChanged(room.data.venue_id);
+          lobbyChanged(room.data);
           inBackground(
             broadcast(sessionChannel(data.requester_session_id), BROADCAST.joinAccepted),
           );
@@ -131,7 +143,7 @@ Deno.serve(
       case 'leave': {
         const { data, error } = await db.rpc('rooms_leave', { target_user_id: user.id });
         if (error) throw dbError('rooms_leave', error);
-        if (data?.id && data.visibility === 'open') lobbyChanged(data.venue_id);
+        if (data?.id && data.visibility === 'open') lobbyChanged(data);
         return { ok: true };
       }
 
@@ -142,7 +154,7 @@ Deno.serve(
           decision_seconds: REVEAL.decisionSeconds,
         });
         if (error) throw dbError('rooms_end', error);
-        if (data?.id && data.visibility === 'open') lobbyChanged(data.venue_id);
+        if (data?.id && data.visibility === 'open') lobbyChanged(data);
         return { ok: true };
       }
     }

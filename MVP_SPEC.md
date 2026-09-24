@@ -78,6 +78,7 @@ Aynı mekandaki insanların, konsept üzerine kurulu odalarda birlikte oyun oyna
 2. İki taraf da "Evet" derse sonuç hemen açıklanır: iki ekranda aynı renk ve emoji 60 saniye tam ekran görünür: "Ekranını kaldır, birbirinizi bulun."
 3. Diğer tüm durumlarda (hayır, cevapsız, pencere sırasında bir masanın ayrılması) sonuç, reddedilen katılma isteğindeki gibi yalnızca pencerenin sonunda (`reveal_ends_at`) açıklanır: iki tarafa da "Güzel oyundu 👋" gösterilir ve lobiye dönülür. Böylece "Evet" diyen masa, karşısındakinin "Hayır" mı dediğini, ayrıldığını mı yoksa hiç cevap mı vermediğini ne gördüğü satırlardan ne de zamanlamadan ayırt edebilir. Kimin hayır dediği asla gösterilmez.
 4. "Hayır" diyen ya da ayrılan masa kendi ekranını hemen kapatıp devam edebilir (yeni oda kurabilir, isteğe katılabilir). Oda diğer masa için pencere sonuna kadar `ending` durumunda kalır; `ending` oda masaları bağlamaz.
+5. Pencerenin iki masasının bu sırada kurduğu açık odalar eski odanın `reveal_ends_at`'ine kadar lobide görünmez ve lobi yayını (`lobby_changed`) üretmez; lobideki bekleme süreleri pencere sonundan sayılır. Özel oda ve tek masa oyunu serbesttir. Pencereyi kapatan `reveal/finalize` çağrısı lobiye bir kez `lobby_changed` yayınlar.
 
 ## 5. Konseptler
 
@@ -217,7 +218,7 @@ banned_phones     phone_hash (HMAC, sunucu gizli anahtarı) PK, created_at
 - İstemcinin çağırdığı security definer RPC'ler (`nearby_venues`, `venue_lobby`) yalnızca okur ve `set search_path = ''` ile tanımlanır. Yazan security definer fonksiyonlar (ör. `record_banned_phone`) istemciye kapalıdır; yalnızca service role çalıştırabilir.
 - `venues`: kimliği doğrulanmış herkes okuyabilir.
 - `profiles`, `table_sessions`: sadece kendi satırı.
-- Lobi, tablo okumasıyla değil `venue_lobby(venue_id)` RPC'siyle gelir (security definer). Yalnızca güvenli kolonları döner (oda id, masa takma adı, kişi sayısı, konsept, bekleme süresi) ve engellemeleri filtreler.
+- Lobi, tablo okumasıyla değil `venue_lobby(venue_id)` RPC'siyle gelir (security definer). Yalnızca güvenli kolonları döner (oda id, masa takma adı, kişi sayısı, konsept, bekleme süresi) ve engellemeleri filtreler. Sahibi süresi dolmamış bir tanışma penceresindeki masaysa oda listelenmez (§4.6).
 - `rooms`, `messages`, `game_events`: sadece odadaki masaların sahibi okur. Misafir, odaya katıldığı andan (`guest_joined_at`) önceki mesajları okuyamaz.
 - `reports`: istemciye tamamen kapalı. `blocks`: engelleyen kendi satırlarının yalnızca `id`, `blocked_alias`, `created_at` kolonlarını okur (kolon yetkisi); `blocked_id` istemciye gitmez.
 - `tabu_turns`: istemciye tamamen kapalı. Herkese açık tur durumu `rooms.game_state`'tedir (tur, anlatan masa, `turnEndsAt`, pas, ortak skor; kart bilgisi yok). Kart kelimesi yalnızca `tabu/current-card` ile anlatana gider, herkese yalnızca `card_closed` olayında görünür.

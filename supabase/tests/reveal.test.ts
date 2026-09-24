@@ -1,6 +1,7 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { REVEAL_COLORS, REVEAL_EMOJIS } from '../functions/_shared/pure/reveal.ts';
+import { BROADCAST, venueChannel } from '../functions/_shared/pure/rooms.ts';
 import { deleteFixtureVenues, insertFixtureVenues } from './fixtures/venues.ts';
 import { checkInAt, errorBody, onboarded, PHONES } from './helpers.ts';
 import { type Client, deleteUserByPhone, invoke, sql } from './local.ts';
@@ -235,6 +236,95 @@ describe('reveal timing', () => {
       .select('id')
       .in('status', ['waiting', 'active']);
     expect(open).toEqual([]);
+  });
+});
+
+// MVP_SPEC §4.6: the table that said no may open a new room at once, but it stays out of the lobby
+// (and off the venue channel) until reveal_ends_at.
+describe('lobby hold during the reveal window', { timeout: 60_000 }, () => {
+  type Lobby = { room_id: string; waiting_since: string }[];
+  const lobbyOf = async (client: Client) =>
+    ((await client.rpc('venue_lobby', { target_venue_id: venue[V] ?? '' })).data ?? []) as Lobby;
+
+  // What the owner (who said yes) sees of the venue while the guest says no and opens a room, or
+  // does nothing. A third table's open room is there in both cases.
+  async function yesSideLobby(guestDoes: 'no' | 'nothing') {
+    const { owner, guest, third, roomId } = await endingRoom();
+    await invoke(third, 'rooms', { action: 'leave' });
+    const thirdRoom = await invoke(third, 'rooms', {
+      action: 'create',
+      concept: 'sohbet',
+      visibility: 'open',
+    });
+    const thirdRoomId = (thirdRoom.body as { roomId: string }).roomId;
+    await decide(owner, roomId, true);
+
+    // Venue broadcasts the owner hears from now on.
+    const events: string[] = [];
+    const channel = owner.channel(venueChannel(venue[V] ?? ''), { config: { private: true } });
+    await new Promise<void>((resolve) => {
+      channel
+        .on('broadcast', { event: '*' }, (msg: { event: string }) => events.push(msg.event))
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') resolve();
+        });
+    });
+
+    let guestRoomId: string | null = null;
+    if (guestDoes === 'no') {
+      await decide(guest, roomId, false);
+      const create = (visibility: 'open' | 'private') =>
+        invoke(guest, 'rooms', { action: 'create', concept: 'tabu', visibility });
+      // Open, then closed again, then private: none of it may show at the venue.
+      expect((await create('open')).status).toBe(200);
+      expect((await invoke(guest, 'rooms', { action: 'end' })).status).toBe(200);
+      expect((await create('private')).status).toBe(200);
+      expect((await invoke(guest, 'rooms', { action: 'end' })).status).toBe(200);
+      const created = await create('open');
+      expect(created.status).toBe(200);
+      guestRoomId = (created.body as { roomId: string }).roomId;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const during = (await lobbyOf(owner)).map((r) =>
+      r.room_id === thirdRoomId ? 'third' : 'other',
+    );
+    const eventsDuring = [...events];
+
+    await expireWindow(roomId);
+    const [{ ends_at: endsAt } = {}] =
+      await sql`select reveal_ends_at as ends_at from public.rooms where id = ${roomId}`;
+    await finalize(owner, roomId);
+    await expect.poll(() => events.length, { timeout: 8000 }).toBeGreaterThan(eventsDuring.length);
+    const after = await lobbyOf(owner);
+    await owner.removeChannel(channel);
+    for (const phone of PHONES) await deleteUserByPhone(phone);
+    return {
+      during,
+      eventsDuring,
+      eventsAtEnd: events.slice(eventsDuring.length),
+      after,
+      guestRoomId,
+      endsAt,
+    };
+  }
+
+  it('shows the yes table the same lobby and venue events for "no + new room" and "no answer"', async () => {
+    const withNo = await yesSideLobby('no');
+    const noAnswer = await yesSideLobby('nothing');
+
+    expect(withNo.during).toEqual(['third']);
+    expect(withNo.during).toEqual(noAnswer.during);
+    expect(withNo.eventsDuring).toEqual([]);
+    expect(withNo.eventsDuring).toEqual(noAnswer.eventsDuring);
+    expect(withNo.eventsAtEnd).toEqual([BROADCAST.lobbyChanged]);
+    expect(withNo.eventsAtEnd).toEqual(noAnswer.eventsAtEnd);
+
+    // After the window the new room is listed, waiting from the window's end.
+    const listed = withNo.after.find((r) => r.room_id === withNo.guestRoomId);
+    expect(listed).toBeDefined();
+    expect(Date.parse(listed?.waiting_since ?? '')).toBeGreaterThanOrEqual(
+      (withNo.endsAt as Date).getTime(),
+    );
   });
 });
 

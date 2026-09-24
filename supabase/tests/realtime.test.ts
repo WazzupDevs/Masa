@@ -176,8 +176,8 @@ describe('private table channels', { timeout: 60_000 }, () => {
     await quiet();
     expect(seen.events).toEqual([]);
 
-    // The server's broadcast arrives.
-    await invoke(owner, 'rooms', { action: 'end' });
+    // The server's broadcast arrives: the guest leaves, the room is back in the lobby.
+    await invoke(guest, 'rooms', { action: 'leave' });
     await expect.poll(() => seen.events, { timeout: 8000 }).toEqual([BROADCAST.lobbyChanged]);
   });
 });
