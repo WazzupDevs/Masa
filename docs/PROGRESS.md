@@ -11,9 +11,9 @@ Otonom çalışma: M2'den M7'ye taşlar sırayla uygulanıyor. Her taş typechec
 | M2 Mekan ve masa             | ✅ Bitti                    | `26ea477`                       |
 | M3 Oda, lobi, katılma isteği | ✅ Bitti                    | `c974d78`                       |
 | M4 Sohbet ve güvenlik        | ✅ Bitti                    | `b054c3c`                       |
-| M5 Konseptler                | ✅ Bitti                    | "M5: …" commit'i                |
-| M6 Oda sonu ve tanışma       | ⏳ Devam ediyor             |                                 |
-| M7 Analitik ve mağaza        | Bekliyor                    |                                 |
+| M5 Konseptler                | ✅ Bitti                    | `8ccf6da`                       |
+| M6 Oda sonu ve tanışma       | ✅ Bitti                    | "M6: …" commit'i                |
+| M7 Analitik ve mağaza        | ⏳ Devam ediyor             |                                 |
 
 ## Container'da doğrulanamayan kabul kriterleri
 
@@ -23,10 +23,11 @@ Otonom çalışma: M2'den M7'ye taşlar sırayla uygulanıyor. Her taş typechec
 - M3: İki cihazda istek ve kabul uçtan uca; push (EAS/Firebase hesabı yok, yapılandırma env'den).
 - M4: Cihazda sohbet, şikayet, engelleme ve bağlantı durumu (sunucu tarafı kabul kriterleri container'da doğrulandı).
 - M5: İki cihazda iki masalı Tabu baştan sona (sunucu akışı ve kelime sızmaması container'da doğrulandı); cihazda tek masa Tabu ve Sohbet.
+- M6: İki cihazda tanışma penceresi ve tam ekran sinyal (sunucu tarafı: yalnızca karşılıklı Evet'te sinyal, diğer durumlarda iki tarafa aynı satır; container'da doğrulandı).
 
 ## Sıradaki adım
 
-M6: `reveal` fonksiyonu (`decide`, `finalize`), `ending` durumu ve `reveal_ends_at`, tam ekran sinyal.
+M7: PostHog (env yoksa hiçbir şey yapmaz, yalnızca kullanıcı id'si), hesap silmede PostHog kişi silme, gizlilik/KVKK taslakları (hukuki kontrol gerekli), mağaza metinleri, `eas.json`, Issue #2'ye mağaza ve hesap adımları, tek PR.
 
 ## Yerel ortamı kaldırma (yeni oturumda)
 

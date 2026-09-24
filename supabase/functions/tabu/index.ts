@@ -16,6 +16,7 @@ import type {
 } from '../_shared/pure/api/games.ts';
 import { AppError } from '../_shared/pure/errors.ts';
 import { containsProfanity } from '../_shared/pure/profanity.ts';
+import { REVEAL } from '../_shared/pure/reveal.ts';
 import { checkClue, MAX_CLUE_LENGTH, TABU } from '../_shared/pure/tabu.ts';
 import { isCorrectGuess } from '../_shared/pure/trText.ts';
 
@@ -129,11 +130,19 @@ Deno.serve(
           return { correct };
         }
 
-        case 'pass':
+        case 'pass': {
+          const { error } = await db.rpc('tabu_pass', target);
+          if (error) throw dbError('tabu_pass', error);
+          return { ok: true };
+        }
+
+        // The last turn ends the room into the reveal window (M6).
         case 'end-turn': {
-          const fn = body.action === 'pass' ? 'tabu_pass' : 'tabu_end_turn';
-          const { error } = await db.rpc(fn, target);
-          if (error) throw dbError(fn, error);
+          const { error } = await db.rpc('tabu_end_turn', {
+            ...target,
+            decision_seconds: REVEAL.decisionSeconds,
+          });
+          if (error) throw dbError('tabu_end_turn', error);
           return { ok: true };
         }
       }

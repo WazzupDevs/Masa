@@ -1,6 +1,7 @@
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import type { AccountRequest, AccountResponse } from '@shared/api/account.ts';
 import type { ChatResponse, SafetyResponse } from '@shared/api/chat.ts';
+import type { RevealResponse } from '@shared/api/reveal.ts';
 import type {
   GameOkResponse,
   TabuCardResponse,
@@ -87,4 +88,10 @@ export const gamesApi = {
   tabuPass: (roomId: string) => invoke<GameOkResponse>('tabu', { action: 'pass', roomId }),
   tabuEndTurn: (roomId: string) => invoke<GameOkResponse>('tabu', { action: 'end-turn', roomId }),
   sohbetNext: (roomId: string) => invoke<GameOkResponse>('sohbet', { action: 'next-card', roomId }),
+};
+
+export const revealApi = {
+  decide: (roomId: string, wantsMeet: boolean) =>
+    invoke<RevealResponse>('reveal', { action: 'decide', roomId, wantsMeet }),
+  finalize: (roomId: string) => invoke<RevealResponse>('reveal', { action: 'finalize', roomId }),
 };

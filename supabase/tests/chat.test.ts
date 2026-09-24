@@ -142,7 +142,7 @@ describe('chat/send', () => {
       status: 403,
       body: errorBody('not_in_room'),
     });
-    await invoke(owner, 'rooms', { action: 'end' });
+    await invoke(owner, 'rooms', { action: 'leave' });
     expect(await send(owner, roomId, 'selam')).toEqual({
       status: 403,
       body: errorBody('not_in_room'),
@@ -255,7 +255,7 @@ describe('cleanup jobs', () => {
     const { owner, guest, roomId } = await roomWithGuest();
     await send(owner, roomId, 'silinecek');
     await invoke(guest, 'safety', { action: 'report', roomId, reason: 'spam' });
-    await invoke(owner, 'rooms', { action: 'end' });
+    await invoke(owner, 'rooms', { action: 'leave' });
 
     await sql`update public.rooms set closed_at = now() - interval '23 hours' where id = ${roomId}`;
     await sql`select private.delete_old_messages()`;

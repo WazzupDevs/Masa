@@ -15,6 +15,7 @@ import type {
   RoomsRequest,
 } from '../_shared/pure/api/rooms.ts';
 import { joinAcceptedPush, joinRequestPush } from '../_shared/pure/push.ts';
+import { REVEAL } from '../_shared/pure/reveal.ts';
 import {
   BROADCAST,
   CONCEPTS,
@@ -127,11 +128,20 @@ Deno.serve(
         return { ok: true };
       }
 
-      case 'leave':
+      case 'leave': {
+        const { data, error } = await db.rpc('rooms_leave', { target_user_id: user.id });
+        if (error) throw dbError('rooms_leave', error);
+        if (data?.id && data.visibility === 'open') lobbyChanged(data.venue_id);
+        return { ok: true };
+      }
+
+      // A two-table room opens the "Tanışalım mı?" window (M6); a one-table room closes.
       case 'end': {
-        const fn = body.action === 'leave' ? 'rooms_leave' : 'rooms_end';
-        const { data, error } = await db.rpc(fn, { target_user_id: user.id });
-        if (error) throw dbError(fn, error);
+        const { data, error } = await db.rpc('rooms_end', {
+          target_user_id: user.id,
+          decision_seconds: REVEAL.decisionSeconds,
+        });
+        if (error) throw dbError('rooms_end', error);
         if (data?.id && data.visibility === 'open') lobbyChanged(data.venue_id);
         return { ok: true };
       }

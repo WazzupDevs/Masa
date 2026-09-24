@@ -343,10 +343,26 @@ describe('leaving', () => {
     expect(await rooms(guest, { action: 'leave' })).toEqual({ status: 200, body: { ok: true } });
   });
 
-  it('closes the room when the owner leaves or ends it', async () => {
+  it('closes the room when the owner leaves', async () => {
+    const { owner, roomId } = await roomWithGuest();
+    await rooms(owner, { action: 'leave' });
+    expect((await roomRow(roomId))?.status).toBe('closed');
+  });
+
+  it('ending a two-table room opens the reveal window, idempotently', async () => {
     const { owner, roomId } = await roomWithGuest();
     await rooms(owner, { action: 'end' });
-    expect((await roomRow(roomId))?.status).toBe('closed');
+    expect((await roomRow(roomId))?.status).toBe('ending');
+    await rooms(owner, { action: 'end' });
+    expect((await roomRow(roomId))?.status).toBe('ending');
+  });
+
+  it('closes a one-table room on end', async () => {
+    const [owner] = await threeTables();
+    const roomId = await createRoom(owner, 'private');
+    await rooms(owner, { action: 'end' });
+    const [row] = await sql`select status, reveal_result from public.rooms where id = ${roomId}`;
+    expect(row).toMatchObject({ status: 'closed', reveal_result: null });
   });
 
   it('releases rooms when a table ends', async () => {
@@ -411,7 +427,7 @@ describe('push tokens and closed helpers', () => {
     for (const [fn, args] of [
       ['rooms_create', { target_user_id: id, new_concept: 'tabu', new_visibility: 'open' }],
       ['rooms_leave', { target_user_id: id }],
-      ['rooms_end', { target_user_id: id }],
+      ['rooms_end', { target_user_id: id, decision_seconds: 60 }],
     ] as const) {
       const { error } = await client.rpc(fn, args as never);
       expect(error?.code, fn).toBe('42501');

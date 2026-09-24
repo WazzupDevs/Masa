@@ -65,6 +65,14 @@ async function readableByGuesser(guest: Client, roomId: string): Promise<string>
   return normalize(JSON.stringify(reads.map((r) => r.data)));
 }
 
+// Pins the current turn's card, for tests that depend on the word itself.
+async function pinCard(roomId: string, word: string) {
+  await sql`
+    update public.tabu_turns set card_id = (select id from public.cards where deck = 'tabu' and word = ${word})
+    where room_id = ${roomId}
+  `;
+}
+
 async function expireTurn(roomId: string) {
   await sql`update public.tabu_turns set ends_at = now() - interval '1 second' where room_id = ${roomId}`;
   await sql`
@@ -148,10 +156,7 @@ describe('tabu, two tables', () => {
     await tabu(owner, { action: 'start', roomId });
     // A card whose word appears nowhere else the guesser can read (aliases, Sohbet prompts), so any
     // occurrence can only be a leak.
-    await sql`
-      update public.tabu_turns set card_id = (select id from public.cards where deck = 'tabu' and word = 'Termometre')
-      where room_id = ${roomId}
-    `;
+    await pinCard(roomId, 'Termometre');
     const word = await currentWord(owner, roomId);
     expect(word).toBe('Termometre');
     expect(await readableByGuesser(guest, roomId)).not.toContain(normalize(word));
@@ -175,6 +180,8 @@ describe('tabu, two tables', () => {
   it('checks clues on the server: forbidden words, roots, profanity, describer only', async () => {
     const { owner, guest, roomId } = await room('tabu', true);
     await tabu(owner, { action: 'start', roomId });
+    // A root of 4+ letters, so suffixed forms count too (short roots match whole words only, §6).
+    await pinCard(roomId, 'Termometre');
     const word = await currentWord(owner, roomId);
 
     expect(await tabu(owner, { action: 'clue', roomId, text: `${word}ler gibi` })).toEqual({
@@ -278,7 +285,7 @@ describe('tabu, two tables', () => {
     expect(timeouts).toHaveLength(1);
   });
 
-  it('plays 6 turns, alternating describers, then finishes with the shared score', async () => {
+  it('plays 6 turns, alternating describers, then finishes into the reveal window', async () => {
     const { owner, guest, roomId } = await room('tabu', true);
     await tabu(owner, { action: 'start', roomId });
     const [r] =
@@ -295,7 +302,14 @@ describe('tabu, two tables', () => {
     const done =
       await sql`select payload from public.game_events where room_id = ${roomId} and type = 'game_completed'`;
     expect(done.map((e) => e.payload)).toEqual([{ score: 0 }]);
-    expect((await tabu(owner, { action: 'start', roomId })).status).toBe(200);
+    // MVP_SPEC §4.6: the finished game ends the room into "Tanışalım mı?".
+    const [after] =
+      await sql`select status, reveal_ends_at > now() as open from public.rooms where id = ${roomId}`;
+    expect(after).toMatchObject({ status: 'ending', open: true });
+    expect(await tabu(owner, { action: 'start', roomId })).toEqual({
+      status: 409,
+      body: errorBody('needs_two_tables'),
+    });
   });
 
   it('resets the game when the guest leaves', async () => {

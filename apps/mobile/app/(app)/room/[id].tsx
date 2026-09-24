@@ -1,4 +1,5 @@
 import type { Concept } from '@shared/rooms.ts';
+import { parseGameState } from '@shared/tabu.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, Text, View } from 'react-native';
@@ -10,6 +11,8 @@ import { RoomSafety } from '@/features/chat/RoomSafety';
 import { useOtherTableOnline } from '@/features/chat/usePresence';
 import { useActiveTable } from '@/features/checkin/useActiveTable';
 import { ConceptArea } from '@/features/games/ConceptArea';
+import { RevealPrompt } from '@/features/reveal/RevealPrompt';
+import { RevealResult } from '@/features/reveal/RevealResult';
 import { IncomingRequest } from '@/features/rooms/IncomingRequest';
 import { roomKeys, useRoom } from '@/features/rooms/queries';
 import { errorMessage } from '@/i18n/errors';
@@ -42,11 +45,33 @@ export default function RoomScreen() {
   const r = room.data;
   const member =
     r && sessionId && (r.owner_session_id === sessionId || r.guest_session_id === sessionId);
-  if (!r || !member || r.status === 'closed') return <Redirect href="/" />;
+  if (!r || !member) return <Redirect href="/" />;
+  if (r.status === 'closed') {
+    // A two-table room shows its shared result once; otherwise back to the venue.
+    return r.reveal_result === 'mutual' || r.reveal_result === 'none' ? (
+      <RevealResult result={r.reveal_result} token={r.reveal_token} />
+    ) : (
+      <Redirect href="/" />
+    );
+  }
 
   const isOwner = r.owner_session_id === sessionId;
   const concept = r.concept as Concept;
   const hasOtherTable = r.guest_session_id !== null;
+  const tabuState = parseGameState(r.game_state);
+
+  if (r.status === 'ending' && r.reveal_ends_at) {
+    return (
+      <Screen>
+        <Text className="text-sm text-neutral-500">{tr.rooms.roomTitle(tr.concepts[concept])}</Text>
+        <RevealPrompt
+          roomId={r.id}
+          revealEndsAt={r.reveal_ends_at}
+          score={tabuState?.concept === 'tabu' ? tabuState.score : null}
+        />
+      </Screen>
+    );
+  }
 
   return (
     <Screen>

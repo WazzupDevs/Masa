@@ -74,7 +74,7 @@ Aynı mekandaki insanların, konsept üzerine kurulu odalarda birlikte oyun oyna
 - 10 dakika hareketsiz kalan oda kapanır.
 
 ### 4.6 Oda sonu ve tanışma
-1. İki masalı bir oda biterken (Tabu bittiğinde ya da biri "Odayı bitir" dediğinde) iki masaya da "Tanışalım mı?" sorusu gelir. Süre 60 saniye.
+1. İki masalı bir oda biterken (Tabu bittiğinde ya da iki masadan biri "Odayı bitir" dediğinde) iki masaya da "Tanışalım mı?" sorusu gelir. Süre 60 saniye. İlk cevap kesindir. Pencere sırasında bir masa ayrılırsa sonuç "none" olur. Tek masalı oda "Odayı bitir" ile doğrudan kapanır.
 2. İki taraf da "Evet" derse iki ekranda aynı renk ve emoji 60 saniye tam ekran görünür: "Ekranını kaldır, birbirinizi bulun."
 3. Diğer tüm durumlarda (hayır, cevapsız) iki tarafa da "Güzel oyundu 👋" gösterilir ve lobiye dönülür. Kimin hayır dediği asla gösterilmez.
 

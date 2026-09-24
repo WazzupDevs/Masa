@@ -32,6 +32,7 @@ export type ErrorCode =
   | 'no_passes_left'
   | 'too_soon'
   | 'no_cards'
+  | 'reveal_closed'
   | 'method_not_allowed'
   | 'internal';
 
@@ -86,6 +87,7 @@ export const DOMAIN_ERROR_CODES: readonly ErrorCode[] = [
   'no_passes_left',
   'too_soon',
   'no_cards',
+  'reveal_closed',
 ];
 
 export function isDomainErrorCode(value: string): value is ErrorCode {

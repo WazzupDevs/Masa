@@ -349,6 +349,42 @@ export type Database = {
           },
         ];
       };
+      reveal_decisions: {
+        Row: {
+          created_at: string;
+          room_id: string;
+          session_id: string;
+          wants_meet: boolean;
+        };
+        Insert: {
+          created_at?: string;
+          room_id: string;
+          session_id: string;
+          wants_meet: boolean;
+        };
+        Update: {
+          created_at?: string;
+          room_id?: string;
+          session_id?: string;
+          wants_meet?: boolean;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'reveal_decisions_room_id_fkey';
+            columns: ['room_id'];
+            isOneToOne: false;
+            referencedRelation: 'rooms';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'reveal_decisions_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'table_sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       room_used_cards: {
         Row: {
           card_id: string;
@@ -394,6 +430,9 @@ export type Database = {
           owner_alias: string;
           owner_headcount: number;
           owner_session_id: string;
+          reveal_ends_at: string | null;
+          reveal_result: string | null;
+          reveal_token: Json | null;
           status: string;
           venue_id: string;
           visibility: string;
@@ -413,6 +452,9 @@ export type Database = {
           owner_alias: string;
           owner_headcount: number;
           owner_session_id: string;
+          reveal_ends_at?: string | null;
+          reveal_result?: string | null;
+          reveal_token?: Json | null;
           status?: string;
           venue_id: string;
           visibility: string;
@@ -432,6 +474,9 @@ export type Database = {
           owner_alias?: string;
           owner_headcount?: number;
           owner_session_id?: string;
+          reveal_ends_at?: string | null;
+          reveal_result?: string | null;
+          reveal_token?: Json | null;
           status?: string;
           venue_id?: string;
           visibility?: string;
@@ -660,6 +705,73 @@ export type Database = {
         Args: { target_user_id: string };
         Returns: undefined;
       };
+      reveal_decide: {
+        Args: {
+          target_room_id: string;
+          target_user_id: string;
+          token: Json;
+          wants: boolean;
+        };
+        Returns: {
+          closed_at: string | null;
+          concept: string;
+          created_at: string;
+          game_state: Json;
+          guest_alias: string | null;
+          guest_headcount: number | null;
+          guest_joined_at: string | null;
+          guest_session_id: string | null;
+          id: string;
+          last_activity_at: string;
+          owner_alias: string;
+          owner_headcount: number;
+          owner_session_id: string;
+          reveal_ends_at: string | null;
+          reveal_result: string | null;
+          reveal_token: Json | null;
+          status: string;
+          venue_id: string;
+          visibility: string;
+          waiting_since: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'rooms';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      reveal_finalize: {
+        Args: { target_room_id: string; target_user_id: string };
+        Returns: {
+          closed_at: string | null;
+          concept: string;
+          created_at: string;
+          game_state: Json;
+          guest_alias: string | null;
+          guest_headcount: number | null;
+          guest_joined_at: string | null;
+          guest_session_id: string | null;
+          id: string;
+          last_activity_at: string;
+          owner_alias: string;
+          owner_headcount: number;
+          owner_session_id: string;
+          reveal_ends_at: string | null;
+          reveal_result: string | null;
+          reveal_token: Json | null;
+          status: string;
+          venue_id: string;
+          visibility: string;
+          waiting_since: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'rooms';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       rooms_create: {
         Args: {
           new_concept: string;
@@ -680,6 +792,9 @@ export type Database = {
           owner_alias: string;
           owner_headcount: number;
           owner_session_id: string;
+          reveal_ends_at: string | null;
+          reveal_result: string | null;
+          reveal_token: Json | null;
           status: string;
           venue_id: string;
           visibility: string;
@@ -693,7 +808,7 @@ export type Database = {
         };
       };
       rooms_end: {
-        Args: { target_user_id: string };
+        Args: { decision_seconds: number; target_user_id: string };
         Returns: {
           closed_at: string | null;
           concept: string;
@@ -708,6 +823,9 @@ export type Database = {
           owner_alias: string;
           owner_headcount: number;
           owner_session_id: string;
+          reveal_ends_at: string | null;
+          reveal_result: string | null;
+          reveal_token: Json | null;
           status: string;
           venue_id: string;
           visibility: string;
@@ -736,6 +854,9 @@ export type Database = {
           owner_alias: string;
           owner_headcount: number;
           owner_session_id: string;
+          reveal_ends_at: string | null;
+          reveal_result: string | null;
+          reveal_token: Json | null;
           status: string;
           venue_id: string;
           visibility: string;
@@ -813,6 +934,9 @@ export type Database = {
           owner_alias: string;
           owner_headcount: number;
           owner_session_id: string;
+          reveal_ends_at: string | null;
+          reveal_result: string | null;
+          reveal_token: Json | null;
           status: string;
           venue_id: string;
           visibility: string;
@@ -857,6 +981,9 @@ export type Database = {
           owner_alias: string;
           owner_headcount: number;
           owner_session_id: string;
+          reveal_ends_at: string | null;
+          reveal_result: string | null;
+          reveal_token: Json | null;
           status: string;
           venue_id: string;
           visibility: string;
@@ -929,7 +1056,11 @@ export type Database = {
         }[];
       };
       tabu_end_turn: {
-        Args: { target_room_id: string; target_user_id: string };
+        Args: {
+          decision_seconds: number;
+          target_room_id: string;
+          target_user_id: string;
+        };
         Returns: {
           closed_at: string | null;
           concept: string;
@@ -944,6 +1075,9 @@ export type Database = {
           owner_alias: string;
           owner_headcount: number;
           owner_session_id: string;
+          reveal_ends_at: string | null;
+          reveal_result: string | null;
+          reveal_token: Json | null;
           status: string;
           venue_id: string;
           visibility: string;
@@ -978,6 +1112,9 @@ export type Database = {
           owner_alias: string;
           owner_headcount: number;
           owner_session_id: string;
+          reveal_ends_at: string | null;
+          reveal_result: string | null;
+          reveal_token: Json | null;
           status: string;
           venue_id: string;
           visibility: string;
@@ -1017,6 +1154,9 @@ export type Database = {
           owner_alias: string;
           owner_headcount: number;
           owner_session_id: string;
+          reveal_ends_at: string | null;
+          reveal_result: string | null;
+          reveal_token: Json | null;
           status: string;
           venue_id: string;
           visibility: string;
@@ -1051,6 +1191,9 @@ export type Database = {
           owner_alias: string;
           owner_headcount: number;
           owner_session_id: string;
+          reveal_ends_at: string | null;
+          reveal_result: string | null;
+          reveal_token: Json | null;
           status: string;
           venue_id: string;
           visibility: string;
