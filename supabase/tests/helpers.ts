@@ -58,7 +58,7 @@ export function waitForBroadcast(
   event: string,
   timeoutMs = 8000,
 ): { subscribed: Promise<void>; received: Promise<void>; close: () => Promise<void> } {
-  const channel = client.channel(topic);
+  const channel = client.channel(topic, { config: { private: true } });
   let resolveReceived: () => void = () => {};
   const received = new Promise<void>((resolve, reject) => {
     resolveReceived = resolve;

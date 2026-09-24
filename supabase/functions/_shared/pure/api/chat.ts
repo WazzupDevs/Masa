@@ -7,5 +7,5 @@ export type ChatResponse = { messageId: string };
 export type SafetyRequest =
   | { action: 'report'; roomId: string; reason: ReportReason }
   | { action: 'block'; roomId: string }
-  | { action: 'unblock'; blockedId: string };
+  | { action: 'unblock'; blockId: string };
 export type SafetyResponse = { ok: true };

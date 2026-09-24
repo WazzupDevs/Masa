@@ -12,7 +12,7 @@ import { BROADCAST, venueChannel } from '../_shared/pure/rooms.ts';
 const Body: z.ZodType<SafetyRequest> = z.discriminatedUnion('action', [
   z.object({ action: z.literal('report'), roomId: z.uuid(), reason: z.enum(REPORT_REASONS) }),
   z.object({ action: z.literal('block'), roomId: z.uuid() }),
-  z.object({ action: z.literal('unblock'), blockedId: z.uuid() }),
+  z.object({ action: z.literal('unblock'), blockId: z.uuid() }),
 ]);
 
 const db = serviceClient();
@@ -48,7 +48,7 @@ Deno.serve(
       case 'unblock': {
         const { error } = await db.rpc('safety_unblock', {
           target_user_id: user.id,
-          target_blocked_id: body.blockedId,
+          target_block_id: body.blockId,
         });
         if (error) throw dbError('safety_unblock', error);
         return { ok: true };

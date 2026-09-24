@@ -20,7 +20,8 @@ function readContent(name: string): unknown {
 
 const tabu = parseTabuCards(readContent('tabu-cards.json'));
 const sohbet = parseSohbetCards(readContent('sohbet-cards.json'));
-const profanity = prepareTerms(parseProfanity(readContent('profanity-tr.json')));
+const profanityList = parseProfanity(readContent('profanity-tr.json'));
+const profanity = prepareTerms(profanityList.terms, profanityList.wholeWords);
 
 function commonPrefixLength(a: string, b: string): number {
   let i = 0;

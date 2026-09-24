@@ -11,7 +11,7 @@ export function useMessages(roomId: string) {
 
   useEffect(() => {
     const channel = supabase
-      .channel(`messages:${roomId}`)
+      .channel(`messages:${roomId}`, { config: { private: true } })
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` },

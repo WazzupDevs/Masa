@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 
 import { supabase } from '@/lib/supabase';
 
-// Listens to a data-free broadcast; the handler refetches through RLS.
+// Listens to a data-free broadcast on a private channel; the handler refetches through RLS.
 export function useBroadcast(topic: string | null, event: string, onEvent: () => void): void {
   const handler = useRef(onEvent);
   useEffect(() => {
@@ -12,7 +12,7 @@ export function useBroadcast(topic: string | null, event: string, onEvent: () =>
   useEffect(() => {
     if (!topic) return;
     const channel = supabase
-      .channel(topic)
+      .channel(topic, { config: { private: true } })
       .on('broadcast', { event }, () => handler.current())
       .subscribe();
     return () => {

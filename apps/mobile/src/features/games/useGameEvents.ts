@@ -12,7 +12,7 @@ export function useGameEvents(roomId: string, onEvent?: () => void) {
 
   useEffect(() => {
     const channel = supabase
-      .channel(`game:${roomId}`)
+      .channel(`game:${roomId}`, { config: { private: true } })
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'game_events', filter: `room_id=eq.${roomId}` },

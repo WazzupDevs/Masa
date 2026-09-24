@@ -49,6 +49,7 @@ Node 22, pnpm 10, Docker (yerel Supabase için). Supabase CLI ve Deno root devDe
    - Phone → test numaraları: `905550000001=123456` (yalnızca dev projesinde; pilot projesinde olmaz).
    - Rate Limits: saatlik SMS **100**; aynı numaraya tekrar gönderim aralığı **60 sn**.
    - Hooks → **Before User Created** → Postgres → şema `private`, fonksiyon `before_user_created`.
+   - **Realtime → Settings → Allow public access: kapalı.** Tüm kanallar özeldir; kimin abone olup yayın yapacağına `realtime.messages` politikaları karar verir.
 8. **Mobil:** `cp apps/mobile/.env.example apps/mobile/.env`; URL `https://<ref>.supabase.co`, anahtar Settings → API Keys'teki publishable key.
 9. Sonraki değişikliklerde: yeni migration ya da içerik → `pnpm supabase db push --include-seed`; fonksiyon değişikliği → `pnpm supabase functions deploy <ad>`.
 
@@ -72,11 +73,12 @@ Node 22, pnpm 10, Docker (yerel Supabase için). Supabase CLI ve Deno root devDe
 1. İstemci hiçbir tabloya doğrudan yazmaz. Tüm yazmalar Edge Function üzerinden yapılır. İstemci okumaları RLS ile sınırlıdır. İstemcinin çağırdığı security definer RPC'ler yalnızca okur ve `set search_path = ''` ile tanımlanır. Yazan security definer fonksiyonlar istemciye kapalıdır (yalnızca service role).
 2. Her tabloda RLS açıktır. Yeni tablo, politikalarıyla aynı migration'da gelir.
 3. Oyun sunucu otoriterdir: tur süresi (`ends_at`), ipucu doğrulama, tahmin kontrolü ve skor sunucuda hesaplanır.
-4. Anonimlik: diğer masalara yalnızca masa takma adı, kişi sayısı ve konsept gider. Kullanıcı takma adı, profil bilgisi ve koordinat asla gitmez.
-5. Katılma isteğinde red ve zaman aşımı, istek sahibine birebir aynı görünür (`unavailable`). API yanıtı ve okunabilir satırlar dahil.
+4. Anonimlik: diğer masalara yalnızca masa takma adı, kişi sayısı ve konsept gider. Kullanıcı takma adı, profil bilgisi, koordinat ve diğer masaların hesap kimliği (kullanıcı id'si; ör. `blocks.blocked_id`) istemciye asla gitmez.
+5. Katılma isteğinde red ve zaman aşımı, istek sahibine birebir aynı görünür (`unavailable`). API yanıtı ve okunabilir satırlar dahil. Aynı ilke tanışmada: karşılıklı "Evet" dışındaki her sonuç (hayır, cevapsız, ayrılma) yalnızca `reveal_ends_at`'te açıklanır; "Evet" diyen taraf bunları satırlardan ya da zamanlamadan ayırt edemez.
 6. Konum yalnızca check-in anında, uygulama açıkken alınır. Koordinat saklanmaz, sadece seçilen `venue_id` saklanır.
 7. Metin eşleştirme ve küfür filtresi yalnızca `supabase/functions/_shared/pure/trText.ts` ve `pure/profanity.ts` üzerinden yapılır. Bu dosyalar bağımlılıksız saf TypeScript'tir, mobil uygulama ve Edge Function aynı dosyayı kullanır. Değişiklikte testler de güncellenir.
 8. Service role anahtarı mobil koda asla girmez.
+9. Realtime kanalları özeldir (`private: true`, sunucu yayınları dahil). Abone olma ve yayın yetkisi `realtime.messages` üzerindeki RLS politikalarıyla (`private.realtime_topic_allowed`) verilir: oda kanallarına yalnızca odanın iki masası, masa kanalına yalnızca o masa, lobi kanalına mekandaki masalar abone olur; lobi ve masa kanallarında yalnızca sunucu yayın yapar. Yeni kanal türü politikasıyla birlikte gelir.
 
 ## Kod kuralları
 - Kod, tablo ve değişken adları İngilizce. Kullanıcıya görünen metinler Türkçe ve `apps/mobile/src/i18n/tr.ts` içinde. Bileşenlerde sabit metin yok.

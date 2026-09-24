@@ -81,6 +81,7 @@ export default function RoomScreen() {
         <Text className="text-sm text-neutral-500">{tr.rooms.roomTitle(tr.concepts[concept])}</Text>
         <RevealPrompt
           roomId={r.id}
+          isOwner={isOwner}
           revealEndsAt={r.reveal_ends_at}
           score={tabuState?.concept === 'tabu' ? tabuState.score : null}
         />

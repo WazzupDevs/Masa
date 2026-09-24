@@ -23,6 +23,11 @@ describe('normalize', () => {
     expect(normalize('d e n i z')).toBe('d e n i z');
   });
 
+  it('can keep Turkish letters (profanity matching)', () => {
+    expect(normalize('ŞIK Sık İyi', { fold: false })).toBe('şık sık iyi');
+    expect(normalize("GÖT'ü", { fold: false })).toBe('göt ü');
+  });
+
   it('keeps letters of other alphabets as letters', () => {
     expect(normalize('Café')).toBe('café');
   });
@@ -32,6 +37,10 @@ describe('tokenize', () => {
   it('splits on spaces and drops empty tokens', () => {
     expect(tokenize("  Deniz'de   yüzdük ")).toEqual(['deniz', 'de', 'yuzduk']);
     expect(tokenize('')).toEqual([]);
+  });
+
+  it('can keep Turkish letters', () => {
+    expect(tokenize('ş ı k olmuş', { fold: false })).toEqual(['şık', 'olmuş']);
   });
 
   it('joins runs of single letters', () => {

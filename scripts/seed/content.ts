@@ -32,9 +32,15 @@ function stringList(value: unknown, field: string): string[] {
   return value;
 }
 
-export function parseProfanity(json: unknown): string[] {
+// `terms` match with suffixes from 5 letters on; `wholeWords` only as whole words.
+export type ProfanityList = { terms: string[]; wholeWords: string[] };
+
+export function parseProfanity(json: unknown): ProfanityList {
   if (!isRecord(json)) throw new Error('profanity-tr.json must be an object');
-  return stringList(json.terms, 'terms');
+  return {
+    terms: stringList(json.terms, 'terms'),
+    wholeWords: stringList(json.wholeWords, 'wholeWords'),
+  };
 }
 
 export function parseAliasWords(json: unknown): AliasWords {

@@ -285,7 +285,7 @@ describe('tabu, two tables', () => {
     expect(timeouts).toHaveLength(1);
   });
 
-  it('plays 6 turns, alternating describers, then finishes into the reveal window', async () => {
+  it('plays 6 turns, alternating describers, then shows the score and lets the owner play again', async () => {
     const { owner, guest, roomId } = await room('tabu', true);
     await tabu(owner, { action: 'start', roomId });
     const [r] =
@@ -302,13 +302,20 @@ describe('tabu, two tables', () => {
     const done =
       await sql`select payload from public.game_events where room_id = ${roomId} and type = 'game_completed'`;
     expect(done.map((e) => e.payload)).toEqual([{ score: 0 }]);
-    // MVP_SPEC §4.6: the finished game ends the room into "Tanışalım mı?".
-    const [after] =
-      await sql`select status, reveal_ends_at > now() as open from public.rooms where id = ${roomId}`;
-    expect(after).toMatchObject({ status: 'ending', open: true });
-    expect(await tabu(owner, { action: 'start', roomId })).toEqual({
-      status: 409,
-      body: errorBody('needs_two_tables'),
+    // MVP_SPEC §4.6: a finished game keeps the room; only "Odayı bitir" opens "Tanışalım mı?".
+    const [after] = await sql`select status, reveal_ends_at from public.rooms where id = ${roomId}`;
+    expect(after).toEqual({ status: 'active', reveal_ends_at: null });
+    expect(await tabu(guest, { action: 'start', roomId })).toEqual({
+      status: 403,
+      body: errorBody('not_owner'),
+    });
+    expect((await tabu(owner, { action: 'start', roomId })).status).toBe(200);
+    expect(await gameState(roomId)).toMatchObject({
+      phase: 'playing',
+      gameNo: 2,
+      turnNo: 1,
+      score: 0,
+      describerSessionId: r?.owner_session_id,
     });
   });
 

@@ -1,19 +1,22 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { router } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
+import { trackOnce } from '@/lib/analytics';
 import { revealApi } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import { useNow } from '@/lib/useNow';
 
-type Props = { roomId: string; revealEndsAt: string; score: number | null };
+type Props = { roomId: string; isOwner: boolean; revealEndsAt: string; score: number | null };
 
-// "Tanışalım mı?" with a 60 second countdown (MVP_SPEC §4.6, screen 8). Only this table's own
-// answer is ever readable.
-export function RevealPrompt({ roomId, revealEndsAt, score }: Props) {
+// "Tanışalım mı?" with a 30 second countdown (MVP_SPEC §4.6, screen 8). Only this table's own
+// answer is ever readable. A table that said "Hayır" already knows the result and may leave at
+// once; the room stays 'ending' for the other table until the window ends.
+export function RevealPrompt({ roomId, isOwner, revealEndsAt, score }: Props) {
   const queryClient = useQueryClient();
   const now = useNow(250);
   const secondsLeft = Math.max(0, Math.ceil((Date.parse(revealEndsAt) - now) / 1000));
@@ -46,6 +49,24 @@ export function RevealPrompt({ roomId, revealEndsAt, score }: Props) {
   }, [secondsLeft, roomId]);
 
   const answered = myAnswer.data !== null && myAnswer.data !== undefined;
+  const saidNo = myAnswer.data?.wants_meet === false;
+
+  useEffect(() => {
+    // The result is certainly "none"; counted once per room from the owner's phone, under the same
+    // key RevealResult uses.
+    if (saidNo && isOwner) trackOnce(`reveal:${roomId}`, 'reveal_none', {});
+  }, [saidNo, isOwner, roomId]);
+
+  if (saidNo) {
+    return (
+      <View className="mt-6 items-center gap-6 rounded-2xl bg-neutral-100 p-6">
+        <Text className="text-center text-3xl font-bold text-black">{tr.reveal.goodGame}</Text>
+        <View className="w-full">
+          <Button label={tr.reveal.backToVenue} onPress={() => router.replace('/')} />
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View className="mt-6 items-center gap-4 rounded-2xl bg-neutral-100 p-6">

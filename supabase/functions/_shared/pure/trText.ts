@@ -3,19 +3,23 @@
 
 const FOLD: Record<string, string> = { ç: 'c', ğ: 'g', ı: 'i', ö: 'o', ş: 's', ü: 'u' };
 
-// Turkish lowercase, fold ç ğ ı ö ş ü, and turn everything but letters and digits into spaces.
-export function normalize(s: string): string {
-  return s
-    .toLocaleLowerCase('tr-TR')
-    .replace(/[çğıöşü]/g, (c) => FOLD[c] ?? c)
-    .replace(/[^\p{L}\p{N}]/gu, ' ');
+// fold: false keeps ç ğ ı ö ş ü. Profanity matching uses it, because folding makes everyday words
+// collide with listed ones (sık → sik, got → göt); Tabu clue and guess checks fold.
+export type TextOptions = { fold?: boolean };
+
+// Turkish lowercase, fold ç ğ ı ö ş ü (unless fold: false), and turn everything but letters and
+// digits into spaces.
+export function normalize(s: string, { fold = true }: TextOptions = {}): string {
+  const lower = s.toLocaleLowerCase('tr-TR');
+  const folded = fold ? lower.replace(/[çğıöşü]/g, (c) => FOLD[c] ?? c) : lower;
+  return folded.replace(/[^\p{L}\p{N}]/gu, ' ');
 }
 
 // Splits a normalized string into words and joins runs of single letters ("d e n i z" → "deniz").
-export function tokenize(s: string): string[] {
+export function tokenize(s: string, options: TextOptions = {}): string[] {
   const tokens: string[] = [];
   let letters = '';
-  for (const token of normalize(s).split(' ')) {
+  for (const token of normalize(s, options).split(' ')) {
     if (token === '') continue;
     if ([...token].length === 1) {
       letters += token;

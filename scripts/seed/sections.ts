@@ -1,5 +1,5 @@
 import type { AliasWords } from '../../supabase/functions/_shared/pure/alias.ts';
-import type { SohbetCard, TabuCard, VenueRecord } from './content.ts';
+import type { ProfanityList, SohbetCard, TabuCard, VenueRecord } from './content.ts';
 import { sqlLiteral } from './sql.ts';
 
 // Replaces the word list, so words removed from the JSON disappear from the database too.
@@ -42,11 +42,15 @@ export function venuesSql(venues: readonly VenueRecord[]): string {
 }
 
 // Replaces the list; only server code reads it (chat and clue filtering).
-export function profanitySql(terms: readonly string[]): string {
+export function profanitySql({ terms, wholeWords }: ProfanityList): string {
+  const rows = [
+    ...terms.map((t) => `(${sqlLiteral(t)}, false)`),
+    ...wholeWords.map((t) => `(${sqlLiteral(t)}, true)`),
+  ];
   return [
     '-- content/profanity-tr.json',
     'delete from public.profanity_terms;',
-    `insert into public.profanity_terms (term) values\n  ${terms.map((t) => `(${sqlLiteral(t)})`).join(',\n  ')};`,
+    `insert into public.profanity_terms (term, whole_word) values\n  ${rows.join(',\n  ')};`,
     '',
   ].join('\n');
 }

@@ -64,14 +64,14 @@ async function expireWindow(roomId: string, by = '1 second') {
 }
 
 describe('reveal window', () => {
-  it('opens for 60 seconds when a two-table room ends', async () => {
+  it('opens for 30 seconds when a two-table room ends', async () => {
     const { owner, roomId } = await endingRoom();
     const [row] = await sql`
       select status, extract(epoch from reveal_ends_at - now()) as left_s from public.rooms where id = ${roomId}
     `;
     expect(row?.status).toBe('ending');
-    expect(Number(row?.left_s)).toBeGreaterThan(55);
-    expect(Number(row?.left_s)).toBeLessThanOrEqual(60);
+    expect(Number(row?.left_s)).toBeGreaterThan(25);
+    expect(Number(row?.left_s)).toBeLessThanOrEqual(30);
     expect((await seenBy(owner, roomId))?.reveal_result).toBeNull();
   });
 });
@@ -96,15 +96,21 @@ describe('reveal/decide', () => {
     [true, false],
     [false, true],
     [false, false],
-  ])('shows both tables the same "none" for owner=%s guest=%s', async (ownerSays, guestSays) => {
-    const { owner, guest, roomId } = await endingRoom();
-    await decide(owner, roomId, ownerSays);
-    await decide(guest, roomId, guestSays);
+  ])(
+    'keeps the room ending until the window ends, then shows both the same "none" for owner=%s guest=%s',
+    async (ownerSays, guestSays) => {
+      const { owner, guest, roomId } = await endingRoom();
+      await decide(owner, roomId, ownerSays);
+      await decide(guest, roomId, guestSays);
+      expect(await seenBy(owner, roomId)).toMatchObject({ status: 'ending', reveal_result: null });
 
-    const a = await seenBy(owner, roomId);
-    expect(a).toMatchObject({ status: 'closed', reveal_result: 'none', reveal_token: null });
-    expect(await seenBy(guest, roomId)).toEqual(a);
-  });
+      await expireWindow(roomId);
+      await finalize(owner, roomId);
+      const a = await seenBy(owner, roomId);
+      expect(a).toMatchObject({ status: 'closed', reveal_result: 'none', reveal_token: null });
+      expect(await seenBy(guest, roomId)).toEqual(a);
+    },
+  );
 
   it('lets each table read only its own answer', async () => {
     const { owner, guest, third, roomId } = await endingRoom();
@@ -142,6 +148,96 @@ describe('reveal/decide', () => {
   });
 });
 
+// MVP_SPEC §4.6: a table that said yes must not tell "no" from "no answer", by rows or by timing.
+describe('reveal timing', () => {
+  // Everything the owner (who said yes) can observe while the guest says no, leaves, or does
+  // nothing.
+  async function yesSideTrace(guestDoes: 'no' | 'leave' | 'nothing') {
+    const { owner, guest, roomId } = await endingRoom();
+    const ownRow = () => owner.from('rooms').select('*').eq('id', roomId).single();
+    const ownDecisions = async () =>
+      (await owner.from('reveal_decisions').select('room_id, wants_meet')).data;
+
+    const decided = await decide(owner, roomId, true);
+    const before = (await ownRow()).data;
+    const guestReply =
+      guestDoes === 'no'
+        ? await decide(guest, roomId, false)
+        : guestDoes === 'leave'
+          ? await invoke(guest, 'rooms', { action: 'leave' })
+          : null;
+    const after = (await ownRow()).data;
+    const early = await finalize(owner, roomId);
+    const afterEarlyFinalize = (await ownRow()).data;
+    const decisionsDuring = await ownDecisions();
+
+    await expireWindow(roomId);
+    const [{ ends_at: endsAt } = {}] =
+      await sql`select reveal_ends_at as ends_at from public.rooms where id = ${roomId}`;
+    const late = await finalize(owner, roomId);
+    const [closed] = await sql`select closed_at from public.rooms where id = ${roomId}`;
+    const final = await seenBy(owner, roomId);
+
+    for (const phone of PHONES) await deleteUserByPhone(phone);
+    return {
+      trace: {
+        decided,
+        rowUnchangedByOtherTable: JSON.stringify(after) === JSON.stringify(before),
+        rowUnchangedByEarlyFinalize: JSON.stringify(afterEarlyFinalize) === JSON.stringify(before),
+        statusDuringWindow: before?.status,
+        resultDuringWindow: before?.reveal_result,
+        early,
+        decisionsDuring: decisionsDuring?.map((d) => d.wants_meet),
+        late,
+        final: { status: final?.status, result: final?.reveal_result, token: final?.reveal_token },
+        closedAtWindowEnd: (closed?.closed_at as Date) >= (endsAt as Date),
+      },
+      guestReply,
+    };
+  }
+
+  it('shows the yes table the same rows and timing for "no", "left" and "no answer"', async () => {
+    const withNo = await yesSideTrace('no');
+    const left = await yesSideTrace('leave');
+    const noAnswer = await yesSideTrace('nothing');
+
+    expect(withNo.guestReply).toEqual({ status: 200, body: { ok: true } });
+    expect(left.guestReply?.status).toBe(200);
+    expect(withNo.trace).toEqual(noAnswer.trace);
+    expect(left.trace).toEqual(noAnswer.trace);
+    expect(withNo.trace).toMatchObject({
+      rowUnchangedByOtherTable: true,
+      rowUnchangedByEarlyFinalize: true,
+      statusDuringWindow: 'ending',
+      resultDuringWindow: null,
+      decisionsDuring: [true],
+      final: { status: 'closed', result: 'none', token: null },
+      closedAtWindowEnd: true,
+    });
+  });
+
+  it('lets the table that said no go on at once while the room stays ending', async () => {
+    const { owner, guest, roomId } = await endingRoom();
+    await decide(owner, roomId, true);
+    await decide(guest, roomId, false);
+
+    const created = await invoke(guest, 'rooms', {
+      action: 'create',
+      concept: 'sohbet',
+      visibility: 'open',
+    });
+    expect(created.status).toBe(200);
+    expect(await seenBy(owner, roomId)).toMatchObject({ status: 'ending', reveal_result: null });
+
+    // The owner, still in the window, is not in an open room either.
+    const { data: open } = await owner
+      .from('rooms')
+      .select('id')
+      .in('status', ['waiting', 'active']);
+    expect(open).toEqual([]);
+  });
+});
+
 describe('reveal/finalize and cleanup', () => {
   it('does nothing before the window ends, then closes with "none" for both', async () => {
     const { owner, guest, roomId } = await endingRoom();
@@ -157,19 +253,22 @@ describe('reveal/finalize and cleanup', () => {
     expect(await finalize(owner, roomId)).toEqual({ status: 200, body: { ok: true } });
   });
 
-  it('closes with "none" when a table leaves during the window', async () => {
+  it('keeps the room ending when a table leaves during the window', async () => {
     const { owner, guest, roomId } = await endingRoom();
     await decide(owner, roomId, true);
     await invoke(guest, 'rooms', { action: 'leave' });
+    await invoke(guest, 'checkin', { action: 'leave' });
+    expect(await seenBy(owner, roomId)).toMatchObject({ status: 'ending', reveal_result: null });
+    await expireWindow(roomId);
+    await finalize(owner, roomId);
     expect(await seenBy(owner, roomId)).toMatchObject({ status: 'closed', reveal_result: 'none' });
   });
 
-  it('closes forgotten windows from cron a minute after they end', async () => {
+  it('closes forgotten windows from cron once they end', async () => {
     const { owner, roomId } = await endingRoom();
-    await expireWindow(roomId, '30 seconds');
     await sql`select private.close_expired_reveals()`;
     expect((await seenBy(owner, roomId))?.status).toBe('ending');
-    await expireWindow(roomId, '2 minutes');
+    await expireWindow(roomId);
     await sql`select private.close_expired_reveals()`;
     expect(await seenBy(owner, roomId)).toMatchObject({ status: 'closed', reveal_result: 'none' });
     const jobs = await sql`select 1 from cron.job where jobname = 'close-expired-reveals'`;

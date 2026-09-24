@@ -4,7 +4,7 @@ import { isRevealToken, pickRevealToken, REVEAL, REVEAL_COLORS, REVEAL_EMOJIS } 
 
 describe('reveal rules', () => {
   it('match the spec', () => {
-    expect(REVEAL).toEqual({ decisionSeconds: 60, signalSeconds: 60 });
+    expect(REVEAL).toEqual({ decisionSeconds: 30, signalSeconds: 60 });
   });
 
   it('picks a color and an emoji from the palette', () => {

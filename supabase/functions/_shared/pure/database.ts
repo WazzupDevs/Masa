@@ -64,18 +64,21 @@ export type Database = {
           blocked_id: string;
           blocker_id: string;
           created_at: string;
+          id: string;
         };
         Insert: {
           blocked_alias: string;
           blocked_id: string;
           blocker_id: string;
           created_at?: string;
+          id?: string;
         };
         Update: {
           blocked_alias?: string;
           blocked_id?: string;
           blocker_id?: string;
           created_at?: string;
+          id?: string;
         };
         Relationships: [];
       };
@@ -260,12 +263,15 @@ export type Database = {
       profanity_terms: {
         Row: {
           term: string;
+          whole_word: boolean;
         };
         Insert: {
           term: string;
+          whole_word?: boolean;
         };
         Update: {
           term?: string;
+          whole_word?: boolean;
         };
         Relationships: [];
       };
@@ -958,7 +964,7 @@ export type Database = {
         Returns: string;
       };
       safety_unblock: {
-        Args: { target_blocked_id: string; target_user_id: string };
+        Args: { target_block_id: string; target_user_id: string };
         Returns: boolean;
       };
       sohbet_next: {
@@ -1056,11 +1062,7 @@ export type Database = {
         }[];
       };
       tabu_end_turn: {
-        Args: {
-          decision_seconds: number;
-          target_room_id: string;
-          target_user_id: string;
-        };
+        Args: { target_room_id: string; target_user_id: string };
         Returns: {
           closed_at: string | null;
           concept: string;

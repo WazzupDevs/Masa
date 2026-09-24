@@ -14,6 +14,7 @@ Otonom çalışma: M2'den M7'ye taşlar sırayla uygulanıyor. Her taş typechec
 | M5 Konseptler                | ✅ Bitti                    | `8ccf6da`                       |
 | M6 Oda sonu ve tanışma       | ✅ Bitti                    | `4a0b84b`                       |
 | M7 Analitik ve mağaza        | ✅ Bitti (mağaza hariç)     | `713dcfd`                       |
+| PR #3 inceleme düzeltmeleri  | ✅ Bitti                    | bu dal, son commit              |
 
 ## Container'da doğrulanamayan kabul kriterleri
 
@@ -23,8 +24,12 @@ Otonom çalışma: M2'den M7'ye taşlar sırayla uygulanıyor. Her taş typechec
 - M3: İki cihazda istek ve kabul uçtan uca; push (EAS/Firebase hesabı yok, yapılandırma env'den).
 - M4: Cihazda sohbet, şikayet, engelleme ve bağlantı durumu (sunucu tarafı kabul kriterleri container'da doğrulandı).
 - M5: İki cihazda iki masalı Tabu baştan sona (sunucu akışı ve kelime sızmaması container'da doğrulandı); cihazda tek masa Tabu ve Sohbet.
-- M6: İki cihazda tanışma penceresi ve tam ekran sinyal (sunucu tarafı: yalnızca karşılıklı Evet'te sinyal, diğer durumlarda iki tarafa aynı satır; container'da doğrulandı).
+- M6: İki cihazda tanışma penceresi ve tam ekran sinyal (sunucu tarafı: yalnızca karşılıklı Evet'te sinyal ve hemen; diğer durumlarda iki tarafa aynı satır, pencere sonunda; container'da doğrulandı).
 - M7: §12 event'lerinin PostHog'a düşmesi (anahtar yok) ve uygulamanın iki mağazanın test kanalında olması (hesap yok; talimat gereği gönderim yapılmadı).
+
+## İnceleme düzeltmeleri (PR #3)
+
+Tanışma sonucunun zamanlaması (yalnızca karşılıklı Evet hemen, 30 sn pencere), Tabu bitince oda açık kalır ("Tekrar oyna"), küfür filtresi katlamasız, Engellenenler listesinde hesap id'si yok, özel Realtime kanalları. Ayrıntılar: [DECISIONS.md](DECISIONS.md) → "İnceleme düzeltmeleri". Açık soru: diğer masanın oturum id'lerinin de gizlenmesi isteniyor mu?
 
 ## Sıradaki adım
 

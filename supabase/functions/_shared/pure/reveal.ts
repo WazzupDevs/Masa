@@ -1,6 +1,6 @@
-// End of a two-table room (MVP_SPEC §4.6): 60 seconds to answer "Tanışalım mı?"; on a mutual
+// End of a two-table room (MVP_SPEC §4.6): 30 seconds to answer "Tanışalım mı?"; on a mutual
 // yes both screens show the same color and emoji for 60 seconds.
-export const REVEAL = { decisionSeconds: 60, signalSeconds: 60 } as const;
+export const REVEAL = { decisionSeconds: 30, signalSeconds: 60 } as const;
 
 // Bright, distinct full-screen colors, easy to spot across a room.
 export const REVEAL_COLORS = [

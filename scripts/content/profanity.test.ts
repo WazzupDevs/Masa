@@ -1,5 +1,6 @@
-// Guards content/profanity-tr.json: normalized terms are unique, and everyday Turkish words that
-// collide with short roots after letter folding (sık → sik, ananın → anani) are never flagged.
+// Guards content/profanity-tr.json: terms are unique as matched (tr-TR lowercase, Turkish letters
+// kept), and everyday words close to listed ones (sık, şık, ananın, "got it") are never flagged.
+// A new term that flags an everyday word here goes to `wholeWords`, or is left out.
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -12,10 +13,11 @@ import {
 import { normalize } from '../../supabase/functions/_shared/pure/trText.ts';
 import { parseProfanity } from '../seed/content.ts';
 
-const terms = parseProfanity(
+const list = parseProfanity(
   JSON.parse(readFileSync(resolve(import.meta.dirname, '../../content/profanity-tr.json'), 'utf8')),
 );
-const prepared = prepareTerms(terms);
+const terms = [...list.terms, ...list.wholeWords];
+const prepared = prepareTerms(list.terms, list.wholeWords);
 
 const EVERYDAY = [
   'sık sık buraya geliriz',
@@ -40,16 +42,32 @@ const EVERYDAY = [
   'kanca attım',
   'Ankara, İstanbul, İzmir',
   'I got it',
+  'got it',
+  'çok şık olmuşsun',
+  'sık sık',
+  'bu film çok sıkıcı',
+  'şık',
+  'sık',
+  'sıkıcı',
+  'sıkıldım',
+  'ananın',
+  'Şık Sık',
 ];
 
 describe('content/profanity-tr.json', () => {
-  it('has unique terms after normalization', () => {
-    const normalized = terms.map((t) => normalize(t).trim());
+  it('has unique terms as matched (Turkish letters kept)', () => {
+    const normalized = terms.map((t) => normalize(t, { fold: false }).trim());
     expect(new Set(normalized).size).toBe(terms.length);
   });
 
   it('flags every listed term on its own', () => {
     for (const term of terms) expect(containsProfanity(term, prepared), term).toBe(true);
+  });
+
+  it('restores the terms that folding used to collide with', () => {
+    for (const word of ['sik', 'piç', 'göt', 'sikim', 'sikiş', 'ananı']) {
+      expect(containsProfanity(word, prepared), word).toBe(true);
+    }
   });
 
   it('never flags everyday sentences', () => {

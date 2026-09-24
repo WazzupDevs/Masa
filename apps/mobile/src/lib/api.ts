@@ -73,8 +73,7 @@ export const safetyApi = {
   report: (roomId: string, reason: ReportReason) =>
     invoke<SafetyResponse>('safety', { action: 'report', roomId, reason }),
   block: (roomId: string) => invoke<SafetyResponse>('safety', { action: 'block', roomId }),
-  unblock: (blockedId: string) =>
-    invoke<SafetyResponse>('safety', { action: 'unblock', blockedId }),
+  unblock: (blockId: string) => invoke<SafetyResponse>('safety', { action: 'unblock', blockId }),
 };
 
 export const gamesApi = {

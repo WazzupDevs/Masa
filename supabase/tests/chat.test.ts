@@ -79,7 +79,7 @@ describe('chat/send', () => {
     const { owner, guest, roomId } = await roomWithGuest();
     const received = new Promise<string>((resolve, reject) => {
       const channel = guest
-        .channel(`test-messages-${roomId}`)
+        .channel(`messages:${roomId}`, { config: { private: true } })
         .on(
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` },
@@ -211,27 +211,43 @@ describe('safety/report', () => {
 
 describe('safety/block and unblock', () => {
   it('blocks the other account, takes the blocker out of the room, and can be undone', async () => {
-    const { owner, guest, roomId } = await roomWithGuest();
+    const { owner, guest, third, roomId } = await roomWithGuest();
     const [room] = await sql`select guest_alias from public.rooms where id = ${roomId}`;
     expect(await invoke(owner, 'safety', { action: 'block', roomId })).toEqual({
       status: 200,
       body: { ok: true },
     });
 
-    const { data: blocks } = await owner.from('blocks').select('blocked_id, blocked_alias');
+    const [row] = await sql`select id, blocked_id from public.blocks`;
+    expect(row?.blocked_id).toBe(await userIdOf(guest));
+    const { data: blocks } = await owner.from('blocks').select('id, blocked_alias, created_at');
     expect(blocks).toEqual([
-      { blocked_id: await userIdOf(guest), blocked_alias: room?.guest_alias },
+      { id: row?.id, blocked_alias: room?.guest_alias, created_at: expect.any(String) },
     ]);
-    expect((await guest.from('blocks').select('blocked_id')).data).toEqual([]);
+    expect((await guest.from('blocks').select('id')).data).toEqual([]);
     const [after] = await sql`select status from public.rooms where id = ${roomId}`;
     expect(after?.status).toBe('closed');
 
-    const blockedId = blocks?.[0]?.blocked_id;
-    expect(await invoke(owner, 'safety', { action: 'unblock', blockedId })).toEqual({
+    // Someone else's block id does nothing.
+    expect(await invoke(third, 'safety', { action: 'unblock', blockId: row?.id })).toEqual({
       status: 200,
       body: { ok: true },
     });
-    expect((await owner.from('blocks').select('blocked_id')).data).toEqual([]);
+    expect(await sql`select 1 from public.blocks`).toHaveLength(1);
+
+    expect(await invoke(owner, 'safety', { action: 'unblock', blockId: row?.id })).toEqual({
+      status: 200,
+      body: { ok: true },
+    });
+    expect((await owner.from('blocks').select('id')).data).toEqual([]);
+  });
+
+  // Rule 4: the blocked account's id never reaches the blocker's client.
+  it('never shows the blocked account id to the client', async () => {
+    const { owner, roomId } = await roomWithGuest();
+    await invoke(owner, 'safety', { action: 'block', roomId });
+    expect((await owner.from('blocks').select('blocked_id')).error?.code).toBe('42501');
+    expect((await owner.from('blocks').select('*')).error?.code).toBe('42501');
   });
 
   it('needs another table in the room', async () => {

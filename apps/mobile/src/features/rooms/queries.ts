@@ -14,7 +14,8 @@ export const roomKeys = {
   room: (roomId: string) => ['room', roomId] as const,
 };
 
-// The open room the table is in, as owner or guest (RLS: members only).
+// The open room the table is in, as owner or guest (RLS: members only). An 'ending' room does
+// not hold the table: a table that answered "Hayır" goes on at once (MVP_SPEC §4.6).
 export function useCurrentRoom(sessionId: string | undefined) {
   return useQuery({
     queryKey: roomKeys.current,
@@ -23,7 +24,7 @@ export function useCurrentRoom(sessionId: string | undefined) {
       const { data, error } = await supabase
         .from('rooms')
         .select('id')
-        .neq('status', 'closed')
+        .in('status', ['waiting', 'active'])
         .or(`owner_session_id.eq.${sessionId},guest_session_id.eq.${sessionId}`)
         .maybeSingle();
       if (error) throw error;
@@ -50,7 +51,7 @@ export function useRoom(roomId: string) {
   // Postgres Changes on this room (RLS applies).
   useEffect(() => {
     const channel = supabase
-      .channel(`room:${roomId}`)
+      .channel(`room:${roomId}`, { config: { private: true } })
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` },

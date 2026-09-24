@@ -8,7 +8,8 @@ import { supabase } from '@/lib/supabase';
 
 const blocksKey = ['blocks'] as const;
 
-// "Engellenenler" in settings (screen 9): the alias seen when blocking, with unblock.
+// "Engellenenler" in settings (screen 9): the alias seen when blocking, with unblock. Rows are
+// read and unblocked by their own id; the blocked account's id never reaches the app (rule 4).
 export function BlockedList() {
   const queryClient = useQueryClient();
   const blocks = useQuery({
@@ -16,7 +17,7 @@ export function BlockedList() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('blocks')
-        .select('blocked_id, blocked_alias, created_at')
+        .select('id, blocked_alias, created_at')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
@@ -35,7 +36,7 @@ export function BlockedList() {
       ) : null}
       {blocks.data?.map((b) => (
         <View
-          key={b.blocked_id}
+          key={b.id}
           className="flex-row items-center justify-between rounded-xl border border-neutral-200 p-3"
         >
           <View className="flex-1 pr-3">
@@ -47,7 +48,7 @@ export function BlockedList() {
           <Button
             variant="secondary"
             label={tr.safety.unblock}
-            onPress={() => unblock.mutate(b.blocked_id)}
+            onPress={() => unblock.mutate(b.id)}
             disabled={unblock.isPending}
           />
         </View>
