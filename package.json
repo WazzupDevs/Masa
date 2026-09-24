@@ -1,0 +1,51 @@
+{
+  "name": "masa",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "typecheck": "pnpm -r typecheck && pnpm typecheck:shared && pnpm typecheck:functions && tsc -p tsconfig.json",
+    "typecheck:shared": "tsc -p supabase/functions/_shared/pure/tsconfig.json",
+    "lint": "eslint . --max-warnings 0 && pnpm lint:functions",
+    "test": "vitest run",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "seed": "pnpm --filter scripts build-seed",
+    "gen:types": "supabase gen types typescript --local > supabase/functions/_shared/pure/database.ts && prettier --write supabase/functions/_shared/pure/database.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "typecheck:functions": "deno check --node-modules-dir=none supabase/functions/*/index.ts",
+    "lint:functions": "deno lint supabase/functions",
+    "admin:ban": "pnpm --filter scripts admin:ban"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "supabase"
+    ],
+    "peerDependencyRules": {
+      "ignoreMissing": [
+        "react-dom"
+      ]
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@supabase/supabase-js": "^2.117.1",
+    "@types/node": "^22.20.4",
+    "deno": "^2.9.6",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "~57.0.2",
+    "globals": "^16.5.0",
+    "postgres": "^3.4.9",
+    "prettier": "^3.9.9",
+    "supabase": "^2.117.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.70.1",
+    "vitest": "^5.0.1"
+  },
+  "workspaces": [
+    "apps/*",
+    "scripts"
+  ]
+}

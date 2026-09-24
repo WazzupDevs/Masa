@@ -1,0 +1,13 @@
+{
+  // Root-level files not covered by a workspace package: tooling config and pure/ tests.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": [
+    "vitest.config.ts",
+    "vitest.integration.config.ts",
+    "supabase/functions/_shared/pure/**/*.test.ts",
+    "supabase/tests/**/*.ts"
+  ]
+}

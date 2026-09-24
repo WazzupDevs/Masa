@@ -1,0 +1,10 @@
+{
+  // pure/ is shared by the mobile app and Edge Functions: no Deno, Node or DOM globals.
+  "extends": "../../../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": []
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["**/*.test.ts"]
+}
