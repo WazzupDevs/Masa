@@ -25,17 +25,3 @@ export async function requireUser(req: Request, db: Db): Promise<User> {
   if (error || !data.user) throw new AppError('unauthorized', 'Invalid access token.');
   return data.user;
 }
-
-// For write actions. A ban deletes sessions, but an issued access token stays valid until it
-// expires, so the ban flag is checked on every write.
-export async function requireActiveUser(req: Request, db: Db): Promise<User> {
-  const user = await requireUser(req, db);
-  const { data, error } = await db
-    .from('profiles')
-    .select('is_banned')
-    .eq('id', user.id)
-    .maybeSingle();
-  if (error) throw error;
-  if (data?.is_banned) throw new AppError('banned', 'Account is banned.');
-  return user;
-}

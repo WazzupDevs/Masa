@@ -1,10 +1,5 @@
 export type ErrorCode =
-  | 'bad_request'
-  | 'unauthorized'
-  | 'banned'
-  | 'consent_outdated'
-  | 'method_not_allowed'
-  | 'internal';
+  'bad_request' | 'unauthorized' | 'consent_outdated' | 'method_not_allowed' | 'internal';
 
 export type ApiErrorBody = { error: { code: ErrorCode; message: string } };
 

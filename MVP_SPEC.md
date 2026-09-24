@@ -122,9 +122,9 @@ Zamanlama: `normalize` ve `profanity.ts` ilk kez sohbette kullanıldığı için
 ## 8. Güvenlik ve uyumluluk
 - **Şikayet:** Oda menüsünden yapılır. Sebep seçilir (Taciz, Uygunsuz içerik, Spam, Diğer). Son 50 mesajın kopyası eklenir.
 - **Engelleme:** Masa değil kullanıcı bazlıdır: engellenen, karşı masanın hesap sahibidir (masadaki diğer kişilerin hesabı yoktur). Takma adlar her check-in'de değiştiği için masa bazlı engelleme işe yaramaz. Görünmezlik iki yönlüdür.
-- **Ban:** Geliştirici makinesinden `pnpm admin:ban <userId>` ile yapılır (secret key ile; panelden `is_banned` elle değiştirilmez). Script `profiles.is_banned = true` yapar ve Supabase Auth ban'ı koyar (`auth.admin.updateUserById`, `ban_duration: '876000h'`). Auth ban'ı giriş yapmayı ve token yenilemeyi engeller; önceden verilmiş erişim token'ının süresi dolana kadar Edge Function'lar her yazma isteğinde `is_banned` kontrol eder. Banlı kullanıcı check-in yapamaz. `is_banned` true olunca bir trigger telefon numarasını sunucu tarafı gizli anahtarla (Supabase Vault) HMAC'leyip `banned_phones` tablosuna yazar; `before_user_created` auth hook'u kayıtta bu tabloyu kontrol eder. Aksi halde ban, hesabı silip yeniden kayıt olarak aşılabilir. Veritabanı kodu `auth` şemasına yazmaz. Banlı kullanıcı giriş yapamadığı için uygulama içinden hesabını silemez.
+- **Ban:** Ban = hesabı silmek + telefon hash'ini tutmak; "banlı ama var olan hesap" durumu yoktur. Geliştirici makinesinden `pnpm admin:ban <userId>` ile yapılır (secret key ile). Script önce telefon numarasının sunucu tarafı gizli anahtarla (Supabase Vault) alınmış HMAC hash'ini `banned_phones` tablosuna yazar (`record_banned_phone`, yalnızca service role çağırabilir), sonra `auth.admin.deleteUser` ile hesabı siler; silme cascade ile tüm veriyi götürür. Silinen kullanıcının henüz süresi dolmamış erişim token'ı `auth.getUser`'da reddedilir. `before_user_created` auth hook'u aynı numarayla yeni kaydı reddeder. Hook desteklenmeyen ve banlı numaralara aynı yanıtı döner (`signup_not_allowed`); uygulama yalnızca "Bu numarayla devam edilemiyor." gösterir, ban nedenini açıklamaz. Veritabanı kodu `auth` şemasına yazmaz.
   - Bilinen kısıt: HMAC anahtarı tektir ve rotasyonu yoktur. Anahtar değişirse mevcut hash'ler geçersiz olur.
-- **Hesap silme:** Kullanıcının tüm verisi silinir. `reports.reporter_id` ve `reports.reported_user_id` `ON DELETE SET NULL`'dır; şikayet kaydı ve mesaj kopyası 30 gün sonunda yine silinir.
+- **Hesap silme:** Kullanıcının tüm verisi silinir. Ban sonrasında geriye kalan tek veri telefon hash'idir; güvenlik amacıyla tutulduğu aydınlatma metninde belirtilir (M7). `reports.reporter_id` ve `reports.reported_user_id` `ON DELETE SET NULL`'dır; şikayet kaydı ve mesaj kopyası 30 gün sonunda yine silinir.
 - **App Store / Play:** Kullanıcı içeriği barındıran uygulamalar için şikayet, engelleme, filtre ve iletişim bilgisi gerekir. Uygulama içi hesap silme zorunludur.
 - **KVKK:** Aydınlatma metni, konum için açık rıza ve gizlilik politikası URL'i (mağaza için de gerekli).
 - **SMS:** Sağlayıcı Twilio Verify (Supabase yerleşik entegrasyonu). SMS pumping dolandırıcılığına karşı Verify coğrafi izinleri yalnızca Türkiye'ye açıktır. Aynı numaraya tekrar gönderim en az 60 sn arayla, proje geneli saatte en fazla 100 SMS. Türkiye'ye teslimat ve maliyet M1'de test edilir; sorun çıkarsa Send SMS Hook ile yerli sağlayıcıya geçilebilir.
@@ -169,7 +169,7 @@ Zamanlama: `normalize` ve `profanity.ts` ilk kez sohbette kullanıldığı için
 
 ### Veri modeli
 ```
-profiles          id (= auth.users.id), push_token, is_banned,
+profiles          id (= auth.users.id), push_token,
                   age_confirmed_at, terms_accepted_at, terms_version,
                   kvkk_accepted_at, kvkk_version, location_consent_at, created_at
                   (push_token M3'te, location_consent_at M2'de kendi migration'ıyla gelir;
@@ -197,11 +197,12 @@ reports           id, reporter_id (null, ON DELETE SET NULL),
                   messages_snapshot jsonb, status, created_at
 blocks            blocker_id, blocked_id, created_at            PK (blocker_id, blocked_id)
 banned_phones     phone_hash (HMAC, sunucu gizli anahtarı) PK, created_at
+                  (ban = hash + hesap silme; hesaba bağlı değildir, silmeden etkilenmez)
 ```
 
 ### RLS ve okuma kuralları
 - Tüm tablolarda RLS açık. İstemcinin hiçbir tabloda insert, update ya da delete izni yok.
-- İstemcinin çağırdığı security definer RPC'ler (`nearby_venues`, `venue_lobby`) yalnızca okur ve `set search_path = ''` ile tanımlanır.
+- İstemcinin çağırdığı security definer RPC'ler (`nearby_venues`, `venue_lobby`) yalnızca okur ve `set search_path = ''` ile tanımlanır. Yazan security definer fonksiyonlar (ör. `record_banned_phone`) istemciye kapalıdır; yalnızca service role çalıştırabilir.
 - `venues`: kimliği doğrulanmış herkes okuyabilir.
 - `profiles`, `table_sessions`: sadece kendi satırı.
 - Lobi, tablo okumasıyla değil `venue_lobby(venue_id)` RPC'siyle gelir (security definer). Yalnızca güvenli kolonları döner (oda id, masa takma adı, kişi sayısı, konsept, bekleme süresi) ve engellemeleri filtreler.
@@ -288,7 +289,7 @@ Kapsam: `reveal` fonksiyonu (`decide`, `finalize`), 60 saniyelik karar penceresi
 Kabul: yalnızca karşılıklı "Evet"te sinyal görünüyor. Diğer durumlarda iki taraf aynı ekranı görüyor.
 
 **M7 — Analitik ve mağaza**
-Kapsam: PostHog event'leri (PostHog'a yalnızca kullanıcı id'si gider; telefon ya da başka kişisel veri gitmez; hesap silmede PostHog kişi kaydı da API ile silinir), gerçek Kullanım Koşulları / KVKK / gizlilik metinleri, mağaza metinleri, EAS build, iOS build, TestFlight ve Play dahili test.
+Kapsam: PostHog event'leri (PostHog'a yalnızca kullanıcı id'si gider; telefon ya da başka kişisel veri gitmez; hesap silmede PostHog kişi kaydı da API ile silinir), gerçek Kullanım Koşulları / KVKK / gizlilik metinleri (banlanan numaranın hash'inin güvenlik amacıyla tutulduğu belirtilir), mağaza metinleri, EAS build, iOS build, TestFlight ve Play dahili test.
 Kabul: §12'deki tüm event'ler PostHog'a düşüyor. Uygulama iki mağazanın test kanalında.
 
 Tahmini süre: tek geliştirici ve Claude Code ile yaklaşık 8 hafta. Ardından kapalı test ve pilot.

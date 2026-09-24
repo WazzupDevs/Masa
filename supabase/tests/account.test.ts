@@ -51,7 +51,6 @@ describe('account/complete-onboarding', () => {
 
     const [row] = await sql`select * from public.profiles where id = ${await userId(client)}`;
     expect(row).toMatchObject({
-      is_banned: false,
       terms_version: CURRENT_TERMS_VERSION,
       kvkk_version: CURRENT_KVKK_VERSION,
     });
@@ -103,54 +102,55 @@ describe('profiles RLS', () => {
 
     const update = await a
       .from('profiles')
-      .update({ is_banned: false })
+      .update({ terms_version: 'x' })
       .eq('id', await userId(a));
     expect(update.error?.code).toBe('42501');
   });
 });
 
 describe('ban', () => {
-  it('records the phone hash and blocks sign-in and token refresh', async () => {
-    const client = await signIn(PHONE_A);
-    await call(client, onboarding);
-
-    await banUser(admin, await userId(client));
-
-    expect(await sql`select 1 from public.banned_phones`).toHaveLength(1);
-    await expect(signIn(PHONE_A)).rejects.toMatchObject({ code: 'user_banned' });
-    expect((await client.auth.refreshSession()).error?.code).toBe('user_banned');
-  });
-
-  it('rejects writes while an access token issued before the ban is still valid', async () => {
-    const client = await signIn(PHONE_A);
-    await call(client, onboarding);
-
-    // Only the profile flag: the state right after a ban, before the access token expires.
-    await sql`update public.profiles set is_banned = true where id = ${await userId(client)}`;
-
-    expect(await call(client, onboarding)).toEqual({
-      status: 403,
-      body: { error: { code: 'banned', message: expect.any(String) } },
-    });
-  });
-
-  it('blocks signing up again with a banned number after account deletion', async () => {
+  it('keeps the phone hash, deletes the account and invalidates its access token', async () => {
     const client = await signIn(PHONE_A);
     await call(client, onboarding);
     const id = await userId(client);
+
     await banUser(admin, id);
 
-    const { error } = await admin.auth.admin.deleteUser(id);
-    expect(error).toBeNull();
+    expect(await sql`select 1 from public.banned_phones`).toHaveLength(1);
+    expect(await sql`select 1 from auth.users where id = ${id}`).toHaveLength(0);
+    expect(await sql`select 1 from public.profiles where id = ${id}`).toHaveLength(0);
 
-    await expect(signIn(PHONE_A)).rejects.toMatchObject({ status: 403, message: 'phone_banned' });
+    // The access token issued before the ban has not expired yet; auth.getUser rejects it.
+    expect(await call(client, onboarding)).toEqual({
+      status: 401,
+      body: { error: { code: 'unauthorized', message: expect.any(String) } },
+    });
   });
 
-  it('rejects non-Turkish-mobile numbers at sign-up', async () => {
-    await expect(signIn('+14152127777')).rejects.toMatchObject({
-      status: 400,
-      message: 'unsupported_phone',
+  it('rejects signing up again with a banned number', async () => {
+    const client = await signIn(PHONE_A);
+    await banUser(admin, await userId(client));
+
+    await expect(signIn(PHONE_A)).rejects.toMatchObject({
+      status: 403,
+      message: 'signup_not_allowed',
     });
+  });
+
+  it('rejects non-Turkish-mobile numbers with the same response as banned ones', async () => {
+    await expect(signIn('+14152127777')).rejects.toMatchObject({
+      status: 403,
+      message: 'signup_not_allowed',
+    });
+  });
+
+  it('does not let clients record banned phones', async () => {
+    const client = await signIn(PHONE_A);
+    const { error } = await client.rpc('record_banned_phone', {
+      target_user_id: await userId(client),
+    });
+    expect(error?.code).toBe('42501');
+    expect(await sql`select 1 from public.banned_phones`).toHaveLength(0);
   });
 });
 

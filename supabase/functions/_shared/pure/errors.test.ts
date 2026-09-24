@@ -4,7 +4,7 @@ import { isApiErrorBody, toErrorBody } from './errors.ts';
 
 describe('error body', () => {
   it('round-trips through the type guard', () => {
-    expect(isApiErrorBody(toErrorBody('banned', 'x'))).toBe(true);
+    expect(isApiErrorBody(toErrorBody('unauthorized', 'x'))).toBe(true);
   });
 
   it('rejects other shapes', () => {

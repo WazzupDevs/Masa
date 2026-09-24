@@ -1,4 +1,4 @@
-import { requireActiveUser, requireUser, serviceClient } from '../_shared/auth.ts';
+import { requireUser, serviceClient } from '../_shared/auth.ts';
 import { z } from '../_shared/deps.ts';
 import { handle } from '../_shared/http.ts';
 import type { AccountRequest, AccountResponse } from '../_shared/pure/api/account.ts';
@@ -23,7 +23,7 @@ Deno.serve(
 
     switch (body.action) {
       case 'complete-onboarding': {
-        const user = await requireActiveUser(req, db);
+        const user = await requireUser(req, db);
         if (
           body.termsVersion !== CURRENT_TERMS_VERSION ||
           body.kvkkVersion !== CURRENT_KVKK_VERSION
@@ -44,7 +44,6 @@ Deno.serve(
       }
 
       case 'delete': {
-        // Allowed for banned users too: the phone hash in banned_phones outlives the account.
         const user = await requireUser(req, db);
         const { error } = await db.auth.admin.deleteUser(user.id);
         if (error) throw error;

@@ -5,7 +5,6 @@ const STATUS: Record<ErrorCode, number> = {
   bad_request: 400,
   consent_outdated: 409,
   unauthorized: 401,
-  banned: 403,
   method_not_allowed: 405,
   internal: 500,
 };

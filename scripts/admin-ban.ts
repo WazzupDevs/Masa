@@ -23,4 +23,4 @@ const admin = createClient<Database>(env('SUPABASE_URL'), env('SUPABASE_SECRET_K
 });
 
 await banUser(admin, userId);
-console.log(`Banned ${userId} on ${env('SUPABASE_URL')}`);
+console.log(`Banned and deleted ${userId} on ${env('SUPABASE_URL')}`);

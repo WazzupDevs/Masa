@@ -48,7 +48,6 @@ export type Database = {
           age_confirmed_at: string;
           created_at: string;
           id: string;
-          is_banned: boolean;
           kvkk_accepted_at: string;
           kvkk_version: string;
           terms_accepted_at: string;
@@ -58,7 +57,6 @@ export type Database = {
           age_confirmed_at: string;
           created_at?: string;
           id: string;
-          is_banned?: boolean;
           kvkk_accepted_at: string;
           kvkk_version: string;
           terms_accepted_at: string;
@@ -68,7 +66,6 @@ export type Database = {
           age_confirmed_at?: string;
           created_at?: string;
           id?: string;
-          is_banned?: boolean;
           kvkk_accepted_at?: string;
           kvkk_version?: string;
           terms_accepted_at?: string;
@@ -81,7 +78,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      record_banned_phone: {
+        Args: { target_user_id: string };
+        Returns: undefined;
+      };
     };
     Enums: {
       [_ in never]: never;

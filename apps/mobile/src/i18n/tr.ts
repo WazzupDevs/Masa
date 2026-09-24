@@ -21,8 +21,7 @@ export const tr = {
     resendIn: (seconds: number) => `Tekrar gönder (${seconds} sn)`,
     errors: {
       invalidPhone: 'Geçerli bir cep telefonu numarası gir (5xx xxx xx xx).',
-      unsupportedPhone: 'Şimdilik yalnızca Türkiye cep numaralarıyla kayıt olunabiliyor.',
-      banned: 'Bu numarayla kayıt olunamıyor.',
+      signupNotAllowed: 'Bu numarayla devam edilemiyor.',
       tooManyRequests: 'Çok fazla deneme yapıldı. Biraz sonra tekrar dene.',
       invalidCode: 'Kod hatalı ya da süresi dolmuş.',
     },
@@ -62,7 +61,6 @@ export const tr = {
   errors: {
     bad_request: 'İstek geçersiz.',
     unauthorized: 'Oturumun sona ermiş. Tekrar giriş yap.',
-    banned: 'Hesabın askıya alındı.',
     consent_outdated: 'Metinler güncellendi. Lütfen tekrar onayla.',
     method_not_allowed: 'İstek geçersiz.',
     internal: 'Bir şeyler ters gitti. Tekrar dener misin?',
