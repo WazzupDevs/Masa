@@ -9,9 +9,9 @@ Otonom çalışma: M2'den M7'ye taşlar sırayla uygulanıyor. Her taş typechec
 | M0 Altyapı                   | ✅ Bitti (merge: `4ce6d29`) | `d1af2f2`                       |
 | M1 Auth ve profil            | ✅ Bitti (merge: `4ce6d29`) | `94c837f`, `c114143`, `a50ee28` |
 | M2 Mekan ve masa             | ✅ Bitti                    | `26ea477`                       |
-| M3 Oda, lobi, katılma isteği | ⏳ Devam ediyor             |                                 |
-| M4 Sohbet ve güvenlik        | Bekliyor                    |                                 |
-| M5 Konseptler                | Bekliyor                    |                                 |
+| M3 Oda, lobi, katılma isteği | ✅ Bitti                    | `c974d78`                       |
+| M4 Sohbet ve güvenlik        | ✅ Bitti                    | "M4: …" commit'i                |
+| M5 Konseptler                | ⏳ Devam ediyor             |                                 |
 | M6 Oda sonu ve tanışma       | Bekliyor                    |                                 |
 | M7 Analitik ve mağaza        | Bekliyor                    |                                 |
 
@@ -21,10 +21,11 @@ Otonom çalışma: M2'den M7'ye taşlar sırayla uygulanıyor. Her taş typechec
 - M1: Türkiye'ye gerçek SMS teslimatı; cihazda giriş.
 - M2: Gerçek mekan listesi (`overpass-api.de` container'dan engelli); cihazda check-in.
 - M3: İki cihazda istek ve kabul uçtan uca; push (EAS/Firebase hesabı yok, yapılandırma env'den).
+- M4: Cihazda sohbet, şikayet, engelleme ve bağlantı durumu (sunucu tarafı kabul kriterleri container'da doğrulandı).
 
 ## Sıradaki adım
 
-M3.
+M5: `trText` kalanı (önce testler), kart içeriği (500+ Tabu, 150+ Sohbet), `tabu` ve `sohbet` fonksiyonları, oyun ekranları.
 
 ## Yerel ortamı kaldırma (yeni oturumda)
 

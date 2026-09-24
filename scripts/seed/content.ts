@@ -31,6 +31,11 @@ function stringList(value: unknown, field: string): string[] {
   return value;
 }
 
+export function parseProfanity(json: unknown): string[] {
+  if (!isRecord(json)) throw new Error('profanity-tr.json must be an object');
+  return stringList(json.terms, 'terms');
+}
+
 export function parseAliasWords(json: unknown): AliasWords {
   if (!isRecord(json)) throw new Error('aliases-tr.json must be an object');
   return {

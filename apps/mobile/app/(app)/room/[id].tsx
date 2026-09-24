@@ -5,6 +5,9 @@ import { ActivityIndicator, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
+import { ChatPanel } from '@/features/chat/ChatPanel';
+import { RoomSafety } from '@/features/chat/RoomSafety';
+import { useOtherTableOnline } from '@/features/chat/usePresence';
 import { useActiveTable } from '@/features/checkin/useActiveTable';
 import { IncomingRequest } from '@/features/rooms/IncomingRequest';
 import { roomKeys, useRoom } from '@/features/rooms/queries';
@@ -42,6 +45,7 @@ export default function RoomScreen() {
 
   const isOwner = r.owner_session_id === sessionId;
   const concept = r.concept as Concept;
+  const hasOtherTable = r.guest_session_id !== null;
 
   return (
     <Screen>
@@ -59,7 +63,12 @@ export default function RoomScreen() {
         ) : null}
       </View>
 
+      {hasOtherTable ? <OtherTableStatus roomId={r.id} isOwner={isOwner} /> : null}
+
+      <ChatPanel roomId={r.id} sessionId={sessionId} />
+
       <View className="mt-auto gap-3 pt-8">
+        <RoomSafety roomId={r.id} hasOtherTable={hasOtherTable} />
         {exit.isError ? (
           <Text className="text-sm text-red-600">{errorMessage(exit.error)}</Text>
         ) : null}
@@ -81,5 +90,12 @@ export default function RoomScreen() {
         <IncomingRequest roomId={r.id} ownerSessionId={r.owner_session_id} concept={concept} />
       ) : null}
     </Screen>
+  );
+}
+
+function OtherTableStatus({ roomId, isOwner }: { roomId: string; isOwner: boolean }) {
+  const online = useOtherTableOnline(roomId, isOwner ? 'owner' : 'guest', true);
+  return online ? null : (
+    <Text className="mt-3 text-sm text-amber-700">{tr.safety.otherOffline}</Text>
   );
 }

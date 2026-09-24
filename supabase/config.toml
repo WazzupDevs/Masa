@@ -437,3 +437,9 @@ verify_jwt = false
 
 [functions.rooms]
 verify_jwt = false
+
+[functions.chat]
+verify_jwt = false
+
+[functions.safety]
+verify_jwt = false

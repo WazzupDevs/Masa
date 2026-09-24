@@ -1,5 +1,6 @@
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import type { AccountRequest, AccountResponse } from '@shared/api/account.ts';
+import type { ChatResponse, SafetyResponse } from '@shared/api/chat.ts';
 import type {
   CreateRoomRequest,
   CreateRoomResponse,
@@ -7,6 +8,7 @@ import type {
   RoomsOkResponse,
 } from '@shared/api/rooms.ts';
 import type { CheckInRequest, CheckInResponse, LeaveResponse } from '@shared/api/checkin.ts';
+import type { ReportReason } from '@shared/chat.ts';
 import { type ErrorCode, isApiErrorBody } from '@shared/errors.ts';
 
 import { supabase } from './supabase';
@@ -53,4 +55,17 @@ export const roomsApi = {
     invoke<RoomsOkResponse>('rooms', { action: 'respond', requestId, accept }),
   leave: () => invoke<RoomsOkResponse>('rooms', { action: 'leave' }),
   end: () => invoke<RoomsOkResponse>('rooms', { action: 'end' }),
+};
+
+export const chatApi = {
+  send: (roomId: string, body: string) =>
+    invoke<ChatResponse>('chat', { action: 'send', roomId, body }),
+};
+
+export const safetyApi = {
+  report: (roomId: string, reason: ReportReason) =>
+    invoke<SafetyResponse>('safety', { action: 'report', roomId, reason }),
+  block: (roomId: string) => invoke<SafetyResponse>('safety', { action: 'block', roomId }),
+  unblock: (blockedId: string) =>
+    invoke<SafetyResponse>('safety', { action: 'unblock', blockedId }),
 };

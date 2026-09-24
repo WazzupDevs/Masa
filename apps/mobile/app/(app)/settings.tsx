@@ -3,6 +3,7 @@ import { Alert, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
+import { BlockedList } from '@/features/chat/BlockedList';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { unregisterPush } from '@/features/push/push';
@@ -45,6 +46,9 @@ export default function SettingsScreen() {
   return (
     <Screen>
       <Text className="text-3xl font-bold text-black">{tr.settings.title}</Text>
+      <View className="mt-6">
+        <BlockedList />
+      </View>
       <View className="mt-auto gap-3 pt-8">
         {deleteAccount.isError ? (
           <Text className="text-sm text-red-600">{errorMessage(deleteAccount.error)}</Text>

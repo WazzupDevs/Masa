@@ -13,6 +13,10 @@ export type ErrorCode =
   | 'rate_limited'
   | 'request_expired'
   | 'request_not_found'
+  | 'not_in_room'
+  | 'nothing_to_block'
+  | 'message_invalid'
+  | 'profanity_rejected'
   | 'method_not_allowed'
   | 'internal';
 
@@ -52,6 +56,8 @@ export const DOMAIN_ERROR_CODES: readonly ErrorCode[] = [
   'rate_limited',
   'request_expired',
   'request_not_found',
+  'not_in_room',
+  'nothing_to_block',
 ];
 
 export function isDomainErrorCode(value: string): value is ErrorCode {

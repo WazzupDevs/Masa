@@ -130,6 +130,60 @@ export type Database = {
           },
         ];
       };
+      messages: {
+        Row: {
+          body: string;
+          created_at: string;
+          id: string;
+          room_id: string;
+          sender_alias: string;
+          session_id: string;
+        };
+        Insert: {
+          body: string;
+          created_at?: string;
+          id?: string;
+          room_id: string;
+          sender_alias: string;
+          session_id: string;
+        };
+        Update: {
+          body?: string;
+          created_at?: string;
+          id?: string;
+          room_id?: string;
+          sender_alias?: string;
+          session_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'messages_room_id_fkey';
+            columns: ['room_id'];
+            isOneToOne: false;
+            referencedRelation: 'rooms';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'messages_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'table_sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      profanity_terms: {
+        Row: {
+          term: string;
+        };
+        Insert: {
+          term: string;
+        };
+        Update: {
+          term?: string;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           age_confirmed_at: string;
@@ -169,6 +223,47 @@ export type Database = {
         };
         Relationships: [];
       };
+      reports: {
+        Row: {
+          created_at: string;
+          id: string;
+          messages_snapshot: Json;
+          reason: string;
+          reported_user_id: string | null;
+          reporter_id: string | null;
+          room_id: string | null;
+          status: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          messages_snapshot: Json;
+          reason: string;
+          reported_user_id?: string | null;
+          reporter_id?: string | null;
+          room_id?: string | null;
+          status?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          messages_snapshot?: Json;
+          reason?: string;
+          reported_user_id?: string | null;
+          reporter_id?: string | null;
+          room_id?: string | null;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'reports_room_id_fkey';
+            columns: ['room_id'];
+            isOneToOne: false;
+            referencedRelation: 'rooms';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       rooms: {
         Row: {
           closed_at: string | null;
@@ -176,6 +271,7 @@ export type Database = {
           created_at: string;
           guest_alias: string | null;
           guest_headcount: number | null;
+          guest_joined_at: string | null;
           guest_session_id: string | null;
           id: string;
           last_activity_at: string;
@@ -193,6 +289,7 @@ export type Database = {
           created_at?: string;
           guest_alias?: string | null;
           guest_headcount?: number | null;
+          guest_joined_at?: string | null;
           guest_session_id?: string | null;
           id?: string;
           last_activity_at?: string;
@@ -210,6 +307,7 @@ export type Database = {
           created_at?: string;
           guest_alias?: string | null;
           guest_headcount?: number | null;
+          guest_joined_at?: string | null;
           guest_session_id?: string | null;
           id?: string;
           last_activity_at?: string;
@@ -347,6 +445,28 @@ export type Database = {
       };
     };
     Functions: {
+      chat_send: {
+        Args: {
+          min_interval_ms: number;
+          new_body: string;
+          target_room_id: string;
+          target_user_id: string;
+        };
+        Returns: {
+          body: string;
+          created_at: string;
+          id: string;
+          room_id: string;
+          sender_alias: string;
+          session_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'messages';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       end_table_session: { Args: { target_user_id: string }; Returns: boolean };
       nearby_venues: {
         Args: { lat: number; lng: number };
@@ -373,6 +493,7 @@ export type Database = {
           created_at: string;
           guest_alias: string | null;
           guest_headcount: number | null;
+          guest_joined_at: string | null;
           guest_session_id: string | null;
           id: string;
           last_activity_at: string;
@@ -399,6 +520,7 @@ export type Database = {
           created_at: string;
           guest_alias: string | null;
           guest_headcount: number | null;
+          guest_joined_at: string | null;
           guest_session_id: string | null;
           id: string;
           last_activity_at: string;
@@ -425,6 +547,7 @@ export type Database = {
           created_at: string;
           guest_alias: string | null;
           guest_headcount: number | null;
+          guest_joined_at: string | null;
           guest_session_id: string | null;
           id: string;
           last_activity_at: string;
@@ -491,6 +614,45 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      safety_block: {
+        Args: { target_room_id: string; target_user_id: string };
+        Returns: {
+          closed_at: string | null;
+          concept: string;
+          created_at: string;
+          guest_alias: string | null;
+          guest_headcount: number | null;
+          guest_joined_at: string | null;
+          guest_session_id: string | null;
+          id: string;
+          last_activity_at: string;
+          owner_alias: string;
+          owner_headcount: number;
+          owner_session_id: string;
+          status: string;
+          venue_id: string;
+          visibility: string;
+          waiting_since: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'rooms';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      safety_report: {
+        Args: {
+          new_reason: string;
+          target_room_id: string;
+          target_user_id: string;
+        };
+        Returns: string;
+      };
+      safety_unblock: {
+        Args: { target_blocked_id: string; target_user_id: string };
+        Returns: boolean;
       };
       start_table_session: {
         Args: {

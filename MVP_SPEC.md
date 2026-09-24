@@ -111,19 +111,19 @@ Aynı mekandaki insanların, konsept üzerine kurulu odalarda birlikte oyun oyna
 - Zorunlu test vakaları: "denizde", "Denize", "DENİZ", "deniz'de", "d e n i z", "Ilık" / "ılık", "İstanbul" / "istanbul", "öğretmen" / "ogretmen", kısa kök yanlış pozitifi ("kar" yasakken "kara" eşleşmemeli).
 - Bilinen ödünleşim: 4 harften kısa köklerde ekli haller ("karda") yakalanmaz. MVP için kabul edilebilir.
 
-`profanity.ts`: `content/profanity-tr.json` listesi ve aynı `normalize` ile çalışır. Sohbete ve ipuçlarına uygulanır.
+`profanity.ts`: `content/profanity-tr.json` listesi ve aynı `normalize` ile çalışır. Sohbete ve ipuçlarına uygulanır. 5 ve daha uzun harfli terimler ekli halleriyle, daha kısalar yalnızca tam kelime olarak, çok kelimeli ifadeler kelime sınırında eşleşir (harf katlama kısa kökleri gündelik kelimelerle çakıştırır: sık → sik). Bir içerik testi gündelik cümlelerde yanlış pozitif olmadığını doğrular.
 
 Zamanlama: `normalize` ve `profanity.ts` ilk kez sohbette kullanıldığı için M4'te gelir; `tokenize`, `containsForbidden` ve `isCorrectGuess` M5'te.
 
 ## 7. Sohbet kuralları
-- Yalnızca oda içinde ve yalnızca odadaki masalar görür. Mesaj masa takma adıyla görünür.
+- Yalnızca oda içinde ve yalnızca odadaki masalar görür. Mesaj masa takma adıyla görünür. Yeni katılan misafir önceki misafirin mesajlarını görmez.
 - Mesaj en fazla 200 karakter. Masa başına saniyede en fazla 1 mesaj.
-- Gönderim `chat` Edge Function'ı üzerinden yapılır (küfür filtresi ve rate limit).
+- Gönderim `chat` Edge Function'ı üzerinden yapılır (küfür filtresi ve rate limit). Küfür içeren mesaj reddedilir, maskelenmez.
 - Oda kapandıktan 24 saat sonra mesajlar silinir (pg_cron). Şikayet edilen odanın son 50 mesajı şikayet kaydına kopyalanır ve 30 gün tutulur.
 
 ## 8. Güvenlik ve uyumluluk
 - **Şikayet:** Oda menüsünden yapılır. Sebep seçilir (Taciz, Uygunsuz içerik, Spam, Diğer). Son 50 mesajın kopyası eklenir.
-- **Engelleme:** Masa değil kullanıcı bazlıdır: engellenen, karşı masanın hesap sahibidir (masadaki diğer kişilerin hesabı yoktur). Takma adlar her check-in'de değiştiği için masa bazlı engelleme işe yaramaz. Görünmezlik iki yönlüdür.
+- **Engelleme:** Engelleyen masa odadan çıkar (sahibiyse oda kapanır). Ayarlardaki Engellenenler listesinde engelleme anındaki masa takma adı görünür ve engel kaldırılabilir. Masa değil kullanıcı bazlıdır: engellenen, karşı masanın hesap sahibidir (masadaki diğer kişilerin hesabı yoktur). Takma adlar her check-in'de değiştiği için masa bazlı engelleme işe yaramaz. Görünmezlik iki yönlüdür.
 - **Ban:** Ban = hesabı silmek + telefon hash'ini tutmak; "banlı ama var olan hesap" durumu yoktur. Geliştirici makinesinden `pnpm admin:ban <userId>` ile yapılır (secret key ile). Script önce telefon numarasının sunucu tarafı gizli anahtarla (Supabase Vault) alınmış HMAC hash'ini `banned_phones` tablosuna yazar (`record_banned_phone`, yalnızca service role çağırabilir), sonra `auth.admin.deleteUser` ile hesabı siler; silme cascade ile tüm veriyi götürür. Silinen kullanıcının henüz süresi dolmamış erişim token'ı `auth.getUser`'da reddedilir. `before_user_created` auth hook'u aynı numarayla yeni kaydı reddeder. Hook desteklenmeyen ve banlı numaralara aynı yanıtı döner (`signup_not_allowed`); uygulama yalnızca "Bu numarayla devam edilemiyor." gösterir, ban nedenini açıklamaz. Veritabanı kodu `auth` şemasına yazmaz.
   - Bilinen kısıt: HMAC anahtarı tektir ve rotasyonu yoktur. Anahtar değişirse mevcut hash'ler geçersiz olur.
 - **Hesap silme:** Kullanıcının tüm verisi silinir. Ban sonrasında geriye kalan tek veri telefon hash'idir; güvenlik amacıyla tutulduğu aydınlatma metninde belirtilir (M7). `reports.reporter_id` ve `reports.reported_user_id` `ON DELETE SET NULL`'dır; şikayet kaydı ve mesaj kopyası 30 gün sonunda yine silinir.
@@ -186,13 +186,14 @@ table_sessions    id, user_id, venue_id, alias, headcount, status (active|ended)
                   gps_accuracy_m, created_at, expires_at, ended_at
 rooms             id, venue_id, owner_session_id, owner_alias, owner_headcount,
                   guest_session_id (nullable), guest_alias, guest_headcount,
-                  concept (tabu|sohbet), visibility (private|open), waiting_since,
+                  concept (tabu|sohbet), visibility (private|open), waiting_since, guest_joined_at,
                   status (waiting|active|ending|closed), game_state jsonb,
                   reveal_result (null|mutual|none), reveal_token jsonb, reveal_ends_at,
                   last_activity_at, created_at, closed_at
 join_requests     id, room_id, requester_session_id, requester_alias, requester_headcount,
                   status (pending|accepted|declined|expired), created_at, expires_at, responded_at
-messages          id, room_id, session_id, body, created_at
+messages          id, room_id, session_id, sender_alias, body, created_at
+profanity_terms   term                                     (profanity-tr.json'dan seed; yalnızca sunucu okur)
 cards             id, deck (tabu|sohbet), theme, word, forbidden text[], prompt, is_active
 tabu_turns        id, room_id, turn_no, describer_session_id, card_id,
                   started_at, ends_at, passes_used, score
@@ -213,7 +214,8 @@ banned_phones     phone_hash (HMAC, sunucu gizli anahtarı) PK, created_at
 - `venues`: kimliği doğrulanmış herkes okuyabilir.
 - `profiles`, `table_sessions`: sadece kendi satırı.
 - Lobi, tablo okumasıyla değil `venue_lobby(venue_id)` RPC'siyle gelir (security definer). Yalnızca güvenli kolonları döner (oda id, masa takma adı, kişi sayısı, konsept, bekleme süresi) ve engellemeleri filtreler.
-- `rooms`, `messages`, `game_events`: sadece odadaki masaların sahibi okur.
+- `rooms`, `messages`, `game_events`: sadece odadaki masaların sahibi okur. Misafir, odaya katıldığı andan (`guest_joined_at`) önceki mesajları okuyamaz.
+- `reports`: istemciye tamamen kapalı. `blocks`: engelleyen kendi satırlarını okur.
 - `tabu_turns`: odadakiler okur ama `card_id` kolonu istemciye açılmaz (view üzerinden). Kart kelimesi yalnızca `tabu/current-card` ile anlatana gider.
 - `cards`: `sohbet` destesi okunabilir. `tabu` destesi istemciye kapalı; tek masa modu desteyi `tabu/start` üzerinden alır.
 - `join_requests`: ham satırları yalnızca oda sahibi okur. İstek sahibi yalnızca `my_join_requests` view'ını okur: kabul hemen `accepted` görünür; red ya da cevapsızlık `expires_at`'e kadar `pending`, sonra `unavailable` görünür (red de 60 sn dolana kadar ayırt edilemez). Red hiçbir yayın, push ya da yanıt alanı üretmez.
