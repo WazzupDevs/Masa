@@ -160,7 +160,7 @@ insert into public.venues (name, city, district, location, source, source_ref, i
   ('Doğal Köyüm', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6284846, 41.007914), 4326)::extensions.geography, 'osm', 'way/1124650064', true),
   ('Barış Cafe', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6504534, 40.9947844), 4326)::extensions.geography, 'osm', 'way/822888291', true),
   ('Lu Gelato Beylikdüzü', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6694918, 40.9769525), 4326)::extensions.geography, 'osm', 'way/895652918', true),
-  ('Yedegör Dürüm', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.67809295207919, 40.99684030712939), 4326)::extensions.geography, 'manual', 'yedegor-durum', true)
+  ('Yedegör Dürüm', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6686509, 40.990265), 4326)::extensions.geography, 'manual', 'yedegor-durum', true)
 on conflict (source, source_ref) do update set
   name = excluded.name, city = excluded.city, district = excluded.district,
   location = excluded.location, is_active = excluded.is_active;
