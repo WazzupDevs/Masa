@@ -23,7 +23,7 @@
       "source": "osm",
       "sourceRef": "node/12197517786",
       "amenity": "cafe",
-      "isActive": true
+      "isActive": false
     },
     {
       "name": "Kahve Dünyası",
@@ -166,7 +166,7 @@
       "source": "osm",
       "sourceRef": "node/1863970118",
       "amenity": "cafe",
-      "isActive": false
+      "isActive": true
     },
     {
       "name": "Starbucks",
@@ -188,7 +188,7 @@
       "source": "osm",
       "sourceRef": "node/1932224711",
       "amenity": "cafe",
-      "isActive": false
+      "isActive": true
     },
     {
       "name": "Doğal Köyüm",
@@ -430,7 +430,7 @@
       "source": "osm",
       "sourceRef": "node/9112379430",
       "amenity": "cafe",
-      "isActive": false
+      "isActive": true
     },
     {
       "name": "Halk Ulaşım Dergisi",
