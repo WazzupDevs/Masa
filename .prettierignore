@@ -1,0 +1,5 @@
+pnpm-lock.yaml
+supabase/.temp/
+# Hand-maintained product docs.
+CLAUDE.md
+MVP_SPEC.md

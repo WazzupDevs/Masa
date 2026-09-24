@@ -1,0 +1,40 @@
+{
+  "name": "masa",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "typecheck": "pnpm -r typecheck && pnpm typecheck:shared && tsc -p tsconfig.json",
+    "typecheck:shared": "tsc -p supabase/functions/_shared/pure/tsconfig.json",
+    "lint": "eslint . --max-warnings 0",
+    "test": "vitest run",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "seed": "pnpm --filter scripts build-seed",
+    "gen:types": "supabase gen types typescript --local > supabase/functions/_shared/pure/database.ts && prettier --write supabase/functions/_shared/pure/database.ts"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "supabase"
+    ],
+    "peerDependencyRules": {
+      "ignoreMissing": [
+        "react-dom"
+      ]
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^22.20.4",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "~57.0.2",
+    "globals": "^16.5.0",
+    "prettier": "^3.9.9",
+    "supabase": "^2.117.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.70.1",
+    "vitest": "^5.0.1"
+  }
+}
