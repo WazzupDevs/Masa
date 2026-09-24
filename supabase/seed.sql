@@ -164,6 +164,13 @@ on conflict (source, source_ref) do update set
   name = excluded.name, city = excluded.city, district = excluded.district,
   location = excluded.location, is_active = excluded.is_active;
 
+-- content/venues-test.json
+insert into public.venues (name, city, district, location, source, source_ref, is_active) values
+  ('Hush Coffee', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.668212457253617, 40.98819357066424), 4326)::extensions.geography, 'test', 'test/hush-coffee', true)
+on conflict (source, source_ref) do update set
+  name = excluded.name, city = excluded.city, district = excluded.district,
+  location = excluded.location, is_active = excluded.is_active;
+
 -- content/profanity-tr.json
 delete from public.profanity_terms;
 insert into public.profanity_terms (term, whole_word) values

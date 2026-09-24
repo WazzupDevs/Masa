@@ -1,3 +1,11 @@
 {
-  "venues": []
+  "venues": [
+    {
+      "ref": "hush-coffee",
+      "name": "Hush Coffee",
+      "district": "Beylikdüzü",
+      "lat": 40.98819357066424,
+      "lng": 28.668212457253617
+    }
+  ]
 }
