@@ -1,7 +1,7 @@
 // Connection details of the local Supabase stack, read from `supabase status`.
 import { execSync } from 'node:child_process';
 
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient, FunctionsHttpError, type SupabaseClient } from '@supabase/supabase-js';
 import postgres from 'postgres';
 
 import type { Database } from '../functions/_shared/pure/database.ts';
@@ -56,4 +56,26 @@ export async function signIn(phone: string): Promise<SupabaseClient<Database>> {
 
 export async function deleteUserByPhone(phone: string): Promise<void> {
   await sql`delete from auth.users where phone = ${phone.replace(/\D/g, '')}`;
+}
+
+export type Client = SupabaseClient<Database>;
+
+// Calls an Edge Function; errors come back as { status, body } instead of throwing.
+export async function invoke(
+  client: Client,
+  fn: string,
+  body: Record<string, unknown>,
+): Promise<{ status: number; body: unknown }> {
+  const { data, error } = await client.functions.invoke(fn, { body });
+  if (error instanceof FunctionsHttpError) {
+    return { status: error.context.status as number, body: await error.context.json() };
+  }
+  if (error) throw error;
+  return { status: 200, body: data as unknown };
+}
+
+export async function userIdOf(client: Client): Promise<string> {
+  const { data } = await client.auth.getUser();
+  if (!data.user) throw new Error('not signed in');
+  return data.user.id;
 }

@@ -1,9 +1,13 @@
 import { requireUser, serviceClient } from '../_shared/auth.ts';
+import { inBackground } from '../_shared/background.ts';
+import { dbError } from '../_shared/db.ts';
 import { z } from '../_shared/deps.ts';
 import { handle } from '../_shared/http.ts';
+import { deletePosthogPerson } from '../_shared/posthog.ts';
 import type { AccountRequest, AccountResponse } from '../_shared/pure/api/account.ts';
 import { CURRENT_KVKK_VERSION, CURRENT_TERMS_VERSION } from '../_shared/pure/consent.ts';
 import { AppError } from '../_shared/pure/errors.ts';
+import { isExpoPushToken } from '../_shared/pure/push.ts';
 
 const Body: z.ZodType<AccountRequest> = z.discriminatedUnion('action', [
   z.object({
@@ -13,6 +17,10 @@ const Body: z.ZodType<AccountRequest> = z.discriminatedUnion('action', [
     kvkkVersion: z.string(),
   }),
   z.object({ action: z.literal('delete') }),
+  z.object({
+    action: z.literal('register-push'),
+    token: z.string().max(200).refine(isExpoPushToken).nullable(),
+  }),
 ]);
 
 const db = serviceClient();
@@ -45,8 +53,22 @@ Deno.serve(
 
       case 'delete': {
         const user = await requireUser(req, db);
+        // End the table first so its rooms close or go back to waiting for the other table.
+        const ended = await db.rpc('end_table_session', { target_user_id: user.id });
+        if (ended.error) throw dbError('end_table_session', ended.error);
         const { error } = await db.auth.admin.deleteUser(user.id);
         if (error) throw error;
+        inBackground(deletePosthogPerson(user.id));
+        return { ok: true };
+      }
+
+      case 'register-push': {
+        const user = await requireUser(req, db);
+        const { error } = await db
+          .from('profiles')
+          .update({ push_token: body.token })
+          .eq('id', user.id);
+        if (error) throw dbError('profiles', error);
         return { ok: true };
       }
     }

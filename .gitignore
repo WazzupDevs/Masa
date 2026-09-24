@@ -29,3 +29,7 @@ supabase/functions/.env
 *.log
 coverage/
 *.tsbuildinfo
+
+# Firebase config (per developer / CI secret)
+apps/mobile/google-services.json
+apps/mobile/GoogleService-Info.plist

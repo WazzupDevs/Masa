@@ -4,7 +4,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 import type { Database } from '../supabase/functions/_shared/pure/database.ts';
-import { banUser, isUserId } from './admin/ban.ts';
+import { banUser, deletePosthogPerson, isUserId } from './admin/ban.ts';
 
 function env(name: string): string {
   const value = process.env[name];
@@ -24,3 +24,4 @@ const admin = createClient<Database>(env('SUPABASE_URL'), env('SUPABASE_SECRET_K
 
 await banUser(admin, userId);
 console.log(`Banned and deleted ${userId} on ${env('SUPABASE_URL')}`);
+if (await deletePosthogPerson(userId, process.env)) console.log('Deleted the PostHog person');

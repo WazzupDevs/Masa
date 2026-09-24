@@ -67,8 +67,9 @@ schema_paths = []
 enabled = true
 # Specifies an ordered list of seed files to load during db reset.
 # Supports glob patterns relative to supabase directory: "./seeds/*.sql"
-# seed.sql is generated from content/ (hosted too); seed.local.sql holds local-only dev secrets.
-sql_paths = ["./seed.sql", "./seed.local.sql"]
+# seed.sql is generated from content/. Local-only dev secrets are NOT seeded here (a seed could
+# reach a hosted project); `pnpm db:reset` applies supabase/local/secrets.sql afterwards.
+sql_paths = ["./seed.sql"]
 
 [db.network_restrictions]
 # Enable management of network restrictions.
@@ -429,4 +430,25 @@ enabled = true
 
 # The function validates the caller's token itself with auth.getUser (works with asymmetric JWT keys).
 [functions.account]
+verify_jwt = false
+
+[functions.checkin]
+verify_jwt = false
+
+[functions.rooms]
+verify_jwt = false
+
+[functions.chat]
+verify_jwt = false
+
+[functions.safety]
+verify_jwt = false
+
+[functions.tabu]
+verify_jwt = false
+
+[functions.sohbet]
+verify_jwt = false
+
+[functions.reveal]
 verify_jwt = false

@@ -1,0 +1,10 @@
+{
+  // app.config.ts runs in Node at build time; kept apart so Node types do not leak into the app.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "module": "preserve",
+    "moduleResolution": "bundler"
+  },
+  "include": ["app.config.ts"]
+}

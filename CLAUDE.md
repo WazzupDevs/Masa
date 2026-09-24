@@ -16,12 +16,13 @@ Node 22, pnpm 10, Docker (yerel Supabase için). Supabase CLI ve Deno root devDe
 - `pnpm typecheck` — mobil + scripts + `_shared/pure` (Deno/Node tipleri olmadan) + Edge Function'lar (`deno check`) + root testleri
 - `pnpm lint` — ESLint (uyarı toleransı sıfır) + `deno lint supabase/functions`
 - `pnpm test` — birim testleri, vitest (`scripts/**`, `_shared/pure/**` altındaki `*.test.ts`)
-- `pnpm test:integration` — `supabase/tests/**`, yerel stack'e karşı (önce `pnpm supabase start` ve `pnpm supabase functions serve`)
+- `pnpm test:integration` — `supabase/tests/**`, yerel stack'e karşı (önce `pnpm supabase start`, `pnpm db:reset` ve `pnpm supabase functions serve`). Mekan testleri gerçek veri değil `supabase/tests/fixtures/venues.ts` kullanır.
 - `pnpm format` / `pnpm format:check` — Prettier
 - `pnpm supabase start` / `pnpm supabase stop` — `config.toml` değişince stop + start gerekir. İlk seferde `cp supabase/.env.example supabase/.env` (`config.toml`'daki `env()` değerleri; yerel placeholder'lar)
-- `pnpm supabase db reset` — migration'lar + `seed.sql` + `seed.local.sql` (yalnızca yerel dev sırları)
+- `pnpm db:reset` — yerel DB'yi sıfırlar: migration'lar + `seed.sql`, ardından `supabase/local/secrets.sql` (yerel dev sırları; script yerel olmayan DB'ye uygulamayı reddeder). Çıplak `supabase db reset` Vault anahtarını kurmaz.
 - `pnpm supabase functions serve` — Edge Function'ları yerelde çalıştırır
 - `pnpm seed` — `content/*.json` → `supabase/seed.sql` (çıktı commit'lenir)
+- `pnpm fetch:venues` — OpenStreetMap Overpass API'den Beylikdüzü kafeleri ve nargile kafeleri → `content/venues-pilot.json`. Sonucu elle kontrol et (`isActive: false` ile kapat; tekrar çekişte korunur), sonra `pnpm seed`. `overpass-api.de` erişimi gerekir.
 - `pnpm gen:types` — çalışan yerel DB'den `supabase/functions/_shared/pure/database.ts` üretir; her migration'dan sonra çalıştır
 - Yerel test numaraları (`config.toml` → `[auth.sms.test_otp]`): `+905550000001` … `+905550000003`, kod `123456`
 - `pnpm admin:ban <userId>` — ban = telefon hash'ini `banned_phones`'a yazar, sonra hesabı siler (tüm veri cascade ile gider). Yalnızca geliştirici makinesinde, `SUPABASE_URL` ve `SUPABASE_SECRET_KEY` ortam değişkenleriyle çalışır. Secret key hiçbir dosyaya yazılmaz, uygulamaya girmez.
@@ -37,9 +38,9 @@ Node 22, pnpm 10, Docker (yerel Supabase için). Supabase CLI ve Deno root devDe
 2. `pnpm supabase login` ve `pnpm supabase link --project-ref <ref>`
 3. **Vault anahtarı:** `openssl rand -hex 32` ile üret, parola yöneticisine kaydet, SQL Editor'da çalıştır:
    `select vault.create_secret('<anahtar>', 'phone_hash_key');`
-   Anahtar asla değişmez (rotasyon yok; değişirse `banned_phones` geçersiz olur). `seed.local.sql`'i barındırılan projede asla çalıştırma.
-4. `pnpm supabase db push` — migration'lar
-5. `pnpm supabase functions deploy account` — `verify_jwt = false` ayarı `config.toml`'dan gelir; token'ı fonksiyon kendisi doğrular.
+   Anahtar asla değişmez (rotasyon yok; değişirse `banned_phones` geçersiz olur). `supabase/local/secrets.sql`'i barındırılan projede asla çalıştırma.
+4. `pnpm supabase db push --include-seed` — migration'lar + `seed.sql` (takma ad kelimeleri, mekanlar; tekrar çalıştırılabilir). Yerel sırlar seed yolunda değildir, buradan barındırılan projeye gidemez.
+5. `pnpm supabase functions deploy` — tüm fonksiyonlar. `verify_jwt = false` ayarı `config.toml`'dan gelir; token'ı fonksiyon kendisi doğrular.
 6. **Twilio:**
    - Verify servisi oluştur; Account SID, Auth Token ve Verify Service SID'i al.
    - **Verify → Settings → Geo permissions: yalnızca Türkiye** açık (SMS pumping dolandırıcılığına karşı). Fraud Guard açık kalsın.
@@ -48,8 +49,20 @@ Node 22, pnpm 10, Docker (yerel Supabase için). Supabase CLI ve Deno root devDe
    - Phone → test numaraları: `905550000001=123456` (yalnızca dev projesinde; pilot projesinde olmaz).
    - Rate Limits: saatlik SMS **100**; aynı numaraya tekrar gönderim aralığı **60 sn**.
    - Hooks → **Before User Created** → Postgres → şema `private`, fonksiyon `before_user_created`.
+   - **Realtime → Settings → Allow public access: kapalı.** Tüm kanallar özeldir; kimin abone olup yayın yapacağına `realtime.messages` politikaları karar verir.
 8. **Mobil:** `cp apps/mobile/.env.example apps/mobile/.env`; URL `https://<ref>.supabase.co`, anahtar Settings → API Keys'teki publishable key.
-9. Sonraki değişikliklerde: yeni migration → `pnpm supabase db push`; fonksiyon değişikliği → `pnpm supabase functions deploy <ad>`.
+9. Sonraki değişikliklerde: yeni migration ya da içerik → `pnpm supabase db push --include-seed`; fonksiyon değişikliği → `pnpm supabase functions deploy <ad>`.
+
+### Push (isteğe bağlı; hesaplar olmadan build kırılmaz)
+- `EAS_PROJECT_ID`: `eas init` ile alınan Expo proje id'si. Yoksa uygulama push token kaydını sessizce atlar.
+- `GOOGLE_SERVICES_JSON`: Firebase'in `google-services.json` yolu (varsayılan `apps/mobile/google-services.json`, git'e girmez). Dosya yoksa Android build'e eklenmez. FCM V1 anahtarı Expo paneline yüklenir.
+- Gönderim Expo push API'si ile yapılır, sunucuda anahtar gerekmez.
+
+### Analitik, yasal metinler, mağaza (M7)
+- Mobil `.env` (hepsi isteğe bağlı): `EXPO_PUBLIC_POSTHOG_KEY` (yoksa analitik hiçbir şey yapmaz), `EXPO_PUBLIC_POSTHOG_HOST` (varsayılan AB), `EXPO_PUBLIC_PRIVACY_URL` (yoksa uygulama içi taslak metin), `EXPO_PUBLIC_CONTACT_EMAIL`.
+- Fonksiyon sırları (hesap silmede PostHog kişi silme; yoksa atlanır): `pnpm supabase secrets set POSTHOG_PERSONAL_API_KEY=… POSTHOG_PROJECT_ID=…` (`POSTHOG_HOST` isteğe bağlı). `pnpm admin:ban` aynı değişkenleri ortamdan okur.
+- Event kataloğu ve izinli özellikler: `_shared/pure/analytics.ts`. PostHog'a yalnızca kullanıcı id'si gider.
+- Yasal taslaklar `docs/legal/` (hukuki kontrol gerekli), mağaza metinleri `docs/store/listing-tr.md`, EAS profilleri `apps/mobile/eas.json`.
 
 ### Mobil (Android fiziksel cihaz, USB hata ayıklama açık)
 1. `apps/mobile/.env` barındırılan dev projesini göstermeli (yukarıdaki 8. adım).
@@ -60,11 +73,12 @@ Node 22, pnpm 10, Docker (yerel Supabase için). Supabase CLI ve Deno root devDe
 1. İstemci hiçbir tabloya doğrudan yazmaz. Tüm yazmalar Edge Function üzerinden yapılır. İstemci okumaları RLS ile sınırlıdır. İstemcinin çağırdığı security definer RPC'ler yalnızca okur ve `set search_path = ''` ile tanımlanır. Yazan security definer fonksiyonlar istemciye kapalıdır (yalnızca service role).
 2. Her tabloda RLS açıktır. Yeni tablo, politikalarıyla aynı migration'da gelir.
 3. Oyun sunucu otoriterdir: tur süresi (`ends_at`), ipucu doğrulama, tahmin kontrolü ve skor sunucuda hesaplanır.
-4. Anonimlik: diğer masalara yalnızca masa takma adı, kişi sayısı ve konsept gider. Kullanıcı takma adı, profil bilgisi ve koordinat asla gitmez.
-5. Katılma isteğinde red ve zaman aşımı, istek sahibine birebir aynı görünür (`unavailable`). API yanıtı ve okunabilir satırlar dahil.
+4. Anonimlik: diğer masalara yalnızca masa takma adı, kişi sayısı ve konsept gider. Kullanıcı takma adı, profil bilgisi ve koordinat asla gitmez. Diğer masaların hesap kimliği istemciye asla gitmez. Masa oturum id'si, takma ad gibi check-in süresince geçerli bir takma kimliktir ve oda üyelerine gidebilir.
+5. Katılma isteğinde red ve zaman aşımı, istek sahibine birebir aynı görünür (`unavailable`). API yanıtı ve okunabilir satırlar dahil. Aynı ilke tanışmada: karşılıklı "Evet" dışındaki her sonuç (hayır, cevapsız, ayrılma) yalnızca `reveal_ends_at`'te açıklanır; "Evet" diyen taraf bunları satırlardan, lobiden, kanal olaylarından ya da zamanlamadan ayırt edemez. Pencere sırasında o odadaki masaların açtığı açık odalar `reveal_ends_at`'e kadar lobide görünmez ve lobi yayını üretmez.
 6. Konum yalnızca check-in anında, uygulama açıkken alınır. Koordinat saklanmaz, sadece seçilen `venue_id` saklanır.
 7. Metin eşleştirme ve küfür filtresi yalnızca `supabase/functions/_shared/pure/trText.ts` ve `pure/profanity.ts` üzerinden yapılır. Bu dosyalar bağımlılıksız saf TypeScript'tir, mobil uygulama ve Edge Function aynı dosyayı kullanır. Değişiklikte testler de güncellenir.
 8. Service role anahtarı mobil koda asla girmez.
+9. Realtime kanalları özeldir (`private: true`, sunucu yayınları dahil). Abone olma ve yayın yetkisi `realtime.messages` üzerindeki RLS politikalarıyla (`private.realtime_topic_allowed`) verilir: oda kanallarına yalnızca odanın iki masası, masa kanalına yalnızca o masa, lobi kanalına mekandaki masalar abone olur; lobi ve masa kanallarında yalnızca sunucu yayın yapar. Yeni kanal türü politikasıyla birlikte gelir.
 
 ## Kod kuralları
 - Kod, tablo ve değişken adları İngilizce. Kullanıcıya görünen metinler Türkçe ve `apps/mobile/src/i18n/tr.ts` içinde. Bileşenlerde sabit metin yok.

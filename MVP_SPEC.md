@@ -44,11 +44,13 @@ Aynı mekandaki insanların, konsept üzerine kurulu odalarda birlikte oyun oyna
 3. Kullanıcı takma adı yoktur: diğer kullanıcılara hiçbir şey gösterilmediği ve hiçbir akışta kullanılmadığı için MVP'den çıkarıldı. Diğer masalar yalnızca masa takma adını görür (§4.2).
 
 ### 4.2 Check-in ve masa
-1. Konum izni istenir (sadece "uygulama kullanılırken"). Arka planda konum takibi yok.
-2. Konum bir kez alınır. `nearby_venues` RPC'si 300 m içindeki mekanları mesafeye göre sıralı döner.
-3. Kullanıcı mekanı seçer. Sunucu mesafeyi tekrar kontrol eder (300 m). Koordinat saklanmaz. `checkin` fonksiyonu koordinatı loglamaz ve hata mesajlarında da döndürmez.
+1. Konum için açık rıza alınır (açıklama ekranı, ilk check-in'de `profiles.location_consent_at` ve `location_consent_version` yazılır; sürüm `draft-0`). Konum izni istenir (sadece "uygulama kullanılırken"). Arka planda konum takibi yok.
+2. Konum yüksek doğrulukla bir kez alınır. `nearby_venues` RPC'si 300 m içindeki mekanları mesafeye göre sıralı döner. Listenin altında "© OpenStreetMap katkıda bulunanlar" atfı görünür (ODbL).
+3. Kullanıcı mekanı seçer. Sunucu mesafeyi tekrar kontrol eder (katı 300 m; doğruluk payı yok). Koordinat saklanmaz. Yalnızca cihazın bildirdiği doğruluk yarıçapı (metre) `table_sessions.gps_accuracy_m` olarak saklanır; sahada eşiği ayarlamak için. `checkin` fonksiyonu koordinatı loglamaz ve hata mesajlarında da döndürmez.
+   - Kabul edilmiş risk: sahte GPS ile uzaktan check-in yapılabilir. Mekanda bulunmayı doğrulama (BLE) v2'de.
 4. Kişi sayısı girilir, masa oluşur, takma ad atanır. Takma ad `content/aliases-tr.json` içindeki sıfat ve hayvan listelerinden üretilir ve mekandaki aktif masalar arasında benzersizdir.
 5. Masa 4 saat sonra ya da kullanıcı "Mekandan ayrıl" dediğinde biter. Biten masanın odaları kapanır.
+6. Kullanıcının aynı anda tek aktif masası olur. Aktif masası varken yeniden check-in yaparsa eski masa biter (odaları kapanır) ve yenisi açılır.
 
 ### 4.3 Oda kurma ve lobi
 1. Masa, konsept (Tabu / Sohbet) ve görünürlük (Sadece masam / Mekana açık) seçerek oda kurar.
@@ -72,27 +74,30 @@ Aynı mekandaki insanların, konsept üzerine kurulu odalarda birlikte oyun oyna
 - 10 dakika hareketsiz kalan oda kapanır.
 
 ### 4.6 Oda sonu ve tanışma
-1. İki masalı bir oda biterken (Tabu bittiğinde ya da biri "Odayı bitir" dediğinde) iki masaya da "Tanışalım mı?" sorusu gelir. Süre 60 saniye.
-2. İki taraf da "Evet" derse iki ekranda aynı renk ve emoji 60 saniye tam ekran görünür: "Ekranını kaldır, birbirinizi bulun."
-3. Diğer tüm durumlarda (hayır, cevapsız) iki tarafa da "Güzel oyundu 👋" gösterilir ve lobiye dönülür. Kimin hayır dediği asla gösterilmez.
+1. "Tanışalım mı?" penceresi yalnızca iki masalı odada iki masadan biri "Odayı bitir" dediğinde açılır; iki masaya da soru gelir. Oyunun (Tabu) bitmesi pencereyi açmaz (§5.2). Süre 30 saniye. İlk cevap kesindir. Tek masalı oda "Odayı bitir" ile doğrudan kapanır.
+2. İki taraf da "Evet" derse sonuç hemen açıklanır: iki ekranda aynı renk ve emoji 60 saniye tam ekran görünür: "Ekranını kaldır, birbirinizi bulun."
+3. Diğer tüm durumlarda (hayır, cevapsız, pencere sırasında bir masanın ayrılması) sonuç, reddedilen katılma isteğindeki gibi yalnızca pencerenin sonunda (`reveal_ends_at`) açıklanır: iki tarafa da "Güzel oyundu 👋" gösterilir ve lobiye dönülür. Böylece "Evet" diyen masa, karşısındakinin "Hayır" mı dediğini, ayrıldığını mı yoksa hiç cevap mı vermediğini ne gördüğü satırlardan ne de zamanlamadan ayırt edebilir. Kimin hayır dediği asla gösterilmez.
+4. "Hayır" diyen ya da ayrılan masa kendi ekranını hemen kapatıp devam edebilir (yeni oda kurabilir, isteğe katılabilir). Oda diğer masa için pencere sonuna kadar `ending` durumunda kalır; `ending` oda masaları bağlamaz.
+5. Pencerenin iki masasının bu sırada kurduğu açık odalar eski odanın `reveal_ends_at`'ine kadar lobide görünmez ve lobi yayını (`lobby_changed`) üretmez; lobideki bekleme süreleri pencere sonundan sayılır. Özel oda ve tek masa oyunu serbesttir. Pencereyi kapatan `reveal/finalize` çağrısı lobiye bir kez `lobby_changed` yayınlar.
 
 ## 5. Konseptler
 
 ### 5.1 Tabu — tek masa (sesli)
 - Oda tek masalıyken oynanır. Tamamen istemci tarafında çalışır, sunucu yalnızca desteyi sağlar.
+- Puanlama: Doğru +1, Tabu −1, Pas 0 (sınırsız). Oyun mantığı saf reducer'dadır (`_shared/pure/localTabu.ts`); sunucu oda üyesine 120 kartlık deste verir.
 - Tek masa Tabu sürerken gelen katılma isteği kabul edilebilir. Kabulde yerel oyun biter; iki masalı oyun (§5.2) sıfırdan ve sunucu otoriter olarak başlar. Destenin istemcide kalmış olması sorun değildir: iki masalı oyun işbirliğidir, hile teşviki yoktur.
 - Kart: hedef kelime ve 5 yasak kelime. Tur 60 saniye. Butonlar: Doğru / Pas / Tabu.
 - İki takım (A/B) sırayla oynar. Varsayılan: takım başına 3 tur.
 
 ### 5.2 Tabu — iki masa (yazılı, işbirliği)
 - İki masa tek takımdır: ortak skor, süreye karşı. İşbirliği tanışmaya rekabetten daha iyi hizmet eder ve sabotaj teşviki yaratmaz.
-- Tur sırası: Masa A anlatır, Masa B tahmin eder, sonra roller değişir. Toplam 6 tur (her masa 3 kez anlatır), tur başı 60 saniye.
-- Anlatan masa hedef kelimeyi ve yasakları görür, ipucu yazar. İstemci gönderimden önce uyarır, sunucu son kararı verir. Yasak kelimeyi, hedef kelimeyi ya da bunların kökünü içeren ipucu reddedilir (ceza yok, sadece gönderilmez).
+- Oyunu oda sahibi başlatır. Tur sırası: Masa A (sahip) anlatır, Masa B tahmin eder, sonra roller değişir. Toplam 6 tur (her masa 3 kez anlatır), tur başı 60 saniye. Misafir çıkarsa oyun sıfırlanır.
+- Anlatan masa hedef kelimeyi ve yasakları görür, ipucu yazar (1–100 karakter). İpucu ve tahminlere küfür filtresi de uygulanır. İstemci gönderimden önce uyarır, sunucu son kararı verir. Yasak kelimeyi, hedef kelimeyi ya da bunların kökünü içeren ipucu reddedilir (ceza yok, sadece gönderilmez).
 - Tahmin eden masa ipucu akışını görür ve tahmin yazar. Doğru tahmin +1 puan getirir ve yeni kart gelir.
 - Tur başına en fazla 3 pas.
 - Kart kelimesi yalnızca anlatan masaya gider (Edge Function yanıtıyla). Oda durumunda (`game_state`) kart bilgisi tutulmaz. Tahmin eden masa kelimeyi ancak kart kapandığında görür.
 - Sunucu otoriterdir: kart seçimi, `ends_at`, ipucu doğrulama, tahmin kontrolü, skor.
-- Oyun sonunda ortak skor gösterilir, ardından §4.6.
+- Oyun sonunda ortak skor gösterilir; oda açık kalır. Oda sahibi "Tekrar oyna" ile yeni oyun başlatabilir (skor sıfırlanır). Oda "Odayı bitir" ile biter (§4.6).
 
 ### 5.3 Sohbet kartları
 - Tek ya da iki masalı odada oynanır. Deste temalara ayrılır: Isınma, Film/Dizi/Müzik, "Hiç … yaptın mı?", Derin.
@@ -102,26 +107,26 @@ Aynı mekandaki insanların, konsept üzerine kurulu odalarda birlikte oyun oyna
 ## 6. Türkçe metin eşleştirme (kritik modül)
 `supabase/functions/_shared/pure/trText.ts`: bağımlılıksız, saf TypeScript. Hem mobil uygulama (`@shared/*` alias'ı) hem Edge Function kullanır. Unit test (vitest) zorunlu.
 
-- `normalize(s)`: `toLocaleLowerCase('tr-TR')`, ardından Türkçe karakter katlama (ç→c, ğ→g, ı→i, ö→o, ş→s, ü→u), ardından harf ve rakam dışındaki her şeyi boşluğa çevirme.
+- `normalize(s, { fold })`: `toLocaleLowerCase('tr-TR')`, ardından Türkçe karakter katlama (ç→c, ğ→g, ı→i, ö→o, ş→s, ü→u; varsayılan açık, `fold: false` ile kapalı), ardından harf ve rakam dışındaki her şeyi boşluğa çevirme. Katlama yalnızca Tabu ipucu (`containsForbidden`) ve tahmin kontrolünde (`isCorrectGuess`) kullanılır.
 - `tokenize(s)`: boşluklardan böler. Ardışık tek harfli token dizilerini birleştirir ("d e n i z" → "deniz").
 - `containsForbidden(clue, words)`: hedef kelime ve her yasak kelime için kök = `normalize(kelime)`. Kök en az 4 harfse `token.startsWith(kök)` eşleşme sayılır. 4 harften kısaysa sadece tam eşleşme sayılır.
 - `isCorrectGuess(guess, target)`: normalize edilmiş tahmin hedefe eşitse ya da hedefle başlayıp en fazla 4 harf uzunsa doğrudur.
 - Zorunlu test vakaları: "denizde", "Denize", "DENİZ", "deniz'de", "d e n i z", "Ilık" / "ılık", "İstanbul" / "istanbul", "öğretmen" / "ogretmen", kısa kök yanlış pozitifi ("kar" yasakken "kara" eşleşmemeli).
 - Bilinen ödünleşim: 4 harften kısa köklerde ekli haller ("karda") yakalanmaz. MVP için kabul edilebilir.
 
-`profanity.ts`: `content/profanity-tr.json` listesi ve aynı `normalize` ile çalışır. Sohbete ve ipuçlarına uygulanır.
+`profanity.ts`: `content/profanity-tr.json` listesiyle çalışır. Sohbete, ipuçlarına ve tahminlere uygulanır. Metin tr-TR ile küçük harfe çevrilir ama Türkçe harfler **katlanmaz** (`normalize(s, { fold: false })`): katlama gündelik kelimeleri listedekilerle çakıştırır (şık/sık → sik, "got it" → göt). Türkçe harfli terimlerin çakışma yaratmayan ASCII yazımları (ör. "serefsiz", "amcik") listede ayrıca yer alır; çakışanlar ("pic", "got", "sikis") yer almaz. Eşleşme: `terms` içindeki 5 ve daha uzun harfli terimler ekli halleriyle; daha kısalar ve `wholeWords` içindekiler (gündelik bir kelimenin öneki olanlar: "ananı" / "ananın") yalnızca tam kelime olarak; çok kelimeli ifadeler kelime sınırında. Bir içerik testi gündelik cümle korpusunda ("şık", "sık", "sıkıcı", "sıkıldım", "ananın", "got it" dahil) yanlış pozitif olmadığını doğrular.
 
 Zamanlama: `normalize` ve `profanity.ts` ilk kez sohbette kullanıldığı için M4'te gelir; `tokenize`, `containsForbidden` ve `isCorrectGuess` M5'te.
 
 ## 7. Sohbet kuralları
-- Yalnızca oda içinde ve yalnızca odadaki masalar görür. Mesaj masa takma adıyla görünür.
+- Yalnızca oda içinde ve yalnızca odadaki masalar görür. Mesaj masa takma adıyla görünür. Yeni katılan misafir önceki misafirin mesajlarını görmez.
 - Mesaj en fazla 200 karakter. Masa başına saniyede en fazla 1 mesaj.
-- Gönderim `chat` Edge Function'ı üzerinden yapılır (küfür filtresi ve rate limit).
+- Gönderim `chat` Edge Function'ı üzerinden yapılır (küfür filtresi ve rate limit). Küfür içeren mesaj reddedilir, maskelenmez.
 - Oda kapandıktan 24 saat sonra mesajlar silinir (pg_cron). Şikayet edilen odanın son 50 mesajı şikayet kaydına kopyalanır ve 30 gün tutulur.
 
 ## 8. Güvenlik ve uyumluluk
 - **Şikayet:** Oda menüsünden yapılır. Sebep seçilir (Taciz, Uygunsuz içerik, Spam, Diğer). Son 50 mesajın kopyası eklenir.
-- **Engelleme:** Masa değil kullanıcı bazlıdır: engellenen, karşı masanın hesap sahibidir (masadaki diğer kişilerin hesabı yoktur). Takma adlar her check-in'de değiştiği için masa bazlı engelleme işe yaramaz. Görünmezlik iki yönlüdür.
+- **Engelleme:** Engelleyen masa odadan çıkar (sahibiyse oda kapanır). Ayarlardaki Engellenenler listesinde engelleme anındaki masa takma adı görünür ve engel kaldırılabilir. Liste ve engel kaldırma `blocks` satırının kendi id'siyle çalışır; engellenen hesabın id'si istemciye gitmez. Masa değil kullanıcı bazlıdır: engellenen, karşı masanın hesap sahibidir (masadaki diğer kişilerin hesabı yoktur). Takma adlar her check-in'de değiştiği için masa bazlı engelleme işe yaramaz. Görünmezlik iki yönlüdür.
 - **Ban:** Ban = hesabı silmek + telefon hash'ini tutmak; "banlı ama var olan hesap" durumu yoktur. Geliştirici makinesinden `pnpm admin:ban <userId>` ile yapılır (secret key ile). Script önce telefon numarasının sunucu tarafı gizli anahtarla (Supabase Vault) alınmış HMAC hash'ini `banned_phones` tablosuna yazar (`record_banned_phone`, yalnızca service role çağırabilir), sonra `auth.admin.deleteUser` ile hesabı siler; silme cascade ile tüm veriyi götürür. Silinen kullanıcının henüz süresi dolmamış erişim token'ı `auth.getUser`'da reddedilir. `before_user_created` auth hook'u aynı numarayla yeni kaydı reddeder. Hook desteklenmeyen ve banlı numaralara aynı yanıtı döner (`signup_not_allowed`); uygulama yalnızca "Bu numarayla devam edilemiyor." gösterir, ban nedenini açıklamaz. Veritabanı kodu `auth` şemasına yazmaz.
   - Bilinen kısıt: HMAC anahtarı tektir ve rotasyonu yoktur. Anahtar değişirse mevcut hash'ler geçersiz olur.
 - **Hesap silme:** Kullanıcının tüm verisi silinir. Ban sonrasında geriye kalan tek veri telefon hash'idir; güvenlik amacıyla tutulduğu aydınlatma metninde belirtilir (M7). `reports.reporter_id` ve `reports.reported_user_id` `ON DELETE SET NULL`'dır; şikayet kaydı ve mesaj kopyası 30 gün sonunda yine silinir.
@@ -148,7 +153,8 @@ Zamanlama: `normalize` ve `profanity.ts` ilk kez sohbette kullanıldığı için
 │  ├─ config.toml
 │  ├─ migrations/
 │  ├─ seed.sql               scripts/ tarafından üretilir
-│  ├─ seed.local.sql         yalnızca yerel dev sırları (Vault anahtarı), barındırılan projede çalışmaz
+│  ├─ local/secrets.sql      yalnızca yerel dev sırları (Vault anahtarı); seed yolunda değil, `pnpm db:reset`
+│  │                         uygular ve yerel olmayan DB'yi reddeder
 │  ├─ tests/                 entegrasyon testleri (vitest, yerel stack'e karşı)
 │  └─ functions/
 │     ├─ _shared/            deps.ts (sabit sürümlü npm: import'ları), http.ts, auth.ts,
@@ -164,29 +170,35 @@ Zamanlama: `normalize` ve `profanity.ts` ilk kez sohbette kullanıldığı için
 │     └─ account/            complete-onboarding, register-push, delete
 ├─ content/                  tabu-cards.json, sohbet-cards.json, profanity-tr.json, venues-pilot.json,
 │                            aliases-tr.json
-└─ scripts/                  içerikten seed üretimi (seed.sql commit'lenir)
+└─ scripts/                  içerikten seed üretimi (seed.sql commit'lenir), fetch-venues (Overpass),
+                             admin-ban, apply-local-secrets
 ```
 
 ### Veri modeli
 ```
 profiles          id (= auth.users.id), push_token,
                   age_confirmed_at, terms_accepted_at, terms_version,
-                  kvkk_accepted_at, kvkk_version, location_consent_at, created_at
-                  (push_token M3'te, location_consent_at M2'de kendi migration'ıyla gelir;
+                  kvkk_accepted_at, kvkk_version, location_consent_at,
+                  location_consent_version, created_at
+                  (push_token M3'te kendi migration'ıyla gelir;
                    profil satırı onboarding tamamlanınca account/complete-onboarding ile oluşur)
 venues            id, name, city, district, location geography(Point),
                   source, source_ref, is_active
+alias_words       kind (adjective|animal), word           (aliases-tr.json'dan seed; yalnızca sunucu okur)
 table_sessions    id, user_id, venue_id, alias, headcount, status (active|ended),
-                  created_at, expires_at
-rooms             id, venue_id, owner_session_id, guest_session_id (nullable),
-                  concept (tabu|sohbet), visibility (private|open),
+                  gps_accuracy_m, created_at, expires_at, ended_at
+rooms             id, venue_id, owner_session_id, owner_alias, owner_headcount,
+                  guest_session_id (nullable), guest_alias, guest_headcount,
+                  concept (tabu|sohbet), visibility (private|open), waiting_since, guest_joined_at,
                   status (waiting|active|ending|closed), game_state jsonb,
                   reveal_result (null|mutual|none), reveal_token jsonb, reveal_ends_at,
                   last_activity_at, created_at, closed_at
-join_requests     id, room_id, requester_session_id,
-                  status (pending|accepted|declined|expired), created_at, expires_at
-messages          id, room_id, session_id, body, created_at
-cards             id, deck (tabu|sohbet), theme, word, forbidden text[], prompt, is_active
+join_requests     id, room_id, requester_session_id, requester_alias, requester_headcount,
+                  status (pending|accepted|declined|expired), created_at, expires_at, responded_at
+messages          id, room_id, session_id, sender_alias, body, created_at
+profanity_terms   term, whole_word                         (profanity-tr.json'dan seed; yalnızca sunucu okur)
+cards             id, deck (tabu|sohbet), source_key, theme, word, forbidden text[], prompt, is_active
+room_used_cards   room_id, card_id                         (sunucu; aynı odada kart tekrarını önler)
 tabu_turns        id, room_id, turn_no, describer_session_id, card_id,
                   started_at, ends_at, passes_used, score
 game_events       id, room_id, turn_id, session_id,
@@ -195,7 +207,8 @@ reveal_decisions  room_id, session_id, wants_meet, created_at   PK (room_id, ses
 reports           id, reporter_id (null, ON DELETE SET NULL),
                   reported_user_id (null, ON DELETE SET NULL), room_id, reason,
                   messages_snapshot jsonb, status, created_at
-blocks            blocker_id, blocked_id, created_at            PK (blocker_id, blocked_id)
+blocks            id (unique), blocker_id, blocked_id, blocked_alias, created_at
+                  PK (blocker_id, blocked_id); istemci yalnızca id, blocked_alias, created_at okur
 banned_phones     phone_hash (HMAC, sunucu gizli anahtarı) PK, created_at
                   (ban = hash + hesap silme; hesaba bağlı değildir, silmeden etkilenmez)
 ```
@@ -205,28 +218,33 @@ banned_phones     phone_hash (HMAC, sunucu gizli anahtarı) PK, created_at
 - İstemcinin çağırdığı security definer RPC'ler (`nearby_venues`, `venue_lobby`) yalnızca okur ve `set search_path = ''` ile tanımlanır. Yazan security definer fonksiyonlar (ör. `record_banned_phone`) istemciye kapalıdır; yalnızca service role çalıştırabilir.
 - `venues`: kimliği doğrulanmış herkes okuyabilir.
 - `profiles`, `table_sessions`: sadece kendi satırı.
-- Lobi, tablo okumasıyla değil `venue_lobby(venue_id)` RPC'siyle gelir (security definer). Yalnızca güvenli kolonları döner (oda id, masa takma adı, kişi sayısı, konsept, bekleme süresi) ve engellemeleri filtreler.
-- `rooms`, `messages`, `game_events`: sadece odadaki masaların sahibi okur.
-- `tabu_turns`: odadakiler okur ama `card_id` kolonu istemciye açılmaz (view üzerinden). Kart kelimesi yalnızca `tabu/current-card` ile anlatana gider.
+- Lobi, tablo okumasıyla değil `venue_lobby(venue_id)` RPC'siyle gelir (security definer). Yalnızca güvenli kolonları döner (oda id, masa takma adı, kişi sayısı, konsept, bekleme süresi) ve engellemeleri filtreler. Sahibi süresi dolmamış bir tanışma penceresindeki masaysa oda listelenmez (§4.6).
+- `rooms`, `messages`, `game_events`: sadece odadaki masaların sahibi okur. Misafir, odaya katıldığı andan (`guest_joined_at`) önceki mesajları okuyamaz.
+- `reports`: istemciye tamamen kapalı. `blocks`: engelleyen kendi satırlarının yalnızca `id`, `blocked_alias`, `created_at` kolonlarını okur (kolon yetkisi); `blocked_id` istemciye gitmez.
+- `tabu_turns`: istemciye tamamen kapalı. Herkese açık tur durumu `rooms.game_state`'tedir (tur, anlatan masa, `turnEndsAt`, pas, ortak skor; kart bilgisi yok). Kart kelimesi yalnızca `tabu/current-card` ile anlatana gider, herkese yalnızca `card_closed` olayında görünür.
 - `cards`: `sohbet` destesi okunabilir. `tabu` destesi istemciye kapalı; tek masa modu desteyi `tabu/start` üzerinden alır.
-- `join_requests`: istek sahibi `declined` ve `expired` durumlarını `unavailable` olarak görür (view). Oda sahibi kendi odasına gelen istekleri görür.
+- `join_requests`: ham satırları yalnızca oda sahibi okur. İstek sahibi yalnızca `my_join_requests` view'ını okur: kabul hemen `accepted` görünür; red ya da cevapsızlık `expires_at`'e kadar `pending`, sonra `unavailable` görünür (red de 60 sn dolana kadar ayırt edilemez). Red hiçbir yayın, push ya da yanıt alanı üretmez.
+- Masa takma adları ve kişi sayıları `rooms` ve `join_requests` satırlarına kopyalanır; üyeler birbirinin `table_sessions` satırını okumaz.
+- Oda durum geçişleri yalnızca service role'ün çağırdığı SQL fonksiyonlarındadır (`rooms_create`, `rooms_request_join`, `rooms_respond`, `rooms_leave`, `rooms_end`).
 - `reveal_decisions`: sadece kendi kararı. Sonuç `rooms.reveal_result` ve `reveal_token` alanlarıyla gelir.
 
 ### Realtime
-- **Lobi:** Edge Function'lar `venue:{id}` kanalına veri içermeyen `lobby_changed` yayını yapar. İstemci bunu duyunca `venue_lobby` RPC'sini yeniden çağırır. Lobi verisi Realtime üzerinden taşınmaz.
-- **Oda:** `rooms`, `messages` ve `game_events` için `room_id` filtreli Postgres Changes (RLS geçerli). Aynı kanalda presence ile bağlantısı kopan masa tespit edilir.
-- **Katılma isteği:** Oda sahibine `session:{id}` kanalından yayın, uygulama arka plandaysa push.
+- **Tüm kanallar özeldir** (`private: true`). Kimin abone olabileceğine ve yayın yapabileceğine `realtime.messages` üzerindeki RLS politikaları karar verir (`private.realtime_topic_allowed`). Barındırılan projede public kanallar kapalıdır.
+- **Lobi:** Edge Function'lar `venue:{id}` kanalına veri içermeyen `lobby_changed` yayını yapar. İstemci bunu duyunca `venue_lobby` RPC'sini yeniden çağırır. Lobi verisi Realtime üzerinden taşınmaz. Kanala yalnızca mekanda aktif masası olanlar abone olur; yalnızca sunucu yayın yapar.
+- **Oda:** `rooms`, `messages` ve `game_events` için `room_id` filtreli Postgres Changes (RLS geçerli), ayrıca `presence:{room_id}` ile bağlantısı kopan masa tespit edilir. Oda kanallarına (`room:`, `messages:`, `game:`, `presence:`) yalnızca odanın iki masası abone olur ve yayın yapar.
+- **Katılma isteği:** Oda sahibine `session:{id}` kanalından veri içermeyen `join_request` yayını; kabulde istek sahibine `join_accepted`. Kanala yalnızca o masa abone olur, yalnızca sunucu yayın yapar. Red yayın üretmez. Uygulama öndeyken sistem bildirimi gösterilmez.
 
 ### Zamanlama
 - Tur süresi sunucuda `ends_at` olarak tutulur. İstemci geri sayımı buna göre gösterir. `ends_at` sonrasında gelen ipucu ya da tahmin reddedilir.
 - Tur geçişi: geri sayım bittiğinde herhangi bir istemci `tabu/end-turn` çağırır. Sunucu süreyi kontrol eder, işlem idempotenttir. Cron gerekmez.
-- Oda sonu: "Tanışalım mı?" penceresi açılınca oda `ending` durumuna geçer ve `reveal_ends_at` set edilir. İki karar da gelince `reveal/decide` odayı hemen kapatır. Gelmezse süre bitiminde herhangi bir istemci `reveal/finalize` çağırır (`tabu/end-turn` gibi idempotent). pg_cron yalnızca güvenlik ağıdır.
+- Oda sonu: "Tanışalım mı?" penceresi açılınca oda `ending` durumuna geçer ve `reveal_ends_at` set edilir. Yalnızca iki "Evet" gelince `reveal/decide` odayı hemen kapatır (`mutual`). Diğer her durumda oda `reveal_ends_at`'e kadar `ending` kalır ve oda satırı değişmez; ayrılma, masa bitirme ya da engelleme `ending` odayı erken kapatmaz. Süre bitiminde herhangi bir istemci `reveal/finalize` çağırır (`tabu/end-turn` gibi idempotent; öncesinde hiçbir şey yapmaz). pg_cron yalnızca güvenlik ağıdır ve süresi geçen `ending` odaları kapatır. `ending` oda masaları bağlamaz.
 - pg_cron (her dakika): hareketsiz odaları kapat, süresi dolan masaları bitir, süresi dolan istekleri `expired` yap, süresi geçmiş `ending` odaları kapat. Saatlik: mesaj temizliği.
 
 ### Push
 - Expo push token `account/register-push` ile kaydedilir (M3).
 - Bildirim izni ilk anlamlı anda istenir: açık oda kurarken ya da katılma isteği gönderirken. Onboarding'de istenmez.
-- Gönderim Edge Function'dan Expo push API'sine yapılır. İki olay var: oda sahibine katılma isteği, istek sahibine kabul.
+- Gönderim Edge Function'dan Expo push API'sine yapılır, en iyi çabayla (başarısızlık isteği bozmaz). İki olay var: oda sahibine katılma isteği, istek sahibine kabul. Metinler `_shared/pure/push.ts` içinde.
+- Yapılandırma env'den: `EAS_PROJECT_ID` yoksa token kaydı sessizce atlanır; `google-services.json` yoksa Android build'e eklenmez. Build hiçbir koşulda bu hesaplara bağlı değildir.
 
 ## 10. Ekranlar
 1. **Onboarding:** Telefon, OTP, 18+ ve onaylar.
@@ -236,19 +254,27 @@ banned_phones     phone_hash (HMAC, sunucu gizli anahtarı) PK, created_at
 5. **Oda:** Başlıkta konsept ve masa takma adları. Ortada konsept alanı. Altta açılıp kapanan sohbet. Menü: Çık, Şikayet et, Engelle, Odayı bitir.
 6. **Tabu (tek masa):** Kart, geri sayım, Doğru / Pas / Tabu, takım skorları.
 7. **Tabu (iki masa):** Anlatan için kelime, yasaklar ve ipucu girişi (yasak kelimede anlık uyarı). Tahmin eden için ipucu akışı ve tahmin girişi. Ortak skor, geri sayım, tur bilgisi.
-8. **Oda sonu:** Skor (varsa), "Tanışalım mı?" Evet / Hayır. Eşleşme olursa tam ekran renk ve emoji, olmazsa "Güzel oyundu" ve lobiye dönüş.
+8. **Oda sonu:** "Tanışalım mı?" Evet / Hayır, 30 saniyelik geri sayım. "Hayır" diyen hemen "Güzel oyundu" ve lobiye dönüş görür. "Evet" diyen pencere sonunu bekler (karşılıklı Evet'te hemen): eşleşme olursa tam ekran renk ve emoji, olmazsa "Güzel oyundu" ve lobiye dönüş.
 9. **Profil ve ayarlar:** Engellenenler, gizlilik politikası, iletişim, çıkış, hesabı sil.
 
 ## 11. İçerik
-- `tabu-cards.json`: en az 500 kart, format `{ word, forbidden: [5] }`. Yasaklar tek kelime olmalı ve hedefle aynı kökten gelmemeli. Argo ya da cinsel içerik yok.
-- `sohbet-cards.json`: en az 150 kart, 4 temaya dağılmış.
-- `venues-pilot.json`: pilot bölgedeki mekanlar (ad, koordinat, ilçe). Google Places ya da OpenStreetMap'ten tek seferlik çekilir ve elle kontrol edilir. Çalışma anında harita API'si çağrılmaz.
+- `tabu-cards.json`: en az 500 kart, format `{ cards: [{ word, forbidden: [5] }] }`. Yasaklar tek kelime olmalı ve hedefle aynı kökten gelmemeli (içerik testi: normalize edilmiş ortak önek 4 harfe ya da kısa kelimenin uzunluğuna ulaşmamalı). Argo ya da cinsel içerik yok.
+- `sohbet-cards.json`: en az 150 kart, 4 temaya dağılmış (`isinma`, `film-dizi-muzik`, `hic-yaptin-mi`, `derin`; her birinde en az 30).
+- Kartlar `(deck, source_key)` ile upsert edilir; JSON'dan çıkarılan kart silinmez, pasifleşir.
+- `venues-pilot.json`: pilot bölgedeki (İstanbul Beylikdüzü) mekanlar (ad, koordinat, ilçe). `pnpm fetch:venues` OpenStreetMap Overpass API'den `amenity=cafe` ve `amenity=hookah_lounge` kayıtlarını tek seferlik çeker; elle kontrol edilir (`is_active: false` ile kapatılabilir). Çalışma anında harita API'si çağrılmaz. OSM verisi ODbL lisanslıdır: atıf check-in listesinde (M2) ve hakkında ekranında (M7) gösterilir.
+- Testler gerçek mekan verisi kullanmaz: `supabase/tests/fixtures/venues.ts`, sabit bir çapa noktasından (41.0000, 28.6400) hesaplanmış mesafelerde sahte mekanlar içerir.
 - `profanity-tr.json`: Türkçe küfür ve hakaret listesi.
-- `aliases-tr.json`: masa takma adları için sıfat ve hayvan listeleri (`{ adjectives: [], animals: [] }`).
+- `aliases-tr.json`: masa takma adları için sıfat ve hayvan listeleri (`{ adjectives: [], animals: [] }`). Sıfatlar olumlu ya da nötr; Türkçede hakaret olarak kullanılan hayvanlar (domuz, eşek, öküz, it, köpek, inek, maymun, ayı, keçi vb.) yok; hiçbir birleşim alay ya da hakaret gibi okunmaz.
 - İçerik Claude ile üretilir, elle ayıklanır ve seed script'iyle yüklenir.
 
 ## 12. Analitik
 **Event'ler:** `onboarding_completed`, `check_in`, `room_created {concept, visibility}`, `join_requested`, `join_accepted`, `join_unavailable`, `room_two_tables`, `game_completed {concept, score}`, `reveal_mutual`, `reveal_none`, `report_submitted`, `block_created`, `session_ended {duration_min}`.
+
+**Uygulama:**
+- `posthog-react-native`, anahtar env'den (`EXPO_PUBLIC_POSTHOG_KEY`); yoksa hiçbir şey gönderilmez. AB sunucusu, GeoIP kapalı, oturum kaydı ve otomatik yaşam döngüsü event'leri kapalı, kişi profili yalnızca `identify` ile (kullanıcı id'si).
+- Event'lerin izinli özellikleri `_shared/pure/analytics.ts`'te tanımlıdır; listede olmayan özellik gönderilmez.
+- Oda başına sayılan event'ler (`room_two_tables`, iki masalı `game_completed`, `reveal_mutual`, `reveal_none`) yalnızca oda sahibinin telefonundan gider; `join_accepted` ve `join_unavailable` istek sahibinden; aynı olay bir çalıştırmada bir kez gönderilir.
+- Hesap silme ve ban, fonksiyon sırları tanımlıysa PostHog kişi kaydını ve event'lerini de siler.
 
 **Metrikler:**
 - **Açık oda oranı** (en kritik) = `open` oda kuran masalar / check-in yapan masalar
@@ -269,8 +295,8 @@ Kapsam: telefon OTP, onaylar (yer tutucu metinler, sürüm `draft-0`), hesap sil
 Kabul: test numarasıyla giriş yapılabiliyor. Onaylar zaman damgası ve metin sürümüyle kayıtlı. Hesap silme kullanıcının tüm verisini siliyor. Türkiye'ye gerçek SMS teslimatı denendi.
 
 **M2 — Mekan ve masa**
-Kapsam: `nearby_venues`, `checkin` fonksiyonu, takma ad üretimi (`aliases-tr.json`), masa süresi.
-Kabul: pilot seed ile 300 m listesi doğru. 300 m dışından check-in reddediliyor. Koordinat hiçbir tabloda saklanmıyor.
+Kapsam: `nearby_venues`, `checkin` fonksiyonu, takma ad üretimi (`aliases-tr.json`), masa süresi, konum rızası, `pnpm fetch:venues`. Doğrulama container'da birim ve entegrasyon testleriyle; cihaz testi M3 öncesinde.
+Kabul: test fixture'ıyla 300 m listesi doğru. 300 m dışından check-in reddediliyor. Koordinat hiçbir tabloda saklanmıyor.
 
 **M3 — Oda, lobi ve katılma isteği**
 Kapsam: `rooms` fonksiyonu, `venue_lobby` RPC, lobi yayını, 60 saniyelik istek akışı, push (`eas init`, Firebase/FCM, bildirim izni, `account/register-push`, gönderim), engelleme filtresi.
@@ -285,8 +311,8 @@ Kapsam: önce `trText.ts`'in kalanı (`tokenize`, `containsForbidden`, `isCorrec
 Kabul: §6'daki tüm test vakaları geçiyor. İki cihazda iki masalı Tabu baştan sona oynanabiliyor. Tahmin eden cihaz ağ trafiğinde kart kelimesini kart kapanmadan görmüyor.
 
 **M6 — Oda sonu ve tanışma**
-Kapsam: `reveal` fonksiyonu (`decide`, `finalize`), 60 saniyelik karar penceresi (`reveal_ends_at`), tam ekran sinyal.
-Kabul: yalnızca karşılıklı "Evet"te sinyal görünüyor. Diğer durumlarda iki taraf aynı ekranı görüyor.
+Kapsam: `reveal` fonksiyonu (`decide`, `finalize`), 30 saniyelik karar penceresi (`reveal_ends_at`), tam ekran sinyal.
+Kabul: yalnızca karşılıklı "Evet"te sinyal görünüyor. Diğer durumlarda iki taraf aynı ekranı görüyor; "Evet" diyen taraf "Hayır", cevapsızlık ve ayrılmayı ne satırlardan ne zamanlamadan ayırt edemiyor.
 
 **M7 — Analitik ve mağaza**
 Kapsam: PostHog event'leri (PostHog'a yalnızca kullanıcı id'si gider; telefon ya da başka kişisel veri gitmez; hesap silmede PostHog kişi kaydı da API ile silinir), gerçek Kullanım Koşulları / KVKK / gizlilik metinleri (banlanan numaranın hash'inin güvenlik amacıyla tutulduğu belirtilir), mağaza metinleri, EAS build, iOS build, TestFlight ve Play dahili test.
@@ -296,6 +322,6 @@ Tahmini süre: tek geliştirici ve Claude Code ile yaklaşık 8 hafta. Ardından
 
 ## 14. Açık kararlar
 - Uygulama adı
-- Pilot bölgesi ve mekan listesi
+- Pilot mekan listesi: bölge İstanbul Beylikdüzü; liste `pnpm fetch:venues` ile pilottan önce üretilip elle kontrol edilecek.
 - Kullanım Koşulları ve KVKK aydınlatma metinleri: M1'de yer tutucu (`draft-0`); gerçek metinler ve hukuki kontrol pilot öncesinde (M7).
 - Yurt dışı veri aktarımı: Supabase'in Türkiye bölgesi yok. Pilot öncesi KVKK kapsamında hukuki görüş alınacak.

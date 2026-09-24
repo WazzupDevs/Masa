@@ -8,6 +8,9 @@ export type CompleteOnboardingRequest = {
 
 export type DeleteAccountRequest = { action: 'delete' };
 
-export type AccountRequest = CompleteOnboardingRequest | DeleteAccountRequest;
+// null clears the token (sign-out).
+export type RegisterPushRequest = { action: 'register-push'; token: string | null };
+
+export type AccountRequest = CompleteOnboardingRequest | DeleteAccountRequest | RegisterPushRequest;
 
 export type AccountResponse = { ok: true };

@@ -13,7 +13,7 @@ export function useProfile() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('terms_version, kvkk_version')
+        .select('terms_version, kvkk_version, location_consent_version')
         .maybeSingle();
       if (error) throw error;
       return data;

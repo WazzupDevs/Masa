@@ -132,6 +132,9 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.117.1
         version: 2.117.1
+      postgres:
+        specifier: ^3.4.9
+        version: 3.4.9
     devDependencies:
       '@types/node':
         specifier: ^22.18.0

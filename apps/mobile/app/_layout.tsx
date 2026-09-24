@@ -9,6 +9,7 @@ import { ActivityIndicator, View } from 'react-native';
 
 import { useProfile } from '@/features/account/useProfile';
 import { startSessionSync, useSessionStore } from '@/features/auth/session';
+import { configureNotifications } from '@/features/push/push';
 import { queryClient } from '@/lib/queryClient';
 
 function RootNavigator() {
@@ -42,7 +43,10 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
-  useEffect(startSessionSync, []);
+  useEffect(() => {
+    startSessionSync();
+    configureNotifications();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

@@ -8,7 +8,10 @@
     "platforms": ["android", "ios"],
     "ios": {
       "bundleIdentifier": "app.masa.mobile",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "app.masa.mobile"

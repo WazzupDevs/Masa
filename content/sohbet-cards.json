@@ -1,0 +1,644 @@
+{
+  "cards": [
+    {
+      "theme": "isinma",
+      "prompt": "Bugün seni en çok ne güldürdü?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Hafta sonu için ideal planın ne?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Sabah insanı mısın, gece kuşu mu?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Çay mı, kahve mi? Neden?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "En sevdiğin mevsim hangisi?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Şu an canın ne yemek istiyor?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Telefonundaki en çok kullandığın uygulama hangisi?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Çocukken en sevdiğin oyun neydi?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Bir süper gücün olsa ne olurdu?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Tatilde deniz mi, dağ mı?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "En sevdiğin sokak lezzeti ne?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Bu mekana ilk kez mi geldin?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Evcil hayvanın var mı, olsa ne olurdu?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "En son neye çok şaşırdın?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Bir gün başka bir şehirde yaşayacak olsan neresi olurdu?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Kahvaltıda olmazsa olmazın ne?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Gidip görmek istediğin ilk ülke hangisi?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "En sevdiğin renk hangisi, neden?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Tatlı mı, tuzlu mu?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Bir günlüğüne başka bir meslek yapsan ne olurdu?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Son zamanlarda öğrendiğin ilginç bir bilgi ne?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "En sevdiğin bayram yemeği hangisi?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Hangi hayvanın dilini konuşabilmek isterdin?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Kışın en sevdiğin aktivite ne?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Yazın vazgeçemediğin şey ne?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Bir yemeği hayatın boyunca yiyecek olsan hangisi olurdu?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Bugün yaptığın en iyi şey ne?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Hangi el becerisini öğrenmek isterdin?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Masadakilerle nasıl tanıştın?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "İlk işin neydi?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Hangi emoji seni en iyi anlatır?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "En sevdiğin masa oyunu hangisi?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Bir haftalık tatil kazansan nereye giderdin?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Doğum gününü nasıl kutlamayı seversin?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Hangi zamanda yaşamak isterdin: geçmiş mi, gelecek mi?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Şehirde en sevdiğin yer neresi?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "En son hangi yemeği kendin yaptın?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Seni sakinleştiren şey ne?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Hangi sporu izlemeyi seversin?"
+    },
+    {
+      "theme": "isinma",
+      "prompt": "Bugün hava olsaydın nasıl bir hava olurdun?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Tekrar tekrar izleyebileceğin film hangisi?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Son izlediğin dizi neydi, tavsiye eder misin?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Bir filmin içinde yaşayabilsen hangisini seçerdin?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Çocukluğunun çizgi filmi hangisi?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "En son hangi şarkıyı dilinden düşüremedin?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Konserine gitmek istediğin sanatçı kim?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Karaoke şarkın hangisi?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Hayatının film müziği olsa hangi şarkı olurdu?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Seni en çok ağlatan film hangisi?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Bir dizi karakteriyle bir gün geçirebilsen kim olurdu?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Hangi filmin sonunu değiştirmek isterdin?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Korku filmi izler misin?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "En sevdiğin Türk filmi hangisi?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Yolculukta dinlediğin şarkılar neler?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Bir müzik aleti çalıyor musun, çalmak ister miydin?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Hangi film seni en çok güldürdü?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "En sevdiğin Yeşilçam oyuncusu kim?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Dizi mi, film mi?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Bir filmi kitabından önce mi izlersin, sonra mı?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Hangi şarkı seni hemen iyi hissettirir?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "En son gittiğin konser hangisiydi?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Bir belgesel önerin var mı?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Hangi dizinin devam etmesini isterdin?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Çocukken ezbere bildiğin şarkı hangisi?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Bir filmde rol alsan hangi karakteri oynardın?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "En sevdiğin film repliği ne?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Hangi müzik türünü hiç sevemedin?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Sinemada mı izlemeyi seversin, evde mi?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Hangi animasyon filmi büyükler için de güzel?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Bir şarkının sözlerini yanlış mı bildiğin oldu?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Kendi hayatını anlatan bir dizinin adı ne olurdu?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "En sevdiğin film müziği hangisi?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Hangi serinin ilk filmi hepsinden iyiydi?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Yabancı dizi mi, yerli dizi mi?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "En uzun süre bağımlı olduğun dizi hangisi?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Hangi şarkıcıyla düet yapmak isterdin?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Sabah uyanınca hangi şarkıyı duymak istersin?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Hangi film seni bir yere seyahat etmeye özendirdi?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Radyoda en çok dinlediğin program hangisiydi?"
+    },
+    {
+      "theme": "film-dizi-muzik",
+      "prompt": "Bir filmin kötü karakterini sevdiğin oldu mu?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç tek başına seyahat ettin mi?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç bir yarışmaya katıldın mı?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç yıldızların altında uyudun mu?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç bir hayvanı sahiplendin mi?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç sahneye çıktın mı?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç ünlü biriyle karşılaştın mı?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç bir yemeği tamamen yaktın mı?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç yanlış otobüse bindin mi?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç gün doğumunu izlemek için erken kalktın mı?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç bir dil öğrenmeye başlayıp bıraktın mı?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç kaybolduğun bir şehir oldu mu?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç uçaktan paraşütle atlamayı düşündün mü?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç kendi sebzeni yetiştirdin mi?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç bir maratonda koştun mu?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç sabaha kadar kitap okudun mu?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç bir yabancıyla uzun bir sohbete daldın mı?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç bir fotoğrafta tanımadığın biriyle poz verdin mi?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç bir filmi sinemada tek başına izledin mi?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç balık tuttun mu?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç kamp yaptın mı?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç bir şarkıyı sahnede söyledin mi?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç gönüllü olarak bir işte çalıştın mı?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç sıfırdan bir şey inşa ettin mi?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç bir sınavı son gece çalışarak geçtin mi?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç bir sürpriz parti düzenledin mi?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç birine mektup yazdın mı?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç bir dağın zirvesine çıktın mı?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç kar tatiline gittin mi?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç bir yemek yarışmasında jüri olmak istedin mi?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç bisikletle uzun bir tura çıktın mı?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç bir oyunda sabaha kadar kaldın mı?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç yağmurda bilerek ıslandın mı?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç bir anda plan yapıp yola çıktın mı?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç bir tabloyu saatlerce izledin mi?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç bir bitkiyi yıllarca yaşattın mı?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç tanımadığın birinin hayatını kolaylaştırdın mı?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç bir konserde en önde durdun mu?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç bir şehrin tüm müzelerini gezdin mi?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç kendi doğum günü pastanı yaptın mı?"
+    },
+    {
+      "theme": "hic-yaptin-mi",
+      "prompt": "Hiç bir sokak hayvanıyla arkadaş oldun mu?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Seni en çok ne motive eder?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Beş yıl sonra kendini nerede görüyorsun?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Hayatındaki en iyi kararı ne zaman verdin?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Küçükken büyüyünce ne olmak istiyordun?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Bir arkadaşta en çok hangi özelliğe değer verirsin?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Seni en çok ne gururlandırdı?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Birine verdiğin en iyi tavsiye neydi?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Aldığın en iyi tavsiye neydi?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Hangi alışkanlığını değiştirmek isterdin?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Mutlu olduğunu nasıl anlarsın?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Hayatında dönüm noktası olan bir an var mı?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "En çok neye zaman ayırmak isterdin?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "On yaşındaki haline ne söylemek isterdin?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Sence iyi bir gün neye benzer?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Hangi konuda fikrini değiştirdin?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Bir yeteneği anında öğrenebilsen ne olurdu?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Seni en çok kim etkiledi?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Dünyada bir şeyi değiştirebilsen ne olurdu?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Hangi an için zamanı durdurmak isterdin?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Kendinde en sevdiğin özellik ne?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Sence arkadaşlığı güçlü yapan şey ne?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Bir gün hiçbir sorumluluğun olmasa ne yapardın?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Seni en çok ne şaşırtır?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Hangi küçük şeyler gününü güzelleştirir?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Bir yıl boyunca yalnızca bir hobiye odaklansan hangisi olurdu?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Hayatta ertelediğin bir hayal var mı?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Seni en iyi anlatan kelime ne?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Hangi şehir sana kendini evinde hissettiriyor?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Başkalarından öğrendiğin en değerli şey ne?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Unutmak istemediğin bir anı var mı?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Yaşlandığında nasıl biri olmak istersin?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Seni en çok ne rahatlatır?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "En çok hangi konuda meraklısın?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Bir kitap yazsan konusu ne olurdu?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Hangi başarı sana en çok emek verdirdi?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Senin için başarı ne demek?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Birinin sana yaptığı en güzel iyilik neydi?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Hangi değerin senin için vazgeçilmez?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Hayatına eklemek istediğin bir alışkanlık var mı?"
+    },
+    {
+      "theme": "derin",
+      "prompt": "Bugünü bir cümleyle anlatsan ne derdin?"
+    }
+  ]
+}
