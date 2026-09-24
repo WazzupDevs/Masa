@@ -81,6 +81,37 @@ export function parseVenuesFile(json: unknown): VenuesFile {
   return { attribution, source, fetchedAt, venues };
 }
 
+// content/venues-test.json: hand-entered venues for field tests (source 'test'). Only `ref`, `name`,
+// `lat` and `lng` are required; an empty list (or no file) adds nothing to the seed.
+export function parseTestVenues(json: unknown): VenueRecord[] {
+  if (!isRecord(json) || !Array.isArray(json.venues)) {
+    throw new Error('venues-test.json must have a venues list');
+  }
+  const venues = json.venues.map((value: unknown, i: number) => {
+    const where = `venues-test.json venues[${i}]`;
+    if (!isRecord(value)) throw new Error(`${where} must be an object`);
+    const { ref, name, city = 'İstanbul', district = 'Test', isActive = true } = value;
+    return parseVenue(
+      {
+        name,
+        city,
+        district,
+        lat: value.lat,
+        lng: value.lng,
+        source: 'test',
+        sourceRef: typeof ref === 'string' ? `test/${ref}` : ref,
+        amenity: 'cafe',
+        isActive,
+      },
+      i,
+    );
+  });
+  if (new Set(venues.map((v) => v.sourceRef)).size !== venues.length) {
+    throw new Error('venues-test.json has duplicate refs');
+  }
+  return venues;
+}
+
 export type TabuCard = { word: string; forbidden: string[] };
 export type SohbetCard = { theme: SohbetTheme; prompt: string };
 

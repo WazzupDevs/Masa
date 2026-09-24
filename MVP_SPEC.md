@@ -262,6 +262,7 @@ banned_phones     phone_hash (HMAC, sunucu gizli anahtarı) PK, created_at
 - `sohbet-cards.json`: en az 150 kart, 4 temaya dağılmış (`isinma`, `film-dizi-muzik`, `hic-yaptin-mi`, `derin`; her birinde en az 30).
 - Kartlar `(deck, source_key)` ile upsert edilir; JSON'dan çıkarılan kart silinmez, pasifleşir.
 - `venues-pilot.json`: pilot bölgedeki (İstanbul Beylikdüzü) mekanlar (ad, koordinat, ilçe). `pnpm fetch:venues` OpenStreetMap Overpass API'den `amenity=cafe` ve `amenity=hookah_lounge` kayıtlarını tek seferlik çeker; elle kontrol edilir (`is_active: false` ile kapatılabilir). Çalışma anında harita API'si çağrılmaz. OSM verisi ODbL lisanslıdır: atıf check-in listesinde (M2) ve hakkında ekranında (M7) gösterilir.
+- `venues-test.json`: saha testi için elle girilen mekanlar (`ref`, `name`, `lat`, `lng`; kaynak `test`). Boşsa seed atlar. Pilot listesinin yerine geçmez.
 - Testler gerçek mekan verisi kullanmaz: `supabase/tests/fixtures/venues.ts`, sabit bir çapa noktasından (41.0000, 28.6400) hesaplanmış mesafelerde sahte mekanlar içerir.
 - `profanity-tr.json`: Türkçe küfür ve hakaret listesi.
 - `aliases-tr.json`: masa takma adları için sıfat ve hayvan listeleri (`{ adjectives: [], animals: [] }`). Sıfatlar olumlu ya da nötr; Türkçede hakaret olarak kullanılan hayvanlar (domuz, eşek, öküz, it, köpek, inek, maymun, ayı, keçi vb.) yok; hiçbir birleşim alay ya da hakaret gibi okunmaz.

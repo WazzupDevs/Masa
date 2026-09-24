@@ -31,6 +31,10 @@ Otonom çalışma: M2'den M7'ye taşlar sırayla uygulanıyor. Her taş typechec
 
 Tanışma sonucunun zamanlaması (yalnızca karşılıklı Evet hemen, 30 sn pencere), Tabu bitince oda açık kalır ("Tekrar oyna"), küfür filtresi katlamasız, Engellenenler listesinde hesap id'si yok, özel Realtime kanalları. Ardından: pencere sırasında açılan açık odalar `reveal_ends_at`'e kadar lobide görünmüyor ve lobi yayını üretmiyor; kural 4 masa oturum id'lerini takma kimlik olarak kabul ediyor. Ayrıntılar: [DECISIONS.md](DECISIONS.md) → "İnceleme düzeltmeleri".
 
+## Saha testi hazırlığı
+
+`preview` APK profili, barındırılan projede test numaraları, `content/venues-test.json` ve iki telefonluk senaryo: [FIELD_TEST.md](FIELD_TEST.md). Adımlar CLAUDE.md'de.
+
 ## Sıradaki adım
 
 Otonom çalışma tamamlandı; tek PR açıldı (merge edilmedi). Kalan tüm adımlar hesap ya da cihaz gerektiriyor: [Issue #2](https://github.com/WazzupDevs/Masa/issues/2).

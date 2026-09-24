@@ -21,7 +21,7 @@ Node 22, pnpm 10, Docker (yerel Supabase için). Supabase CLI ve Deno root devDe
 - `pnpm supabase start` / `pnpm supabase stop` — `config.toml` değişince stop + start gerekir. İlk seferde `cp supabase/.env.example supabase/.env` (`config.toml`'daki `env()` değerleri; yerel placeholder'lar)
 - `pnpm db:reset` — yerel DB'yi sıfırlar: migration'lar + `seed.sql`, ardından `supabase/local/secrets.sql` (yerel dev sırları; script yerel olmayan DB'ye uygulamayı reddeder). Çıplak `supabase db reset` Vault anahtarını kurmaz.
 - `pnpm supabase functions serve` — Edge Function'ları yerelde çalıştırır
-- `pnpm seed` — `content/*.json` → `supabase/seed.sql` (çıktı commit'lenir)
+- `pnpm seed` — `content/*.json` → `supabase/seed.sql` (çıktı commit'lenir). `content/venues-test.json` boşsa atlanır (bkz. "Saha testi mekanı")
 - `pnpm fetch:venues` — OpenStreetMap Overpass API'den Beylikdüzü kafeleri ve nargile kafeleri → `content/venues-pilot.json`. Sonucu elle kontrol et (`isActive: false` ile kapat; tekrar çekişte korunur), sonra `pnpm seed`. `overpass-api.de` erişimi gerekir.
 - `pnpm gen:types` — çalışan yerel DB'den `supabase/functions/_shared/pure/database.ts` üretir; her migration'dan sonra çalıştır
 - Yerel test numaraları (`config.toml` → `[auth.sms.test_otp]`): `+905550000001` … `+905550000003`, kod `123456`
@@ -68,6 +68,45 @@ Node 22, pnpm 10, Docker (yerel Supabase için). Supabase CLI ve Deno root devDe
 1. `apps/mobile/.env` barındırılan dev projesini göstermeli (yukarıdaki 8. adım).
 2. `pnpm --filter mobile android` — `expo run:android`, dev build'i derleyip cihaza kurar (Android SDK + JDK 17 gerekir)
 3. Sonraki çalıştırmalarda `pnpm --filter mobile start` — Metro'yu dev client için başlatır
+
+### Test APK'sı (`preview` profili): alma ve paylaşma
+Dev client olmadan, tek başına çalışan bir Android APK'sı. Arkadaşa link ile gönderilir, USB ve Metro gerekmez. `EXPO_PUBLIC_*` değerleri yerel `.env`'den değil EAS ortam değişkenlerinden gelir: `.env` git'e girmediği için EAS'a yüklenmez.
+1. **Expo hesabı** (ücretsiz) aç. `eas-cli` bağımlılık değildir, `pnpm dlx` ile çalıştırılır: `cd apps/mobile && pnpm dlx eas-cli login`
+2. **Proje:** `pnpm dlx eas-cli init`. `app.config.ts` dinamik olduğu için id dosyaya yazılamaz; CLI'nin verdiği proje id'sini not et. Bu id `eas` komutlarını çalıştırdığın kabukta gerekir: `export EAS_PROJECT_ID=<id>`
+3. **Ortam değişkenleri** (`preview` ortamı; bir kez, değer değişince tekrar):
+   ```
+   pnpm dlx eas-cli env:create --environment preview --name EXPO_PUBLIC_SUPABASE_URL --value https://<ref>.supabase.co --visibility plaintext
+   pnpm dlx eas-cli env:create --environment preview --name EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY --value <publishable key> --visibility plaintext
+   pnpm dlx eas-cli env:create --environment preview --name EAS_PROJECT_ID --value <id> --visibility plaintext
+   ```
+   İsteğe bağlı: `EXPO_PUBLIC_POSTHOG_KEY`, `EXPO_PUBLIC_PRIVACY_URL`, `EXPO_PUBLIC_CONTACT_EMAIL`. Kontrol: `pnpm dlx eas-cli env:list --environment preview`. Publishable key zaten uygulamanın içindedir, gizli değildir. **Secret key asla eklenmez.**
+4. **Build:** `pnpm dlx eas-cli build --platform android --profile preview`. İlk seferde Android keystore'u EAS'ın üretmesini kabul et (sonraki APK'lar aynı anahtarla imzalanır, üstüne kurulur). Ücretsiz planda kuyrukla birlikte 15–40 dk sürebilir.
+5. **Paylaşma:** Build bitince CLI bir `expo.dev/.../builds/<id>` linki ve QR kodu verir; sonra `pnpm dlx eas-cli build:list` ya da expo.dev'deki proje sayfasından da bulunur. Linki arkadaşına gönder. Android'de linki Chrome'da açar, **Install** ile APK'yı indirir, "bilinmeyen uygulamaları yükleme" iznini Chrome'a verir ve kurar. Play Protect uyarısında "Yine de yükle" seçilir.
+6. **Güncelleme:** kod ya da `EXPO_PUBLIC_*` değişince yeni build gerekir (değerler build anında pakete girer). Yeni APK eskisinin üstüne kurulur, oturum korunur. Sunucu değişiklikleri (migration, fonksiyon) yeni APK gerektirmez.
+7. Push bu APK'da çalışmaz (Firebase yok, bkz. "Push"). Uygulama bunu sessizce atlar; bildirim izni sorulursa cevap önemsizdir.
+
+### Barındırılan projede SMS'siz giriş (test numaraları)
+Saha testinde gerçek numaralarla, SMS gönderilmeden, sabit kodla giriş yapılabilir. Twilio'ya ve SMS kotasına dokunmaz.
+1. Supabase paneli → **Authentication → Sign In / Providers → Phone**.
+2. **Test Phone Numbers and OTPs** alanına numara=kod çiftlerini virgülle yaz. Numara `+` olmadan, ülke koduyla: `905321234567=482915,905339876543=730264`.
+3. **Test OTPs Valid Until:** testten sonraki güne bir tarih ver; o tarihten sonra bu çiftler çalışmaz.
+4. Kaydet. Uygulamada numarayı her zamanki gibi gir (`5xx xxx xx xx`), SMS gelmez; kodu elle gir.
+- Kodu `123456` gibi tahmin edilebilir seçme: numarayı ve kodu bilen herkes o hesaba girebilir. Test bitince çiftleri sil.
+- Test numarası ban kontrolünden ve 18+/onay akışından muaf değildir. Hesap silme ve `pnpm admin:ban` aynı şekilde çalışır.
+- Phone sağlayıcısı açık olmalı. Twilio henüz kurulmadıysa panel sağlayıcı alanlarını doldurmanı isteyebilir; test numaralarına SMS gönderilmez.
+- Gerçek numara şart değil: dev projesindeki `905550000001=123456` gibi uydurma numaralar da aynı yolla çalışır.
+
+### Saha testi mekanı (`content/venues-test.json`)
+Pilot listesinde olmayan bir yerde test için elle girilen mekan. Dosya boşsa (`"venues": []`) seed onu atlar.
+1. Mekanın koordinatını haritadan al (Google Maps'te noktaya uzun bas; ilk sayı enlem `lat`, ikinci boylam `lng`) ve dosyaya yaz:
+   ```json
+   { "venues": [{ "ref": "saha-1", "name": "Saha Testi", "lat": 41.00123, "lng": 28.64210 }] }
+   ```
+   `ref` kalıcı kimliktir (değiştirme; aynı `ref` güncellenir). İsteğe bağlı: `city` (varsayılan İstanbul), `district` (varsayılan Test), `isActive`.
+2. `pnpm seed`, sonra `pnpm supabase db push --include-seed` (yerelde `pnpm db:reset`). `supabase/seed.sql` commit'lenir, yani koordinat git'e girer: ev adresi değil mekan koordinatı kullan.
+3. Check-in 300 m içinden çalışır. İki telefon da mekanın yakınında olmalı.
+4. Test bitince mekanı silmek yerine `"isActive": false` yapıp tekrar seed et (seed yalnızca ekler ya da günceller, silmez), ya da listeyi boşalt ve mekanı panelden pasif yap.
+5. Uçtan uca senaryo: `docs/FIELD_TEST.md`.
 
 ## Değişmez kurallar
 1. İstemci hiçbir tabloya doğrudan yazmaz. Tüm yazmalar Edge Function üzerinden yapılır. İstemci okumaları RLS ile sınırlıdır. İstemcinin çağırdığı security definer RPC'ler yalnızca okur ve `set search_path = ''` ile tanımlanır. Yazan security definer fonksiyonlar istemciye kapalıdır (yalnızca service role).
