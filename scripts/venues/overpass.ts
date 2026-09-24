@@ -32,6 +32,21 @@ function isElement(value: unknown): value is OverpassElement {
   );
 }
 
+// How many cafes and hookah lounges of the response have no name (toVenuesFile drops them).
+export function countUnnamed(overpass: unknown): number {
+  const elements =
+    typeof overpass === 'object' && overpass !== null && 'elements' in overpass
+      ? (overpass as { elements: unknown }).elements
+      : [];
+  if (!Array.isArray(elements)) return 0;
+  return elements
+    .filter(isElement)
+    .filter(
+      (e) =>
+        (AMENITIES as readonly string[]).includes(e.tags?.amenity ?? '') && !e.tags?.name?.trim(),
+    ).length;
+}
+
 // Keeps named cafes and hookah lounges with a position; ways/relations use their center.
 // `previous` carries manual edits (isActive: false) over from the last reviewed file.
 export function toVenuesFile(
