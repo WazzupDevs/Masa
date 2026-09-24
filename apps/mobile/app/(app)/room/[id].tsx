@@ -9,6 +9,7 @@ import { ChatPanel } from '@/features/chat/ChatPanel';
 import { RoomSafety } from '@/features/chat/RoomSafety';
 import { useOtherTableOnline } from '@/features/chat/usePresence';
 import { useActiveTable } from '@/features/checkin/useActiveTable';
+import { ConceptArea } from '@/features/games/ConceptArea';
 import { IncomingRequest } from '@/features/rooms/IncomingRequest';
 import { roomKeys, useRoom } from '@/features/rooms/queries';
 import { errorMessage } from '@/i18n/errors';
@@ -54,14 +55,19 @@ export default function RoomScreen() {
         {r.guest_alias ? tr.rooms.withGuest(r.owner_alias, r.guest_alias) : r.owner_alias}
       </Text>
 
-      <View className="mt-6 min-h-48 items-center justify-center rounded-2xl bg-neutral-100 p-6">
-        <Text className="text-center text-base text-neutral-500">{tr.rooms.conceptSoon}</Text>
-        {r.status === 'waiting' && r.visibility === 'open' ? (
-          <Text className="mt-3 text-center text-sm text-neutral-500">
-            {tr.rooms.waitingForGuest}
-          </Text>
-        ) : null}
-      </View>
+      <ConceptArea
+        roomId={r.id}
+        concept={concept}
+        gameState={r.game_state}
+        hasGuest={hasOtherTable}
+        sessionId={sessionId}
+        isOwner={isOwner}
+      />
+      {r.status === 'waiting' && r.visibility === 'open' ? (
+        <Text className="mt-3 text-center text-sm text-neutral-500">
+          {tr.rooms.waitingForGuest}
+        </Text>
+      ) : null}
 
       {hasOtherTable ? <OtherTableStatus roomId={r.id} isOwner={isOwner} /> : null}
 

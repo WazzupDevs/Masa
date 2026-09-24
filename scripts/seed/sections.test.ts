@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { parseAliasWords, parseVenuesFile } from './content.ts';
-import { aliasWordsSql, venuesSql } from './sections.ts';
+import { aliasWordsSql, cardsSql, venuesSql } from './sections.ts';
 
 const venue = {
   name: "Ayşe'nin Kafesi",
@@ -47,5 +47,22 @@ describe('content validation', () => {
     expect(() => parseVenuesFile({ ...file, venues: [{ ...venue, lat: 91 }] })).toThrow();
     expect(() => parseVenuesFile({ ...file, venues: [venue, venue] })).toThrow();
     expect(parseVenuesFile({ ...file, venues: [venue] }).venues).toHaveLength(1);
+  });
+});
+
+describe('cardsSql', () => {
+  it('upserts both decks and retires cards missing from the JSON', () => {
+    const sql = cardsSql(
+      [{ word: 'Deniz', forbidden: ['dalga', 'kum', 'mavi', 'tuz', 'yüzmek'] }],
+      [{ theme: 'derin', prompt: 'Seni ne mutlu eder?' }],
+    );
+    expect(sql).toContain('update public.cards set is_active = false;');
+    expect(sql).toContain(
+      "('tabu', 'Deniz', 'Deniz', array['dalga', 'kum', 'mavi', 'tuz', 'yüzmek']::text[], null, null)",
+    );
+    expect(sql).toContain(
+      "('sohbet', 'Seni ne mutlu eder?', null, null, 'derin', 'Seni ne mutlu eder?')",
+    );
+    expect(sql).toContain('on conflict (deck, source_key) do update');
   });
 });

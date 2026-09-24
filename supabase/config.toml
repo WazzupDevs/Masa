@@ -443,3 +443,9 @@ verify_jwt = false
 
 [functions.safety]
 verify_jwt = false
+
+[functions.tabu]
+verify_jwt = false
+
+[functions.sohbet]
+verify_jwt = false

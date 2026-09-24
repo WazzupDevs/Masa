@@ -1,5 +1,6 @@
 // Types and validation for content/*.json. Invalid content fails `pnpm seed` loudly.
 import type { AliasWords } from '../../supabase/functions/_shared/pure/alias.ts';
+import { SOHBET_THEMES, type SohbetTheme } from '../../supabase/functions/_shared/pure/sohbet.ts';
 
 export type VenueRecord = {
   name: string;
@@ -72,4 +73,31 @@ export function parseVenuesFile(json: unknown): VenuesFile {
   const refs = new Set(venues.map((v) => `${v.source}:${v.sourceRef}`));
   if (refs.size !== venues.length) throw new Error('venues-pilot.json has duplicate sourceRefs');
   return { attribution, source, fetchedAt, venues };
+}
+
+export type TabuCard = { word: string; forbidden: string[] };
+export type SohbetCard = { theme: SohbetTheme; prompt: string };
+
+export function parseTabuCards(json: unknown): TabuCard[] {
+  if (!isRecord(json) || !Array.isArray(json.cards)) throw new Error('tabu-cards.json needs cards');
+  return json.cards.map((card, i) => {
+    if (!isRecord(card) || typeof card.word !== 'string' || card.word.trim() === '') {
+      throw new Error(`tabu cards[${i}].word is required`);
+    }
+    return { word: card.word, forbidden: stringList(card.forbidden, `tabu cards[${i}].forbidden`) };
+  });
+}
+
+export function parseSohbetCards(json: unknown): SohbetCard[] {
+  if (!isRecord(json) || !Array.isArray(json.cards))
+    throw new Error('sohbet-cards.json needs cards');
+  return json.cards.map((card, i) => {
+    if (!isRecord(card) || typeof card.prompt !== 'string' || card.prompt.trim() === '') {
+      throw new Error(`sohbet cards[${i}].prompt is required`);
+    }
+    if (!(SOHBET_THEMES as readonly unknown[]).includes(card.theme)) {
+      throw new Error(`sohbet cards[${i}].theme is invalid`);
+    }
+    return { theme: card.theme as SohbetTheme, prompt: card.prompt };
+  });
 }

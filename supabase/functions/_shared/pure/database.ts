@@ -79,6 +79,91 @@ export type Database = {
         };
         Relationships: [];
       };
+      cards: {
+        Row: {
+          deck: string;
+          forbidden: string[] | null;
+          id: string;
+          is_active: boolean;
+          prompt: string | null;
+          source_key: string;
+          theme: string | null;
+          word: string | null;
+        };
+        Insert: {
+          deck: string;
+          forbidden?: string[] | null;
+          id?: string;
+          is_active?: boolean;
+          prompt?: string | null;
+          source_key: string;
+          theme?: string | null;
+          word?: string | null;
+        };
+        Update: {
+          deck?: string;
+          forbidden?: string[] | null;
+          id?: string;
+          is_active?: boolean;
+          prompt?: string | null;
+          source_key?: string;
+          theme?: string | null;
+          word?: string | null;
+        };
+        Relationships: [];
+      };
+      game_events: {
+        Row: {
+          created_at: string;
+          id: string;
+          payload: Json;
+          room_id: string;
+          session_id: string | null;
+          turn_id: string | null;
+          type: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          payload?: Json;
+          room_id: string;
+          session_id?: string | null;
+          turn_id?: string | null;
+          type: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          payload?: Json;
+          room_id?: string;
+          session_id?: string | null;
+          turn_id?: string | null;
+          type?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'game_events_room_id_fkey';
+            columns: ['room_id'];
+            isOneToOne: false;
+            referencedRelation: 'rooms';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'game_events_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'table_sessions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'game_events_turn_id_fkey';
+            columns: ['turn_id'];
+            isOneToOne: false;
+            referencedRelation: 'tabu_turns';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       join_requests: {
         Row: {
           created_at: string;
@@ -264,11 +349,42 @@ export type Database = {
           },
         ];
       };
+      room_used_cards: {
+        Row: {
+          card_id: string;
+          room_id: string;
+        };
+        Insert: {
+          card_id: string;
+          room_id: string;
+        };
+        Update: {
+          card_id?: string;
+          room_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'room_used_cards_card_id_fkey';
+            columns: ['card_id'];
+            isOneToOne: false;
+            referencedRelation: 'cards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'room_used_cards_room_id_fkey';
+            columns: ['room_id'];
+            isOneToOne: false;
+            referencedRelation: 'rooms';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       rooms: {
         Row: {
           closed_at: string | null;
           concept: string;
           created_at: string;
+          game_state: Json;
           guest_alias: string | null;
           guest_headcount: number | null;
           guest_joined_at: string | null;
@@ -287,6 +403,7 @@ export type Database = {
           closed_at?: string | null;
           concept: string;
           created_at?: string;
+          game_state?: Json;
           guest_alias?: string | null;
           guest_headcount?: number | null;
           guest_joined_at?: string | null;
@@ -305,6 +422,7 @@ export type Database = {
           closed_at?: string | null;
           concept?: string;
           created_at?: string;
+          game_state?: Json;
           guest_alias?: string | null;
           guest_headcount?: number | null;
           guest_joined_at?: string | null;
@@ -386,6 +504,67 @@ export type Database = {
             columns: ['venue_id'];
             isOneToOne: false;
             referencedRelation: 'venues';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      tabu_turns: {
+        Row: {
+          card_id: string;
+          describer_session_id: string;
+          ends_at: string;
+          game_no: number;
+          id: string;
+          passes_used: number;
+          room_id: string;
+          score: number;
+          started_at: string;
+          turn_no: number;
+        };
+        Insert: {
+          card_id: string;
+          describer_session_id: string;
+          ends_at: string;
+          game_no: number;
+          id?: string;
+          passes_used?: number;
+          room_id: string;
+          score?: number;
+          started_at?: string;
+          turn_no: number;
+        };
+        Update: {
+          card_id?: string;
+          describer_session_id?: string;
+          ends_at?: string;
+          game_no?: number;
+          id?: string;
+          passes_used?: number;
+          room_id?: string;
+          score?: number;
+          started_at?: string;
+          turn_no?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tabu_turns_card_id_fkey';
+            columns: ['card_id'];
+            isOneToOne: false;
+            referencedRelation: 'cards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tabu_turns_describer_session_id_fkey';
+            columns: ['describer_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'table_sessions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tabu_turns_room_id_fkey';
+            columns: ['room_id'];
+            isOneToOne: false;
+            referencedRelation: 'rooms';
             referencedColumns: ['id'];
           },
         ];
@@ -491,6 +670,7 @@ export type Database = {
           closed_at: string | null;
           concept: string;
           created_at: string;
+          game_state: Json;
           guest_alias: string | null;
           guest_headcount: number | null;
           guest_joined_at: string | null;
@@ -518,6 +698,7 @@ export type Database = {
           closed_at: string | null;
           concept: string;
           created_at: string;
+          game_state: Json;
           guest_alias: string | null;
           guest_headcount: number | null;
           guest_joined_at: string | null;
@@ -545,6 +726,7 @@ export type Database = {
           closed_at: string | null;
           concept: string;
           created_at: string;
+          game_state: Json;
           guest_alias: string | null;
           guest_headcount: number | null;
           guest_joined_at: string | null;
@@ -621,6 +803,7 @@ export type Database = {
           closed_at: string | null;
           concept: string;
           created_at: string;
+          game_state: Json;
           guest_alias: string | null;
           guest_headcount: number | null;
           guest_joined_at: string | null;
@@ -654,6 +837,38 @@ export type Database = {
         Args: { target_blocked_id: string; target_user_id: string };
         Returns: boolean;
       };
+      sohbet_next: {
+        Args: {
+          cooldown_ms: number;
+          target_room_id: string;
+          target_user_id: string;
+        };
+        Returns: {
+          closed_at: string | null;
+          concept: string;
+          created_at: string;
+          game_state: Json;
+          guest_alias: string | null;
+          guest_headcount: number | null;
+          guest_joined_at: string | null;
+          guest_session_id: string | null;
+          id: string;
+          last_activity_at: string;
+          owner_alias: string;
+          owner_headcount: number;
+          owner_session_id: string;
+          status: string;
+          venue_id: string;
+          visibility: string;
+          waiting_since: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'rooms';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       start_table_session: {
         Args: {
           accuracy_m?: number;
@@ -678,6 +893,172 @@ export type Database = {
         SetofOptions: {
           from: '*';
           to: 'table_sessions';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      tabu_add_clue: {
+        Args: {
+          checked_card_id: string;
+          clue: string;
+          target_room_id: string;
+          target_user_id: string;
+        };
+        Returns: {
+          created_at: string;
+          id: string;
+          payload: Json;
+          room_id: string;
+          session_id: string | null;
+          turn_id: string | null;
+          type: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'game_events';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      tabu_current_card: {
+        Args: { target_room_id: string; target_user_id: string };
+        Returns: {
+          card_id: string;
+          forbidden: string[];
+          word: string;
+        }[];
+      };
+      tabu_end_turn: {
+        Args: { target_room_id: string; target_user_id: string };
+        Returns: {
+          closed_at: string | null;
+          concept: string;
+          created_at: string;
+          game_state: Json;
+          guest_alias: string | null;
+          guest_headcount: number | null;
+          guest_joined_at: string | null;
+          guest_session_id: string | null;
+          id: string;
+          last_activity_at: string;
+          owner_alias: string;
+          owner_headcount: number;
+          owner_session_id: string;
+          status: string;
+          venue_id: string;
+          visibility: string;
+          waiting_since: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'rooms';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      tabu_guess: {
+        Args: {
+          checked_card_id: string;
+          correct: boolean;
+          guess: string;
+          target_room_id: string;
+          target_user_id: string;
+        };
+        Returns: {
+          closed_at: string | null;
+          concept: string;
+          created_at: string;
+          game_state: Json;
+          guest_alias: string | null;
+          guest_headcount: number | null;
+          guest_joined_at: string | null;
+          guest_session_id: string | null;
+          id: string;
+          last_activity_at: string;
+          owner_alias: string;
+          owner_headcount: number;
+          owner_session_id: string;
+          status: string;
+          venue_id: string;
+          visibility: string;
+          waiting_since: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'rooms';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      tabu_local_deck: {
+        Args: {
+          deck_size: number;
+          target_room_id: string;
+          target_user_id: string;
+        };
+        Returns: {
+          forbidden: string[];
+          word: string;
+        }[];
+      };
+      tabu_pass: {
+        Args: { target_room_id: string; target_user_id: string };
+        Returns: {
+          closed_at: string | null;
+          concept: string;
+          created_at: string;
+          game_state: Json;
+          guest_alias: string | null;
+          guest_headcount: number | null;
+          guest_joined_at: string | null;
+          guest_session_id: string | null;
+          id: string;
+          last_activity_at: string;
+          owner_alias: string;
+          owner_headcount: number;
+          owner_session_id: string;
+          status: string;
+          venue_id: string;
+          visibility: string;
+          waiting_since: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'rooms';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      tabu_start: {
+        Args: {
+          max_passes: number;
+          target_room_id: string;
+          target_user_id: string;
+          total_turns: number;
+          turn_seconds: number;
+        };
+        Returns: {
+          closed_at: string | null;
+          concept: string;
+          created_at: string;
+          game_state: Json;
+          guest_alias: string | null;
+          guest_headcount: number | null;
+          guest_joined_at: string | null;
+          guest_session_id: string | null;
+          id: string;
+          last_activity_at: string;
+          owner_alias: string;
+          owner_headcount: number;
+          owner_session_id: string;
+          status: string;
+          venue_id: string;
+          visibility: string;
+          waiting_since: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'rooms';
           isOneToOne: true;
           isSetofReturn: false;
         };

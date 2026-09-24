@@ -82,14 +82,15 @@ Aynı mekandaki insanların, konsept üzerine kurulu odalarda birlikte oyun oyna
 
 ### 5.1 Tabu — tek masa (sesli)
 - Oda tek masalıyken oynanır. Tamamen istemci tarafında çalışır, sunucu yalnızca desteyi sağlar.
+- Puanlama: Doğru +1, Tabu −1, Pas 0 (sınırsız). Oyun mantığı saf reducer'dadır (`_shared/pure/localTabu.ts`); sunucu oda üyesine 120 kartlık deste verir.
 - Tek masa Tabu sürerken gelen katılma isteği kabul edilebilir. Kabulde yerel oyun biter; iki masalı oyun (§5.2) sıfırdan ve sunucu otoriter olarak başlar. Destenin istemcide kalmış olması sorun değildir: iki masalı oyun işbirliğidir, hile teşviki yoktur.
 - Kart: hedef kelime ve 5 yasak kelime. Tur 60 saniye. Butonlar: Doğru / Pas / Tabu.
 - İki takım (A/B) sırayla oynar. Varsayılan: takım başına 3 tur.
 
 ### 5.2 Tabu — iki masa (yazılı, işbirliği)
 - İki masa tek takımdır: ortak skor, süreye karşı. İşbirliği tanışmaya rekabetten daha iyi hizmet eder ve sabotaj teşviki yaratmaz.
-- Tur sırası: Masa A anlatır, Masa B tahmin eder, sonra roller değişir. Toplam 6 tur (her masa 3 kez anlatır), tur başı 60 saniye.
-- Anlatan masa hedef kelimeyi ve yasakları görür, ipucu yazar. İstemci gönderimden önce uyarır, sunucu son kararı verir. Yasak kelimeyi, hedef kelimeyi ya da bunların kökünü içeren ipucu reddedilir (ceza yok, sadece gönderilmez).
+- Oyunu oda sahibi başlatır. Tur sırası: Masa A (sahip) anlatır, Masa B tahmin eder, sonra roller değişir. Toplam 6 tur (her masa 3 kez anlatır), tur başı 60 saniye. Misafir çıkarsa oyun sıfırlanır.
+- Anlatan masa hedef kelimeyi ve yasakları görür, ipucu yazar (1–100 karakter). İpucu ve tahminlere küfür filtresi de uygulanır. İstemci gönderimden önce uyarır, sunucu son kararı verir. Yasak kelimeyi, hedef kelimeyi ya da bunların kökünü içeren ipucu reddedilir (ceza yok, sadece gönderilmez).
 - Tahmin eden masa ipucu akışını görür ve tahmin yazar. Doğru tahmin +1 puan getirir ve yeni kart gelir.
 - Tur başına en fazla 3 pas.
 - Kart kelimesi yalnızca anlatan masaya gider (Edge Function yanıtıyla). Oda durumunda (`game_state`) kart bilgisi tutulmaz. Tahmin eden masa kelimeyi ancak kart kapandığında görür.
@@ -194,7 +195,8 @@ join_requests     id, room_id, requester_session_id, requester_alias, requester_
                   status (pending|accepted|declined|expired), created_at, expires_at, responded_at
 messages          id, room_id, session_id, sender_alias, body, created_at
 profanity_terms   term                                     (profanity-tr.json'dan seed; yalnızca sunucu okur)
-cards             id, deck (tabu|sohbet), theme, word, forbidden text[], prompt, is_active
+cards             id, deck (tabu|sohbet), source_key, theme, word, forbidden text[], prompt, is_active
+room_used_cards   room_id, card_id                         (sunucu; aynı odada kart tekrarını önler)
 tabu_turns        id, room_id, turn_no, describer_session_id, card_id,
                   started_at, ends_at, passes_used, score
 game_events       id, room_id, turn_id, session_id,
@@ -216,7 +218,7 @@ banned_phones     phone_hash (HMAC, sunucu gizli anahtarı) PK, created_at
 - Lobi, tablo okumasıyla değil `venue_lobby(venue_id)` RPC'siyle gelir (security definer). Yalnızca güvenli kolonları döner (oda id, masa takma adı, kişi sayısı, konsept, bekleme süresi) ve engellemeleri filtreler.
 - `rooms`, `messages`, `game_events`: sadece odadaki masaların sahibi okur. Misafir, odaya katıldığı andan (`guest_joined_at`) önceki mesajları okuyamaz.
 - `reports`: istemciye tamamen kapalı. `blocks`: engelleyen kendi satırlarını okur.
-- `tabu_turns`: odadakiler okur ama `card_id` kolonu istemciye açılmaz (view üzerinden). Kart kelimesi yalnızca `tabu/current-card` ile anlatana gider.
+- `tabu_turns`: istemciye tamamen kapalı. Herkese açık tur durumu `rooms.game_state`'tedir (tur, anlatan masa, `turnEndsAt`, pas, ortak skor; kart bilgisi yok). Kart kelimesi yalnızca `tabu/current-card` ile anlatana gider, herkese yalnızca `card_closed` olayında görünür.
 - `cards`: `sohbet` destesi okunabilir. `tabu` destesi istemciye kapalı; tek masa modu desteyi `tabu/start` üzerinden alır.
 - `join_requests`: ham satırları yalnızca oda sahibi okur. İstek sahibi yalnızca `my_join_requests` view'ını okur: kabul hemen `accepted` görünür; red ya da cevapsızlık `expires_at`'e kadar `pending`, sonra `unavailable` görünür (red de 60 sn dolana kadar ayırt edilemez). Red hiçbir yayın, push ya da yanıt alanı üretmez.
 - Masa takma adları ve kişi sayıları `rooms` ve `join_requests` satırlarına kopyalanır; üyeler birbirinin `table_sessions` satırını okumaz.
@@ -252,8 +254,9 @@ banned_phones     phone_hash (HMAC, sunucu gizli anahtarı) PK, created_at
 9. **Profil ve ayarlar:** Engellenenler, gizlilik politikası, iletişim, çıkış, hesabı sil.
 
 ## 11. İçerik
-- `tabu-cards.json`: en az 500 kart, format `{ word, forbidden: [5] }`. Yasaklar tek kelime olmalı ve hedefle aynı kökten gelmemeli. Argo ya da cinsel içerik yok.
-- `sohbet-cards.json`: en az 150 kart, 4 temaya dağılmış.
+- `tabu-cards.json`: en az 500 kart, format `{ cards: [{ word, forbidden: [5] }] }`. Yasaklar tek kelime olmalı ve hedefle aynı kökten gelmemeli (içerik testi: normalize edilmiş ortak önek 4 harfe ya da kısa kelimenin uzunluğuna ulaşmamalı). Argo ya da cinsel içerik yok.
+- `sohbet-cards.json`: en az 150 kart, 4 temaya dağılmış (`isinma`, `film-dizi-muzik`, `hic-yaptin-mi`, `derin`; her birinde en az 30).
+- Kartlar `(deck, source_key)` ile upsert edilir; JSON'dan çıkarılan kart silinmez, pasifleşir.
 - `venues-pilot.json`: pilot bölgedeki (İstanbul Beylikdüzü) mekanlar (ad, koordinat, ilçe). `pnpm fetch:venues` OpenStreetMap Overpass API'den `amenity=cafe` ve `amenity=hookah_lounge` kayıtlarını tek seferlik çeker; elle kontrol edilir (`is_active: false` ile kapatılabilir). Çalışma anında harita API'si çağrılmaz. OSM verisi ODbL lisanslıdır: atıf check-in listesinde (M2) ve hakkında ekranında (M7) gösterilir.
 - Testler gerçek mekan verisi kullanmaz: `supabase/tests/fixtures/venues.ts`, sabit bir çapa noktasından (41.0000, 28.6400) hesaplanmış mesafelerde sahte mekanlar içerir.
 - `profanity-tr.json`: Türkçe küfür ve hakaret listesi.

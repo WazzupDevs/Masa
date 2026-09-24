@@ -2,6 +2,12 @@ import { FunctionsHttpError } from '@supabase/supabase-js';
 import type { AccountRequest, AccountResponse } from '@shared/api/account.ts';
 import type { ChatResponse, SafetyResponse } from '@shared/api/chat.ts';
 import type {
+  GameOkResponse,
+  TabuCardResponse,
+  TabuGuessResponse,
+  TabuStartResponse,
+} from '@shared/api/games.ts';
+import type {
   CreateRoomRequest,
   CreateRoomResponse,
   RequestJoinResponse,
@@ -68,4 +74,17 @@ export const safetyApi = {
   block: (roomId: string) => invoke<SafetyResponse>('safety', { action: 'block', roomId }),
   unblock: (blockedId: string) =>
     invoke<SafetyResponse>('safety', { action: 'unblock', blockedId }),
+};
+
+export const gamesApi = {
+  tabuStart: (roomId: string) => invoke<TabuStartResponse>('tabu', { action: 'start', roomId }),
+  tabuCard: (roomId: string) =>
+    invoke<TabuCardResponse>('tabu', { action: 'current-card', roomId }),
+  tabuClue: (roomId: string, text: string) =>
+    invoke<GameOkResponse>('tabu', { action: 'clue', roomId, text }),
+  tabuGuess: (roomId: string, text: string) =>
+    invoke<TabuGuessResponse>('tabu', { action: 'guess', roomId, text }),
+  tabuPass: (roomId: string) => invoke<GameOkResponse>('tabu', { action: 'pass', roomId }),
+  tabuEndTurn: (roomId: string) => invoke<GameOkResponse>('tabu', { action: 'end-turn', roomId }),
+  sohbetNext: (roomId: string) => invoke<GameOkResponse>('sohbet', { action: 'next-card', roomId }),
 };

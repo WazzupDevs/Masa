@@ -29,6 +29,11 @@ describe('containsProfanity', () => {
     expect(containsProfanity('piç', terms)).toBe(false);
   });
 
+  it('sees through spaced-out letters', () => {
+    expect(containsProfanity('o r o s p u', terms)).toBe(true);
+    expect(containsProfanity('a.m.k', terms)).toBe(true);
+  });
+
   it('passes clean text', () => {
     expect(containsProfanity('Merhaba, nasılsınız?', terms)).toBe(false);
     expect(containsProfanity('', terms)).toBe(false);
