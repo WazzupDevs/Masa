@@ -475,6 +475,17 @@
       "sourceRef": "way/895652918",
       "amenity": "cafe",
       "isActive": true
+    },
+    {
+      "name": "Yedegör Dürüm",
+      "city": "İstanbul",
+      "district": "Beylikdüzü",
+      "lat": 41.03246825530586,
+      "lng": 28.69109025525628,
+      "source": "manual",
+      "sourceRef": "yedegor-durum",
+      "amenity": "restaurant",
+      "isActive": true
     }
   ]
 }
