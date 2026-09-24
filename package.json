@@ -16,7 +16,8 @@
     "gen:types": "supabase gen types typescript --local > supabase/functions/_shared/pure/database.ts && prettier --write supabase/functions/_shared/pure/database.ts",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "typecheck:functions": "deno check --node-modules-dir=none supabase/functions/*/index.ts",
-    "lint:functions": "deno lint supabase/functions"
+    "lint:functions": "deno lint supabase/functions",
+    "admin:ban": "pnpm --filter scripts admin:ban"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

@@ -27,9 +27,15 @@ function value(name: string): string {
 
 export const apiUrl = value('API_URL');
 export const anonKey = value('ANON_KEY');
+const secretKey = value('SECRET_KEY');
 export const sql = postgres(value('DB_URL'), { max: 1, onnotice: () => {} });
 
 export const TEST_OTP = '123456';
+
+// Same kind of client `pnpm admin:ban` uses on a developer machine.
+export const admin = createClient<Database>(apiUrl, secretKey, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
 
 // Signs a local test number in (see [auth.sms.test_otp] in config.toml).
 export async function signIn(phone: string): Promise<SupabaseClient<Database>> {

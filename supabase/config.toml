@@ -289,13 +289,14 @@ uri = "pg-functions://postgres/private/before_user_created"
 
 # Configure one of the supported SMS providers: `twilio`, `twilio_verify`, `messagebird`, `textlocal`, `vonage`.
 # The hosted dev project uses Twilio Verify, configured in the dashboard. Locally a provider must be
-# enabled for phone auth to work at all, so Twilio Verify is on with placeholder values: only the
-# test_otp numbers above are used, and they never reach Twilio.
+# enabled for phone auth to work at all, so Twilio Verify is on with placeholder values from
+# supabase/.env (copy supabase/.env.example): only the test_otp numbers above are used, and they
+# never reach Twilio. Never run `supabase config push`.
 [auth.sms.twilio_verify]
 enabled = true
-account_sid = "local-placeholder"
-message_service_sid = "local-placeholder"
-auth_token = "local-placeholder"
+account_sid = "env(SUPABASE_AUTH_SMS_TWILIO_VERIFY_ACCOUNT_SID)"
+message_service_sid = "env(SUPABASE_AUTH_SMS_TWILIO_VERIFY_MESSAGE_SERVICE_SID)"
+auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_VERIFY_AUTH_TOKEN)"
 
 [auth.sms.twilio]
 enabled = false

@@ -18,16 +18,18 @@ Node 22, pnpm 10, Docker (yerel Supabase için). Supabase CLI ve Deno root devDe
 - `pnpm test` — birim testleri, vitest (`scripts/**`, `_shared/pure/**` altındaki `*.test.ts`)
 - `pnpm test:integration` — `supabase/tests/**`, yerel stack'e karşı (önce `pnpm supabase start` ve `pnpm supabase functions serve`)
 - `pnpm format` / `pnpm format:check` — Prettier
-- `pnpm supabase start` / `pnpm supabase stop` — `config.toml` değişince stop + start gerekir
+- `pnpm supabase start` / `pnpm supabase stop` — `config.toml` değişince stop + start gerekir. İlk seferde `cp supabase/.env.example supabase/.env` (`config.toml`'daki `env()` değerleri; yerel placeholder'lar)
 - `pnpm supabase db reset` — migration'lar + `seed.sql` + `seed.local.sql` (yalnızca yerel dev sırları)
 - `pnpm supabase functions serve` — Edge Function'ları yerelde çalıştırır
 - `pnpm seed` — `content/*.json` → `supabase/seed.sql` (çıktı commit'lenir)
 - `pnpm gen:types` — çalışan yerel DB'den `supabase/functions/_shared/pure/database.ts` üretir; her migration'dan sonra çalıştır
 - Yerel test numaraları (`config.toml` → `[auth.sms.test_otp]`): `+905550000001` … `+905550000003`, kod `123456`
+- `pnpm admin:ban <userId>` — kullanıcıyı banlar: `profiles.is_banned` + Supabase Auth ban'ı. Yalnızca geliştirici makinesinde, `SUPABASE_URL` ve `SUPABASE_SECRET_KEY` ortam değişkenleriyle çalışır. Secret key hiçbir dosyaya yazılmaz, uygulamaya girmez. Panelden `is_banned`'ı elle değiştirme: Auth ban'ı konmaz.
 
 ## Ortamlar
 - **Yerel (container, CI, entegrasyon testleri):** `pnpm supabase start`. SMS gönderilmez, yalnızca test numaraları çalışır.
 - **Barındırılan dev projesi (cihaz testleri):** mobil `.env` bu projeyi gösterir. Dağıtımı proje sahibi yapar.
+- **`supabase config push` asla çalıştırılmaz.** `config.toml` yalnızca yerel ortamı tanımlar (placeholder SMS sağlayıcısı, test numaraları); barındırılan projenin auth ayarları panelden yapılır.
 - Edge Function bağımlılıkları `supabase/functions/_shared/deps.ts` içinde sabit sürümlü `npm:` import'larıdır (import map yok). Deno 24 saatten yeni sürümleri reddeder; yeni yayımlanmış bir sürüme hemen geçme.
 
 ### Barındırılan dev projesi kurulumu (tek seferlik)
