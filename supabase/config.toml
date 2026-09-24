@@ -434,3 +434,6 @@ verify_jwt = false
 
 [functions.checkin]
 verify_jwt = false
+
+[functions.rooms]
+verify_jwt = false

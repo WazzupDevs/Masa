@@ -16,6 +16,10 @@ export async function banUser(admin: SupabaseClient<Database>, userId: string): 
   const hash = await admin.rpc('record_banned_phone', { target_user_id: userId });
   if (hash.error) throw hash.error;
 
+  // End the table first so its rooms close or go back to waiting for the other table.
+  const ended = await admin.rpc('end_table_session', { target_user_id: userId });
+  if (ended.error) throw ended.error;
+
   const deletion = await admin.auth.admin.deleteUser(userId);
   if (deletion.error) throw deletion.error;
 }

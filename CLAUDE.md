@@ -40,7 +40,7 @@ Node 22, pnpm 10, Docker (yerel Supabase için). Supabase CLI ve Deno root devDe
    `select vault.create_secret('<anahtar>', 'phone_hash_key');`
    Anahtar asla değişmez (rotasyon yok; değişirse `banned_phones` geçersiz olur). `supabase/local/secrets.sql`'i barındırılan projede asla çalıştırma.
 4. `pnpm supabase db push --include-seed` — migration'lar + `seed.sql` (takma ad kelimeleri, mekanlar; tekrar çalıştırılabilir). Yerel sırlar seed yolunda değildir, buradan barındırılan projeye gidemez.
-5. `pnpm supabase functions deploy account` ve `pnpm supabase functions deploy checkin` — `verify_jwt = false` ayarı `config.toml`'dan gelir; token'ı fonksiyon kendisi doğrular.
+5. `pnpm supabase functions deploy` — tüm fonksiyonlar. `verify_jwt = false` ayarı `config.toml`'dan gelir; token'ı fonksiyon kendisi doğrular.
 6. **Twilio:**
    - Verify servisi oluştur; Account SID, Auth Token ve Verify Service SID'i al.
    - **Verify → Settings → Geo permissions: yalnızca Türkiye** açık (SMS pumping dolandırıcılığına karşı). Fraud Guard açık kalsın.
@@ -51,6 +51,11 @@ Node 22, pnpm 10, Docker (yerel Supabase için). Supabase CLI ve Deno root devDe
    - Hooks → **Before User Created** → Postgres → şema `private`, fonksiyon `before_user_created`.
 8. **Mobil:** `cp apps/mobile/.env.example apps/mobile/.env`; URL `https://<ref>.supabase.co`, anahtar Settings → API Keys'teki publishable key.
 9. Sonraki değişikliklerde: yeni migration ya da içerik → `pnpm supabase db push --include-seed`; fonksiyon değişikliği → `pnpm supabase functions deploy <ad>`.
+
+### Push (isteğe bağlı; hesaplar olmadan build kırılmaz)
+- `EAS_PROJECT_ID`: `eas init` ile alınan Expo proje id'si. Yoksa uygulama push token kaydını sessizce atlar.
+- `GOOGLE_SERVICES_JSON`: Firebase'in `google-services.json` yolu (varsayılan `apps/mobile/google-services.json`, git'e girmez). Dosya yoksa Android build'e eklenmez. FCM V1 anahtarı Expo paneline yüklenir.
+- Gönderim Expo push API'si ile yapılır, sunucuda anahtar gerekmez.
 
 ### Mobil (Android fiziksel cihaz, USB hata ayıklama açık)
 1. `apps/mobile/.env` barındırılan dev projesini göstermeli (yukarıdaki 8. adım).

@@ -12,5 +12,6 @@
       "@shared/*": ["../../supabase/functions/_shared/pure/*"]
     }
   },
+  "exclude": ["app.config.ts"],
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts", "nativewind-env.d.ts"]
 }

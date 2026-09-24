@@ -58,6 +58,78 @@ export type Database = {
         };
         Relationships: [];
       };
+      blocks: {
+        Row: {
+          blocked_alias: string;
+          blocked_id: string;
+          blocker_id: string;
+          created_at: string;
+        };
+        Insert: {
+          blocked_alias: string;
+          blocked_id: string;
+          blocker_id: string;
+          created_at?: string;
+        };
+        Update: {
+          blocked_alias?: string;
+          blocked_id?: string;
+          blocker_id?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      join_requests: {
+        Row: {
+          created_at: string;
+          expires_at: string;
+          id: string;
+          requester_alias: string;
+          requester_headcount: number;
+          requester_session_id: string;
+          responded_at: string | null;
+          room_id: string;
+          status: string;
+        };
+        Insert: {
+          created_at?: string;
+          expires_at: string;
+          id?: string;
+          requester_alias: string;
+          requester_headcount: number;
+          requester_session_id: string;
+          responded_at?: string | null;
+          room_id: string;
+          status?: string;
+        };
+        Update: {
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          requester_alias?: string;
+          requester_headcount?: number;
+          requester_session_id?: string;
+          responded_at?: string | null;
+          room_id?: string;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'join_requests_requester_session_id_fkey';
+            columns: ['requester_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'table_sessions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'join_requests_room_id_fkey';
+            columns: ['room_id'];
+            isOneToOne: false;
+            referencedRelation: 'rooms';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       profiles: {
         Row: {
           age_confirmed_at: string;
@@ -67,6 +139,7 @@ export type Database = {
           kvkk_version: string;
           location_consent_at: string | null;
           location_consent_version: string | null;
+          push_token: string | null;
           terms_accepted_at: string;
           terms_version: string;
         };
@@ -78,6 +151,7 @@ export type Database = {
           kvkk_version: string;
           location_consent_at?: string | null;
           location_consent_version?: string | null;
+          push_token?: string | null;
           terms_accepted_at: string;
           terms_version: string;
         };
@@ -89,10 +163,87 @@ export type Database = {
           kvkk_version?: string;
           location_consent_at?: string | null;
           location_consent_version?: string | null;
+          push_token?: string | null;
           terms_accepted_at?: string;
           terms_version?: string;
         };
         Relationships: [];
+      };
+      rooms: {
+        Row: {
+          closed_at: string | null;
+          concept: string;
+          created_at: string;
+          guest_alias: string | null;
+          guest_headcount: number | null;
+          guest_session_id: string | null;
+          id: string;
+          last_activity_at: string;
+          owner_alias: string;
+          owner_headcount: number;
+          owner_session_id: string;
+          status: string;
+          venue_id: string;
+          visibility: string;
+          waiting_since: string;
+        };
+        Insert: {
+          closed_at?: string | null;
+          concept: string;
+          created_at?: string;
+          guest_alias?: string | null;
+          guest_headcount?: number | null;
+          guest_session_id?: string | null;
+          id?: string;
+          last_activity_at?: string;
+          owner_alias: string;
+          owner_headcount: number;
+          owner_session_id: string;
+          status?: string;
+          venue_id: string;
+          visibility: string;
+          waiting_since?: string;
+        };
+        Update: {
+          closed_at?: string | null;
+          concept?: string;
+          created_at?: string;
+          guest_alias?: string | null;
+          guest_headcount?: number | null;
+          guest_session_id?: string | null;
+          id?: string;
+          last_activity_at?: string;
+          owner_alias?: string;
+          owner_headcount?: number;
+          owner_session_id?: string;
+          status?: string;
+          venue_id?: string;
+          visibility?: string;
+          waiting_since?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'rooms_guest_session_id_fkey';
+            columns: ['guest_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'table_sessions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rooms_owner_session_id_fkey';
+            columns: ['owner_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'table_sessions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rooms_venue_id_fkey';
+            columns: ['venue_id'];
+            isOneToOne: false;
+            referencedRelation: 'venues';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       table_sessions: {
         Row: {
@@ -176,7 +327,24 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      my_join_requests: {
+        Row: {
+          created_at: string | null;
+          expires_at: string | null;
+          id: string | null;
+          room_id: string | null;
+          status: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'join_requests_room_id_fkey';
+            columns: ['room_id'];
+            isOneToOne: false;
+            referencedRelation: 'rooms';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Functions: {
       end_table_session: { Args: { target_user_id: string }; Returns: boolean };
@@ -192,6 +360,137 @@ export type Database = {
       record_banned_phone: {
         Args: { target_user_id: string };
         Returns: undefined;
+      };
+      rooms_create: {
+        Args: {
+          new_concept: string;
+          new_visibility: string;
+          target_user_id: string;
+        };
+        Returns: {
+          closed_at: string | null;
+          concept: string;
+          created_at: string;
+          guest_alias: string | null;
+          guest_headcount: number | null;
+          guest_session_id: string | null;
+          id: string;
+          last_activity_at: string;
+          owner_alias: string;
+          owner_headcount: number;
+          owner_session_id: string;
+          status: string;
+          venue_id: string;
+          visibility: string;
+          waiting_since: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'rooms';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      rooms_end: {
+        Args: { target_user_id: string };
+        Returns: {
+          closed_at: string | null;
+          concept: string;
+          created_at: string;
+          guest_alias: string | null;
+          guest_headcount: number | null;
+          guest_session_id: string | null;
+          id: string;
+          last_activity_at: string;
+          owner_alias: string;
+          owner_headcount: number;
+          owner_session_id: string;
+          status: string;
+          venue_id: string;
+          visibility: string;
+          waiting_since: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'rooms';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      rooms_leave: {
+        Args: { target_user_id: string };
+        Returns: {
+          closed_at: string | null;
+          concept: string;
+          created_at: string;
+          guest_alias: string | null;
+          guest_headcount: number | null;
+          guest_session_id: string | null;
+          id: string;
+          last_activity_at: string;
+          owner_alias: string;
+          owner_headcount: number;
+          owner_session_id: string;
+          status: string;
+          venue_id: string;
+          visibility: string;
+          waiting_since: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'rooms';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      rooms_request_join: {
+        Args: {
+          max_per_hour: number;
+          target_room_id: string;
+          target_user_id: string;
+          ttl_seconds: number;
+        };
+        Returns: {
+          created_at: string;
+          expires_at: string;
+          id: string;
+          requester_alias: string;
+          requester_headcount: number;
+          requester_session_id: string;
+          responded_at: string | null;
+          room_id: string;
+          status: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'join_requests';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      rooms_respond: {
+        Args: {
+          accept: boolean;
+          target_request_id: string;
+          target_user_id: string;
+        };
+        Returns: {
+          created_at: string;
+          expires_at: string;
+          id: string;
+          requester_alias: string;
+          requester_headcount: number;
+          requester_session_id: string;
+          responded_at: string | null;
+          room_id: string;
+          status: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'join_requests';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       start_table_session: {
         Args: {
@@ -224,6 +523,16 @@ export type Database = {
       venue_distance_m: {
         Args: { lat: number; lng: number; target_venue_id: string };
         Returns: number;
+      };
+      venue_lobby: {
+        Args: { target_venue_id: string };
+        Returns: {
+          alias: string;
+          concept: string;
+          headcount: number;
+          room_id: string;
+          waiting_since: string;
+        }[];
       };
     };
     Enums: {

@@ -184,13 +184,14 @@ venues            id, name, city, district, location geography(Point),
 alias_words       kind (adjective|animal), word           (aliases-tr.json'dan seed; yalnızca sunucu okur)
 table_sessions    id, user_id, venue_id, alias, headcount, status (active|ended),
                   gps_accuracy_m, created_at, expires_at, ended_at
-rooms             id, venue_id, owner_session_id, guest_session_id (nullable),
-                  concept (tabu|sohbet), visibility (private|open),
+rooms             id, venue_id, owner_session_id, owner_alias, owner_headcount,
+                  guest_session_id (nullable), guest_alias, guest_headcount,
+                  concept (tabu|sohbet), visibility (private|open), waiting_since,
                   status (waiting|active|ending|closed), game_state jsonb,
                   reveal_result (null|mutual|none), reveal_token jsonb, reveal_ends_at,
                   last_activity_at, created_at, closed_at
-join_requests     id, room_id, requester_session_id,
-                  status (pending|accepted|declined|expired), created_at, expires_at
+join_requests     id, room_id, requester_session_id, requester_alias, requester_headcount,
+                  status (pending|accepted|declined|expired), created_at, expires_at, responded_at
 messages          id, room_id, session_id, body, created_at
 cards             id, deck (tabu|sohbet), theme, word, forbidden text[], prompt, is_active
 tabu_turns        id, room_id, turn_no, describer_session_id, card_id,
@@ -201,7 +202,7 @@ reveal_decisions  room_id, session_id, wants_meet, created_at   PK (room_id, ses
 reports           id, reporter_id (null, ON DELETE SET NULL),
                   reported_user_id (null, ON DELETE SET NULL), room_id, reason,
                   messages_snapshot jsonb, status, created_at
-blocks            blocker_id, blocked_id, created_at            PK (blocker_id, blocked_id)
+blocks            blocker_id, blocked_id, blocked_alias, created_at   PK (blocker_id, blocked_id)
 banned_phones     phone_hash (HMAC, sunucu gizli anahtarı) PK, created_at
                   (ban = hash + hesap silme; hesaba bağlı değildir, silmeden etkilenmez)
 ```
@@ -215,13 +216,15 @@ banned_phones     phone_hash (HMAC, sunucu gizli anahtarı) PK, created_at
 - `rooms`, `messages`, `game_events`: sadece odadaki masaların sahibi okur.
 - `tabu_turns`: odadakiler okur ama `card_id` kolonu istemciye açılmaz (view üzerinden). Kart kelimesi yalnızca `tabu/current-card` ile anlatana gider.
 - `cards`: `sohbet` destesi okunabilir. `tabu` destesi istemciye kapalı; tek masa modu desteyi `tabu/start` üzerinden alır.
-- `join_requests`: istek sahibi `declined` ve `expired` durumlarını `unavailable` olarak görür (view). Oda sahibi kendi odasına gelen istekleri görür.
+- `join_requests`: ham satırları yalnızca oda sahibi okur. İstek sahibi yalnızca `my_join_requests` view'ını okur: kabul hemen `accepted` görünür; red ya da cevapsızlık `expires_at`'e kadar `pending`, sonra `unavailable` görünür (red de 60 sn dolana kadar ayırt edilemez). Red hiçbir yayın, push ya da yanıt alanı üretmez.
+- Masa takma adları ve kişi sayıları `rooms` ve `join_requests` satırlarına kopyalanır; üyeler birbirinin `table_sessions` satırını okumaz.
+- Oda durum geçişleri yalnızca service role'ün çağırdığı SQL fonksiyonlarındadır (`rooms_create`, `rooms_request_join`, `rooms_respond`, `rooms_leave`, `rooms_end`).
 - `reveal_decisions`: sadece kendi kararı. Sonuç `rooms.reveal_result` ve `reveal_token` alanlarıyla gelir.
 
 ### Realtime
 - **Lobi:** Edge Function'lar `venue:{id}` kanalına veri içermeyen `lobby_changed` yayını yapar. İstemci bunu duyunca `venue_lobby` RPC'sini yeniden çağırır. Lobi verisi Realtime üzerinden taşınmaz.
 - **Oda:** `rooms`, `messages` ve `game_events` için `room_id` filtreli Postgres Changes (RLS geçerli). Aynı kanalda presence ile bağlantısı kopan masa tespit edilir.
-- **Katılma isteği:** Oda sahibine `session:{id}` kanalından yayın, uygulama arka plandaysa push.
+- **Katılma isteği:** Oda sahibine `session:{id}` kanalından veri içermeyen `join_request` yayını; kabulde istek sahibine `join_accepted`. Red yayın üretmez. Uygulama öndeyken sistem bildirimi gösterilmez.
 
 ### Zamanlama
 - Tur süresi sunucuda `ends_at` olarak tutulur. İstemci geri sayımı buna göre gösterir. `ends_at` sonrasında gelen ipucu ya da tahmin reddedilir.
@@ -232,7 +235,8 @@ banned_phones     phone_hash (HMAC, sunucu gizli anahtarı) PK, created_at
 ### Push
 - Expo push token `account/register-push` ile kaydedilir (M3).
 - Bildirim izni ilk anlamlı anda istenir: açık oda kurarken ya da katılma isteği gönderirken. Onboarding'de istenmez.
-- Gönderim Edge Function'dan Expo push API'sine yapılır. İki olay var: oda sahibine katılma isteği, istek sahibine kabul.
+- Gönderim Edge Function'dan Expo push API'sine yapılır, en iyi çabayla (başarısızlık isteği bozmaz). İki olay var: oda sahibine katılma isteği, istek sahibine kabul. Metinler `_shared/pure/push.ts` içinde.
+- Yapılandırma env'den: `EAS_PROJECT_ID` yoksa token kaydı sessizce atlanır; `google-services.json` yoksa Android build'e eklenmez. Build hiçbir koşulda bu hesaplara bağlı değildir.
 
 ## 10. Ekranlar
 1. **Onboarding:** Telefon, OTP, 18+ ve onaylar.

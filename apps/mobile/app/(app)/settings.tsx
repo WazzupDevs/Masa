@@ -5,6 +5,7 @@ import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
+import { unregisterPush } from '@/features/push/push';
 import { callAccount } from '@/lib/api';
 import { queryClient } from '@/lib/queryClient';
 import { supabase } from '@/lib/supabase';
@@ -18,6 +19,7 @@ async function signOutLocally() {
 export default function SettingsScreen() {
   const signOut = useMutation({
     mutationFn: async () => {
+      await unregisterPush();
       await supabase.auth.signOut();
       queryClient.clear();
     },

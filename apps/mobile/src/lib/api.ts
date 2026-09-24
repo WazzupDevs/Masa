@@ -1,5 +1,11 @@
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import type { AccountRequest, AccountResponse } from '@shared/api/account.ts';
+import type {
+  CreateRoomRequest,
+  CreateRoomResponse,
+  RequestJoinResponse,
+  RoomsOkResponse,
+} from '@shared/api/rooms.ts';
 import type { CheckInRequest, CheckInResponse, LeaveResponse } from '@shared/api/checkin.ts';
 import { type ErrorCode, isApiErrorBody } from '@shared/errors.ts';
 
@@ -37,3 +43,14 @@ export function callCheckIn(body: CheckInRequest): Promise<CheckInResponse> {
 export function callLeave(): Promise<LeaveResponse> {
   return invoke<LeaveResponse>('checkin', { action: 'leave' });
 }
+
+export const roomsApi = {
+  create: (body: Omit<CreateRoomRequest, 'action'>) =>
+    invoke<CreateRoomResponse>('rooms', { action: 'create', ...body }),
+  requestJoin: (roomId: string) =>
+    invoke<RequestJoinResponse>('rooms', { action: 'request-join', roomId }),
+  respond: (requestId: string, accept: boolean) =>
+    invoke<RoomsOkResponse>('rooms', { action: 'respond', requestId, accept }),
+  leave: () => invoke<RoomsOkResponse>('rooms', { action: 'leave' }),
+  end: () => invoke<RoomsOkResponse>('rooms', { action: 'end' }),
+};

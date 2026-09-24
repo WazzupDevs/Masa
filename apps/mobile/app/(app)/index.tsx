@@ -1,23 +1,17 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { Link, Redirect, router } from 'expo-router';
+import { useEffect } from 'react';
 import { ActivityIndicator, Alert, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { useActiveTable } from '@/features/checkin/useActiveTable';
+import { Lobby } from '@/features/rooms/Lobby';
+import { useCurrentRoom } from '@/features/rooms/queries';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { callLeave } from '@/lib/api';
-
-function useNow(intervalMs: number): number {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), intervalMs);
-    return () => clearInterval(timer);
-  }, [intervalMs]);
-  return now;
-}
+import { useNow } from '@/lib/useNow';
 
 function Header() {
   return (
@@ -32,11 +26,12 @@ function Header() {
 export default function HomeScreen() {
   const queryClient = useQueryClient();
   const table = useActiveTable();
+  const currentRoom = useCurrentRoom(table.data?.id);
   const now = useNow(30_000);
 
   const leave = useMutation({
     mutationFn: callLeave,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['activeTable'] }),
+    onSuccess: () => queryClient.invalidateQueries(),
   });
 
   const expiresAt = table.data ? Date.parse(table.data.expires_at) : null;
@@ -67,6 +62,10 @@ export default function HomeScreen() {
     );
   }
 
+  if (currentRoom.data) {
+    return <Redirect href={{ pathname: '/room/[id]', params: { id: currentRoom.data.id } }} />;
+  }
+
   const minutesLeft = Math.max(0, Math.ceil((expiresAt - now) / 60_000));
 
   function confirmLeave() {
@@ -80,13 +79,23 @@ export default function HomeScreen() {
     <Screen>
       <Header />
       <Text className="mt-4 text-3xl font-bold text-black">{table.data.venue?.name}</Text>
-      <Text className="mt-6 text-sm text-neutral-500">{tr.venue.yourTable}</Text>
+      <Text className="mt-2 text-sm text-neutral-500">{tr.venue.yourTable}</Text>
       <Text className="text-2xl font-semibold text-black">{table.data.alias}</Text>
       <Text className="mt-1 text-base text-neutral-600">
         {tr.venue.people(table.data.headcount)} ·{' '}
         {tr.venue.remaining(Math.floor(minutesLeft / 60), minutesLeft % 60)}
       </Text>
-      <Text className="mt-8 text-base text-neutral-500">{tr.venue.roomsSoon}</Text>
+
+      <View className="mt-6">
+        <Button label={tr.rooms.create} onPress={() => router.push('/room/new')} />
+      </View>
+
+      <Lobby
+        venueId={table.data.venue_id}
+        sessionId={table.data.id}
+        since={table.data.created_at}
+      />
+
       <View className="mt-auto gap-3 pt-8">
         {leave.isError ? (
           <Text className="text-sm text-red-600">{errorMessage(leave.error)}</Text>
