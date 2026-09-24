@@ -11,6 +11,7 @@ import { useProfile } from '@/features/account/useProfile';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { callAccount } from '@/lib/api';
+import { track } from '@/lib/analytics';
 
 export default function ConsentsScreen() {
   const queryClient = useQueryClient();
@@ -27,7 +28,10 @@ export default function ConsentsScreen() {
         termsVersion: CURRENT_TERMS_VERSION,
         kvkkVersion: CURRENT_KVKK_VERSION,
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['profile'] }),
+    onSuccess: () => {
+      if (!profile.data) track('onboarding_completed', {});
+      return queryClient.invalidateQueries({ queryKey: ['profile'] });
+    },
   });
 
   return (

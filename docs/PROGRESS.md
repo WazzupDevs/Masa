@@ -12,8 +12,8 @@ Otonom çalışma: M2'den M7'ye taşlar sırayla uygulanıyor. Her taş typechec
 | M3 Oda, lobi, katılma isteği | ✅ Bitti                    | `c974d78`                       |
 | M4 Sohbet ve güvenlik        | ✅ Bitti                    | `b054c3c`                       |
 | M5 Konseptler                | ✅ Bitti                    | `8ccf6da`                       |
-| M6 Oda sonu ve tanışma       | ✅ Bitti                    | "M6: …" commit'i                |
-| M7 Analitik ve mağaza        | ⏳ Devam ediyor             |                                 |
+| M6 Oda sonu ve tanışma       | ✅ Bitti                    | `4a0b84b`                       |
+| M7 Analitik ve mağaza        | ✅ Bitti (mağaza hariç)     | "M7: …" commit'i                |
 
 ## Container'da doğrulanamayan kabul kriterleri
 
@@ -24,10 +24,11 @@ Otonom çalışma: M2'den M7'ye taşlar sırayla uygulanıyor. Her taş typechec
 - M4: Cihazda sohbet, şikayet, engelleme ve bağlantı durumu (sunucu tarafı kabul kriterleri container'da doğrulandı).
 - M5: İki cihazda iki masalı Tabu baştan sona (sunucu akışı ve kelime sızmaması container'da doğrulandı); cihazda tek masa Tabu ve Sohbet.
 - M6: İki cihazda tanışma penceresi ve tam ekran sinyal (sunucu tarafı: yalnızca karşılıklı Evet'te sinyal, diğer durumlarda iki tarafa aynı satır; container'da doğrulandı).
+- M7: §12 event'lerinin PostHog'a düşmesi (anahtar yok) ve uygulamanın iki mağazanın test kanalında olması (hesap yok; talimat gereği gönderim yapılmadı).
 
 ## Sıradaki adım
 
-M7: PostHog (env yoksa hiçbir şey yapmaz, yalnızca kullanıcı id'si), hesap silmede PostHog kişi silme, gizlilik/KVKK taslakları (hukuki kontrol gerekli), mağaza metinleri, `eas.json`, Issue #2'ye mağaza ve hesap adımları, tek PR.
+Otonom çalışma tamamlandı; tek PR açıldı (merge edilmedi). Kalan tüm adımlar hesap ya da cihaz gerektiriyor: [Issue #2](https://github.com/WazzupDevs/Masa/issues/2).
 
 ## Yerel ortamı kaldırma (yeni oturumda)
 

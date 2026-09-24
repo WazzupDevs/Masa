@@ -266,6 +266,12 @@ banned_phones     phone_hash (HMAC, sunucu gizli anahtarı) PK, created_at
 ## 12. Analitik
 **Event'ler:** `onboarding_completed`, `check_in`, `room_created {concept, visibility}`, `join_requested`, `join_accepted`, `join_unavailable`, `room_two_tables`, `game_completed {concept, score}`, `reveal_mutual`, `reveal_none`, `report_submitted`, `block_created`, `session_ended {duration_min}`.
 
+**Uygulama:**
+- `posthog-react-native`, anahtar env'den (`EXPO_PUBLIC_POSTHOG_KEY`); yoksa hiçbir şey gönderilmez. AB sunucusu, GeoIP kapalı, oturum kaydı ve otomatik yaşam döngüsü event'leri kapalı, kişi profili yalnızca `identify` ile (kullanıcı id'si).
+- Event'lerin izinli özellikleri `_shared/pure/analytics.ts`'te tanımlıdır; listede olmayan özellik gönderilmez.
+- Oda başına sayılan event'ler (`room_two_tables`, iki masalı `game_completed`, `reveal_mutual`, `reveal_none`) yalnızca oda sahibinin telefonundan gider; `join_accepted` ve `join_unavailable` istek sahibinden; aynı olay bir çalıştırmada bir kez gönderilir.
+- Hesap silme ve ban, fonksiyon sırları tanımlıysa PostHog kişi kaydını ve event'lerini de siler.
+
 **Metrikler:**
 - **Açık oda oranı** (en kritik) = `open` oda kuran masalar / check-in yapan masalar
 - İstek kabul oranı = `join_accepted` / `join_requested`

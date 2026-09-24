@@ -17,6 +17,7 @@ import { IncomingRequest } from '@/features/rooms/IncomingRequest';
 import { roomKeys, useRoom } from '@/features/rooms/queries';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
+import { trackOnce } from '@/lib/analytics';
 import { roomsApi } from '@/lib/api';
 
 export default function RoomScreen() {
@@ -49,7 +50,12 @@ export default function RoomScreen() {
   if (r.status === 'closed') {
     // A two-table room shows its shared result once; otherwise back to the venue.
     return r.reveal_result === 'mutual' || r.reveal_result === 'none' ? (
-      <RevealResult result={r.reveal_result} token={r.reveal_token} />
+      <RevealResult
+        roomId={r.id}
+        isOwner={r.owner_session_id === sessionId}
+        result={r.reveal_result}
+        token={r.reveal_token}
+      />
     ) : (
       <Redirect href="/" />
     );
@@ -59,6 +65,15 @@ export default function RoomScreen() {
   const concept = r.concept as Concept;
   const hasOtherTable = r.guest_session_id !== null;
   const tabuState = parseGameState(r.game_state);
+
+  // Room-level events come from one table only, so each room counts once.
+  if (!isOwner) trackOnce(`join_accepted:${r.id}`, 'join_accepted', {});
+  if (isOwner && tabuState?.concept === 'tabu' && tabuState.phase === 'finished') {
+    trackOnce(`game_completed:${r.id}:${tabuState.gameNo}`, 'game_completed', {
+      concept: 'tabu',
+      score: tabuState.score,
+    });
+  }
 
   if (r.status === 'ending' && r.reveal_ends_at) {
     return (

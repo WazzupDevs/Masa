@@ -1,7 +1,9 @@
 import { requireUser, serviceClient } from '../_shared/auth.ts';
+import { inBackground } from '../_shared/background.ts';
 import { dbError } from '../_shared/db.ts';
 import { z } from '../_shared/deps.ts';
 import { handle } from '../_shared/http.ts';
+import { deletePosthogPerson } from '../_shared/posthog.ts';
 import type { AccountRequest, AccountResponse } from '../_shared/pure/api/account.ts';
 import { CURRENT_KVKK_VERSION, CURRENT_TERMS_VERSION } from '../_shared/pure/consent.ts';
 import { AppError } from '../_shared/pure/errors.ts';
@@ -56,6 +58,7 @@ Deno.serve(
         if (ended.error) throw dbError('end_table_session', ended.error);
         const { error } = await db.auth.admin.deleteUser(user.id);
         if (error) throw error;
+        inBackground(deletePosthogPerson(user.id));
         return { ok: true };
       }
 

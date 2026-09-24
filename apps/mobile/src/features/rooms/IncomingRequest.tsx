@@ -5,6 +5,7 @@ import { Modal, Text, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
+import { track } from '@/lib/analytics';
 import { roomsApi } from '@/lib/api';
 import { useNow } from '@/lib/useNow';
 
@@ -21,6 +22,9 @@ export function IncomingRequest({ roomId, ownerSessionId, concept }: Props) {
 
   const respond = useMutation({
     mutationFn: ({ id, accept }: { id: string; accept: boolean }) => roomsApi.respond(id, accept),
+    onSuccess: (_data, { accept }) => {
+      if (accept) track('room_two_tables', {});
+    },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: roomKeys.incoming(roomId) });
       void queryClient.invalidateQueries({ queryKey: roomKeys.room(roomId) });

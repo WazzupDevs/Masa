@@ -7,6 +7,7 @@ import { ActivityIndicator, Text, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
+import { track } from '@/lib/analytics';
 import { gamesApi } from '@/lib/api';
 import { useNow } from '@/lib/useNow';
 
@@ -33,6 +34,11 @@ export function LocalTabu({ roomId }: { roomId: string }) {
   useEffect(() => {
     if (timeUp) dispatch({ type: 'timeUp' });
   }, [timeUp]);
+  const finished = state.phase === 'finished';
+  const { A, B } = state.scores;
+  useEffect(() => {
+    if (finished) track('game_completed', { concept: 'tabu', score: A + B });
+  }, [finished, A, B]);
 
   if (deck.isError) return <Text className="text-sm text-red-600">{errorMessage(deck.error)}</Text>;
   if (!cards || state.deck.length === 0) return <ActivityIndicator />;

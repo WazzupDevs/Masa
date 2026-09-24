@@ -7,6 +7,7 @@ import { Button } from '@/components/Button';
 import { roomKeys } from '@/features/rooms/queries';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
+import { track } from '@/lib/analytics';
 import { safetyApi } from '@/lib/api';
 
 type Props = { roomId: string; hasOtherTable: boolean };
@@ -19,12 +20,14 @@ export function RoomSafety({ roomId, hasOtherTable }: Props) {
   const report = useMutation({
     mutationFn: (reason: ReportReason) => safetyApi.report(roomId, reason),
     onSuccess: () => {
+      track('report_submitted', {});
       setReporting(false);
       Alert.alert(tr.safety.reportSent);
     },
   });
   const block = useMutation({
     mutationFn: () => safetyApi.block(roomId),
+    onSuccess: () => track('block_created', {}),
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: roomKeys.current });
       void queryClient.invalidateQueries({ queryKey: roomKeys.room(roomId) });

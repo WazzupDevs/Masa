@@ -10,6 +10,7 @@ import { Screen } from '@/components/Screen';
 import { useCheckinDraft } from '@/features/checkin/draft';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
+import { track } from '@/lib/analytics';
 import { callCheckIn } from '@/lib/api';
 
 const COUNTS = Array.from(
@@ -36,6 +37,7 @@ export default function HeadcountScreen() {
       });
     },
     onSuccess: async (result) => {
+      track('check_in', {});
       clear();
       await queryClient.invalidateQueries({ queryKey: ['profile'] });
       router.replace({ pathname: '/checkin/done', params: { alias: result.alias } });

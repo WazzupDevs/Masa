@@ -8,6 +8,7 @@ import { Button } from '@/components/Button';
 import { registerForPush } from '@/features/push/push';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
+import { track, trackOnce } from '@/lib/analytics';
 import { roomsApi } from '@/lib/api';
 import { useNow } from '@/lib/useNow';
 
@@ -28,6 +29,7 @@ export function Lobby({ venueId, sessionId, since }: Props) {
       void registerForPush();
       return roomsApi.requestJoin(roomId);
     },
+    onSuccess: () => track('join_requested', {}),
     onSettled: () => void queryClient.invalidateQueries({ queryKey: roomKeys.myRequest }),
   });
 
@@ -39,6 +41,12 @@ export function Lobby({ venueId, sessionId, since }: Props) {
   useEffect(() => {
     if (viewStale) void refetch();
   }, [viewStale, refetch]);
+  const requestId = mine?.id;
+  useEffect(() => {
+    if (requestId && status === 'unavailable') {
+      trackOnce(`join_unavailable:${requestId}`, 'join_unavailable', {});
+    }
+  }, [requestId, status]);
   const secondsLeft = mine ? Math.max(0, Math.ceil((Date.parse(mine.expiresAt) - now) / 1000)) : 0;
   const recentlyUnavailable =
     mine && status === 'unavailable' && now - Date.parse(mine.expiresAt) < 15_000;

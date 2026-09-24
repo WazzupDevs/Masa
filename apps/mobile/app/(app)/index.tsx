@@ -10,8 +10,17 @@ import { Lobby } from '@/features/rooms/Lobby';
 import { useCurrentRoom } from '@/features/rooms/queries';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
+import { sessionDurationMinutes } from '@shared/analytics.ts';
+
+import { trackOnce } from '@/lib/analytics';
 import { callLeave } from '@/lib/api';
 import { useNow } from '@/lib/useNow';
+
+function endSession(tableId: string, startedAt: string) {
+  trackOnce(`session_ended:${tableId}`, 'session_ended', {
+    duration_min: sessionDurationMinutes(startedAt, Date.now()),
+  });
+}
 
 function Header() {
   return (
@@ -31,15 +40,22 @@ export default function HomeScreen() {
 
   const leave = useMutation({
     mutationFn: callLeave,
-    onSuccess: () => queryClient.invalidateQueries(),
+    onSuccess: () => {
+      if (table.data) endSession(table.data.id, table.data.created_at);
+      return queryClient.invalidateQueries();
+    },
   });
 
   const expiresAt = table.data ? Date.parse(table.data.expires_at) : null;
   const expired = expiresAt !== null && expiresAt <= now;
 
+  const tableId = table.data?.id;
+  const tableStartedAt = table.data?.created_at;
   useEffect(() => {
-    if (expired) void queryClient.invalidateQueries({ queryKey: ['activeTable'] });
-  }, [expired, queryClient]);
+    if (!expired) return;
+    if (tableId && tableStartedAt) endSession(tableId, tableStartedAt);
+    void queryClient.invalidateQueries({ queryKey: ['activeTable'] });
+  }, [expired, queryClient, tableId, tableStartedAt]);
 
   if (table.isPending) {
     return (

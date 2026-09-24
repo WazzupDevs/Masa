@@ -205,6 +205,13 @@ export const tr = {
     deleteConfirmTitle: 'Hesabın silinsin mi?',
     deleteConfirmBody: 'Tüm verilerin kalıcı olarak silinir. Bu işlem geri alınamaz.',
     deleteConfirm: 'Sil',
+    privacy: 'Gizlilik politikası',
+    kvkk: 'KVKK Aydınlatma Metni',
+    terms: 'Kullanım Koşulları',
+    contact: 'İletişim',
+    about: 'Hakkında',
+    version: (v: string) => `Sürüm ${v}`,
+    osm: 'Mekan verileri © OpenStreetMap katkıda bulunanlar (ODbL).',
   },
   errors: {
     bad_request: 'İstek geçersiz.',

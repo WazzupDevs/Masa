@@ -11,6 +11,7 @@ import { registerForPush } from '@/features/push/push';
 import { roomKeys } from '@/features/rooms/queries';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
+import { track } from '@/lib/analytics';
 import { roomsApi } from '@/lib/api';
 
 export default function NewRoomScreen() {
@@ -24,6 +25,7 @@ export default function NewRoomScreen() {
   const create = useMutation({
     mutationFn: () => roomsApi.create({ concept, visibility }),
     onSuccess: async ({ roomId }) => {
+      track('room_created', { concept, visibility });
       if (visibility === 'open') void registerForPush();
       await queryClient.invalidateQueries({ queryKey: roomKeys.current });
       router.replace({ pathname: '/room/[id]', params: { id: roomId } });

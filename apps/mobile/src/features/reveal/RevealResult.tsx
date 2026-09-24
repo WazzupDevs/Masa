@@ -6,13 +6,19 @@ import { Modal, Text, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { tr } from '@/i18n/tr';
+import { trackOnce } from '@/lib/analytics';
 
-type Props = { result: 'mutual' | 'none'; token: unknown };
+type Props = { roomId: string; isOwner: boolean; result: 'mutual' | 'none'; token: unknown };
 
 // On a mutual yes both screens show the same full-screen color and emoji for 60 seconds; in every
 // other case both tables see the same "Güzel oyundu" (MVP_SPEC §4.6).
-export function RevealResult({ result, token }: Props) {
+export function RevealResult({ roomId, isOwner, result, token }: Props) {
   const mutual = result === 'mutual' && isRevealToken(token);
+
+  useEffect(() => {
+    // Counted once per room, from the owner's phone.
+    if (isOwner) trackOnce(`reveal:${roomId}`, mutual ? 'reveal_mutual' : 'reveal_none', {});
+  }, [isOwner, roomId, mutual]);
 
   useEffect(() => {
     if (!mutual) return;
