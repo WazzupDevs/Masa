@@ -7,6 +7,12 @@ export const tr = {
   app: {
     name: 'Masa',
   },
+  update: {
+    title: 'Güncelleme gerekli',
+    body: 'Uygulamanın bu sürümü artık çalışmıyor. Devam etmek için yeni sürümü yükle.',
+    action: 'Güncelle',
+    build: (b: string) => `Yüklü sürüm: ${b}`,
+  },
   errorScreen: {
     title: 'Bir şeyler ters gitti',
     body: 'Bu ekran açılamadı. Tekrar deneyebilir ya da ana ekrana dönebilirsin.',
@@ -358,6 +364,7 @@ export const tr = {
     bio_invalid: 'Tanıtım en fazla 160 karakter olmalı ve uygun olmayan ifade içermemeli.',
     photo_invalid: 'Fotoğraf yüklenemedi. Başka bir fotoğraf dene.',
     method_not_allowed: 'İstek geçersiz.',
+    update_required: 'Uygulamanın yeni sürümünü yüklemen gerekiyor.',
     internal: 'Bir şeyler ters gitti. Tekrar dener misin?',
   },
 } as const;

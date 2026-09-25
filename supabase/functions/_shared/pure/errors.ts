@@ -39,6 +39,7 @@ export type ErrorCode =
   | 'bio_invalid'
   | 'photo_invalid'
   | 'method_not_allowed'
+  | 'update_required'
   | 'internal';
 
 export type ApiErrorBody = { error: { code: ErrorCode; message: string } };

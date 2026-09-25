@@ -19,6 +19,9 @@ import type { ProfileRequest, ProfileUploadUrl, ProfileView } from '@shared/api/
 import type { ReportReason } from '@shared/chat.ts';
 import { type ErrorCode, isApiErrorBody } from '@shared/errors.ts';
 
+import { useUpdateGate } from '@/features/update/updateGate';
+
+import { appBuildHeaders } from './appBuild';
 import { supabase } from './supabase';
 
 export class ApiError extends Error {
@@ -31,11 +34,19 @@ export class ApiError extends Error {
   }
 }
 
+// Every Edge Function call goes through here: it carries the native build number, and an
+// update_required answer switches the whole app to the "Güncelleme gerekli" screen.
 async function invoke<T>(fn: string, body: Record<string, unknown>): Promise<T> {
-  const { data, error } = await supabase.functions.invoke<T>(fn, { body });
+  const { data, error } = await supabase.functions.invoke<T>(fn, {
+    body,
+    headers: appBuildHeaders,
+  });
   if (error instanceof FunctionsHttpError) {
     const payload: unknown = await error.context.json().catch(() => null);
-    if (isApiErrorBody(payload)) throw new ApiError(payload.error.code, payload.error.message);
+    if (isApiErrorBody(payload)) {
+      if (payload.error.code === 'update_required') useUpdateGate.getState().markRequired();
+      throw new ApiError(payload.error.code, payload.error.message);
+    }
     throw new ApiError('internal', error.message);
   }
   if (error || data === null) throw new ApiError('internal', error?.message ?? 'Empty response');
