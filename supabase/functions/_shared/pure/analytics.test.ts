@@ -28,6 +28,9 @@ describe('analytics events', () => {
         'session_ended',
         'explore_viewed',
         'checkin_out_of_range',
+        'participation_chosen',
+        'profile_photo_set',
+        'profile_bio_set',
       ].sort(),
     );
   });
@@ -40,7 +43,14 @@ describe('analytics events', () => {
         phone: '+905551234567',
       } as never),
     ).toEqual({ concept: 'tabu', visibility: 'open' });
-    expect(analyticsProperties('check_in', {} as never)).toEqual({});
+    expect(analyticsProperties('check_in', { headcount: 4 })).toEqual({ headcount: 4 });
+    expect(
+      analyticsProperties('check_in', { headcount: 2, venueId: 'v', lat: 41 } as never),
+    ).toEqual({ headcount: 2 });
+    expect(analyticsProperties('participation_chosen', { mode: 'profile' })).toEqual({
+      mode: 'profile',
+    });
+    expect(analyticsProperties('profile_bio_set', { bio: 'merhaba' } as never)).toEqual({});
     expect(analyticsProperties('game_completed', { concept: 'tabu', score: 4 })).toEqual({
       concept: 'tabu',
       score: 4,

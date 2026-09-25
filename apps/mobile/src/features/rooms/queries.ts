@@ -139,7 +139,7 @@ export function useIncomingRequests(roomId: string, ownerSessionId: string | nul
     queryFn: async () => {
       const { data, error } = await supabase
         .from('join_requests')
-        .select('id, requester_alias, requester_headcount, expires_at')
+        .select('id, requester_alias, requester_headcount, requester_profiled, expires_at')
         .eq('room_id', roomId)
         .eq('status', 'pending')
         .gt('expires_at', new Date().toISOString())

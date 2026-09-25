@@ -27,6 +27,7 @@ Node 22, pnpm 10, Docker (yerel Supabase için). Supabase CLI ve Deno root devDe
 - Yerel test numaraları (`config.toml` → `[auth.sms.test_otp]`): `+905550000001` … `+905550000003`, kod `123456`
 - `pnpm admin:ban <userId>` — ban = telefon hash'ini `banned_phones`'a yazar, sonra hesabı siler (tüm veri cascade ile gider). Yalnızca geliştirici makinesinde, `SUPABASE_URL` ve `SUPABASE_SECRET_KEY` ortam değişkenleriyle çalışır. Secret key hiçbir dosyaya yazılmaz, uygulamaya girmez.
 - `pnpm admin:event add <venueId|sourceRef> "<başlık>" <başlangıç> [<bitiş>]` / `list` / `remove <id>` — Keşfet'teki planlı etkinlikler (`venue_events`). Saat `2026-09-29 20:00` (İstanbul) ya da ofsetli ISO; bitiş verilmezse 3 saat. `admin:ban` gibi yalnızca geliştirici makinesinde, `SUPABASE_URL` ve `SUPABASE_SECRET_KEY` ortam değişkenleriyle.
+- `pnpm admin:remove-photo <publicId>` — şikayet incelemesinden sonra profil fotoğrafını siler ve `photo_path`'i boşaltır (şikayet kopyası 30 gün kalır). `admin:ban` gibi yalnızca geliştirici makinesinde, `SUPABASE_URL` ve `SUPABASE_SECRET_KEY` ortam değişkenleriyle. Ban ve hesap silme profil fotoğraflarını da siler.
 
 ## Ortamlar
 - **Yerel (container, CI, entegrasyon testleri):** `pnpm supabase start`. SMS gönderilmez, yalnızca test numaraları çalışır.

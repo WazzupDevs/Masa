@@ -167,6 +167,47 @@ export type Database = {
           },
         ];
       };
+      game_results: {
+        Row: {
+          completed_at: string;
+          concept: string;
+          id: string;
+          mode: string;
+          room_id: string | null;
+          score: number | null;
+          user_id: string;
+          won: boolean | null;
+        };
+        Insert: {
+          completed_at?: string;
+          concept: string;
+          id?: string;
+          mode: string;
+          room_id?: string | null;
+          score?: number | null;
+          user_id: string;
+          won?: boolean | null;
+        };
+        Update: {
+          completed_at?: string;
+          concept?: string;
+          id?: string;
+          mode?: string;
+          room_id?: string | null;
+          score?: number | null;
+          user_id?: string;
+          won?: boolean | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'game_results_room_id_fkey';
+            columns: ['room_id'];
+            isOneToOne: false;
+            referencedRelation: 'rooms';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       join_requests: {
         Row: {
           created_at: string;
@@ -174,6 +215,7 @@ export type Database = {
           id: string;
           requester_alias: string;
           requester_headcount: number;
+          requester_profiled: boolean;
           requester_session_id: string;
           responded_at: string | null;
           room_id: string;
@@ -185,6 +227,7 @@ export type Database = {
           id?: string;
           requester_alias: string;
           requester_headcount: number;
+          requester_profiled?: boolean;
           requester_session_id: string;
           responded_at?: string | null;
           room_id: string;
@@ -196,6 +239,7 @@ export type Database = {
           id?: string;
           requester_alias?: string;
           requester_headcount?: number;
+          requester_profiled?: boolean;
           requester_session_id?: string;
           responded_at?: string | null;
           room_id?: string;
@@ -278,36 +322,60 @@ export type Database = {
       profiles: {
         Row: {
           age_confirmed_at: string;
+          bio: string | null;
           created_at: string;
+          default_participation: string;
+          display_name: string | null;
           id: string;
           kvkk_accepted_at: string;
           kvkk_version: string;
           location_consent_at: string | null;
           location_consent_version: string | null;
+          notify_dm: boolean;
+          notify_friend_requests: boolean;
+          photo_hidden_at: string | null;
+          photo_path: string | null;
+          public_id: string;
           push_token: string | null;
           terms_accepted_at: string;
           terms_version: string;
         };
         Insert: {
           age_confirmed_at: string;
+          bio?: string | null;
           created_at?: string;
+          default_participation?: string;
+          display_name?: string | null;
           id: string;
           kvkk_accepted_at: string;
           kvkk_version: string;
           location_consent_at?: string | null;
           location_consent_version?: string | null;
+          notify_dm?: boolean;
+          notify_friend_requests?: boolean;
+          photo_hidden_at?: string | null;
+          photo_path?: string | null;
+          public_id?: string;
           push_token?: string | null;
           terms_accepted_at: string;
           terms_version: string;
         };
         Update: {
           age_confirmed_at?: string;
+          bio?: string | null;
           created_at?: string;
+          default_participation?: string;
+          display_name?: string | null;
           id?: string;
           kvkk_accepted_at?: string;
           kvkk_version?: string;
           location_consent_at?: string | null;
           location_consent_version?: string | null;
+          notify_dm?: boolean;
+          notify_friend_requests?: boolean;
+          photo_hidden_at?: string | null;
+          photo_path?: string | null;
+          public_id?: string;
           push_token?: string | null;
           terms_accepted_at?: string;
           terms_version?: string;
@@ -317,33 +385,48 @@ export type Database = {
       reports: {
         Row: {
           created_at: string;
+          dm_thread_id: string | null;
+          history_id: string | null;
           id: string;
-          messages_snapshot: Json;
+          messages_snapshot: Json | null;
+          photo_copy: string | null;
+          profile_snapshot: Json | null;
           reason: string;
           reported_user_id: string | null;
           reporter_id: string | null;
           room_id: string | null;
           status: string;
+          target_type: string;
         };
         Insert: {
           created_at?: string;
+          dm_thread_id?: string | null;
+          history_id?: string | null;
           id?: string;
-          messages_snapshot: Json;
+          messages_snapshot?: Json | null;
+          photo_copy?: string | null;
+          profile_snapshot?: Json | null;
           reason: string;
           reported_user_id?: string | null;
           reporter_id?: string | null;
           room_id?: string | null;
           status?: string;
+          target_type?: string;
         };
         Update: {
           created_at?: string;
+          dm_thread_id?: string | null;
+          history_id?: string | null;
           id?: string;
-          messages_snapshot?: Json;
+          messages_snapshot?: Json | null;
+          photo_copy?: string | null;
+          profile_snapshot?: Json | null;
           reason?: string;
           reported_user_id?: string | null;
           reporter_id?: string | null;
           room_id?: string | null;
           status?: string;
+          target_type?: string;
         };
         Relationships: [
           {
@@ -521,6 +604,7 @@ export type Database = {
           gps_accuracy_m: number | null;
           headcount: number;
           id: string;
+          participation: string;
           status: string;
           user_id: string;
           venue_id: string;
@@ -533,6 +617,7 @@ export type Database = {
           gps_accuracy_m?: number | null;
           headcount: number;
           id?: string;
+          participation?: string;
           status?: string;
           user_id: string;
           venue_id: string;
@@ -545,6 +630,7 @@ export type Database = {
           gps_accuracy_m?: number | null;
           headcount?: number;
           id?: string;
+          participation?: string;
           status?: string;
           user_id?: string;
           venue_id?: string;
@@ -782,6 +868,18 @@ export type Database = {
           name: string;
         }[];
       };
+      profile_view: {
+        Args: { target_public_id: string; viewer: string };
+        Returns: {
+          bio: string;
+          display_name: string;
+          is_self: boolean;
+          photo_hidden: boolean;
+          photo_path: string;
+          public_id: string;
+          user_id: string;
+        }[];
+      };
       record_banned_phone: {
         Args: { target_user_id: string };
         Returns: undefined;
@@ -826,6 +924,7 @@ export type Database = {
         Args: { target_room_id: string; target_user_id: string };
         Returns: string;
       };
+      room_member_profile: { Args: { target_room_id: string }; Returns: string };
       rooms_create: {
         Args: {
           new_concept: string;
@@ -937,6 +1036,7 @@ export type Database = {
           id: string;
           requester_alias: string;
           requester_headcount: number;
+          requester_profiled: boolean;
           requester_session_id: string;
           responded_at: string | null;
           room_id: string;
@@ -961,6 +1061,7 @@ export type Database = {
           id: string;
           requester_alias: string;
           requester_headcount: number;
+          requester_profiled: boolean;
           requester_session_id: string;
           responded_at: string | null;
           room_id: string;
@@ -1012,6 +1113,16 @@ export type Database = {
         };
         Returns: string;
       };
+      safety_report_profile: {
+        Args: {
+          new_reason: string;
+          photo?: string;
+          reported_photo_path?: string;
+          target_public_id: string;
+          target_user_id: string;
+        };
+        Returns: boolean;
+      };
       safety_unblock: {
         Args: { target_block_id: string; target_user_id: string };
         Returns: boolean;
@@ -1057,6 +1168,7 @@ export type Database = {
           consent_version: string;
           new_alias: string;
           new_headcount: number;
+          new_participation?: string;
           target_user_id: string;
           target_venue_id: string;
         };
@@ -1068,6 +1180,7 @@ export type Database = {
           gps_accuracy_m: number | null;
           headcount: number;
           id: string;
+          participation: string;
           status: string;
           user_id: string;
           venue_id: string;
@@ -1257,6 +1370,13 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      user_stats: {
+        Args: { target_user_id: string };
+        Returns: {
+          games: number;
+          voice_tabu_wins: number;
+        }[];
+      };
       venue_distance_m: {
         Args: { lat: number; lng: number; target_venue_id: string };
         Returns: number;
@@ -1267,6 +1387,7 @@ export type Database = {
           alias: string;
           concept: string;
           headcount: number;
+          profiled: boolean;
           room_id: string;
           waiting_since: string;
         }[];

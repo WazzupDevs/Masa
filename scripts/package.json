@@ -8,6 +8,7 @@
     "typecheck": "tsc --noEmit",
     "admin:ban": "node --experimental-strip-types admin-ban.ts",
     "admin:event": "node --experimental-strip-types admin-event.ts",
+    "admin:remove-photo": "node --experimental-strip-types admin-remove-photo.ts",
     "apply-local-secrets": "node --experimental-strip-types apply-local-secrets.ts",
     "fetch:venues": "node --experimental-strip-types fetch-venues.ts"
   },

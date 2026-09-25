@@ -15,6 +15,7 @@ import type {
   RoomsOkResponse,
 } from '@shared/api/rooms.ts';
 import type { CheckInRequest, CheckInResponse, LeaveResponse } from '@shared/api/checkin.ts';
+import type { ProfileRequest, ProfileUploadUrl, ProfileView } from '@shared/api/profile.ts';
 import type { ReportReason } from '@shared/chat.ts';
 import { type ErrorCode, isApiErrorBody } from '@shared/errors.ts';
 
@@ -72,6 +73,8 @@ export const chatApi = {
 export const safetyApi = {
   report: (roomId: string, reason: ReportReason) =>
     invoke<SafetyResponse>('safety', { action: 'report', roomId, reason }),
+  reportProfile: (publicId: string, reason: ReportReason) =>
+    invoke<SafetyResponse>('safety', { action: 'report', target: 'profile', publicId, reason }),
   block: (roomId: string) => invoke<SafetyResponse>('safety', { action: 'block', roomId }),
   unblock: (blockId: string) => invoke<SafetyResponse>('safety', { action: 'unblock', blockId }),
 };
@@ -93,4 +96,15 @@ export const revealApi = {
   decide: (roomId: string, wantsMeet: boolean) =>
     invoke<RevealResponse>('reveal', { action: 'decide', roomId, wantsMeet }),
   finalize: (roomId: string) => invoke<RevealResponse>('reveal', { action: 'finalize', roomId }),
+};
+
+type ProfileUpdate = Omit<Extract<ProfileRequest, { action: 'update' }>, 'action'>;
+
+export const profileApi = {
+  get: (publicId: string) => invoke<ProfileView>('profile', { action: 'get', publicId }),
+  update: (changes: ProfileUpdate) =>
+    invoke<{ ok: true }>('profile', { action: 'update', ...changes }),
+  photoUploadUrl: () => invoke<ProfileUploadUrl>('profile', { action: 'photo-upload-url' }),
+  photoCommit: (path: string) => invoke<{ ok: true }>('profile', { action: 'photo-commit', path }),
+  photoRemove: () => invoke<{ ok: true }>('profile', { action: 'photo-remove' }),
 };

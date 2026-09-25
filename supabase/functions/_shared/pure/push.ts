@@ -1,3 +1,4 @@
+import { headcountLabel } from './checkin.ts';
 import type { Concept } from './rooms.ts';
 
 // Push notification texts are built on the server, so they live here rather than in the app's
@@ -10,7 +11,7 @@ export type PushMessage = { title: string; body: string };
 export function joinRequestPush(alias: string, headcount: number, concept: Concept): PushMessage {
   return {
     title: 'Katılma isteği',
-    body: `${alias} (${headcount} kişi) ${CONCEPT_NAMES[concept]} odana katılmak istiyor.`,
+    body: `${alias} (${headcountLabel(headcount)} kişi) ${CONCEPT_NAMES[concept]} odana katılmak istiyor.`,
   };
 }
 

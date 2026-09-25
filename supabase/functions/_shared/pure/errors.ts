@@ -33,6 +33,11 @@ export type ErrorCode =
   | 'too_soon'
   | 'no_cards'
   | 'reveal_closed'
+  | 'not_found'
+  | 'display_name_required'
+  | 'display_name_invalid'
+  | 'bio_invalid'
+  | 'photo_invalid'
   | 'method_not_allowed'
   | 'internal';
 

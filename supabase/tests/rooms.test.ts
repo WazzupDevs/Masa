@@ -99,14 +99,16 @@ describe('rooms/create and the lobby', () => {
 
     const rows = await lobby(other);
     expect(rows).toHaveLength(1);
+    // v2: + the "profilli" flag (docs/SPEC_V2.md §5.4); still no account or profile id.
     expect(Object.keys(rows[0] ?? {}).sort()).toEqual(
-      ['alias', 'concept', 'headcount', 'room_id', 'waiting_since'].sort(),
+      ['alias', 'concept', 'headcount', 'profiled', 'room_id', 'waiting_since'].sort(),
     );
     expect(rows[0]).toMatchObject({
       room_id: roomId,
       alias: ownerTable[0]?.alias,
       headcount: ownerTable[0]?.headcount,
       concept: 'sohbet',
+      profiled: false,
     });
 
     // Not the owner's own room, not private rooms, not for tables at another venue.

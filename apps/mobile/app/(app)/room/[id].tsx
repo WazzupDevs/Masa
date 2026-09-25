@@ -1,7 +1,7 @@
 import type { Concept } from '@shared/rooms.ts';
 import { parseGameState } from '@shared/tabu.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Redirect, useLocalSearchParams } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -11,6 +11,7 @@ import { RoomSafety } from '@/features/chat/RoomSafety';
 import { useOtherTableOnline } from '@/features/chat/usePresence';
 import { useActiveTable } from '@/features/checkin/useActiveTable';
 import { ConceptArea } from '@/features/games/ConceptArea';
+import { useRoomMemberProfile } from '@/features/profile/queries';
 import { RevealPrompt } from '@/features/reveal/RevealPrompt';
 import { RevealResult } from '@/features/reveal/RevealResult';
 import { IncomingRequest } from '@/features/rooms/IncomingRequest';
@@ -111,6 +112,9 @@ export default function RoomScreen() {
       ) : null}
 
       {hasOtherTable ? <OtherTableStatus roomId={r.id} isOwner={isOwner} /> : null}
+      {hasOtherTable ? (
+        <OtherTableProfile roomId={r.id} guestSessionId={r.guest_session_id} />
+      ) : null}
 
       <ChatPanel roomId={r.id} sessionId={sessionId} />
 
@@ -144,5 +148,28 @@ function OtherTableStatus({ roomId, isOwner }: { roomId: string; isOwner: boolea
   const online = useOtherTableOnline(roomId, isOwner ? 'owner' : 'guest', true);
   return online ? null : (
     <Text className="mt-3 text-sm text-amber-700">{tr.safety.otherOffline}</Text>
+  );
+}
+
+// "Profili gör" only when the other table joined with its profile, and only while the room runs
+// (room_member_profile; docs/SPEC_V2.md §5.4).
+function OtherTableProfile({
+  roomId,
+  guestSessionId,
+}: {
+  roomId: string;
+  guestSessionId: string | null;
+}) {
+  const member = useRoomMemberProfile(roomId, guestSessionId);
+  const publicId = member.data;
+  if (!publicId) return null;
+  return (
+    <View className="mt-3">
+      <Button
+        variant="secondary"
+        label={tr.rooms.viewProfile}
+        onPress={() => router.push({ pathname: '/people/[publicId]', params: { publicId } })}
+      />
+    </View>
   );
 }

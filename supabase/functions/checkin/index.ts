@@ -14,6 +14,7 @@ import type {
 import { isWithinCheckinRadius, MAX_HEADCOUNT, MIN_HEADCOUNT } from '../_shared/pure/checkin.ts';
 import { CURRENT_LOCATION_CONSENT_VERSION, needsConsent } from '../_shared/pure/consent.ts';
 import { AppError } from '../_shared/pure/errors.ts';
+import { type Participation, PARTICIPATIONS } from '../_shared/pure/profile.ts';
 
 const Body: z.ZodType<CheckinRequest> = z.discriminatedUnion('action', [
   z.object({
@@ -24,6 +25,7 @@ const Body: z.ZodType<CheckinRequest> = z.discriminatedUnion('action', [
     accuracyM: z.number().nonnegative().max(100_000).nullable(),
     headcount: z.number().int().min(MIN_HEADCOUNT).max(MAX_HEADCOUNT),
     locationConsentVersion: z.string(),
+    participation: z.enum(PARTICIPATIONS).optional(),
   }),
   z.object({ action: z.literal('leave') }),
 ]);
@@ -50,18 +52,32 @@ async function loadAliasWords(): Promise<AliasWords> {
   return aliasWords;
 }
 
-async function requireOnboarded(db: Db, userId: string): Promise<void> {
+// The table's participation (docs/SPEC_V2.md §5.4): the request's choice, else the profile's
+// default. Joining with the profile needs a display name.
+async function requireOnboarded(
+  db: Db,
+  userId: string,
+  requested: Participation | undefined,
+): Promise<Participation> {
   const { data, error } = await db
     .from('profiles')
-    .select('terms_version, kvkk_version')
+    .select('terms_version, kvkk_version, display_name, default_participation')
     .eq('id', userId)
     .maybeSingle();
   if (error) throw dbError('profiles', error);
-  if (needsConsent(data)) throw new AppError('onboarding_required', 'Complete onboarding first.');
+  if (!data || needsConsent(data)) {
+    throw new AppError('onboarding_required', 'Complete onboarding first.');
+  }
+  const participation =
+    requested ?? (data.default_participation === 'profile' ? 'profile' : 'anonymous');
+  if (participation === 'profile' && !data.display_name) {
+    throw new AppError('display_name_required', 'Choose a display name first.');
+  }
+  return participation;
 }
 
 async function checkIn(userId: string, body: CheckInRequest): Promise<CheckInResponse> {
-  await requireOnboarded(db, userId);
+  const participation = await requireOnboarded(db, userId, body.participation);
   if (body.locationConsentVersion !== CURRENT_LOCATION_CONSENT_VERSION) {
     throw new AppError('consent_outdated', 'Location consent is not the current version.');
   }
@@ -95,6 +111,7 @@ async function checkIn(userId: string, body: CheckInRequest): Promise<CheckInRes
       new_headcount: body.headcount,
       consent_version: body.locationConsentVersion,
       accuracy_m: body.accuracyM ?? undefined,
+      new_participation: participation,
     });
     if (!error) return { sessionId: data.id, alias: data.alias, expiresAt: data.expires_at };
     if (error.code !== UNIQUE_VIOLATION) throw dbError('start_table_session', error);

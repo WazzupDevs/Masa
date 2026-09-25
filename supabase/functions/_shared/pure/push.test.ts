@@ -17,6 +17,7 @@ describe('push texts', () => {
       'Mor Baykuş (3 kişi) Tabu odana katılmak istiyor.',
     );
     expect(joinRequestPush('Mavi Kedi', 2, 'sohbet').body).toContain('Sohbet odana');
+    expect(joinRequestPush('Mor Baykuş', 4, 'tabu').body).toContain('(4+ kişi)');
     expect(joinAcceptedPush().body.length).toBeGreaterThan(0);
   });
 });

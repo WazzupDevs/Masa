@@ -1,10 +1,12 @@
 // Product analytics (MVP_SPEC §12, docs/SPEC_V2.md §13). Only these events, only these properties, and the user id as
 // the distinct id: never a phone number, alias, message, venue or position.
+import type { Participation } from './profile.ts';
 import type { Concept, Visibility } from './rooms.ts';
 
 export type AnalyticsEventProps = {
   onboarding_completed: Record<string, never>;
-  check_in: Record<string, never>;
+  // 1–4; 4 means "4+".
+  check_in: { headcount: number };
   room_created: { concept: Concept; visibility: Visibility };
   join_requested: Record<string, never>;
   join_accepted: Record<string, never>;
@@ -18,13 +20,16 @@ export type AnalyticsEventProps = {
   session_ended: { duration_min: number };
   explore_viewed: { view: 'list' | 'map' };
   checkin_out_of_range: Record<string, never>;
+  participation_chosen: { mode: Participation };
+  profile_photo_set: Record<string, never>;
+  profile_bio_set: Record<string, never>;
 };
 
 export type AnalyticsEvent = keyof AnalyticsEventProps;
 
 const ALLOWED: { [E in AnalyticsEvent]: readonly (keyof AnalyticsEventProps[E])[] } = {
   onboarding_completed: [],
-  check_in: [],
+  check_in: ['headcount'],
   room_created: ['concept', 'visibility'],
   join_requested: [],
   join_accepted: [],
@@ -38,6 +43,9 @@ const ALLOWED: { [E in AnalyticsEvent]: readonly (keyof AnalyticsEventProps[E])[
   session_ended: ['duration_min'],
   explore_viewed: ['view'],
   checkin_out_of_range: [],
+  participation_chosen: ['mode'],
+  profile_photo_set: [],
+  profile_bio_set: [],
 };
 
 export const ANALYTICS_EVENTS = Object.keys(ALLOWED) as AnalyticsEvent[];
