@@ -93,8 +93,8 @@ export function Lobby({ venueId, sessionId, since }: Props) {
                   {room.profiled ? <ProfiledTag /> : null}
                 </View>
                 <Text className="text-sm text-neutral-500">
-                  {tr.rooms.people(room.headcount)} · {tr.concepts[room.concept as Concept]} ·{' '}
-                  {tr.rooms.waitingFor(waitedMin)}
+                  {tr.rooms.people(room.headcount)} · {tr.conceptWithMode(room.concept as Concept)}{' '}
+                  · {tr.rooms.waitingFor(waitedMin)}
                 </Text>
                 <View className="mt-3">
                   <Button
