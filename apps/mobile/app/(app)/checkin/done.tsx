@@ -12,7 +12,7 @@ export default function DoneScreen() {
 
   async function finish() {
     await queryClient.invalidateQueries({ queryKey: ['activeTable'] });
-    router.dismissTo('/');
+    router.dismissTo('/venue');
   }
 
   return (

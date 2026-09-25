@@ -22,7 +22,7 @@ export function RevealResult({ roomId, isOwner, result, token }: Props) {
 
   useEffect(() => {
     if (!mutual) return;
-    const timer = setTimeout(() => router.replace('/'), REVEAL.signalSeconds * 1000);
+    const timer = setTimeout(() => router.replace('/venue'), REVEAL.signalSeconds * 1000);
     return () => clearTimeout(timer);
   }, [mutual]);
 
@@ -39,7 +39,7 @@ export function RevealResult({ roomId, isOwner, result, token }: Props) {
             <Button
               variant="secondary"
               label={tr.reveal.backToVenue}
-              onPress={() => router.replace('/')}
+              onPress={() => router.replace('/venue')}
             />
           </View>
         </View>
@@ -52,7 +52,7 @@ export function RevealResult({ roomId, isOwner, result, token }: Props) {
       <View className="flex-1 items-center justify-center gap-6">
         <Text className="text-center text-3xl font-bold text-black">{tr.reveal.goodGame}</Text>
         <View className="w-full">
-          <Button label={tr.reveal.backToVenue} onPress={() => router.replace('/')} />
+          <Button label={tr.reveal.backToVenue} onPress={() => router.replace('/venue')} />
         </View>
       </View>
     </Screen>
