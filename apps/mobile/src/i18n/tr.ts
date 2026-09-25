@@ -365,8 +365,15 @@ export const tr = {
     startServer: 'Oyunu başlat',
     waitingForOwner: 'Oda sahibinin oyunu başlatması bekleniyor.',
     turn: (n: number, total: number) => `Tur ${n}/${total}`,
+    turnEyebrow: (n: number, total: number) => `Tabu · Tur ${n}/${total}`,
     passesLeft: (n: number) => `${n} pas hakkı`,
+    passDetail: (n: number) => `${n} hak`,
     secondsLeft: (s: number) => `${s} sn`,
+    // The turn clock, "0:37".
+    clock: (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`,
+    clockLabel: (s: number) => `${s} saniye kaldı`,
+    correctPoints: '+1',
+    tabooPoints: '−1',
     turnOverWait: 'Tur bitiyor…',
     voiceIntro:
       'Yüz yüze oynanır: masalar sırayla anlatır, diğer masa kartı görür ve hakemlik yapar. 6 tur, her tur 60 saniye.',

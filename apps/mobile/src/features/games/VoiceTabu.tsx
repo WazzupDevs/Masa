@@ -13,15 +13,23 @@ import {
 } from '@shared/tabu.ts';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Pressable, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { Text } from '@/components/Text';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { gamesApi } from '@/lib/api';
 import { useNow } from '@/lib/useNow';
+import { useTheme } from '@/theme/ThemeProvider';
+import { ICON, SPACING } from '@/theme/tokens';
 
+import { ClockPill, RoleNote, TeamScore } from './GameBits';
 import { TabuCardView } from './TabuCardView';
+
+// Height of the covered card, about that of an open one.
+const COVER_HEIGHT = 192;
 
 type Props = {
   roomId: string;
@@ -45,17 +53,21 @@ export function VoiceTabu({ roomId, state, side, isOwner, aliases }: Props) {
         {voice ? (
           <>
             <Scores scores={voice.scores} aliases={aliases} side={side} />
-            <Text className="text-center text-xl font-bold text-black">
+            <Text variant="title" align="center">
               {winner === 'draw' || winner === null
                 ? tr.games.voiceDraw
                 : tr.games.voiceWinner(aliases[winner])}
             </Text>
           </>
         ) : (
-          <Text className="text-center text-base text-neutral-600">{tr.games.voiceIntro}</Text>
+          <Text tone="muted" align="center">
+            {tr.games.voiceIntro}
+          </Text>
         )}
         {start.isError ? (
-          <Text className="text-sm text-red-600">{errorMessage(start.error)}</Text>
+          <Text variant="fine" tone="danger">
+            {errorMessage(start.error)}
+          </Text>
         ) : null}
         {isOwner ? (
           <View className="w-full">
@@ -66,7 +78,7 @@ export function VoiceTabu({ roomId, state, side, isOwner, aliases }: Props) {
             />
           </View>
         ) : (
-          <Text className="text-sm text-neutral-500">{tr.games.waitingForOwner}</Text>
+          <Text variant="fine">{tr.games.waitingForOwner}</Text>
         )}
       </View>
     );
@@ -87,20 +99,15 @@ function Scores({
   describing?: TableSide;
 }) {
   return (
-    <View className="w-full flex-row gap-2">
+    <View className="w-full flex-row gap-2.5">
       {(['owner', 'guest'] as const).map((t) => (
-        <View
+        <TeamScore
           key={t}
-          className={`flex-1 rounded-xl border-2 bg-white p-3 ${describing === t ? 'border-black' : 'border-transparent'}`}
-        >
-          <Text className="text-sm font-semibold text-black" numberOfLines={1}>
-            {aliases[t]}
-          </Text>
-          <Text className="text-xs text-neutral-500">
-            {t === side ? tr.games.you : describing === t ? tr.games.describing : ' '}
-          </Text>
-          <Text className="mt-1 text-3xl font-bold text-black">{scores[t]}</Text>
-        </View>
+          name={aliases[t]}
+          note={t === side ? tr.games.you : describing === t ? tr.games.describing : ' '}
+          score={scores[t]}
+          active={describing === t}
+        />
       ))}
     </View>
   );
@@ -154,6 +161,7 @@ function Turn({
   side: TableSide;
   aliases: Record<TableSide, string>;
 }) {
+  const { colors, shape } = useTheme();
   const now = useNow(250);
   const role = roleOf(server, side);
   const { pending, push, error } = usePressQueue(roomId);
@@ -192,13 +200,9 @@ function Turn({
 
   return (
     <View className="gap-3">
-      <View className="flex-row justify-between">
-        <Text className="text-sm text-neutral-600">
-          {tr.games.turn(server.turnNo, server.totalTurns)}
-        </Text>
-        <Text className="text-sm font-semibold text-black">
-          {tr.games.secondsLeft(secondsLeft)}
-        </Text>
+      <View className="flex-row items-center justify-between">
+        <Text variant="eyebrow">{tr.games.turnEyebrow(server.turnNo, server.totalTurns)}</Text>
+        <ClockPill seconds={secondsLeft} />
       </View>
       <Scores
         scores={view.scores}
@@ -206,36 +210,57 @@ function Turn({
         side={side}
         describing={view.describingTable}
       />
-      <Text className="rounded-xl bg-white p-3 text-base text-black">
-        {role === 'describer'
-          ? tr.games.voiceDescribe
-          : tr.games.voiceJudge(aliases[view.describingTable])}
-      </Text>
+      <RoleNote
+        icon={role === 'describer' ? 'megaphone-outline' : 'shield-checkmark-outline'}
+        text={
+          role === 'describer'
+            ? tr.games.voiceDescribe
+            : tr.games.voiceJudge(aliases[view.describingTable])
+        }
+      />
 
       {covered ? (
         <Pressable
           accessibilityRole="button"
           onPress={() => setRevealedTurn(server.turnNo)}
-          className="min-h-48 items-center justify-center gap-2 rounded-2xl bg-black p-6"
+          className="items-center justify-center gap-2"
+          style={{
+            minHeight: COVER_HEIGHT,
+            padding: SPACING[6],
+            borderRadius: shape.radius.lg,
+            backgroundColor: colors.accent,
+            boxShadow: shape.shadow.card,
+          }}
         >
-          <Text className="text-xl font-bold text-white">{tr.games.tapToReveal}</Text>
-          <Text className="text-center text-sm text-neutral-300">{tr.games.hideFromTeam}</Text>
+          <Ionicons name="eye-outline" size={ICON.xl} color={colors.onAccent} />
+          <Text variant="title" tone="onAccent" align="center">
+            {tr.games.tapToReveal}
+          </Text>
+          <Text variant="fine" tone="onAccent" align="center">
+            {tr.games.hideFromTeam}
+          </Text>
         </Pressable>
       ) : card ? (
         <TabuCardView word={card.word} forbidden={card.forbidden} />
       ) : (
-        <Text className="text-center text-sm text-neutral-500">
+        <Text variant="fine" align="center" tone={cards.isError ? 'danger' : 'muted'}>
           {cards.isError ? errorMessage(cards.error) : tr.games.cardsLoading}
         </Text>
       )}
 
       {secondsLeft === 0 ? (
-        <Text className="text-sm text-neutral-500">{tr.games.turnOverWait}</Text>
+        <Text variant="fine" align="center">
+          {tr.games.turnOverWait}
+        </Text>
       ) : (
-        <View className="flex-row gap-2">
+        <View className="flex-row gap-2.5">
           <View className="flex-1">
             <Button
-              label={tr.games.judgeCorrect}
+              variant="success"
+              size="lg"
+              icon="checkmark"
+              label={tr.games.correct}
+              detail={tr.games.correctPoints}
               onPress={() => press('correct')}
               disabled={disabled}
             />
@@ -244,14 +269,21 @@ function Turn({
             {role === 'judge' ? (
               <Button
                 variant="danger"
-                label={tr.games.judgeTaboo}
+                size="lg"
+                icon="close"
+                label={tr.games.taboo}
+                detail={tr.games.tabooPoints}
                 onPress={() => press('taboo')}
                 disabled={disabled}
               />
             ) : (
               <Button
                 variant="secondary"
-                label={`${tr.games.pass} · ${passesLeft}`}
+                size="lg"
+                icon="play-skip-forward-outline"
+                label={tr.games.pass}
+                detail={tr.games.passDetail(passesLeft)}
+                accessibilityLabel={`${tr.games.pass}, ${tr.games.passesLeft(passesLeft)}`}
                 onPress={() => press('pass')}
                 disabled={disabled || passesLeft <= 0}
               />
@@ -259,8 +291,14 @@ function Turn({
           </View>
         </View>
       )}
-      {error ? <Text className="text-sm text-red-600">{errorMessage(error)}</Text> : null}
-      <Text className="text-center text-xs text-neutral-500">{tr.games.cardOnlyHere}</Text>
+      {error ? (
+        <Text variant="fine" tone="danger">
+          {errorMessage(error)}
+        </Text>
+      ) : null}
+      <Text variant="fine" align="center">
+        {tr.games.cardOnlyHere}
+      </Text>
     </View>
   );
 }
