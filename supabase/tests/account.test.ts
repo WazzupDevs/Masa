@@ -1,11 +1,11 @@
-import { FunctionsHttpError, type SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 
 import type { AccountRequest } from '../functions/_shared/pure/api/account.ts';
 import { CURRENT_KVKK_VERSION, CURRENT_TERMS_VERSION } from '../functions/_shared/pure/consent.ts';
 import type { Database } from '../functions/_shared/pure/database.ts';
 import { banUser } from '../../scripts/admin/ban.ts';
-import { admin, anonKey, apiUrl, deleteUserByPhone, signIn, sql } from './local.ts';
+import { admin, anonKey, apiUrl, deleteUserByPhone, invoke, signIn, sql } from './local.ts';
 
 const PHONE_A = '+905550000001';
 const PHONE_B = '+905550000002';
@@ -19,14 +19,7 @@ const onboarding: AccountRequest = {
   kvkkVersion: CURRENT_KVKK_VERSION,
 };
 
-async function call(client: Client, body: Record<string, unknown>) {
-  const { data, error } = await client.functions.invoke('account', { body });
-  if (error instanceof FunctionsHttpError) {
-    return { status: error.context.status as number, body: await error.context.json() };
-  }
-  if (error) throw error;
-  return { status: 200, body: data as unknown };
-}
+const call = (client: Client, body: Record<string, unknown>) => invoke(client, 'account', body);
 
 async function userId(client: Client): Promise<string> {
   const { data } = await client.auth.getUser();

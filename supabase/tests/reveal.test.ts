@@ -354,6 +354,13 @@ describe('reveal/finalize and cleanup', () => {
     expect(await seenBy(owner, roomId)).toMatchObject({ status: 'closed', reveal_result: 'none' });
   });
 
+  it('runs with every pg_cron job paused, so only the test closes a window', async () => {
+    const [jobs] =
+      await sql`select count(*)::int as n, bool_or(active) as any_active from cron.job`;
+    expect(jobs?.n).toBeGreaterThan(0);
+    expect(jobs?.any_active).toBe(false);
+  });
+
   it('closes forgotten windows from cron once they end', async () => {
     const { owner, roomId } = await endingRoom();
     await sql`select private.close_expired_reveals()`;

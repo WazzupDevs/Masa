@@ -60,15 +60,33 @@ export async function deleteUserByPhone(phone: string): Promise<void> {
 
 export type Client = SupabaseClient<Database>;
 
-// Calls an Edge Function; errors come back as { status, body } instead of throwing.
+// The local serve (`per_worker`) retires an isolate once the CPU time of the requests it served adds
+// up past its 1 s soft limit. A request routed to it at that moment is refused before the function
+// runs (WorkerAlreadyRetired) with this body from the serve's main service, not from our code
+// (ours is `{ error: { code, message } }`). Nothing ran, so sending it again is its first attempt.
+const RETIRED_WORKER_BODY =
+  '{"code":"Internal Server Error","message":"Request failed due to an internal server error"}';
+
+// Calls an Edge Function; errors come back as { status, body } instead of throwing. A 5xx is never
+// an expected answer, so it throws with the function, action and body to name the failure.
 export async function invoke(
   client: Client,
   fn: string,
   body: Record<string, unknown>,
+  attempt = 1,
 ): Promise<{ status: number; body: unknown }> {
   const { data, error } = await client.functions.invoke(fn, { body });
   if (error instanceof FunctionsHttpError) {
-    return { status: error.context.status as number, body: await error.context.json() };
+    const status = error.context.status as number;
+    const text = await (error.context as Response).text();
+    if (status === 500 && text === RETIRED_WORKER_BODY && attempt === 1) {
+      console.warn(`retired worker: sending ${fn}/${String(body.action)} again`);
+      return invoke(client, fn, body, 2);
+    }
+    if (status >= 500) {
+      throw new Error(`${fn}/${String(body.action)} answered ${status}: ${text}`);
+    }
+    return { status, body: JSON.parse(text) as unknown };
   }
   if (error) throw error;
   return { status: 200, body: data as unknown };

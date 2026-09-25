@@ -4,6 +4,8 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     include: ['supabase/tests/**/*.test.ts'],
+    // Pauses pg_cron for the run; tests call the job functions directly.
+    globalSetup: ['supabase/tests/globalSetup.ts'],
     fileParallelism: false,
     testTimeout: 30_000,
     hookTimeout: 30_000,
