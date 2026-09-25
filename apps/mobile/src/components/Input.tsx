@@ -17,12 +17,14 @@ type Props = Omit<TextInputProps, 'style' | 'placeholderTextColor'> & {
   counter?: string;
   // The one-time code: large, centered, spaced digits.
   code?: boolean;
+  // A multi-line field that starts several lines high (the bio).
+  tall?: boolean;
 };
 
 // A text field. Its outline is the direction's border where that reads 3:1 against the surface
 // (Oyun Gecesi), the secondary text colour otherwise; focus draws it in the accent.
 export const Input = forwardRef<TextInput, Props>(function Input(
-  { label, hint, error, prefix, counter, code, multiline, ...rest },
+  { label, hint, error, prefix, counter, code, tall, multiline, ...rest },
   ref,
 ) {
   const theme = useTheme();
@@ -72,7 +74,7 @@ export const Input = forwardRef<TextInput, Props>(function Input(
               flex: 1,
               color: colors.text,
               paddingVertical: SPACING[3],
-              minHeight: multiline ? TOUCH.large + SPACING[8] : undefined,
+              minHeight: tall ? TOUCH.large + SPACING[8] : undefined,
             },
             code ? { textAlign: 'center', letterSpacing: SPACING[2] } : null,
           ]}
