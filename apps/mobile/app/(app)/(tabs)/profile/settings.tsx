@@ -9,6 +9,8 @@ import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Text } from '@/components/Text';
 import { BlockedList } from '@/features/chat/BlockedList';
+import { DesignPicker } from '@/features/design/DesignPicker';
+import { designPickerEnabled } from '@/theme/ThemeProvider';
 import { ProfileSettings } from '@/features/profile/ProfileSettings';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
@@ -61,6 +63,11 @@ export default function SettingsScreen() {
   return (
     <Screen>
       <ScreenHeader title={tr.settings.title} onBack={() => router.back()} />
+      {designPickerEnabled ? (
+        <View className="mb-4 mt-4">
+          <DesignPicker />
+        </View>
+      ) : null}
       <View className="mt-4">
         <ProfileSettings />
       </View>

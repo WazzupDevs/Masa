@@ -419,6 +419,24 @@ export const tr = {
     leaveConfirmBody: 'Masan kapanır. Sonra yeniden giriş yapabilirsin.',
     leaveConfirm: 'Ayrıl',
   },
+  design: {
+    title: 'Tasarım (test)',
+    hint: 'Yalnızca test sürümünde görünür. Seçimin bu cihazda saklanır.',
+    themes: {
+      night: 'Gece Kafe',
+      play: 'Oyun Gecesi',
+      calm: 'Sakin Liman',
+    },
+    themeHints: {
+      night: 'Loş bir kafede, sıcak ve koyu.',
+      play: 'Kalın çizgiler, canlı renkler.',
+      calm: 'Sade, açık, bol boşluk.',
+    },
+    schemeLabel: 'Görünüm',
+    schemes: { light: 'Açık', dark: 'Koyu', system: 'Sistem' },
+    systemNote:
+      'Sistem seçeneği bu sürümde açık görünür; telefonun ayarını bir sonraki uygulama sürümü izleyecek.',
+  },
   settings: {
     title: 'Ayarlar',
     privacySection: 'Gizlilik',
