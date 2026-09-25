@@ -64,6 +64,8 @@ export const tr = {
     retry: 'Tekrar dene',
     loading: 'Yükleniyor…',
     genericError: 'Bir şeyler ters gitti. Tekrar dener misin?',
+    close: 'Kapat',
+    back: 'Geri',
   },
   auth: {
     phoneTitle: 'Telefon numaran',
