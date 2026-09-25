@@ -18,11 +18,13 @@ import type { DmOkResponse, FriendsListResponse, FriendsOkResponse } from '@shar
 import type { ProfileRequest, ProfileUploadUrl, ProfileView } from '@shared/api/profile.ts';
 import type { ReportReason } from '@shared/chat.ts';
 import type { Mark } from '@shared/tabu.ts';
+import { callName, RETRY_DELAY_MS, retriesAfter } from '@shared/apiRetry.ts';
 import { type ErrorCode, isApiErrorBody } from '@shared/errors.ts';
 
 import { useUpdateGate } from '@/features/update/updateGate';
 
 import { appBuildHeaders } from './appBuild';
+import { reportFunctionFailure } from './errorReporting';
 import { supabase } from './supabase';
 
 export class ApiError extends Error {
@@ -36,13 +38,24 @@ export class ApiError extends Error {
 }
 
 // Every Edge Function call goes through here: it carries the native build number, and an
-// update_required answer switches the whole app to the "Güncelleme gerekli" screen.
-async function invoke<T>(fn: string, body: Record<string, unknown>): Promise<T> {
+// update_required answer switches the whole app to the "Güncelleme gerekli" screen. A 5xx is
+// reported (function and status only) and, for the calls in IDEMPOTENT_CALLS, sent once more after
+// a short wait.
+async function invoke<T>(fn: string, body: Record<string, unknown>, attempt = 1): Promise<T> {
   const { data, error } = await supabase.functions.invoke<T>(fn, {
     body,
     headers: appBuildHeaders,
   });
   if (error instanceof FunctionsHttpError) {
+    const status = (error.context as Response).status;
+    if (status >= 500) {
+      const call = callName(fn, body);
+      reportFunctionFailure(call, status);
+      if (retriesAfter(call, status, attempt)) {
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+        return invoke<T>(fn, body, attempt + 1);
+      }
+    }
     const payload: unknown = await error.context.json().catch(() => null);
     if (isApiErrorBody(payload)) {
       if (payload.error.code === 'update_required') useUpdateGate.getState().markRequired();

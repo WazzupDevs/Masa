@@ -58,6 +58,16 @@ describe('scrubEvent', () => {
     });
   });
 
+  it('keeps the tags and grouping of an Edge Function 5xx', () => {
+    const event = {
+      message: 'Edge Function tabu/mark answered 503',
+      tags: { function: 'tabu/mark', status: '503' },
+      fingerprint: ['edge-function-5xx', 'tabu/mark', '503'],
+      user: { id: 'u1' },
+    };
+    expect(scrubEvent(event)).toEqual(event);
+  });
+
   it('sends no user when there is no id', () => {
     expect(scrubEvent({ user: { email: 'a@b.c' } }).user).toBeUndefined();
   });

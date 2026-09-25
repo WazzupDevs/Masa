@@ -64,6 +64,7 @@ Node 22, pnpm 10, Docker (yerel Supabase için). Supabase CLI ve Deno root devDe
 ### Hata raporlama (Sentry)
 - `EXPO_PUBLIC_SENTRY_DSN` (EAS ortam değişkeni ya da mobil `.env`); yoksa hiçbir şey gönderilmez. Kullanıcı kimliği olarak yalnızca kullanıcı id'si gider. Telefon, konum, yazılan metin, istek gövdesi ve URL sorgu dizesi `_shared/pure/errorReporting.ts` ile telefondan çıkmadan silinir.
 - Kaynak haritası yüklemesi kapalı (`SENTRY_DISABLE_AUTO_UPLOAD=true`, `eas.json`). Açmak için Sentry hesabı ve `SENTRY_AUTH_TOKEN` gerekir.
+- Edge Function'dan gelen her 5xx Sentry'ye `function` (ör. `tabu/mark`) ve `status` etiketleriyle gider; istek ve yanıt gövdesi gitmez. Yalnızca `_shared/pure/apiRetry.ts` → `IDEMPOTENT_CALLS` listesindeki çağrılar (okuyanlar ve sunucunun en fazla bir kez uyguladıkları) 5xx sonrası 500 ms bekleyip bir kez daha gönderilir; diğerleri (DM, istek, oda kurma…) asla tekrar gönderilmez. Listeye ekleme, çağrının iki kez gönderilmesinin güvenli olduğunu gösteren bir testle gelir.
 - Her rota grubunun `_layout.tsx`'i `RouteError`'ı `ErrorBoundary` olarak dışa verir: beyaz ekran yerine kısa bir mesaj, "Tekrar dene" ve "Ana ekrana dön".
 
 ### Neyi ne zaman yayınlamalı
