@@ -1,4 +1,9 @@
-import { Pressable, Text } from 'react-native';
+import { Pressable, View } from 'react-native';
+
+import { useTheme } from '@/theme/ThemeProvider';
+import { SPACING, TOUCH } from '@/theme/tokens';
+
+import { Text } from './Text';
 
 type Props = {
   label: string;
@@ -8,17 +13,56 @@ type Props = {
   disabled?: boolean;
 };
 
+const DOT = SPACING[5];
+
+// One option of a single choice: a card with a radio mark; selected draws the accent ring.
 export function Choice({ label, hint, selected, onPress, disabled }: Props) {
+  const { colors, shape } = useTheme();
   return (
     <Pressable
       accessibilityRole="radio"
-      accessibilityState={{ selected, disabled }}
+      accessibilityState={{ selected, disabled: !!disabled }}
       disabled={disabled}
       onPress={onPress}
-      className={`rounded-xl border-2 px-4 py-3 ${selected ? 'border-black bg-neutral-100' : 'border-neutral-200'} ${disabled ? 'opacity-40' : ''}`}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: SPACING[3],
+        minHeight: TOUCH.tab,
+        paddingHorizontal: SPACING[4],
+        paddingVertical: SPACING[3],
+        borderRadius: shape.radius.md,
+        backgroundColor: colors.surface,
+        borderWidth: selected ? Math.max(shape.stroke.control, 2) : shape.stroke.control,
+        borderColor: selected ? colors.accent : colors.border,
+        opacity: disabled ? 0.4 : 1,
+      }}
     >
-      <Text className="text-base font-semibold text-black">{label}</Text>
-      {hint ? <Text className="mt-1 text-sm text-neutral-500">{hint}</Text> : null}
+      <View className="flex-1 gap-1">
+        <Text variant="bodyStrong">{label}</Text>
+        {hint ? <Text variant="fine">{hint}</Text> : null}
+      </View>
+      <View
+        className="items-center justify-center"
+        style={{
+          width: DOT,
+          height: DOT,
+          borderRadius: shape.radius.pill,
+          borderWidth: 2,
+          borderColor: selected ? colors.accent : colors.muted,
+        }}
+      >
+        {selected ? (
+          <View
+            style={{
+              width: DOT / 2,
+              height: DOT / 2,
+              borderRadius: shape.radius.pill,
+              backgroundColor: colors.accent,
+            }}
+          />
+        ) : null}
+      </View>
     </Pressable>
   );
 }

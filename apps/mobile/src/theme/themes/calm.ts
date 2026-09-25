@@ -82,6 +82,7 @@ export const calm: ThemeDefinition = {
   typography: baseTypography({
     display: { font: 'display', size: 28, lineHeight: 32, letterSpacing: -0.4 },
     button: { font: 'semibold', size: 16, lineHeight: 20 },
+    buttonLarge: { font: 'semibold', size: 18, lineHeight: 22 },
     tag: { font: 'semibold', size: 13, lineHeight: 17 },
   }),
   eventTagTilt: 0,

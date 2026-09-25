@@ -139,6 +139,7 @@ export type TypeVariant =
   | 'label' // form and section labels
   | 'fine' // explanations, hints
   | 'button'
+  | 'buttonLarge' // the Tabu judge buttons
   | 'buttonDetail'
   | 'tag'
   | 'caption' // tab labels, small counters
@@ -183,6 +184,9 @@ export const SPACING = {
   16: 64,
 } as const;
 
+// Icon sizes (Ionicons).
+export const ICON = { sm: 16, md: 20, lg: 24, xl: 28 } as const;
+
 // Minimum touch target (WCAG 2.5.8 is 24; the mockups and Android guidance use 44–48).
 export const TOUCH = { min: 44, button: 48, tab: 56, large: 64 } as const;
 
@@ -203,6 +207,7 @@ export function baseTypography(overrides: Partial<Typography> = {}): Typography 
     label: { font: 'semibold', size: 13, lineHeight: 18 },
     fine: { font: 'regular', size: 13, lineHeight: 18 },
     button: { font: 'bold', size: 16, lineHeight: 20 },
+    buttonLarge: { font: 'bold', size: 18, lineHeight: 22 },
     buttonDetail: { font: 'semibold', size: 16, lineHeight: 20 },
     tag: { font: 'bold', size: 13, lineHeight: 17 },
     caption: { font: 'bold', size: 12, lineHeight: 16 },
