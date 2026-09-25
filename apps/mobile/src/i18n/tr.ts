@@ -1,3 +1,7 @@
+import type { EventTime } from '@shared/explore.ts';
+
+const WEEKDAYS = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+
 export const tr = {
   app: {
     name: 'Masa',
@@ -59,6 +63,28 @@ export const tr = {
   },
   explore: {
     backToVenue: 'Mekan ekranına dön',
+    views: { list: 'Liste', map: 'Harita' },
+    buckets: { calm: 'Sakin', lively: 'Hareketli', buzzing: 'Çok canlı' },
+    eventShort: 'Etkinlik',
+    eventTag: (when: string, title: string) => `${when} · ${title}`,
+    eventTime: (when: EventTime): string => {
+      switch (when.kind) {
+        case 'now':
+          return 'Şimdi';
+        case 'today':
+          return `Bugün ${when.time}`;
+        case 'tomorrow':
+          return `Yarın ${when.time}`;
+        case 'weekday':
+          return `${WEEKDAYS[when.weekday] ?? ''} ${when.time}`;
+      }
+    },
+    empty: 'Şu an listede mekan yok.',
+    notFound: 'Bu mekan artık listede değil.',
+    back: 'Geri dön',
+    checkInHint:
+      'Mekanı sen seçtin; konumun yalnızca mekanda olduğunu doğrulamak için bir kez alınır.',
+    checkInHere: 'Buraya giriş yap',
   },
   friends: {
     soon: 'Birlikte oynadığın masalarla burada arkadaş olabileceksin.',

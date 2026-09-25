@@ -44,7 +44,8 @@ export default function HeadcountScreen() {
     },
   });
 
-  if (!position || !venue) return <Redirect href="/checkin" />;
+  if (!venue) return <Redirect href="/explore" />;
+  if (!position) return <Redirect href="/checkin" />;
 
   return (
     <Screen>

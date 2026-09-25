@@ -10,7 +10,7 @@ import {
 } from './analytics.ts';
 
 describe('analytics events', () => {
-  it('cover exactly the events of MVP_SPEC §12', () => {
+  it('cover exactly the events of MVP_SPEC §12 and the v2 steps shipped so far (SPEC_V2 §13)', () => {
     expect([...ANALYTICS_EVENTS].sort()).toEqual(
       [
         'onboarding_completed',
@@ -26,6 +26,8 @@ describe('analytics events', () => {
         'report_submitted',
         'block_created',
         'session_ended',
+        'explore_viewed',
+        'checkin_out_of_range',
       ].sort(),
     );
   });
