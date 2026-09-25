@@ -2,13 +2,15 @@
 
 Çalışma adı: Masa (değişebilir)
 
+> **v2:** Navigasyon, Keşfet, profil, arkadaşlar ve DM, sesli Tabu için onaylı teknik tasarım `docs/SPEC_V2.md`'dedir. Bu belgede v2 ile değişen kararlar "**v2:**" notuyla işaretlidir; v2 adımları uygulandıkça metin güncellenir.
+
 ## 1. Ürün tanımı
 Aynı mekandaki insanların, konsept üzerine kurulu odalarda birlikte oyun oynayıp sohbet edebildiği bir mobil uygulama. Tanışma ikinci planda ve isteğe bağlı: iki taraf da isterse oda sonunda fiziksel olarak buluşurlar. Kafe anlaşması gerekmez.
 
 **MVP'nin test ettiği hipotez:** İnsanlar mekandaki yabancılarla oyun ve sohbet üzerinden etkileşime girmek için odalarını mekana açıyor mu?
 
 ## 2. Temel kavramlar
-- **Masa (`table_session`):** Tek telefon, tek masa demek. Hesap sahibi masayı açar ve kişi sayısını girer (1-6). Masadaki diğer kişilerin hesabı olmaz. Masa rastgele bir takma ad alır ("Mor Baykuş" gibi); bu ad check-in süresince geçerlidir.
+- **Masa (`table_session`):** Tek telefon, tek masa demek. Hesap sahibi masayı açar ve kişi sayısını girer (1-6; v2'de 1 / 2 / 3 / 4+, `docs/SPEC_V2.md` §6.6). Masadaki diğer kişilerin hesabı olmaz. Masa rastgele bir takma ad alır ("Mor Baykuş" gibi); bu ad check-in süresince geçerlidir.
 - **Mekan (`venue`):** Önceden seed edilmiş mekanlar. MVP'de kullanıcı mekan ekleyemez.
 - **Oda (`room`):** Bir masanın kurduğu ve bir konsepte (Tabu ya da Sohbet) sahip alan. En fazla 2 masa alır. Görünürlük `private` (sadece kendi masam) ya da `open` (mekan lobisinde listelenir) olabilir.
 - **Lobi:** Bir mekandaki `open` ve `waiting` durumundaki odaların listesi.
@@ -41,7 +43,7 @@ Aynı mekandaki insanların, konsept üzerine kurulu odalarda birlikte oyun oyna
 ### 4.1 Onboarding
 1. Telefon numarası girilir, SMS ile OTP gelir (Supabase Auth). Yalnızca Türkiye cep numaraları (+90 5xx) kabul edilir.
 2. "18 yaşından büyüğüm" onayı, Kullanım Koşulları ve KVKK aydınlatma metni onayı alınır. Onaylar zaman damgasıyla ve onaylanan metin sürümüyle (`terms_version`, `kvkk_version`) saklanır. Metin sürümü değişince yeniden onay istenebilir.
-3. Kullanıcı takma adı yoktur: diğer kullanıcılara hiçbir şey gösterilmediği ve hiçbir akışta kullanılmadığı için MVP'den çıkarıldı. Diğer masalar yalnızca masa takma adını görür (§4.2).
+3. Kullanıcı takma adı yoktur: diğer kullanıcılara hiçbir şey gösterilmediği ve hiçbir akışta kullanılmadığı için MVP'den çıkarıldı. Diğer masalar yalnızca masa takma adını görür (§4.2). **v2:** isteğe bağlı görünen ad (`display_name`) eklenir; kayıtta sorulmaz, profil kurulurken, arkadaşlık isteği gönderirken ve ilk arkadaşlık kabulünde zorunludur (`docs/SPEC_V2.md` §6.3).
 
 ### 4.2 Check-in ve masa
 1. Konum için açık rıza alınır (açıklama ekranı, ilk check-in'de `profiles.location_consent_at` ve `location_consent_version` yazılır; sürüm `draft-0`). Konum izni istenir (sadece "uygulama kullanılırken"). Arka planda konum takibi yok.
@@ -79,6 +81,7 @@ Aynı mekandaki insanların, konsept üzerine kurulu odalarda birlikte oyun oyna
 3. Diğer tüm durumlarda (hayır, cevapsız, pencere sırasında bir masanın ayrılması) sonuç, reddedilen katılma isteğindeki gibi yalnızca pencerenin sonunda (`reveal_ends_at`) açıklanır: iki tarafa da "Güzel oyundu 👋" gösterilir ve lobiye dönülür. Böylece "Evet" diyen masa, karşısındakinin "Hayır" mı dediğini, ayrıldığını mı yoksa hiç cevap mı vermediğini ne gördüğü satırlardan ne de zamanlamadan ayırt edebilir. Kimin hayır dediği asla gösterilmez.
 4. "Hayır" diyen ya da ayrılan masa kendi ekranını hemen kapatıp devam edebilir (yeni oda kurabilir, isteğe katılabilir). Oda diğer masa için pencere sonuna kadar `ending` durumunda kalır; `ending` oda masaları bağlamaz.
 5. Pencerenin iki masasının bu sırada kurduğu açık odalar eski odanın `reveal_ends_at`'ine kadar lobide görünmez ve lobi yayını (`lobby_changed`) üretmez; lobideki bekleme süreleri pencere sonundan sayılır. Özel oda ve tek masa oyunu serbesttir. Pencereyi kapatan `reveal/finalize` çağrısı lobiye bir kez `lobby_changed` yayınlar.
+6. **v2:** Karşılıklı "Evet"ten sonra iki tarafa "Arkadaş ekle" çıkar; ikisi de basarsa istek-onay turu olmadan arkadaşlık kurulur, biri basmazsa sessiz kalır. Karşılıklı olmayan sonuçlarda oyun geçmişi ve arkadaşlık isteği ancak `reveal_ends_at`'ten sonra açılır (`docs/SPEC_V2.md` §6.5).
 
 ## 5. Konseptler
 
@@ -91,6 +94,7 @@ Aynı mekandaki insanların, konsept üzerine kurulu odalarda birlikte oyun oyna
 
 ### 5.2 Tabu — iki masa (yazılı, işbirliği)
 - İki masa tek takımdır: ortak skor, süreye karşı. İşbirliği tanışmaya rekabetten daha iyi hizmet eder ve sabotaj teşviki yaratmaz.
+- **v2:** İki masa Tabu sesli olur: masalar bir araya gelir, takım = masa, anlatan kartı görür, karşı masa kart ve Doğru / Tabu / Pas düğmeleriyle hakemlik yapar; Tabu −1. Yazılı ipucu/tahmin akışı kaldırılır (`docs/SPEC_V2.md` §8).
 - Oyunu oda sahibi başlatır. Tur sırası: Masa A (sahip) anlatır, Masa B tahmin eder, sonra roller değişir. Toplam 6 tur (her masa 3 kez anlatır), tur başı 60 saniye. Misafir çıkarsa oyun sıfırlanır.
 - Anlatan masa hedef kelimeyi ve yasakları görür, ipucu yazar (1–100 karakter). İpucu ve tahminlere küfür filtresi de uygulanır. İstemci gönderimden önce uyarır, sunucu son kararı verir. Yasak kelimeyi, hedef kelimeyi ya da bunların kökünü içeren ipucu reddedilir (ceza yok, sadece gönderilmez).
 - Tahmin eden masa ipucu akışını görür ve tahmin yazar. Doğru tahmin +1 puan getirir ve yeni kart gelir.
@@ -262,6 +266,7 @@ banned_phones     phone_hash (HMAC, sunucu gizli anahtarı) PK, created_at
 - `sohbet-cards.json`: en az 150 kart, 4 temaya dağılmış (`isinma`, `film-dizi-muzik`, `hic-yaptin-mi`, `derin`; her birinde en az 30).
 - Kartlar `(deck, source_key)` ile upsert edilir; JSON'dan çıkarılan kart silinmez, pasifleşir.
 - `venues-pilot.json`: pilot bölgedeki (İstanbul Beylikdüzü) mekanlar (ad, koordinat, ilçe). `pnpm fetch:venues` OpenStreetMap Overpass API'den `amenity=cafe` ve `amenity=hookah_lounge` kayıtlarını tek seferlik çeker; elle kontrol edilir (`is_active: false` ile kapatılabilir). Çalışma anında harita API'si çağrılmaz. OSM verisi ODbL lisanslıdır: atıf check-in listesinde (M2) ve hakkında ekranında (M7) gösterilir.
+- `venues-test.json`: saha testi için elle girilen mekanlar (`ref`, `name`, `lat`, `lng`; kaynak `test`). Boşsa seed atlar. Pilot listesinin yerine geçmez.
 - Testler gerçek mekan verisi kullanmaz: `supabase/tests/fixtures/venues.ts`, sabit bir çapa noktasından (41.0000, 28.6400) hesaplanmış mesafelerde sahte mekanlar içerir.
 - `profanity-tr.json`: Türkçe küfür ve hakaret listesi.
 - `aliases-tr.json`: masa takma adları için sıfat ve hayvan listeleri (`{ adjectives: [], animals: [] }`). Sıfatlar olumlu ya da nötr; Türkçede hakaret olarak kullanılan hayvanlar (domuz, eşek, öküz, it, köpek, inek, maymun, ayı, keçi vb.) yok; hiçbir birleşim alay ya da hakaret gibi okunmaz.

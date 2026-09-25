@@ -28,7 +28,18 @@
           "isAndroidForegroundServiceEnabled": false
         }
       ],
-      "expo-notifications"
+      "expo-notifications",
+      "expo-updates",
+      "@sentry/react-native",
+      "@maplibre/maplibre-react-native",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Profil fotoğrafı seçebilmen için galerine erişim gerekiyor.",
+          "cameraPermission": "Profil fotoğrafı çekebilmen için kameraya erişim gerekiyor.",
+          "microphonePermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

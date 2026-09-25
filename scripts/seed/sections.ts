@@ -17,8 +17,13 @@ export function aliasWordsSql(words: AliasWords): string {
 }
 
 // Upsert by (source, source_ref): safe to re-run on a hosted project, keeps venue ids stable.
-export function venuesSql(venues: readonly VenueRecord[]): string {
-  if (venues.length === 0) return '-- content/venues-pilot.json: no venues\n';
+// A venue removed from the JSON stays in the database; set isActive: false to hide it.
+export function venuesSql(
+  venues: readonly VenueRecord[],
+  file = 'content/venues-pilot.json',
+  attribution: string | null = '© OpenStreetMap contributors, ODbL',
+): string {
+  if (venues.length === 0) return `-- ${file}: no venues\n`;
   const rows = venues.map((v) =>
     [
       sqlLiteral(v.name),
@@ -31,7 +36,7 @@ export function venuesSql(venues: readonly VenueRecord[]): string {
     ].join(', '),
   );
   return [
-    '-- content/venues-pilot.json (© OpenStreetMap contributors, ODbL)',
+    `-- ${file}${attribution ? ` (${attribution})` : ''}`,
     'insert into public.venues (name, city, district, location, source, source_ref, is_active) values',
     `  (${rows.join('),\n  (')})`,
     'on conflict (source, source_ref) do update set',

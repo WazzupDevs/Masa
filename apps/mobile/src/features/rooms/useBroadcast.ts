@@ -1,22 +1,19 @@
-import { useEffect, useRef } from 'react';
-
-import { supabase } from '@/lib/supabase';
+import { privateChannel, useChannel } from '@/lib/realtime';
 
 // Listens to a data-free broadcast on a private channel; the handler refetches through RLS.
+// Several consumers may listen to different events of the same topic (e.g. session:{id}).
 export function useBroadcast(topic: string | null, event: string, onEvent: () => void): void {
-  const handler = useRef(onEvent);
-  useEffect(() => {
-    handler.current = onEvent;
-  }, [onEvent]);
-
-  useEffect(() => {
-    if (!topic) return;
-    const channel = supabase
-      .channel(topic, { config: { private: true } })
-      .on('broadcast', { event }, () => handler.current())
-      .subscribe();
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [topic, event]);
+  useChannel<string>(
+    topic,
+    (emit) => ({
+      channel: privateChannel(topic ?? '').on(
+        'broadcast',
+        { event: '*' },
+        (msg: { event: string }) => emit(msg.event),
+      ),
+    }),
+    (received) => {
+      if (received === event) onEvent();
+    },
+  );
 }

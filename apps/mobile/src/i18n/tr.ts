@@ -2,6 +2,12 @@ export const tr = {
   app: {
     name: 'Masa',
   },
+  errorScreen: {
+    title: 'Bir şeyler ters gitti',
+    body: 'Bu ekran açılamadı. Tekrar deneyebilir ya da ana ekrana dönebilirsin.',
+    retry: 'Tekrar dene',
+    home: 'Ana ekrana dön',
+  },
   common: {
     continue: 'Devam',
     cancel: 'Vazgeç',
@@ -114,6 +120,10 @@ export const tr = {
     send: 'Gönder',
     empty: 'Henüz mesaj yok.',
     counter: (n: number, max: number) => `${n}/${max}`,
+    sending: 'Gönderiliyor…',
+    notSent: 'Gönderilemedi.',
+    retry: 'Tekrar dene',
+    discard: 'Sil',
   },
   safety: {
     report: 'Şikayet et',

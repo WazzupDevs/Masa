@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseAliasWords, parseVenuesFile } from './content.ts';
+import { parseAliasWords, parseTestVenues, parseVenuesFile } from './content.ts';
 import { aliasWordsSql, cardsSql, venuesSql } from './sections.ts';
 
 const venue = {
@@ -34,6 +34,46 @@ describe('venuesSql', () => {
 
   it('emits a comment when there are no venues', () => {
     expect(venuesSql([])).toBe('-- content/venues-pilot.json: no venues\n');
+  });
+
+  it('labels test venues without the OSM attribution', () => {
+    const sql = venuesSql(
+      parseTestVenues({ venues: [{ ref: 'saha', name: 'Test', lat: 41, lng: 28.6 }] }),
+      'content/venues-test.json',
+      null,
+    );
+    expect(sql.split('\n')[0]).toBe('-- content/venues-test.json');
+    expect(sql).toContain("'test', 'test/saha', true");
+  });
+});
+
+describe('parseTestVenues', () => {
+  it('fills defaults from ref, name and coordinates', () => {
+    expect(
+      parseTestVenues({ venues: [{ ref: 'saha', name: 'Kafe', lat: 41, lng: 28.6 }] }),
+    ).toEqual([
+      {
+        name: 'Kafe',
+        city: 'İstanbul',
+        district: 'Test',
+        lat: 41,
+        lng: 28.6,
+        source: 'test',
+        sourceRef: 'test/saha',
+        amenity: 'cafe',
+        isActive: true,
+      },
+    ]);
+  });
+
+  it('accepts an empty list and rejects bad entries', () => {
+    expect(parseTestVenues({ venues: [] })).toEqual([]);
+    expect(() =>
+      parseTestVenues({ venues: [{ ref: 'a', name: 'K', lat: 91, lng: 28 }] }),
+    ).toThrow();
+    expect(() => parseTestVenues({ venues: [{ name: 'K', lat: 41, lng: 28 }] })).toThrow();
+    const twice = { ref: 'a', name: 'K', lat: 41, lng: 28 };
+    expect(() => parseTestVenues({ venues: [twice, twice] })).toThrow();
   });
 });
 

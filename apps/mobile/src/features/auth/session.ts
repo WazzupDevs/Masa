@@ -3,6 +3,7 @@ import { AppState } from 'react-native';
 import { create } from 'zustand';
 
 import { identify, resetAnalytics } from '@/lib/analytics';
+import { setReportingUser } from '@/lib/errorReporting';
 import { supabase } from '@/lib/supabase';
 
 type SessionState = {
@@ -26,6 +27,7 @@ export function startSessionSync(): void {
     useSessionStore.setState({ session, initialized: true });
     if (session) identify(session.user.id);
     else resetAnalytics();
+    setReportingUser(session?.user.id ?? null);
   });
 
   // Refresh tokens only while the app is in the foreground (Supabase React Native guidance).

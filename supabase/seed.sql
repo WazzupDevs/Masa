@@ -115,7 +115,61 @@ insert into public.alias_words (kind, word) values
   ('animal', 'Yusufçuk'),
   ('animal', 'Denizatı');
 
--- content/venues-pilot.json: no venues
+-- content/venues-pilot.json (© OpenStreetMap contributors, ODbL)
+insert into public.venues (name, city, district, location, source, source_ref, is_active) values
+  ('Togo Stüdyo', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6442848, 41.0125245), 4326)::extensions.geography, 'osm', 'node/11898270556', true),
+  ('Susam Kids Cafe', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6356771, 40.9973417), 4326)::extensions.geography, 'osm', 'node/12197517786', false),
+  ('Kahve Dünyası', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6261346, 40.9975457), 4326)::extensions.geography, 'osm', 'node/12319662960', true),
+  ('Starbucks', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6259923, 40.9952942), 4326)::extensions.geography, 'osm', 'node/12339800126', true),
+  ('Espressolab', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6252385, 40.9938678), 4326)::extensions.geography, 'osm', 'node/12339800127', true),
+  ('Gloria Jean''s', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6289513, 40.9996377), 4326)::extensions.geography, 'osm', 'node/12339800131', true),
+  ('Local Kafe Restoran', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6342854, 41.0075096), 4326)::extensions.geography, 'osm', 'node/12423633454', true),
+  ('Defne Restoran', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6342478, 41.0077282), 4326)::extensions.geography, 'osm', 'node/12423633455', false),
+  ('Gloria Jean''s', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6336739, 41.0081715), 4326)::extensions.geography, 'osm', 'node/12423633456', true),
+  ('Starbucks', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6576325, 40.9841488), 4326)::extensions.geography, 'osm', 'node/12809077374', true),
+  ('Kahve Dünyası', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6576535, 40.9833802), 4326)::extensions.geography, 'osm', 'node/12809159360', true),
+  ('Gua Kameroğlu Beylikdüzü', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6377121, 41.0151438), 4326)::extensions.geography, 'osm', 'node/13144390571', true),
+  ('Luuq Coffee Beylikdüzü Migros Avm', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.65878, 41.0067255), 4326)::extensions.geography, 'osm', 'node/13817453185', true),
+  ('Cafe Mania', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6437778, 41.0122518), 4326)::extensions.geography, 'osm', 'node/1863970114', true),
+  ('Özsüt', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6438343, 41.0122456), 4326)::extensions.geography, 'osm', 'node/1863970118', true),
+  ('Starbucks', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6571048, 41.0067484), 4326)::extensions.geography, 'osm', 'node/1874201495', true),
+  ('Mado', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6255188, 41.0089196), 4326)::extensions.geography, 'osm', 'node/1932224711', true),
+  ('Doğal Köyüm', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6285336, 41.0078914), 4326)::extensions.geography, 'osm', 'node/1932234048', true),
+  ('Kahve Dünyası', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6588317, 41.0064082), 4326)::extensions.geography, 'osm', 'node/2282198301', true),
+  ('Gloria''s Jeans', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6434971, 41.0123447), 4326)::extensions.geography, 'osm', 'node/2397936072', true),
+  ('Meşale Cafe & Restaurant', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6446172, 41.0073269), 4326)::extensions.geography, 'osm', 'node/4390192705', true),
+  ('Osmanlı Börek Pide', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6288516, 41.0007884), 4326)::extensions.geography, 'osm', 'node/4406951307', false),
+  ('Asçi ev yemekleri', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6717885, 40.9830641), 4326)::extensions.geography, 'osm', 'node/4592883590', false),
+  ('Livaneli Özgurluk Parkı', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6321769, 40.9962323), 4326)::extensions.geography, 'osm', 'node/5794090453', true),
+  ('Starbucks', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.653784, 41.0048729), 4326)::extensions.geography, 'osm', 'node/6182146908', true),
+  ('Happy Moon''s', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6440818, 41.0109452), 4326)::extensions.geography, 'osm', 'node/6790521563', true),
+  ('Cuba Cafe', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6442227, 41.0121493), 4326)::extensions.geography, 'osm', 'node/6790553034', true),
+  ('Kahve Dünyası', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6442969, 41.0111689), 4326)::extensions.geography, 'osm', 'node/7053601618', true),
+  ('Beylikdüzü Belediyesi Yaşam Cafe', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6365929, 41.0049537), 4326)::extensions.geography, 'osm', 'node/7654935640', true),
+  ('Starbucks', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6376376, 41.0032449), 4326)::extensions.geography, 'osm', 'node/7654975435', true),
+  ('Hi-cazz Taksim', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6422519, 41.0027361), 4326)::extensions.geography, 'osm', 'node/7655001416', true),
+  ('Metropol Börek & Cafe', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.642435, 41.0026762), 4326)::extensions.geography, 'osm', 'node/7655001426', true),
+  ('Beylik Cafe', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6445654, 41.0113152), 4326)::extensions.geography, 'osm', 'node/7695460484', true),
+  ('Book & Tea', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6507248, 41.0096909), 4326)::extensions.geography, 'osm', 'node/7695484933', true),
+  ('Wolf', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6445285, 41.0125469), 4326)::extensions.geography, 'osm', 'node/7695484934', true),
+  ('Faruk güllüoğlu', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6328097, 41.0030504), 4326)::extensions.geography, 'osm', 'node/8322016278', false),
+  ('Babil Big Boss', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6436481, 41.0114156), 4326)::extensions.geography, 'osm', 'node/9112371170', true),
+  ('Sarissa', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6434243, 41.0109902), 4326)::extensions.geography, 'osm', 'node/9112371447', true),
+  ('Mado', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6459823, 41.0124876), 4326)::extensions.geography, 'osm', 'node/9112379430', true),
+  ('Halk Ulaşım Dergisi', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6323248, 41.0109748), 4326)::extensions.geography, 'osm', 'node/9216110604', false),
+  ('Doğal Köyüm', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6284846, 41.007914), 4326)::extensions.geography, 'osm', 'way/1124650064', false),
+  ('Barış Cafe', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6504534, 40.9947844), 4326)::extensions.geography, 'osm', 'way/822888291', true),
+  ('Lu Gelato Beylikdüzü', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.6694918, 40.9769525), 4326)::extensions.geography, 'osm', 'way/895652918', false)
+on conflict (source, source_ref) do update set
+  name = excluded.name, city = excluded.city, district = excluded.district,
+  location = excluded.location, is_active = excluded.is_active;
+
+-- content/venues-test.json
+insert into public.venues (name, city, district, location, source, source_ref, is_active) values
+  ('Hush Coffee', 'İstanbul', 'Beylikdüzü', extensions.st_setsrid(extensions.st_makepoint(28.668212457253617, 40.98819357066424), 4326)::extensions.geography, 'test', 'test/hush-coffee', true)
+on conflict (source, source_ref) do update set
+  name = excluded.name, city = excluded.city, district = excluded.district,
+  location = excluded.location, is_active = excluded.is_active;
 
 -- content/profanity-tr.json
 delete from public.profanity_terms;

@@ -20,7 +20,7 @@ Otonom çalışma: M2'den M7'ye taşlar sırayla uygulanıyor. Her taş typechec
 
 - M0: Android fiziksel cihazda açılış.
 - M1: Türkiye'ye gerçek SMS teslimatı; cihazda giriş.
-- M2: Gerçek mekan listesi (`overpass-api.de` container'dan engelli); cihazda check-in.
+- M2: Cihazda check-in. Gerçek mekan listesi çekildi (43 kafe, 35'i aktif); pilot öncesi sahada ya da haritada elle doğrulanmalı.
 - M3: İki cihazda istek ve kabul uçtan uca; push (EAS/Firebase hesabı yok, yapılandırma env'den).
 - M4: Cihazda sohbet, şikayet, engelleme ve bağlantı durumu (sunucu tarafı kabul kriterleri container'da doğrulandı).
 - M5: İki cihazda iki masalı Tabu baştan sona (sunucu akışı ve kelime sızmaması container'da doğrulandı); cihazda tek masa Tabu ve Sohbet.
@@ -30,6 +30,10 @@ Otonom çalışma: M2'den M7'ye taşlar sırayla uygulanıyor. Her taş typechec
 ## İnceleme düzeltmeleri (PR #3)
 
 Tanışma sonucunun zamanlaması (yalnızca karşılıklı Evet hemen, 30 sn pencere), Tabu bitince oda açık kalır ("Tekrar oyna"), küfür filtresi katlamasız, Engellenenler listesinde hesap id'si yok, özel Realtime kanalları. Ardından: pencere sırasında açılan açık odalar `reveal_ends_at`'e kadar lobide görünmüyor ve lobi yayını üretmiyor; kural 4 masa oturum id'lerini takma kimlik olarak kabul ediyor. Ayrıntılar: [DECISIONS.md](DECISIONS.md) → "İnceleme düzeltmeleri".
+
+## Saha testi hazırlığı
+
+`preview` APK profili, barındırılan projede test numaraları, `content/venues-test.json` ve iki telefonluk senaryo: [FIELD_TEST.md](FIELD_TEST.md). Adımlar CLAUDE.md'de.
 
 ## Sıradaki adım
 

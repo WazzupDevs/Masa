@@ -7,7 +7,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { parseVenuesFile } from './seed/content.ts';
-import { buildQuery, toVenuesFile } from './venues/overpass.ts';
+import { buildQuery, countUnnamed, toVenuesFile } from './venues/overpass.ts';
 
 const OVERPASS_URL = process.env.OVERPASS_URL ?? 'https://overpass-api.de/api/interpreter';
 
@@ -30,6 +30,9 @@ if (!response.ok) {
   throw new Error(`Overpass returned ${response.status}: ${await response.text()}`);
 }
 
-const file = toVenuesFile(await response.json(), new Date().toISOString(), previous);
+const overpass: unknown = await response.json();
+const file = toVenuesFile(overpass, new Date().toISOString(), previous);
 writeFileSync(outFile, `${JSON.stringify(file, null, 2)}\n`);
-console.log(`Wrote ${file.venues.length} venues to ${outFile}. Review them, then run pnpm seed.`);
+console.log(
+  `Wrote ${file.venues.length} venues to ${outFile} (${countUnnamed(overpass)} skipped without a name). Review them, then run pnpm seed.`,
+);

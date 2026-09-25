@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildQuery, toVenuesFile } from './overpass.ts';
+import { buildQuery, countUnnamed, toVenuesFile } from './overpass.ts';
 
 const response = {
   elements: [
@@ -29,6 +29,13 @@ describe('buildQuery', () => {
     expect(q).toContain('["name"="Beylikdüzü"]');
     expect(q).toContain('^(cafe|hookah_lounge)$');
     expect(q).toContain('out center');
+  });
+});
+
+describe('countUnnamed', () => {
+  it('counts only cafes and hookah lounges without a name', () => {
+    expect(countUnnamed(response)).toBe(1);
+    expect(countUnnamed({})).toBe(0);
   });
 });
 
