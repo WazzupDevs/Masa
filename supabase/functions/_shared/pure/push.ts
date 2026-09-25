@@ -19,6 +19,15 @@ export function joinAcceptedPush(): PushMessage {
   return { title: 'İsteğin kabul edildi', body: 'Odaya katılabilirsin.' };
 }
 
+// v2 (docs/SPEC_V2.md §6.4): no sender, no preview. The friend request text follows the DM one.
+export function dmPush(): PushMessage {
+  return { title: 'Masa', body: 'Yeni bir mesajın var' };
+}
+
+export function friendRequestPush(): PushMessage {
+  return { title: 'Masa', body: 'Yeni bir arkadaşlık isteğin var' };
+}
+
 export function isExpoPushToken(token: string): boolean {
   return /^Expo(nent)?PushToken\[[^\]]+\]$/.test(token);
 }

@@ -115,6 +115,147 @@ export type Database = {
         };
         Relationships: [];
       };
+      dm_messages: {
+        Row: {
+          body: string;
+          created_at: string;
+          id: string;
+          sender_user_id: string;
+          thread_id: string;
+        };
+        Insert: {
+          body: string;
+          created_at?: string;
+          id?: string;
+          sender_user_id: string;
+          thread_id: string;
+        };
+        Update: {
+          body?: string;
+          created_at?: string;
+          id?: string;
+          sender_user_id?: string;
+          thread_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'dm_messages_thread_id_fkey';
+            columns: ['thread_id'];
+            isOneToOne: false;
+            referencedRelation: 'dm_threads';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      dm_reads: {
+        Row: {
+          last_read_at: string;
+          thread_id: string;
+          user_id: string;
+        };
+        Insert: {
+          last_read_at?: string;
+          thread_id: string;
+          user_id: string;
+        };
+        Update: {
+          last_read_at?: string;
+          thread_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'dm_reads_thread_id_fkey';
+            columns: ['thread_id'];
+            isOneToOne: false;
+            referencedRelation: 'dm_threads';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      dm_threads: {
+        Row: {
+          created_at: string;
+          id: string;
+          last_message_at: string | null;
+          user_a: string;
+          user_b: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          last_message_at?: string | null;
+          user_a: string;
+          user_b: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          last_message_at?: string | null;
+          user_a?: string;
+          user_b?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'dm_threads_user_a_user_b_fkey';
+            columns: ['user_a', 'user_b'];
+            isOneToOne: true;
+            referencedRelation: 'friendships';
+            referencedColumns: ['user_a', 'user_b'];
+          },
+        ];
+      };
+      friend_requests: {
+        Row: {
+          created_at: string;
+          encounter_id: string;
+          from_user_id: string;
+          id: string;
+          responded_at: string | null;
+          status: string;
+          to_user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          encounter_id: string;
+          from_user_id: string;
+          id?: string;
+          responded_at?: string | null;
+          status?: string;
+          to_user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          encounter_id?: string;
+          from_user_id?: string;
+          id?: string;
+          responded_at?: string | null;
+          status?: string;
+          to_user_id?: string;
+        };
+        Relationships: [];
+      };
+      friendships: {
+        Row: {
+          created_at: string;
+          source: string;
+          user_a: string;
+          user_b: string;
+        };
+        Insert: {
+          created_at?: string;
+          source: string;
+          user_a: string;
+          user_b: string;
+        };
+        Update: {
+          created_at?: string;
+          source?: string;
+          user_a?: string;
+          user_b?: string;
+        };
+        Relationships: [];
+      };
       game_events: {
         Row: {
           created_at: string;
@@ -304,6 +445,89 @@ export type Database = {
           },
         ];
       };
+      mutual_friend_intents: {
+        Row: {
+          created_at: string;
+          encounter_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          encounter_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          encounter_id?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      play_history: {
+        Row: {
+          available_at: string;
+          concept: string;
+          encounter_id: string;
+          friend_action_at: string | null;
+          id: string;
+          mode: string;
+          other_alias: string;
+          other_headcount: number;
+          other_profiled: boolean;
+          other_user_id: string | null;
+          own_alias: string;
+          played_at: string;
+          reveal_mutual: boolean;
+          room_id: string | null;
+          started_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          available_at: string;
+          concept: string;
+          encounter_id: string;
+          friend_action_at?: string | null;
+          id?: string;
+          mode: string;
+          other_alias: string;
+          other_headcount: number;
+          other_profiled?: boolean;
+          other_user_id?: string | null;
+          own_alias: string;
+          played_at?: string;
+          reveal_mutual?: boolean;
+          room_id?: string | null;
+          started_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          available_at?: string;
+          concept?: string;
+          encounter_id?: string;
+          friend_action_at?: string | null;
+          id?: string;
+          mode?: string;
+          other_alias?: string;
+          other_headcount?: number;
+          other_profiled?: boolean;
+          other_user_id?: string | null;
+          own_alias?: string;
+          played_at?: string;
+          reveal_mutual?: boolean;
+          room_id?: string | null;
+          started_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'play_history_room_id_fkey';
+            columns: ['room_id'];
+            isOneToOne: false;
+            referencedRelation: 'rooms';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       profanity_terms: {
         Row: {
           term: string;
@@ -384,6 +608,7 @@ export type Database = {
       };
       reports: {
         Row: {
+          context: Json | null;
           created_at: string;
           dm_thread_id: string | null;
           history_id: string | null;
@@ -399,6 +624,7 @@ export type Database = {
           target_type: string;
         };
         Insert: {
+          context?: Json | null;
           created_at?: string;
           dm_thread_id?: string | null;
           history_id?: string | null;
@@ -414,6 +640,7 @@ export type Database = {
           target_type?: string;
         };
         Update: {
+          context?: Json | null;
           created_at?: string;
           dm_thread_id?: string | null;
           history_id?: string | null;
@@ -844,6 +1071,28 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      dm_mark_read: {
+        Args: { target_thread_id: string; target_user_id: string };
+        Returns: undefined;
+      };
+      dm_messages_page: {
+        Args: { before?: string; target_thread_id: string };
+        Returns: {
+          body: string;
+          created_at: string;
+          from_me: boolean;
+          id: string;
+        }[];
+      };
+      dm_send: {
+        Args: {
+          min_interval_ms: number;
+          new_body: string;
+          target_thread_id: string;
+          target_user_id: string;
+        };
+        Returns: string;
+      };
       end_table_session: { Args: { target_user_id: string }; Returns: boolean };
       explore_venues: {
         Args: { event_days?: number };
@@ -857,6 +1106,78 @@ export type Database = {
           lng: number;
           name: string;
           venue_id: string;
+        }[];
+      };
+      friends_add_from_room: {
+        Args: { target_history_id: string; target_user_id: string };
+        Returns: {
+          other_user_id: string;
+          outcome: string;
+        }[];
+      };
+      friends_of: {
+        Args: { viewer: string };
+        Returns: {
+          display_name: string;
+          last_message_at: string;
+          photo_path: string;
+          public_id: string;
+          since: string;
+          thread_id: string;
+          unread: boolean;
+        }[];
+      };
+      friends_remove: {
+        Args: {
+          report_reason?: string;
+          target_public_id: string;
+          target_user_id: string;
+        };
+        Returns: undefined;
+      };
+      friends_request: {
+        Args: { target_history_id: string; target_user_id: string };
+        Returns: {
+          other_user_id: string;
+          outcome: string;
+        }[];
+      };
+      friends_respond: {
+        Args: {
+          accept: boolean;
+          target_request_id: string;
+          target_user_id: string;
+        };
+        Returns: {
+          other_user_id: string;
+          outcome: string;
+        }[];
+      };
+      history_report_photo: {
+        Args: { target_history_id: string; target_user_id: string };
+        Returns: string;
+      };
+      my_incoming_requests: {
+        Args: never;
+        Returns: {
+          concept: string;
+          created_at: string;
+          history_id: string;
+          other_alias: string;
+          other_headcount: number;
+          played_at: string;
+          request_id: string;
+        }[];
+      };
+      my_sent_requests: {
+        Args: never;
+        Returns: {
+          concept: string;
+          created_at: string;
+          history_id: string;
+          other_alias: string;
+          played_at: string;
+          status: string;
         }[];
       };
       nearby_venues: {
@@ -1105,6 +1426,24 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      safety_block_friend: {
+        Args: {
+          report_reason?: string;
+          target_public_id: string;
+          target_user_id: string;
+        };
+        Returns: undefined;
+      };
+      safety_block_history: {
+        Args: {
+          photo?: string;
+          report_reason?: string;
+          reported_photo_path?: string;
+          target_history_id: string;
+          target_user_id: string;
+        };
+        Returns: boolean;
+      };
       safety_report: {
         Args: {
           new_reason: string;
@@ -1112,6 +1451,24 @@ export type Database = {
           target_user_id: string;
         };
         Returns: string;
+      };
+      safety_report_dm: {
+        Args: {
+          new_reason: string;
+          target_thread_id: string;
+          target_user_id: string;
+        };
+        Returns: undefined;
+      };
+      safety_report_history: {
+        Args: {
+          new_reason: string;
+          photo?: string;
+          reported_photo_path?: string;
+          target_history_id: string;
+          target_user_id: string;
+        };
+        Returns: boolean;
       };
       safety_report_profile: {
         Args: {
@@ -1373,6 +1730,7 @@ export type Database = {
       user_stats: {
         Args: { target_user_id: string };
         Returns: {
+          distinct_tables: number;
           games: number;
           voice_tabu_wins: number;
         }[];

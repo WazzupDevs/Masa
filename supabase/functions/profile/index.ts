@@ -81,7 +81,7 @@ async function getProfile(viewer: string, publicId: string): Promise<ProfileView
     badges: earnedBadges({
       games: counts?.games ?? 0,
       voiceTabuWins: counts?.voice_tabu_wins ?? 0,
-      distinctTables: 0,
+      distinctTables: counts?.distinct_tables ?? 0,
     }),
     ...(row.is_self ? { photoHidden: row.photo_hidden } : {}),
   };

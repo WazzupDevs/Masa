@@ -469,6 +469,8 @@ Yazılı kalır, değişmez. Yeni oyun yok.
 | `safety`  | `report`: `target` room/dm/profile/history (`historyId` kabul eder). `block`: `publicId` (arkadaş, DM, profil) ya da `historyId` (arkadaşlık öncesi), isteğe bağlı `report`. Engel arkadaşlığı siler; şikayet kopyası aynı transaction'da alınır                            | Değişir |
 | `account` | `delete`: Storage klasörü + PostHog (mevcut)                                                                                                                                                                                                                                | Değişir |
 
+_Adım 4 notu: arkadaş listesi `my_friends()` RPC'si yerine `friends/list` eylemiyle gelir (fotoğraf URL'leri yalnızca fonksiyonda imzalanabilir); `dm_threads()` bu listeye katıldı; `my_history` tabloya RLS okumasıdır; DM sayfası `dm_messages_page`. `safety/report` ayrıca `target: 'history'` ile oda bittikten sonra da çalışır ve karşı masa profille katıldıysa profilin o anki kopyasını alır (proje sahibinin ek şartı). Ayrıntı: `docs/DECISIONS.md`, v2 adım 4._
+
 Hepsi bugünkü kalıbı izler: tek endpoint, `action`, zod v4, `{ error: { code, message } }`. Yazan SQL fonksiyonları yalnızca service role'e açıktır. İstemcinin çağırdığı RPC'ler yalnızca okur: `explore_venues`, `venue_lobby` (+ `profiled`), `room_member_profile`, `my_friends`, `my_incoming_requests`, `my_sent_requests`, `my_history`, `dm_threads`, `dm_messages`. Hepsi `set search_path = ''`.
 
 **Admin script'leri** (geliştirici makinesi, `SUPABASE_URL` ve `SUPABASE_SECRET_KEY` ortamdan; secret key hiçbir dosyaya yazılmaz):

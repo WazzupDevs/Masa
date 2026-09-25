@@ -458,3 +458,9 @@ verify_jwt = false
 
 [functions.reveal]
 verify_jwt = false
+
+[functions.friends]
+verify_jwt = false
+
+[functions.dm]
+verify_jwt = false

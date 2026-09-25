@@ -8,10 +8,13 @@ import { Screen } from '@/components/Screen';
 import { tr } from '@/i18n/tr';
 import { trackOnce } from '@/lib/analytics';
 
+import { AddFriendButton } from './AddFriendButton';
+
 type Props = { roomId: string; isOwner: boolean; result: 'mutual' | 'none'; token: unknown };
 
 // On a mutual yes both screens show the same full-screen color and emoji for 60 seconds; in every
-// other case both tables see the same "Güzel oyundu" (MVP_SPEC §4.6).
+// other case both tables see the same "Güzel oyundu" (MVP_SPEC §4.6). v2: the mutual signal also
+// offers "Arkadaş ekle" (docs/SPEC_V2.md §6.5).
 export function RevealResult({ roomId, isOwner, result, token }: Props) {
   const mutual = result === 'mutual' && isRevealToken(token);
 
@@ -35,7 +38,8 @@ export function RevealResult({ roomId, isOwner, result, token }: Props) {
         >
           <Text style={{ fontSize: 160 }}>{token.emoji}</Text>
           <Text className="mt-8 text-center text-3xl font-bold text-white">{tr.reveal.signal}</Text>
-          <View className="mt-12 w-full">
+          <View className="mt-12 w-full gap-3">
+            <AddFriendButton roomId={roomId} />
             <Button
               variant="secondary"
               label={tr.reveal.backToVenue}
