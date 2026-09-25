@@ -2,6 +2,7 @@
 // the distinct id: never a phone number, alias, message, venue or position.
 import type { Participation } from './profile.ts';
 import type { Concept, Visibility } from './rooms.ts';
+import type { SohbetTheme } from './sohbet.ts';
 
 export type AnalyticsEventProps = {
   onboarding_completed: Record<string, never>;
@@ -23,6 +24,8 @@ export type AnalyticsEventProps = {
   participation_chosen: { mode: Participation };
   profile_photo_set: Record<string, never>;
   profile_bio_set: Record<string, never>;
+  // A Sohbet card was opened in a room; the theme only, never the prompt.
+  sohbet_card_opened: { theme: SohbetTheme };
 };
 
 export type AnalyticsEvent = keyof AnalyticsEventProps;
@@ -46,6 +49,7 @@ const ALLOWED: { [E in AnalyticsEvent]: readonly (keyof AnalyticsEventProps[E])[
   participation_chosen: ['mode'],
   profile_photo_set: [],
   profile_bio_set: [],
+  sohbet_card_opened: ['theme'],
 };
 
 export const ANALYTICS_EVENTS = Object.keys(ALLOWED) as AnalyticsEvent[];

@@ -204,7 +204,6 @@ dm_reads           thread_id, user_id, last_read_at   (okunmamış rozeti; karş
   - 10 iki masalı oyun
   - Sesli Tabu'da 5 galibiyet
   - 5 farklı masayla oynamış
-  - Sohbet kartlarında 3 tema
 
   Kurallar ve eşikler saf modülde ve testlidir. Ünvan metinleri `tr.ts`'te.
 
@@ -600,6 +599,7 @@ Yeni olaylar `_shared/pure/analytics.ts` izin listesine eklenir. Hepsi yalnızca
 | `friendship_created`                   | `source: 'room_end_mutual' \| 'request'` |
 | `dm_sent`                              | —                                        |
 | `game_completed`                       | mevcut + `mode: 'voice' \| 'text'`       |
+| `sohbet_card_opened`                   | `theme` (kart metni yok; oda sahibinden) |
 
 `reveal_mutual` ve `reveal_none` kalır. Arkadaşlık oranı `friendship_created` / iki masalı odalar olarak ölçülür.
 

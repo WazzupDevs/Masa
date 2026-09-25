@@ -31,6 +31,7 @@ describe('analytics events', () => {
         'participation_chosen',
         'profile_photo_set',
         'profile_bio_set',
+        'sohbet_card_opened',
       ].sort(),
     );
   });
@@ -51,6 +52,13 @@ describe('analytics events', () => {
       mode: 'profile',
     });
     expect(analyticsProperties('profile_bio_set', { bio: 'merhaba' } as never)).toEqual({});
+    expect(
+      analyticsProperties('sohbet_card_opened', {
+        theme: 'derin',
+        prompt: 'En son ne zaman ağladın?',
+        cardId: 'c1',
+      } as never),
+    ).toEqual({ theme: 'derin' });
     expect(analyticsProperties('game_completed', { concept: 'tabu', score: 4 })).toEqual({
       concept: 'tabu',
       score: 4,

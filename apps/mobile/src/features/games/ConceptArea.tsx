@@ -22,7 +22,11 @@ export function ConceptArea({ roomId, concept, gameState, hasGuest, sessionId, i
   return (
     <View className="mt-6 rounded-2xl bg-neutral-100 p-4">
       {concept === 'sohbet' ? (
-        <SohbetCard roomId={roomId} state={state?.concept === 'sohbet' ? state : null} />
+        <SohbetCard
+          roomId={roomId}
+          isOwner={isOwner}
+          state={state?.concept === 'sohbet' ? state : null}
+        />
       ) : hasGuest ? (
         <ServerTabu
           roomId={roomId}

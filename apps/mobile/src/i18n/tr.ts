@@ -121,7 +121,6 @@ export const tr = {
       ten_games: '10 oyun',
       voice_tabu_five_wins: 'Sesli Tabu ustası',
       five_tables: '5 farklı masa',
-      sohbet_three_themes: 'Sohbet kaşifi',
     },
     notVisible: 'Bu profil artık görüntülenemiyor.',
     report: 'Profili şikayet et',

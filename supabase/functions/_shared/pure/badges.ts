@@ -7,8 +7,6 @@ export type UserStats = {
   voiceTabuWins: number;
   // Different tables met (play_history, from step 4).
   distinctTables: number;
-  // Sohbet themes seen in two-table rooms (from step 4).
-  sohbetThemes: number;
 };
 
 export const BADGES = [
@@ -16,7 +14,6 @@ export const BADGES = [
   { id: 'ten_games', earned: (s: UserStats) => s.games >= 10 },
   { id: 'voice_tabu_five_wins', earned: (s: UserStats) => s.voiceTabuWins >= 5 },
   { id: 'five_tables', earned: (s: UserStats) => s.distinctTables >= 5 },
-  { id: 'sohbet_three_themes', earned: (s: UserStats) => s.sohbetThemes >= 3 },
 ] as const;
 
 export type BadgeId = (typeof BADGES)[number]['id'];
