@@ -1648,6 +1648,42 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      tabu_judge: {
+        Args: {
+          checked_card_id: string;
+          result: string;
+          target_room_id: string;
+          target_user_id: string;
+        };
+        Returns: {
+          closed_at: string | null;
+          concept: string;
+          created_at: string;
+          game_state: Json;
+          guest_alias: string | null;
+          guest_headcount: number | null;
+          guest_joined_at: string | null;
+          guest_session_id: string | null;
+          id: string;
+          last_activity_at: string;
+          owner_alias: string;
+          owner_headcount: number;
+          owner_session_id: string;
+          reveal_ends_at: string | null;
+          reveal_result: string | null;
+          reveal_token: Json | null;
+          status: string;
+          venue_id: string;
+          visibility: string;
+          waiting_since: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'rooms';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       tabu_local_deck: {
         Args: {
           deck_size: number;
@@ -1691,6 +1727,43 @@ export type Database = {
         };
       };
       tabu_start: {
+        Args: {
+          max_passes: number;
+          target_room_id: string;
+          target_user_id: string;
+          total_turns: number;
+          turn_seconds: number;
+        };
+        Returns: {
+          closed_at: string | null;
+          concept: string;
+          created_at: string;
+          game_state: Json;
+          guest_alias: string | null;
+          guest_headcount: number | null;
+          guest_joined_at: string | null;
+          guest_session_id: string | null;
+          id: string;
+          last_activity_at: string;
+          owner_alias: string;
+          owner_headcount: number;
+          owner_session_id: string;
+          reveal_ends_at: string | null;
+          reveal_result: string | null;
+          reveal_token: Json | null;
+          status: string;
+          venue_id: string;
+          visibility: string;
+          waiting_since: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'rooms';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      tabu_start_voice: {
         Args: {
           max_passes: number;
           target_room_id: string;

@@ -1,5 +1,5 @@
 import type { Concept } from '@shared/rooms.ts';
-import { parseGameState } from '@shared/tabu.ts';
+import { isVoiceTabu, parseGameState } from '@shared/tabu.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, Text, View } from 'react-native';
@@ -69,10 +69,11 @@ export default function RoomScreen() {
 
   // Room-level events come from one table only, so each room counts once.
   if (!isOwner) trackOnce(`join_accepted:${r.id}`, 'join_accepted', {});
-  if (isOwner && tabuState?.concept === 'tabu' && tabuState.phase === 'finished') {
+  if (isOwner && isVoiceTabu(tabuState) && tabuState.phase === 'finished') {
     trackOnce(`game_completed:${r.id}:${tabuState.gameNo}`, 'game_completed', {
       concept: 'tabu',
-      score: tabuState.score,
+      mode: 'voice',
+      score: tabuState.scores.owner,
     });
   }
 
@@ -84,7 +85,7 @@ export default function RoomScreen() {
           roomId={r.id}
           isOwner={isOwner}
           revealEndsAt={r.reveal_ends_at}
-          score={tabuState?.concept === 'tabu' ? tabuState.score : null}
+          score={null}
         />
       </Screen>
     );
@@ -102,8 +103,8 @@ export default function RoomScreen() {
         concept={concept}
         gameState={r.game_state}
         hasGuest={hasOtherTable}
-        sessionId={sessionId}
         isOwner={isOwner}
+        aliases={{ owner: r.owner_alias, guest: r.guest_alias ?? '' }}
       />
       {r.status === 'waiting' && r.visibility === 'open' ? (
         <Text className="mt-3 text-center text-sm text-neutral-500">

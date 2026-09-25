@@ -40,6 +40,7 @@ export type ErrorCode =
   | 'photo_invalid'
   | 'already_friends'
   | 'not_friends'
+  | 'not_judge'
   | 'method_not_allowed'
   | 'update_required'
   | 'internal';
@@ -97,6 +98,7 @@ export const DOMAIN_ERROR_CODES: readonly ErrorCode[] = [
   'no_cards',
   'reveal_closed',
   'not_friends',
+  'not_judge',
 ];
 
 export function isDomainErrorCode(value: string): value is ErrorCode {

@@ -43,6 +43,7 @@ const STATUS: Record<ErrorCode, number> = {
   photo_invalid: 422,
   already_friends: 409,
   not_friends: 403,
+  not_judge: 403,
   unauthorized: 401,
   method_not_allowed: 405,
   update_required: 426,

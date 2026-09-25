@@ -1,5 +1,6 @@
-// Tabu (MVP_SPEC §5.1, §5.2). One table: the deck, then the phone runs the game. Two tables:
-// server-authoritative. The card goes only to the describer, in the current-card response; the
+// Tabu (MVP_SPEC §5.1, §5.2, docs/SPEC_V2.md §8.2). One table: the deck, then the phone runs the
+// game. Two tables: server-authoritative; voice by default from v2 (the other table judges), the
+// written clue/guess flow only for older APKs until …_drop_text_tabu.sql. The card goes only to the describer, in the current-card response; the
 // word becomes public only in the card_closed event.
 import type { Db } from '../_shared/auth.ts';
 import { requireUser, serviceClient } from '../_shared/auth.ts';
@@ -16,16 +17,22 @@ import type {
 } from '../_shared/pure/api/games.ts';
 import { AppError } from '../_shared/pure/errors.ts';
 import { containsProfanity } from '../_shared/pure/profanity.ts';
-import { checkClue, MAX_CLUE_LENGTH, TABU } from '../_shared/pure/tabu.ts';
+import { checkClue, JUDGE_RESULTS, MAX_CLUE_LENGTH, TABU } from '../_shared/pure/tabu.ts';
 import { isCorrectGuess } from '../_shared/pure/trText.ts';
 
 const Body: z.ZodType<TabuRequest> = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('start'), roomId: z.uuid() }),
+  z.object({ action: z.literal('start'), roomId: z.uuid(), mode: z.literal('voice').optional() }),
   z.object({ action: z.literal('current-card'), roomId: z.uuid() }),
   z.object({ action: z.literal('clue'), roomId: z.uuid(), text: z.string().max(1000) }),
   z.object({ action: z.literal('guess'), roomId: z.uuid(), text: z.string().max(1000) }),
   z.object({ action: z.literal('pass'), roomId: z.uuid() }),
   z.object({ action: z.literal('end-turn'), roomId: z.uuid() }),
+  z.object({
+    action: z.literal('judge'),
+    roomId: z.uuid(),
+    cardId: z.uuid(),
+    result: z.enum(JUDGE_RESULTS),
+  }),
 ]);
 
 const db = serviceClient();
@@ -77,12 +84,16 @@ Deno.serve(
             if (deck.error) throw dbError('tabu_local_deck', deck.error);
             return { mode: 'local', deck: deck.data };
           }
-          const started = await db.rpc('tabu_start', {
+          const rules = {
             ...target,
             turn_seconds: TABU.turnSeconds,
             total_turns: TABU.totalTurns,
             max_passes: TABU.maxPasses,
-          });
+          };
+          const started =
+            body.mode === 'voice'
+              ? await db.rpc('tabu_start_voice', rules)
+              : await db.rpc('tabu_start', rules);
           if (started.error) throw dbError('tabu_start', started.error);
           return { mode: 'server' };
         }
@@ -90,7 +101,7 @@ Deno.serve(
         case 'current-card': {
           const { data, error } = await db.rpc('tabu_current_card', target).single();
           if (error) throw dbError('tabu_current_card', error);
-          return { word: data.word, forbidden: data.forbidden };
+          return { cardId: data.card_id, word: data.word, forbidden: data.forbidden };
         }
 
         case 'clue': {
@@ -132,6 +143,16 @@ Deno.serve(
         case 'pass': {
           const { error } = await db.rpc('tabu_pass', target);
           if (error) throw dbError('tabu_pass', error);
+          return { ok: true };
+        }
+
+        case 'judge': {
+          const { error } = await db.rpc('tabu_judge', {
+            ...target,
+            checked_card_id: body.cardId,
+            result: body.result,
+          });
+          if (error) throw dbError('tabu_judge', error);
           return { ok: true };
         }
 

@@ -369,3 +369,161 @@ describe('sohbet', () => {
     expect(new Set((data ?? []).map((c) => c.deck))).toEqual(new Set(['sohbet']));
   });
 });
+
+describe('tabu, two tables by voice (docs/SPEC_V2.md §8.2)', () => {
+  async function voiceRoom() {
+    const r = await room('tabu', true);
+    expect(await tabu(r.owner, { action: 'start', roomId: r.roomId, mode: 'voice' })).toEqual({
+      status: 200,
+      body: { mode: 'server' },
+    });
+    return r;
+  }
+
+  async function card(client: Client, roomId: string) {
+    const res = await tabu(client, { action: 'current-card', roomId });
+    return res as { status: number; body: { cardId: string; word: string; forbidden: string[] } };
+  }
+
+  const judge = (client: Client, roomId: string, cardId: string, result: string) =>
+    tabu(client, { action: 'judge', roomId, cardId, result });
+
+  it('starts with the owner table describing and one score per table, without the card', async () => {
+    const { roomId } = await voiceRoom();
+    const state = await gameState(roomId);
+    expect(state).toMatchObject({
+      concept: 'tabu',
+      mode: 'voice',
+      phase: 'playing',
+      turnNo: 1,
+      totalTurns: 6,
+      turnSeconds: 60,
+      describingTable: 'owner',
+      scores: { owner: 0, guest: 0 },
+      passesUsed: 0,
+      maxPasses: 3,
+    });
+    expect(JSON.stringify(state)).not.toMatch(/word|forbidden|card/i);
+  });
+
+  it('gives the card to both tables and to nobody outside the room', async () => {
+    const { owner, guest, third, roomId } = await voiceRoom();
+    const [a, b] = await Promise.all([card(owner, roomId), card(guest, roomId)]);
+    expect(a.status).toBe(200);
+    expect(b.body).toEqual(a.body);
+    expect(a.body.forbidden.length).toBeGreaterThan(0);
+    expect(await card(third, roomId)).toEqual({ status: 403, body: errorBody('not_in_room') });
+  });
+
+  it('lets only the judging table act, and scores +1, −1 and 0 for the describing table', async () => {
+    const { owner, guest, roomId } = await voiceRoom();
+    let current = (await card(guest, roomId)).body.cardId;
+    expect(await judge(owner, roomId, current, 'correct')).toEqual({
+      status: 403,
+      body: errorBody('not_judge'),
+    });
+
+    expect((await judge(guest, roomId, current, 'correct')).status).toBe(200);
+    const afterCorrect = (await card(guest, roomId)).body.cardId;
+    expect(afterCorrect).not.toBe(current);
+    // A second press on the closed card is refused, not counted twice.
+    expect(await judge(guest, roomId, current, 'correct')).toEqual({
+      status: 409,
+      body: errorBody('card_changed'),
+    });
+    current = afterCorrect;
+    expect((await judge(guest, roomId, current, 'taboo')).status).toBe(200);
+    current = (await card(guest, roomId)).body.cardId;
+    expect((await judge(guest, roomId, current, 'pass')).status).toBe(200);
+
+    expect(await gameState(roomId)).toMatchObject({
+      scores: { owner: 0, guest: 0 },
+      passesUsed: 1,
+    });
+    const events = await sql`
+      select type, payload ->> 'result' as result from public.game_events
+      where room_id = ${roomId} and type in ('correct', 'taboo', 'pass', 'card_closed')
+      order by created_at
+    `;
+    expect(events.map((e) => e.result ?? e.type)).toEqual([
+      'correct',
+      'correct',
+      'taboo',
+      'taboo',
+      'pass',
+      'pass',
+    ]);
+  });
+
+  it('limits passes per turn and refuses judging after the turn ended', async () => {
+    const { guest, roomId } = await voiceRoom();
+    for (let i = 0; i < 3; i++) {
+      const id = (await card(guest, roomId)).body.cardId;
+      expect((await judge(guest, roomId, id, 'pass')).status).toBe(200);
+    }
+    const id = (await card(guest, roomId)).body.cardId;
+    expect(await judge(guest, roomId, id, 'pass')).toEqual({
+      status: 409,
+      body: errorBody('no_passes_left'),
+    });
+    await expireTurn(roomId);
+    expect(await judge(guest, roomId, id, 'correct')).toEqual({
+      status: 409,
+      body: errorBody('turn_over'),
+    });
+  });
+
+  it('alternates the tables and hands the judge buttons to the other one', async () => {
+    const { owner, guest, roomId } = await voiceRoom();
+    await expireTurn(roomId);
+    expect((await tabu(owner, { action: 'end-turn', roomId })).status).toBe(200);
+    expect(await gameState(roomId)).toMatchObject({
+      turnNo: 2,
+      describingTable: 'guest',
+      passesUsed: 0,
+    });
+    const id = (await card(owner, roomId)).body.cardId;
+    expect(await judge(guest, roomId, id, 'correct')).toEqual({
+      status: 403,
+      body: errorBody('not_judge'),
+    });
+    expect((await judge(owner, roomId, id, 'correct')).status).toBe(200);
+    expect(await gameState(roomId)).toMatchObject({ scores: { owner: 0, guest: 1 } });
+    // Ending the turn again before it is over changes nothing.
+    expect((await tabu(guest, { action: 'end-turn', roomId })).status).toBe(200);
+    expect(await gameState(roomId)).toMatchObject({ turnNo: 2 });
+  });
+
+  it('writes a result per account at the end, with its table score and whether it won', async () => {
+    const { owner, guest, roomId } = await voiceRoom();
+    const id = (await card(guest, roomId)).body.cardId;
+    await judge(guest, roomId, id, 'correct');
+    for (let turn = 1; turn <= 6; turn++) {
+      await expireTurn(roomId);
+      await tabu(owner, { action: 'end-turn', roomId });
+    }
+    expect(await gameState(roomId)).toMatchObject({
+      phase: 'finished',
+      scores: { owner: 1, guest: 0 },
+    });
+    const results = await sql`
+      select u.phone, g.concept, g.mode, g.score, g.won from public.game_results g
+      join auth.users u on u.id = g.user_id order by u.phone
+    `;
+    expect(results).toEqual([
+      { phone: PHONES[0].replace(/\D/g, ''), concept: 'tabu', mode: 'voice', score: 1, won: true },
+      { phone: PHONES[1].replace(/\D/g, ''), concept: 'tabu', mode: 'voice', score: 0, won: false },
+    ]);
+    // The owner can start the next game; the room stays open.
+    expect((await tabu(owner, { action: 'start', roomId, mode: 'voice' })).status).toBe(200);
+    expect(await gameState(roomId)).toMatchObject({ gameNo: 2, scores: { owner: 0, guest: 0 } });
+  });
+
+  it('still opens the written game for a client that does not ask for voice', async () => {
+    const { owner, roomId } = await room('tabu', true);
+    await tabu(owner, { action: 'start', roomId });
+    const state = await gameState(roomId);
+    expect(state).toHaveProperty('describerSessionId');
+    expect(state).not.toHaveProperty('mode');
+  });
+});
