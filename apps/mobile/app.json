@@ -5,6 +5,7 @@
     "scheme": "masa",
     "version": "0.1.0",
     "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
     "platforms": ["android", "ios"],
     "ios": {
       "bundleIdentifier": "app.masa.mobile",
