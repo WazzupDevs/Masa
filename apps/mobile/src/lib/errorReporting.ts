@@ -29,3 +29,14 @@ export function reportError(error: unknown): void {
   if (!dsn) return;
   Sentry.captureException(error);
 }
+
+// A 5xx from an Edge Function, tagged with the function (and its action) and the status, grouped by
+// both. Nothing from the request or the answer body is sent.
+export function reportFunctionFailure(call: string, status: number): void {
+  if (!dsn) return;
+  Sentry.captureMessage(`Edge Function ${call} answered ${status}`, {
+    level: 'error',
+    tags: { function: call, status: String(status) },
+    fingerprint: ['edge-function-5xx', call, String(status)],
+  });
+}
