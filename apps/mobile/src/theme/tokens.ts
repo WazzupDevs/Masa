@@ -186,7 +186,7 @@ export const SPACING = {
 } as const;
 
 // Icon sizes (Ionicons).
-export const ICON = { sm: 16, md: 20, lg: 24, xl: 28 } as const;
+export const ICON = { xs: 12, sm: 16, md: 20, lg: 24, xl: 28 } as const;
 
 // Minimum touch target (WCAG 2.5.8 is 24; the mockups and Android guidance use 44–48).
 export const TOUCH = { min: 44, button: 48, tab: 56, large: 64 } as const;

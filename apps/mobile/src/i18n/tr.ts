@@ -129,6 +129,9 @@ export const tr = {
       }
     },
     empty: 'Şu an listede mekan yok.',
+    count: (n: number) => `${n} mekan`,
+    locationHidden: 'Konumun gösterilmez',
+    viewSwitch: 'Görünüm',
     notFound: 'Bu mekan artık listede değil.',
     back: 'Geri dön',
     checkInHint:
