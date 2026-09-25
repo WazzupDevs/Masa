@@ -42,14 +42,23 @@ Birincil: Sosyal ağ (iOS) / Sosyal (Android). İkincil: Oyunlar → Kelime.
 
 ## Veri güvenliği (Play) / Uygulama gizliliği (Apple) özeti
 
-| Veri                           | Toplanıyor                          | Paylaşılıyor | Amaç                      | Kimliğe bağlı            |
-| ------------------------------ | ----------------------------------- | ------------ | ------------------------- | ------------------------ |
-| Telefon numarası               | Evet                                | Hayır        | Hesap yönetimi            | Evet                     |
-| Yaklaşık/kesin konum           | Hayır (anlık kullanılır, saklanmaz) | Hayır        | Uygulama işlevi           | —                        |
-| Mesajlar (uygulama içi)        | Evet                                | Hayır        | Uygulama işlevi, güvenlik | Evet                     |
-| Uygulama etkileşimi (analitik) | Evet                                | Hayır        | Analitik                  | Evet (kullanıcı kimliği) |
-| Cihaz kimliği (push token)     | Evet                                | Hayır        | Uygulama işlevi           | Evet                     |
+> **v2 taslağı.** Profil, arkadaşlık, DM ve hata raporları eklendi (`docs/SPEC_V2.md`). Play Console'daki form bu tabloya göre doldurulur (adımlar `docs/store/PLAY_CHECKLIST.md`). v2 yayınından önce hukuki kontrolden geçmeli. Başka kullanıcılara kullanıcının kendi isteğiyle gösterilen veriler (profil, DM) Play tanımında "paylaşım" sayılmaz; yine de formda "Toplanıyor" olarak işaretlenir.
 
+| Veri                                                                | Toplanıyor                          | Paylaşılıyor | Amaç                      | Kimliğe bağlı            |
+| ------------------------------------------------------------------- | ----------------------------------- | ------------ | ------------------------- | ------------------------ |
+| Telefon numarası                                                    | Evet                                | Hayır        | Hesap yönetimi            | Evet                     |
+| Yaklaşık/kesin konum                                                | Hayır (anlık kullanılır, saklanmaz) | Hayır        | Uygulama işlevi           | —                        |
+| Mesajlar (uygulama içi)                                             | Evet                                | Hayır        | Uygulama işlevi, güvenlik | Evet                     |
+| Uygulama etkileşimi (analitik)                                      | Evet                                | Hayır        | Analitik                  | Evet (kullanıcı kimliği) |
+| Cihaz kimliği (push token)                                          | Evet                                | Hayır        | Uygulama işlevi           | Evet                     |
+| Ad (görünen ad; isteğe bağlı)                                       | Evet                                | Hayır        | Uygulama işlevi           | Evet                     |
+| Fotoğraflar (profil fotoğrafı; isteğe bağlı, konum ve EXIF silinir) | Evet                                | Hayır        | Uygulama işlevi           | Evet                     |
+| Diğer kullanıcı içeriği (biyografi)                                 | Evet                                | Hayır        | Uygulama işlevi           | Evet                     |
+| Uygulama içi mesajlar (arkadaşlar arası DM)                         | Evet                                | Hayır        | Uygulama işlevi, güvenlik | Evet                     |
+| Diğer uygulama etkinlikleri (oyun geçmişi, arkadaşlık)              | Evet                                | Hayır        | Uygulama işlevi           | Evet                     |
+| Kilitlenme günlükleri ve teşhis (Sentry)                            | Evet                                | Hayır        | Analitik (hata giderme)   | Evet (kullanıcı kimliği) |
+
+- Hiçbir veri türü zorunlu değildir: profil, fotoğraf, biyografi ve arkadaşlık isteğe bağlıdır (telefon numarası hariç).
 - Veriler aktarımda şifrelenir. Kullanıcı verilerinin silinmesini isteyebilir (uygulama içi ve [web silme talebi URL'i — Play zorunlu kılar]).
 - İzleme (tracking) yok; reklam yok.
 
