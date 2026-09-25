@@ -47,7 +47,14 @@ async function gameState(roomId: string) {
   return row?.game_state as Record<string, unknown>;
 }
 
-// Everything a member's client can read about the room outside tabu/turn-cards, as one string.
+const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+
+// Table aliases come from alias_words, whose animals are Tabu words too ("Kelebek").
+const ALIAS_COLUMNS = new Set(['owner_alias', 'guest_alias', 'sender_alias']);
+
+// Everything a member's client can read about the room outside tabu/turn-cards, as one string:
+// every value, and every key inside JSON values. Column names are left out (they are the schema,
+// and `created_at` would read as the card "At"), and so are the alias columns.
 async function readableBy(guest: Client, roomId: string): Promise<string> {
   const reads = await Promise.all([
     guest.from('rooms').select('*').eq('id', roomId),
@@ -55,7 +62,14 @@ async function readableBy(guest: Client, roomId: string): Promise<string> {
     guest.from('messages').select('*').eq('room_id', roomId),
     guest.from('my_join_requests').select('*'),
   ]);
-  return normalize(JSON.stringify(reads.map((r) => r.data)));
+  const rows = reads.flatMap((r) => (r.data ?? []) as Record<string, unknown>[]);
+  const values = rows.flatMap((row) =>
+    Object.entries(row)
+      .filter(([column]) => !ALIAS_COLUMNS.has(column))
+      .map(([, value]) => value),
+  );
+  // Random ids are not data either; a 4-hex chunk could read as the card "Dede".
+  return normalize(JSON.stringify(values).replace(UUID, ' '));
 }
 
 async function expireTurn(roomId: string) {
@@ -179,8 +193,13 @@ describe('tabu, two tables face to face (docs/SPEC_V2.md §8.2)', () => {
     // The Tabu deck is not readable by the app (the Sohbet deck is, by design).
     const deck = await guest.from('cards').select('word').eq('deck', 'tabu');
     expect(deck.data ?? []).toEqual([]);
-    // Whole words only: the text is normalized with spaces around every word.
-    for (const c of a.body.cards) expect(` ${readable} `).not.toContain(` ${normalize(c.word)} `);
+    // No word of the whole deck, dealt or not, so the check does not depend on the deal. Whole
+    // words only: the text is normalized with spaces around every word.
+    const deckWords = (await sql`select word from public.cards where deck = 'tabu'`).map((row) =>
+      normalize(String(row.word)),
+    );
+    expect(deckWords).toEqual(expect.arrayContaining(a.body.cards.map((c) => normalize(c.word))));
+    expect(deckWords.filter((word) => ` ${readable} `.includes(` ${word} `))).toEqual([]);
   });
 
   it('lets the judge say Tabu, the describer say Pas, and both say Doğru', async () => {
