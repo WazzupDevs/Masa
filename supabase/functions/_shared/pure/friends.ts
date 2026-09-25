@@ -20,8 +20,9 @@ export function prepareDm(raw: string): string | null {
   return length >= 1 && length <= DM_MAX_LENGTH ? body : null;
 }
 
-// What the sender sees of a request: a decline looks like a request still waiting, for ever.
-export type StoredRequestStatus = 'pending' | 'accepted' | 'declined';
+// What the sender sees of a request: a decline, and a removal from the friend list, look like a
+// request still waiting, for ever.
+export type StoredRequestStatus = 'pending' | 'accepted' | 'declined' | 'removed';
 export type SentRequestView = 'pending' | 'accepted';
 
 export function sentRequestView(status: StoredRequestStatus): SentRequestView {

@@ -28,8 +28,9 @@ describe('prepareDm', () => {
 });
 
 describe('sentRequestView', () => {
-  it('shows a declined request as pending to its sender', () => {
+  it('shows a declined request, and one after a removal, as pending to its sender', () => {
     expect(sentRequestView('declined')).toBe('pending');
+    expect(sentRequestView('removed')).toBe('pending');
     expect(sentRequestView('pending')).toBe('pending');
     expect(sentRequestView('accepted')).toBe('accepted');
   });

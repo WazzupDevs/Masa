@@ -337,6 +337,7 @@ Arkadaşlık kurulana kadar hiçbir yanıt karşı tarafın `public_id`'sini ta�
   - Test bunu tüm dönüş kolonları üzerinden doğrular (§11).
 - **Arkadaşlığı bitirme ve engelleme, isteğe bağlı şikayetle:**
   - `friends/remove { publicId, report?: reason }` sessizdir. Karşı taraf yalnızca arkadaşın listeden çıktığını görür.
+  - **Çıkarma, çıkarılan için kalıcı reddir** (proje sahibi kararı, adım 4): çıkarılanın çıkarana yeni isteği sessizce yutulur ve gönderende süresiz `pending` görünür; çıkaran yeniden istek gönderebilir. Engelleme de arkadaşlığı aynı yolla bitirir, bu yüzden çıkarılan taraf ikisini ayırt edemez. Önceden verilmiş red kayıtları silinmez. `my_sent_requests()` bu yüzden istek satırlarından değil, gönderenin kendi geçmiş kaydındaki basıştan (`friend_action_at`) üretilir: hangi sebeple yutulursa yutulsun istek bekliyor görünür.
   - `safety/block { publicId, report?: reason }` bugünkü `blocks`'a yazar ve arkadaşlığı siler. Karşı tarafa bildirilmez.
   - Engellemede de karşı tarafın gördüğü aynıdır: arkadaş listeden çıkar. Karşı taraf ikisini ayırt edemez.
   - **"Şikayet de et":** İki akışta da bir seçenek olarak sunulur. Seçilirse, konuşmanın son 50 mesajının kopyası arkadaşlık ve konuşma cascade ile silinmeden önce, **aynı transaction'da** `reports`'a yazılır (`target_type = 'dm'`). Silme ve kopya birlikte başarılı olur ya da birlikte geri alınır.

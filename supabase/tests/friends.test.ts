@@ -617,10 +617,8 @@ describe('ending a friendship', () => {
       body: errorBody('not_friends'),
     });
 
-    // They meet again and become friends; this time b blocks.
-    await encounter(first.a, first.b);
-    await endByGuestLeaving(first.b);
-    await becomeFriends(first.a, first.b, await latestHistoryId(first.a));
+    // They become friends again (only the remover, b, can ask); this time b blocks.
+    await becomeFriends(first.b, first.a, await latestHistoryId(first.b));
     await quiet();
     inboxA.events.length = 0; // the new friendship's own event
     expect(await safety(first.b, { action: 'block', publicId: await publicIdOf(first.a) })).toEqual(
@@ -674,6 +672,119 @@ describe('ending a friendship', () => {
       status: 403,
       body: errorBody('not_friends'),
     });
+  });
+});
+
+describe('removal works as a permanent decline for the removed side', () => {
+  // b removes a unless `block`, in which case b blocks a (from the friend list).
+  async function endedBy(block: boolean) {
+    const { a, b, historyA } = await metOnce();
+    await becomeFriends(a, b, historyA);
+    const idA = await publicIdOf(a);
+    expect(
+      block
+        ? await safety(b, { action: 'block', publicId: idA })
+        : await friends(b, { action: 'remove', publicId: idA }),
+    ).toEqual(OK);
+    return { a, b, historyA };
+  }
+
+  // Everything the removed side (a) can see after asking again.
+  async function removedSideView(a: Client, historyA: string) {
+    const answer = await friends(a, { action: 'request', historyId: historyA });
+    // Ids, aliases and times differ between the two runs; the shape and states must not.
+    return {
+      answer,
+      friends: await friendList(a),
+      sent: (await sent(a)).map((r) => ({ concept: r.concept, status: r.status })),
+      history: (await history(a)).map((h) => ({
+        concept: h.concept,
+        mode: h.mode,
+        reveal_mutual: h.reveal_mutual,
+        other_headcount: h.other_headcount,
+        pressed: h.friend_action_at !== null,
+      })),
+      incoming: await incoming(a),
+    };
+  }
+
+  it("swallows the removed side's new request and shows it pending for ever", async () => {
+    const { a, b, historyA } = await endedBy(false);
+    const rowsBefore =
+      await sql`select from_user_id, to_user_id, status from public.friend_requests order by status`;
+    expect(await friends(a, { action: 'request', historyId: historyA })).toEqual(OK);
+    // A new encounter does not help either.
+    await encounter(a, b);
+    await endByGuestLeaving(b);
+    const newer = await latestHistoryId(a);
+    expect(await friends(a, { action: 'request', historyId: newer })).toEqual(OK);
+
+    expect(
+      await sql`select from_user_id, to_user_id, status from public.friend_requests order by status`,
+    ).toEqual(rowsBefore);
+    expect(await incoming(b)).toEqual([]);
+    expect((await sent(a)).map((r) => r.status)).toEqual(['pending', 'pending']);
+  });
+
+  it('looks the same to the removed side as a block', async () => {
+    const removed = await endedBy(false);
+    const afterRemoval = await removedSideView(removed.a, removed.historyA);
+    for (const phone of PHONES) await deleteUserByPhone(phone);
+    await sql`delete from public.blocks`;
+
+    const blocked = await endedBy(true);
+    const afterBlock = await removedSideView(blocked.a, blocked.historyA);
+    expect(afterBlock).toEqual(afterRemoval);
+    expect(afterRemoval.answer).toEqual(OK);
+    expect(afterRemoval.sent).toEqual([expect.objectContaining({ status: 'pending' })]);
+  });
+
+  it('lets the remover ask again', async () => {
+    const { a, b } = await endedBy(false);
+    const historyB = await latestHistoryId(b);
+    expect(await friends(b, { action: 'request', historyId: historyB })).toEqual(OK);
+    const [req] = await incoming(a);
+    expect(req).toBeDefined();
+    expect(
+      await friends(a, { action: 'respond', requestId: req?.request_id, accept: true }),
+    ).toEqual(OK);
+    expect(await friendList(b)).toHaveLength(1);
+
+    // Now a removes b: b, the earlier remover, becomes the removed side and a may ask again.
+    expect(await friends(a, { action: 'remove', publicId: await publicIdOf(b) })).toEqual(OK);
+    expect(await friends(b, { action: 'request', historyId: historyB })).toEqual(OK);
+    expect(await incoming(a)).toEqual([]);
+    expect(await friends(a, { action: 'request', historyId: await latestHistoryId(a) })).toEqual(
+      OK,
+    );
+    expect(await incoming(b)).toHaveLength(1);
+  });
+
+  it('keeps an earlier real decline on removal, whoever removes', async () => {
+    const { a, b, historyA, historyB } = await metOnce();
+    // a asks, b declines; then b asks and a accepts.
+    await friends(a, { action: 'request', historyId: historyA });
+    const [first] = await incoming(b);
+    await friends(b, { action: 'respond', requestId: first?.request_id, accept: false });
+    await friends(b, { action: 'request', historyId: historyB });
+    const [second] = await incoming(a);
+    await friends(a, { action: 'respond', requestId: second?.request_id, accept: true });
+    const [decline] = await sql`select id from public.friend_requests where status = 'declined'`;
+
+    // b (who declined) removes a: the decline stays, untouched.
+    await friends(b, { action: 'remove', publicId: await publicIdOf(a) });
+    expect(
+      await sql`select id, status from public.friend_requests where id = ${decline?.id}`,
+    ).toEqual([{ id: decline?.id, status: 'declined' }]);
+
+    // Friends again through b's request; now a (who was declined) removes b.
+    await friends(b, { action: 'request', historyId: historyB });
+    const [third] = await incoming(a);
+    await friends(a, { action: 'respond', requestId: third?.request_id, accept: true });
+    await friends(a, { action: 'remove', publicId: await publicIdOf(b) });
+    expect(
+      await sql`select id, status from public.friend_requests where id = ${decline?.id}`,
+    ).toEqual([{ id: decline?.id, status: 'declined' }]);
   });
 });
 
