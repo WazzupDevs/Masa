@@ -274,6 +274,7 @@ export const tr = {
     playWithTable: 'Masanla oyna',
     playWithTableHint: 'Şu an mekanda açık oda yok. Kendi masanla oynayabilirsin.',
     lobbyTitle: 'Açık odalar',
+    roomCount: (n: number) => `${n} oda`,
     profiled: 'profilli',
     people: (n: number) => `${headcountLabel(n)} kişi`,
     waitingFor: (minutes: number) => (minutes < 1 ? 'yeni açıldı' : `${minutes} dk bekliyor`),
@@ -290,6 +291,9 @@ export const tr = {
     },
     createConfirm: 'Odayı kur',
     roomTitle: (concept: string) => `${concept} odası`,
+    // The room's eyebrow; voice games say they are played face to face (docs/SPEC_V2.md §8.1).
+    roomEyebrow: (concept: 'tabu' | 'sohbet') =>
+      concept === 'tabu' ? 'Tabu odası · yüz yüze' : 'Sohbet odası',
     withGuest: (owner: string, guest: string) => `${owner} ve ${guest}`,
     waitingForGuest: 'Başka bir masa katılmak isteyebilir. Bu arada kendi masanla oynayabilirsin.',
     leave: 'Odadan çık',
@@ -394,6 +398,7 @@ export const tr = {
     addFriendDone: 'Eklendi. İkiniz de basarsanız arkadaş olursunuz.',
   },
   venue: {
+    here: 'Mekandasın',
     yourTable: 'Masanın adı',
     people: (n: number) => `${headcountLabel(n)} kişi`,
     remaining: (h: number, m: number) => (h > 0 ? `${h} sa ${m} dk kaldı` : `${m} dk kaldı`),
