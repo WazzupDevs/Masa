@@ -8,7 +8,7 @@ import { tr } from '@/i18n/tr';
 
 export { RouteError as ErrorBoundary } from '@/components/RouteError';
 
-export const unstable_settings = { initialRouteName: 'index' };
+export const unstable_settings = { initialRouteName: 'explore' };
 
 // The highlighted middle tab (docs/SPEC_V2.md §2).
 function VenueIcon({ focused }: { focused: boolean }) {
@@ -28,8 +28,9 @@ export default function TabsLayout() {
 
   return (
     <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: 'black' }}>
+      <Tabs.Screen name="index" options={{ href: null }} />
       <Tabs.Screen
-        name="index"
+        name="explore"
         options={{
           title: tr.tabs.explore,
           tabBarIcon: ({ color, size }) => (

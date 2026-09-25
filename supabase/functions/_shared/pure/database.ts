@@ -620,6 +620,67 @@ export type Database = {
           },
         ];
       };
+      venue_activity: {
+        Row: {
+          bucket: string;
+          computed_at: string;
+          venue_id: string;
+        };
+        Insert: {
+          bucket: string;
+          computed_at?: string;
+          venue_id: string;
+        };
+        Update: {
+          bucket?: string;
+          computed_at?: string;
+          venue_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'venue_activity_venue_id_fkey';
+            columns: ['venue_id'];
+            isOneToOne: true;
+            referencedRelation: 'venues';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      venue_events: {
+        Row: {
+          created_at: string;
+          ends_at: string;
+          id: string;
+          starts_at: string;
+          title: string;
+          venue_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          ends_at: string;
+          id?: string;
+          starts_at: string;
+          title: string;
+          venue_id: string;
+        };
+        Update: {
+          created_at?: string;
+          ends_at?: string;
+          id?: string;
+          starts_at?: string;
+          title?: string;
+          venue_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'venue_events_venue_id_fkey';
+            columns: ['venue_id'];
+            isOneToOne: false;
+            referencedRelation: 'venues';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       venues: {
         Row: {
           city: string;
@@ -698,6 +759,20 @@ export type Database = {
         };
       };
       end_table_session: { Args: { target_user_id: string }; Returns: boolean };
+      explore_venues: {
+        Args: { event_days?: number };
+        Returns: {
+          bucket: string;
+          district: string;
+          event_ends_at: string;
+          event_starts_at: string;
+          event_title: string;
+          lat: number;
+          lng: number;
+          name: string;
+          venue_id: string;
+        }[];
+      };
       nearby_venues: {
         Args: { lat: number; lng: number };
         Returns: {

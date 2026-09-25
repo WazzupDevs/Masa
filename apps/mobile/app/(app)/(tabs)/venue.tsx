@@ -58,7 +58,7 @@ export default function VenueScreen() {
   }
 
   if (!table.data || expired || expiresAt === null) {
-    return <Redirect href="/" />;
+    return <Redirect href="/explore" />;
   }
 
   if (currentRoom.data) {

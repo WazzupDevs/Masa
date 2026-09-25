@@ -46,6 +46,8 @@ Aynı mekandaki insanların, konsept üzerine kurulu odalarda birlikte oyun oyna
 3. Kullanıcı takma adı yoktur: diğer kullanıcılara hiçbir şey gösterilmediği ve hiçbir akışta kullanılmadığı için MVP'den çıkarıldı. Diğer masalar yalnızca masa takma adını görür (§4.2). **v2:** isteğe bağlı görünen ad (`display_name`) eklenir; kayıtta sorulmaz, profil kurulurken, arkadaşlık isteği gönderirken ve ilk arkadaşlık kabulünde zorunludur (`docs/SPEC_V2.md` §6.3).
 
 ### 4.2 Check-in ve masa
+> **v2:** Mekan Keşfet'te (liste ya da harita) elle seçilir; konum yalnızca seçilen mekanda 300 m içinde olunduğunu doğrular. Yakındaki mekanlar listesi kalkar (`docs/SPEC_V2.md` §4).
+
 1. Konum için açık rıza alınır (açıklama ekranı, ilk check-in'de `profiles.location_consent_at` ve `location_consent_version` yazılır; sürüm `draft-0`). Konum izni istenir (sadece "uygulama kullanılırken"). Arka planda konum takibi yok.
 2. Konum yüksek doğrulukla bir kez alınır. `nearby_venues` RPC'si 300 m içindeki mekanları mesafeye göre sıralı döner. Listenin altında "© OpenStreetMap katkıda bulunanlar" atfı görünür (ODbL).
 3. Kullanıcı mekanı seçer. Sunucu mesafeyi tekrar kontrol eder (katı 300 m; doğruluk payı yok). Koordinat saklanmaz. Yalnızca cihazın bildirdiği doğruluk yarıçapı (metre) `table_sessions.gps_accuracy_m` olarak saklanır; sahada eşiği ayarlamak için. `checkin` fonksiyonu koordinatı loglamaz ve hata mesajlarında da döndürmez.

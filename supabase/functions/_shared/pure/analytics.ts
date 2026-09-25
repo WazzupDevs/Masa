@@ -1,4 +1,4 @@
-// Product analytics (MVP_SPEC §12). Only these events, only these properties, and the user id as
+// Product analytics (MVP_SPEC §12, docs/SPEC_V2.md §13). Only these events, only these properties, and the user id as
 // the distinct id: never a phone number, alias, message, venue or position.
 import type { Concept, Visibility } from './rooms.ts';
 
@@ -16,6 +16,8 @@ export type AnalyticsEventProps = {
   report_submitted: Record<string, never>;
   block_created: Record<string, never>;
   session_ended: { duration_min: number };
+  explore_viewed: { view: 'list' | 'map' };
+  checkin_out_of_range: Record<string, never>;
 };
 
 export type AnalyticsEvent = keyof AnalyticsEventProps;
@@ -34,6 +36,8 @@ const ALLOWED: { [E in AnalyticsEvent]: readonly (keyof AnalyticsEventProps[E])[
   report_submitted: [],
   block_created: [],
   session_ended: ['duration_min'],
+  explore_viewed: ['view'],
+  checkin_out_of_range: [],
 };
 
 export const ANALYTICS_EVENTS = Object.keys(ALLOWED) as AnalyticsEvent[];

@@ -1,7 +1,7 @@
 // v2 navigation (docs/SPEC_V2.md §2): the app opens on Keşfet; the Mekan tab goes to the venue
 // screen only while the table is active, otherwise to Keşfet.
 export const ROUTES = {
-  explore: '/',
+  explore: '/explore',
   venue: '/venue',
   friends: '/friends',
   profile: '/profile',

@@ -18,6 +18,7 @@
     "typecheck:functions": "deno check --node-modules-dir=none supabase/functions/*/index.ts",
     "lint:functions": "deno lint supabase/functions",
     "admin:ban": "pnpm --filter scripts admin:ban",
+    "admin:event": "pnpm --filter scripts admin:event",
     "db:reset": "supabase db reset && pnpm --filter scripts apply-local-secrets",
     "fetch:venues": "pnpm --filter scripts fetch:venues"
   },
