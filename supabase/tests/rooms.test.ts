@@ -1,9 +1,10 @@
+import postgres from 'postgres';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { sessionChannel, venueChannel } from '../functions/_shared/pure/rooms.ts';
 import { deleteFixtureVenues, insertFixtureVenues } from './fixtures/venues.ts';
 import { checkInAt, errorBody, onboarded, PHONES, waitForBroadcast } from './helpers.ts';
-import { type Client, deleteUserByPhone, invoke, sql, userIdOf } from './local.ts';
+import { type Client, dbUrl, deleteUserByPhone, invoke, sql, userIdOf } from './local.ts';
 
 let venue: Record<string, string> = {};
 const V = 'at-anchor';
@@ -380,6 +381,30 @@ describe('leaving', () => {
     expect((await invoke(owner, 'account', { action: 'delete' })).status).toBe(200);
     const [row] = await sql`select count(*)::int as n from public.rooms where id = ${roomId}`;
     expect(row?.n).toBe(0);
+  });
+});
+
+describe('locks', () => {
+  // Both tables ending a Tabu turn at once deadlocked: the owner, holding the room, wrote the next
+  // turn whose describer is the guest's session while the guest held that row FOR UPDATE.
+  it("lets rows reference a table's session while that table holds its session lock", async () => {
+    const client = await onboarded(PHONES[0]);
+    await checkInAt(client, venue, V);
+    const userId = await userIdOf(client);
+    const other = postgres(dbUrl, { max: 1, onnotice: () => {} });
+    try {
+      await sql.begin(async (tx) => {
+        const [held] = await tx`select id from private.active_session_for_update(${userId})`;
+        // What a foreign key check takes on the referenced row.
+        const referenced = await other.begin(async (otx) => {
+          await otx`set local lock_timeout = '2s'`;
+          return otx`select id from public.table_sessions where id = ${held?.id} for key share`;
+        });
+        expect(referenced).toHaveLength(1);
+      });
+    } finally {
+      await other.end();
+    }
   });
 });
 

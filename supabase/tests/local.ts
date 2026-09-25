@@ -28,7 +28,8 @@ function value(name: string): string {
 export const apiUrl = value('API_URL');
 export const anonKey = value('ANON_KEY');
 const secretKey = value('SECRET_KEY');
-export const sql = postgres(value('DB_URL'), { max: 1, onnotice: () => {} });
+export const dbUrl = value('DB_URL');
+export const sql = postgres(dbUrl, { max: 1, onnotice: () => {} });
 
 export const TEST_OTP = '123456';
 

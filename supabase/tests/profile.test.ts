@@ -543,7 +543,10 @@ describe('reports stay closed to the app', () => {
       expect(update.error?.code).toBe('42501');
     }
     // The row is there, with the copy, for the server only.
-    const [row] = await sql`select photo_copy is not null as has_copy from public.reports`;
-    expect(row?.has_copy).toBe(true);
+    const rows = await sql`
+      select photo_copy is not null as has_copy from public.reports
+      where reporter_id = ${await userIdOf(b)}
+    `;
+    expect(rows).toEqual([{ has_copy: true }]);
   });
 });
