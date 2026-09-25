@@ -1,5 +1,7 @@
 # Saha testi: iki telefonla uçtan uca
 
+> **v2 build'i (adım 1–3) ile:** 2. bölümdeki "Yakındaki mekanlar" akışı yerine mekan Keşfet'ten seçilir. Önce en alttaki **"v2 adım 1–3"** senaryosunu çalıştır; 3–11. bölümler v2'de de aynen geçerlidir (kişi sayısı artık 1 / 2 / 3 / 4+).
+
 İki telefon, iki hesap, aynı mekan. **Telefon A** oda sahibidir (sen), **Telefon B** misafir masadır (arkadaşın). Senaryo yaklaşık 45 dakika sürer; en uzun adım iki masalı Tabu'dur (6 tur × 60 sn).
 
 ## Önemli: push yok, uygulama açık kalmalı
@@ -158,3 +160,172 @@ Reddedilen masa o odayı lobide bir daha görmez; bu yüzden iki deneme için A 
 ## Test sonrası
 
 Notları ve ekran görüntülerini tek bir yerde topla; ❌ olan adımları hata satırlarıyla birlikte bildir. Adım numaraları bu belgedeki numaralardır.
+
+---
+
+# v2 adım 1–3: iki telefonlu cihaz testi
+
+Yaklaşık 60 dakika. **A** ve **B** iki telefon, iki hesap. Adım numaraları `V1`, `V2`… diye yazılır; hata satırı biçimi yukarıdakiyle aynı.
+
+## Test öncesi (v2)
+
+- [ ] Barındırılan proje güncel: adım 1–3'ün migration'ları ve fonksiyonları yayında (`pnpm supabase db push`, `pnpm supabase functions deploy profile checkin safety account`).
+- [ ] Telefonlardaki APK, MapLibre ve image picker içeren Faz 8A (ya da sonraki) `preview` build'i; adım 1–3'ün JS'i OTA ile gelmiş (Profil sekmesinde dişli ve "Ad ekle" düğmesi görünüyorsa güncel).
+- [ ] Planlı etkinlik (geliştirici makinesinde, `SUPABASE_URL` ve `SUPABASE_SECRET_KEY` ortamda):
+  - `pnpm admin:event add test/<ref> "Masa gecesi" "<bugün, 1 saat sonra, ör. 2026-09-26 21:00>"` (test mekanı)
+  - `pnpm admin:event add <pilot mekanlardan birinin source_ref'i> "Tabu turnuvası" "<3 gün sonra 20:00>"`
+  - `pnpm admin:event list` ile iki kaydın göründüğünü kontrol et.
+- [ ] B'nin telefonunda **konum servisi açık** ve kamera uygulamasında **konum etiketi açık** (V9'da gerekli).
+- [ ] A'nın hesabında görünen ad **yok** (yeni hesap ya da hiç ad girilmemiş); B'ninkinde de yok. Adları test sırasında gireceğiz.
+
+## V1. Açılış ve sekmeler (A ve B)
+
+1. Uygulamayı aç.
+2. Alttaki dört sekmeye sırayla dokun: **Keşfet**, **Mekan** (ortada, siyah daire, kahve simgesi), **Arkadaşlar**, **Profil**.
+
+**Bak:**
+
+- Uygulama Keşfet'te açılıyor.
+- Mekan düğmesi diğerlerinden büyük ve yükseltilmiş.
+- Aktif masa yokken **Mekan'a dokunmak Keşfet'e götürür** (Mekan ekranı açılmaz).
+- Arkadaşlar'da "Birlikte oynadığın masalarla burada arkadaş olabileceksin." yazar.
+- Profil'de sağ üstte dişli var; dişli Ayarlar'ı açar, geri tuşu Profil'e döner.
+- Sekme değişimlerinde beyaz ekran ya da titreme yok.
+
+**Hata olursa:** hangi sekmeden hangisine geçerken, ne gördün.
+
+## V2. Keşfet: liste, harita, etkinlik etiketi (A)
+
+1. Keşfet'te **Liste** görünümü: mekanlar kovaya göre sıralı (Çok canlı, Hareketli, Sakin; sonra ad).
+2. Test mekanının satırında etkinlik etiketi: **"Bugün 21.00 · Masa gecesi"** (etkinlik başladıysa **"Şimdi · Masa gecesi"**).
+3. Pilot mekandaki etkinlik: gün adıyla, ör. **"Pazartesi 20.00 · Tabu turnuvası"**.
+4. **Harita**'ya geç. Mekan işaretçileri görünür. Kaydır, yakınlaştır.
+5. Listenin altında ve haritanın atıf düğmesinde OpenStreetMap atfı var.
+
+**Bak:**
+
+- Kova etiketi yalnızca "Sakin / Hareketli / Çok canlı"; **hiçbir yerde masa ya da kişi sayısı yok**.
+- Tek masa açıkken bile mekan "Sakin" görünür (V5'ten sonra geri dönüp bak; kovalar 5 dakikada bir tazelenir).
+- Haritada **kendi konumunu gösteren mavi nokta yok** (bilerek).
+- Etiketteki saat İstanbul saatiyle, `admin:event`'e yazdığın saatle aynı.
+
+**Hata olursa:** etiket görünmüyorsa `admin:event list` çıktısını ve mekanın adını yaz. Harita boş ya da gri kaldıysa internet bağlantısını ve ekran görüntüsünü ekle.
+
+## V3. Yarıçap dışından check-in (A, mekandan en az 400 m uzakta)
+
+1. Keşfet'te test mekanına dokun → mekan detayı → **Buraya giriş yap**.
+2. Rıza kutusunu işaretle → **Konumumu kullan** → izin ver.
+
+**Bak:** konum alındıktan sonra kırmızı yazı: **"Bu mekana çok uzaktasın. Mekandayken tekrar dene."**; kişi sayısı ekranına geçilmez. Masa açılmaz (Mekan sekmesi hâlâ Keşfet'e götürür).
+**Hata olursa:** uzaktayken kişi sayısı ekranına geçildiyse, telefonun gösterdiği konum doğruluğunu (varsa) ve mekana uzaklığı yaz. Bu ❌'dır.
+
+## V4. Kişi sayısı ve katılım biçimi; adsız hesapta "Profille" kapalı (A, mekanda)
+
+1. Mekana gel, V3'ü tekrarla: bu kez **"Masada kaç kişisiniz?"** ekranı açılır.
+2. Seçenekler: **1 / 2 / 3 / 4+** (5 ve 6 yok).
+3. Altta "Nasıl katılıyorsunuz?": **Anonim** seçili. **Profille** soluk ve dokunulamaz; altında **"Profille katılmak için önce Profil sekmesinden bir ad seç."** yazar.
+4. **2**'yi seç, Anonim kalsın, **Masayı aç**. "Masan hazır" ekranında takma adı not et.
+5. Mekan sekmesine dokun.
+
+**Bak:**
+
+- "Profille"ye dokunmak hiçbir şey yapmaz.
+- Masa açıldıktan sonra **Mekan sekmesi Mekan ekranını açar** (artık Keşfet'e götürmez); ekranda "2 kişi" yazar.
+
+**Hata olursa:** "Profille" seçilebildiyse ve masa açıldıysa ❌; ekrandaki mesajı yaz.
+
+## V5. Profil kurulumu (A ve B)
+
+1. Profil → **Ad ekle** → görünen ad yaz (ör. A: "Deniz", B: "Ece") → **Kaydet**.
+2. A: **Profili düzenle** → Tanıtım'a bir cümle yaz → **Kaydet**. Sayaç `n/160` doğru sayıyor.
+3. Küfürlü bir ad dene (ör. içinde "amk" geçen): **"Ad 2–24 karakter olmalı ve uygun olmayan ifade içermemeli."**; kaydedilmez.
+4. Tek harfli ad dene: **Kaydet** soluk kalır.
+5. Profil → dişli → Ayarlar → **Gizlilik**: "Masaya varsayılan katılım" artık iki seçenek de dokunulabilir. Anonim kalsın. **Bildirimler**'de iki anahtar açık.
+
+**Bak:** Profil ekranında ad ve tanıtım görünüyor; "Rozetler" altında "Oynadıkça rozet kazanırsın." (rozetler bu adımda boş, beklenen).
+**Hata olursa:** kaydedilmeyen alanı ve mesajı yaz.
+
+## V6. Konum etiketli kamera fotoğrafı (B)
+
+Amaç: telefonda konum servisi ve kamerada konum etiketi açıkken çekilen fotoğrafın konum bilgisi olmadan yüklenmesi.
+
+1. B: Profil → **Fotoğraf ekle** → **Fotoğraf çek** → kamera izni → bir fotoğraf çek → kareyi onayla.
+2. İstersen ayrıca **Galeriden seç** ile telefonun kamerasıyla daha önce çekilmiş (konum etiketli) bir fotoğraf seç.
+
+**Bak:**
+
+- Pencerede "Fotoğrafın konum ve cihaz bilgisi gibi bütün ek bilgilerden arındırılarak yüklenir." yazar.
+- Birkaç saniyede pencere kapanır, profil fotoğrafı daire içinde görünür.
+- Hata mesajı çıkmaz. "Bu fotoğraf kullanılamadı." çıkarsa ❌ (metadata silinemedi ya da sunucu reddetti): saati yaz.
+
+**Sonra (panelde, geliştirici):** Storage → `profile-photos` → B'nin klasöründeki `.jpg` dosyasını indir, bir EXIF görüntüleyicide aç (ör. `exiftool dosya.jpg`): **GPS, cihaz modeli, tarih alanı olmamalı**; boyut 512×512, birkaç on KB.
+
+## V7. Lobide "profilli" etiketi, katılma isteği (A ve B)
+
+1. A: Mekan ekranından **Mekandan ayrıl**, sonra yeniden check-in; bu kez **2** ve **Profille** seç, **Masayı aç**.
+2. A: **Oda kur** → **Tabu** → **Mekana açık** → **Odayı kur**.
+3. B: Keşfet → test mekanı → check-in → **3** ve **Profille** → **Masayı aç**. Mekan ekranındaki "Açık odalar"a bak.
+4. B: A'nın odasında **Katılmak istiyorum**.
+5. A: "Katılma isteği" penceresi → **Kabul**.
+
+**Bak:**
+
+- B'nin lobisinde A'nın takma adının yanında küçük **"profilli"** etiketi. A'nın görünen adı, fotoğrafı ya da tanıtımı **lobide yok**.
+- A'nın istek penceresinde B'nin takma adı, "(3 kişi)" ve **"profilli"** etiketi; ad ya da fotoğraf yok.
+
+## V8. Beyaz ekran senaryosu: iki masalı Tabu, önce A bitirir, sonra B
+
+Bu senaryo iki kez oynanır. Her turda **odayı bitirmeyen telefon** izlenir: ekranın beyaza dönmemesi, takılmaması ve doğru ekrana geçmesi gerekir.
+
+**8a (A bitirir, B izlenir):**
+
+1. V7'deki odada A **Oyunu başlat**. 1–2 tur oyna (kartı bil ya da pas geç).
+2. A: **Odayı bitir**.
+3. **B'yi izle.**
+
+**Bak (B):** birkaç saniye içinde "Tanışalım mı?" ekranı ve 30 sn sayaç; **beyaz ekran, boş ekran ya da "Bir şeyler ters gitti" yok**. İki taraf da **Hayır** desin → "Güzel oyundu 👋" → **Mekana dön** → Mekan ekranı.
+
+**8b (B bitirir, A izlenir):**
+
+1. A yeniden açık oda kurar (Tabu), B katılır (V7'nin 4–5. adımları), A oyunu başlatır, 1–2 tur.
+2. B: **Odayı bitir**.
+3. **A'yı izle.**
+
+**Bak (A):** 8a'daki B ile aynı: tanışma ekranı düzgün açılıyor, beyaz ekran yok. Bu kez ikisi de **Evet** desin: aynı renk ve emoji iki ekranda.
+
+**Hata olursa:** beyaz ekran görülürse **hangi telefon, hangi turda, hangi düğmeden sonra** ve kaç saniye sürdüğünü yaz; uygulamayı kapatıp açınca ne gördüğünü ekle. "Bir şeyler ters gitti" ekranı çıktıysa **Tekrar dene**'ye bas ve sonucu yaz (bu ekran beyaz ekranın yerini alan hata sınırıdır; çıkması da ❌ ama beyaz ekrandan iyidir).
+
+## V9. Odada profil görme ve profil şikayeti (A ve B)
+
+1. A yeniden açık oda kurar, B katılır (ikisi de V7'deki gibi **Profille** masadalar).
+2. B: oda ekranında **"Diğer masanın profilini gör"** → A'nın adı, tanıtımı ve (varsa) fotoğrafı.
+3. A: aynı düğmeyle B'nin profilini açar: V6'daki fotoğraf görünür.
+4. B: A'nın profilinde **Profili şikayet et** → bir sebep → **"Şikayetin alındı. Teşekkürler."**
+5. **Geri dön** ile odaya dön.
+
+**Bak:**
+
+- Profil ekranında mekan, konum ya da masa bilgisi yok; yalnızca ad, fotoğraf, tanıtım, rozetler.
+- Anonim bir masa katılırsa (istersen dene: B Anonim masayla katılsın) düğme **hiç görünmez**.
+
+**Sonra (panelde):** `reports` tablosunda `target_type = 'profile'` satırı; `profile_snapshot` içinde A'nın adı ve tanıtımı.
+
+## V10. Oda bittikten sonra profil görünmez
+
+1. V9'daki odada B, A'nın profilini açık tutsun (profil ekranında kalsın).
+2. A: **Odayı bitir**, iki taraf **Hayır** (ya da pencereyi beklesin).
+3. Pencere kapandıktan ve iki taraf Mekan ekranına döndükten sonra B, **geri tuşuyla** profil ekranına dönmeyi denesin (mümkün değilse sorun değil).
+
+**Bak:**
+
+- Oda ekranında "Diğer masanın profilini gör" düğmesi artık yok.
+- Profil ekranı yeniden açılırsa **"Bu profil artık görüntülenemiyor."** yazar; ad ve fotoğraf görünmez.
+- Keşfet, lobi ve Mekan ekranında A'nın profili hiçbir yerde yok.
+
+**Hata olursa:** oda bittikten sonra hâlâ ad ya da fotoğraf görünen ekranı ve saati yaz; bu ❌'dır.
+
+## V11. Kapanış
+
+1. İki telefonda **Mekandan ayrıl**; Mekan sekmesi yine Keşfet'e götürür.
+2. (İsteğe bağlı) B: Profil → **Fotoğraf değiştir** → **Fotoğrafı kaldır**; profil dairesi boşalır.
+3. Etkinlikleri kaldır: `pnpm admin:event list`, sonra her biri için `pnpm admin:event remove <id>`.

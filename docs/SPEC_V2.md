@@ -165,7 +165,7 @@ dm_reads           thread_id, user_id, last_read_at   (okunmamış rozeti; karş
 
 - **Silme:** Hesap silme ve ban (bugünkü `admin:ban` = hesabı silmek), FK'lar üzerinden hepsini temizler: arkadaşlıklar, DM'ler, kendi geçmişi, istekleri, niyetleri ve sonuçları. Karşı tarafın `play_history.other_user_id` kolonu `null` olur; o satır geçmişte kalır, ama ondan istek, engel ya da şikayet yapılamaz (sessizce `ok`).
 - **Fotoğraflar:** Storage nesneleri FK ile silinmez. Bunları `account/delete` ve `admin:ban` açıkça siler (§5.3).
-- **Şikayet kopyaları:** `reports` 30 gün sonra silinir (mevcut cron). Şikayetle kopyalanan fotoğraf şikayet satırında durur (`reports.photo_copy`, bytea) ve satırla birlikte aynı cron'la silinir. _Adım 3 sapması (onay bekliyor): ilk metin `reports/{report_id}.jpg` diyordu; Storage nesneleri SQL'den silinemediği için (`storage.protect_delete()`) kopya satıra alındı._
+- **Şikayet kopyaları:** `reports` 30 gün sonra silinir (mevcut cron). Şikayetle kopyalanan fotoğraf şikayet satırında durur (`reports.photo_copy`, bytea) ve satırla birlikte aynı cron'la silinir. _Adım 3 sapması (proje sahibi onayladı): ilk metin `reports/{report_id}.jpg` diyordu; Storage nesneleri SQL'den silinemediği için (`storage.protect_delete()`) kopya satıra alındı._
 
 ---
 
@@ -239,7 +239,7 @@ dm_reads           thread_id, user_id, last_read_at   (okunmamış rozeti; karş
   4. İstemci dosyayı bu URL'e yükler.
   5. `profile/photo-commit { path }` nesnenin kullanıcıya ait yolda olduğunu, boyutunu, türünü ve metadata'sızlığını doğrular, `profiles.photo_path`'i yazar, `photo_hidden_at`'i temizler ve eski fotoğrafı siler.
 - **Şikayet ve gizleme:**
-  - Profil ve fotoğraf şikayet edilebilir. `safety/report { target: 'profile', publicId, reason }` fotoğrafı şikayet satırına kopyalar (`reports.photo_copy`, 30 gün; adım 3 sapması, §3.2) ve görünen adı ve biyografiyi `profile_snapshot`'a yazar. Şikayet eden o an profili göremiyorsa yanıt `profile/get` ile aynıdır (`not_found`) ve hiçbir şey yazılmaz. Arkadaşlık öncesi bağlamda aynı şikayet `historyId` ile yapılır (§6.2).
+  - Profil ve fotoğraf şikayet edilebilir. `safety/report { target: 'profile', publicId, reason }` fotoğrafı şikayet satırına kopyalar (`reports.photo_copy`, 30 gün; onaylı adım 3 sapması, §3.2) ve görünen adı ve biyografiyi `profile_snapshot`'a yazar. Şikayet eden o an profili göremiyorsa yanıt `profile/get` ile aynıdır (`not_found`) ve hiçbir şey yazılmaz. Arkadaşlık öncesi bağlamda aynı şikayet `historyId` ile yapılır (§6.2).
   - Aynı fotoğraf için **2 ayrı hesaptan** şikayet gelince `photo_hidden_at` dolar ve fotoğraf hiç kimseye verilmez. Sahibi yeni fotoğraf yükleyene ya da inceleme sonucu geri açılana kadar gizli kalır.
   - İnceleme sonrası kaldırma: `pnpm admin:remove-photo <publicId>` fotoğrafı siler ve `photo_path`'i boşaltır. Geliştirici makinesinde, `admin:ban` gibi ortam değişkenleriyle çalışır.
   - Otomatik içerik denetimi yok (kapsam dışı).

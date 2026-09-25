@@ -1,6 +1,7 @@
 // Profiles, participation and photos (docs/SPEC_V2.md §5, §11).
 import { randomUUID } from 'node:crypto';
 
+import { createClient } from '@supabase/supabase-js';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import type { ProfileUploadUrl, ProfileView } from '../functions/_shared/pure/api/profile.ts';
@@ -9,7 +10,16 @@ import { removeProfilePhoto } from '../../scripts/admin/photos.ts';
 import { banUser } from '../../scripts/admin/ban.ts';
 import { deleteFixtureVenues, insertFixtureVenues } from './fixtures/venues.ts';
 import { checkInAt, errorBody, onboarded, PHONES } from './helpers.ts';
-import { admin, apiUrl, type Client, deleteUserByPhone, invoke, sql, userIdOf } from './local.ts';
+import {
+  admin,
+  anonKey,
+  apiUrl,
+  type Client,
+  deleteUserByPhone,
+  invoke,
+  sql,
+  userIdOf,
+} from './local.ts';
 
 let venue: Record<string, string> = {};
 const V = 'at-anchor';
@@ -482,5 +492,58 @@ describe('profile photos', () => {
     expect(await objectExists(pathA)).toBe(false);
     await banUser(admin, await userIdOf(b));
     expect(await objectExists(pathB)).toBe(false);
+  });
+});
+
+describe('reports stay closed to the app', () => {
+  it('grants no role but the server any access to reports or photo_copy', async () => {
+    const privileges = await sql`
+      select r.role,
+             has_table_privilege(r.role, 'public.reports', 'select, insert, update, delete') as tbl,
+             has_column_privilege(r.role, 'public.reports', 'photo_copy', 'select, insert, update') as col
+      from (values ('anon'), ('authenticated')) as r(role)
+    `;
+    expect(privileges).toEqual([
+      { role: 'anon', tbl: false, col: false },
+      { role: 'authenticated', tbl: false, col: false },
+    ]);
+    const [rls] = await sql`
+      select relrowsecurity from pg_class where oid = 'public.reports'::regclass
+    `;
+    expect(rls?.relrowsecurity).toBe(true);
+  });
+
+  it('refuses reads and writes of report rows, photo copy included, from any client', async () => {
+    const [a, b] = await Promise.all([named(PHONES[0], 'Ayşe'), named(PHONES[1], 'Burak')]);
+    await setPhoto(a);
+    await room(a, b, 'profile', 'anonymous');
+    const res = await invoke(b, 'safety', {
+      action: 'report',
+      target: 'profile',
+      publicId: await publicIdOf(a),
+      reason: 'spam',
+    });
+    expect(res.status).toBe(200);
+
+    const anon = createClient(apiUrl, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    for (const client of [a, b, anon] as Client[]) {
+      for (const columns of ['id', 'photo_copy', 'profile_snapshot', '*']) {
+        const { data, error } = await client.from('reports').select(columns);
+        expect(error?.code, columns).toBe('42501');
+        expect(data).toBeNull();
+      }
+      const insert = await client.from('reports').insert({ reason: 'spam' } as never);
+      expect(insert.error?.code).toBe('42501');
+      const update = await client
+        .from('reports')
+        .update({ photo_copy: null } as never)
+        .neq('id', randomUUID());
+      expect(update.error?.code).toBe('42501');
+    }
+    // The row is there, with the copy, for the server only.
+    const [row] = await sql`select photo_copy is not null as has_copy from public.reports`;
+    expect(row?.has_copy).toBe(true);
   });
 });
