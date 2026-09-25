@@ -6,7 +6,7 @@ Mekan içi sosyal oyun uygulaması (çalışma adı: Masa). Aynı mekandaki masa
 Tüm ürün kararları, kapsam ve kilometre taşları `MVP_SPEC.md` içinde. Spec'te olmayan bir özelliği ekleme. Belirsizlikte varsayım yapma, sor.
 
 ## Stack
-- `apps/mobile`: Expo (expo-router, development build), TypeScript strict, @supabase/supabase-js, TanStack Query, Zustand, NativeWind, expo-location, expo-notifications, posthog-react-native
+- `apps/mobile`: Expo (expo-router, development build), TypeScript strict, @supabase/supabase-js, TanStack Query, Zustand, NativeWind, expo-location, expo-notifications, posthog-react-native, @sentry/react-native, expo-updates. v2 için kurulu ama henüz kullanılmayan: @maplibre/maplibre-react-native, expo-image-picker, expo-image-manipulator
 - `supabase/`: Postgres + PostGIS + RLS, Realtime, Edge Functions (Deno), pg_cron
 - Monorepo, paket yöneticisi pnpm
 
@@ -57,6 +57,26 @@ Node 22, pnpm 10, Docker (yerel Supabase için). Supabase CLI ve Deno root devDe
 - `EAS_PROJECT_ID`: `eas init` ile alınan Expo proje id'si. Yoksa uygulama push token kaydını sessizce atlar.
 - `GOOGLE_SERVICES_JSON`: Firebase'in `google-services.json` yolu (varsayılan `apps/mobile/google-services.json`, git'e girmez). Dosya yoksa Android build'e eklenmez. FCM V1 anahtarı Expo paneline yüklenir.
 - Gönderim Expo push API'si ile yapılır, sunucuda anahtar gerekmez.
+
+### Hata raporlama (Sentry)
+- `EXPO_PUBLIC_SENTRY_DSN` (EAS ortam değişkeni ya da mobil `.env`); yoksa hiçbir şey gönderilmez. Kullanıcı kimliği olarak yalnızca kullanıcı id'si gider. Telefon, konum, yazılan metin, istek gövdesi ve URL sorgu dizesi `_shared/pure/errorReporting.ts` ile telefondan çıkmadan silinir.
+- Kaynak haritası yüklemesi kapalı (`SENTRY_DISABLE_AUTO_UPLOAD=true`, `eas.json`). Açmak için Sentry hesabı ve `SENTRY_AUTH_TOKEN` gerekir.
+- Her rota grubunun `_layout.tsx`'i `RouteError`'ı `ErrorBoundary` olarak dışa verir: beyaz ekran yerine kısa bir mesaj, "Tekrar dene" ve "Ana ekrana dön".
+
+### Neyi ne zaman yayınlamalı
+`expo-updates` açık (`app.config.ts`, `EAS_PROJECT_ID` varsa). `runtimeVersion` native parmak izidir: bir OTA güncellemesi yalnızca aynı native koda sahip build'lere gider. Kanallar: `preview` build'i `preview` kanalını, `production` build'i `production` kanalını dinler.
+
+| Değişiklik | Gereken |
+| --- | --- |
+| Yalnızca JS/TS, metin, stil, `@shared` kodu | `pnpm dlx eas-cli update --channel preview --message "…"` (`apps/mobile` içinde) |
+| `EXPO_PUBLIC_*` değeri | EAS ortam değişkenini güncelle, sonra `eas update` (değerler JS paketine girer) |
+| Yeni native modül, config plugin, `app.json`/`app.config.ts` native alanı (izin, paket adı, ikon, splash), Expo SDK yükseltmesi, `google-services.json` | Yeni `eas build --profile preview` ve APK'nın yeniden kurulması |
+| Migration ya da `content/` (seed) | `pnpm supabase db push --include-seed` |
+| Edge Function | `pnpm supabase functions deploy <ad>` |
+| Panel ayarı (Auth, Realtime, Storage) | Panelden; `config push` asla |
+
+- Sunucu değişikliği istemciden önce yayınlanır: yeni bir alan ya da action'ı kullanan JS güncellemesi, migration ve fonksiyonlar yayında olduktan sonra gönderilir.
+- Yeni native bağımlılık eklendiyse önce build, sonra o build'i hedefleyen `eas update`. Parmak izi değiştiği için eski APK'lar bu güncellemeyi almaz, yanlış koda düşmez.
 
 ### Analitik, yasal metinler, mağaza (M7)
 - Mobil `.env` (hepsi isteğe bağlı): `EXPO_PUBLIC_POSTHOG_KEY` (yoksa analitik hiçbir şey yapmaz), `EXPO_PUBLIC_POSTHOG_HOST` (varsayılan AB), `EXPO_PUBLIC_PRIVACY_URL` (yoksa uygulama içi taslak metin), `EXPO_PUBLIC_CONTACT_EMAIL`.
