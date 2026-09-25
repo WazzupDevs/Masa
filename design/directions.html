@@ -1,0 +1,940 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Masa görsel yönler</title>
+<meta name="description" content="Masa için üç görsel yön: renk, tipografi, bileşenler ve altı ekranlık telefon mockup'ları.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+/* Page frame: neutral, so the three directions are judged on their own. */
+:root {
+  --page-bg: #f3f3f1;
+  --page-surface: #ffffff;
+  --page-text: #1c1c1a;
+  --page-muted: #5d5d58;
+  --page-line: #dcdcd6;
+  --page-accent: #1c1c1a;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page-bg: #151514;
+    --page-surface: #1f1f1d;
+    --page-text: #f1f1ec;
+    --page-muted: #b3b3ab;
+    --page-line: #34342f;
+    --page-accent: #f1f1ec;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --page-bg: #151514;
+  --page-surface: #1f1f1d;
+  --page-text: #f1f1ec;
+  --page-muted: #b3b3ab;
+  --page-line: #34342f;
+  --page-accent: #f1f1ec;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--page-bg);
+  color: var(--page-text);
+  font: 15px/1.5 Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+code { font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--page-muted); }
+
+.page-head {
+  display: flex; flex-wrap: wrap; gap: 20px 40px; align-items: flex-end; justify-content: space-between;
+  padding: 40px 32px 24px; max-width: 1600px; margin: 0 auto;
+}
+.ph-text { max-width: 720px; }
+.kicker { margin: 0 0 6px; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--page-muted); }
+.page-head h1 { margin: 0 0 8px; font-size: 34px; line-height: 1.15; letter-spacing: -.01em; }
+.lede { margin: 0; color: var(--page-muted); max-width: 64ch; }
+.controls { display: flex; flex-wrap: wrap; gap: 12px; }
+.tabs, .modes {
+  display: inline-flex; padding: 4px; gap: 4px; background: var(--page-surface);
+  border: 1px solid var(--page-line); border-radius: 999px;
+}
+.tab-btn, .mode-btn {
+  min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent; font-weight: 600;
+  color: var(--page-muted); white-space: nowrap;
+}
+.tabs { flex-wrap: wrap; border-radius: 26px; }
+.tab-btn[aria-selected="true"], .mode-btn[aria-pressed="true"] { background: var(--page-accent); color: var(--page-bg); }
+.tab-btn:focus-visible, .mode-btn:focus-visible { outline: 2px solid var(--page-accent); outline-offset: 2px; }
+
+main { max-width: 1600px; margin: 0 auto; padding: 0 32px 48px; }
+.dir-head {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 16px 40px;
+  padding: 28px; background: var(--page-surface); border: 1px solid var(--page-line); border-radius: 20px;
+}
+.dir-name { margin: 0 0 6px; font-size: 28px; }
+.dir-feel { margin: 0; font-size: 17px; color: var(--page-text); }
+.dir-why { margin: 0; padding-left: 18px; color: var(--page-muted); display: grid; gap: 6px; }
+.dir-night .dir-name { font-family: Fraunces, serif; font-weight: 600; }
+.dir-play .dir-name { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; }
+.dir-calm .dir-name { font-family: Figtree, sans-serif; font-weight: 700; }
+
+.tokens { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 16px; margin-top: 16px; }
+.tok-block { background: var(--page-surface); border: 1px solid var(--page-line); border-radius: 20px; padding: 20px 24px; min-width: 0; }
+.tok-block h3 { margin: 0 0 12px; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--page-muted); }
+.pals { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.pal h4 { margin: 0 0 8px; font-size: 14px; }
+.swatches { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.swatches li { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 8px; font-size: 13px; }
+.sw { width: 28px; height: 28px; border-radius: 8px; border: 1px solid rgba(127, 127, 127, .35); }
+.pal-note { margin: 10px 0 0; font-size: 12px; color: var(--page-muted); }
+.type-spec { display: grid; gap: 4px; margin-bottom: 14px; }
+.ts-big { font-size: 28px; line-height: 1.15; }
+.ts-body { font-size: 16px; }
+.rads, .spcs { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 12px; }
+.rad { display: grid; gap: 4px; justify-items: center; }
+.rad span { width: 56px; height: 40px; border: 2px solid var(--page-text); }
+.spc { display: grid; gap: 4px; justify-items: center; }
+.spc span { background: var(--page-muted); border-radius: 2px; }
+
+/* The kit: everything inside uses the direction's tokens. */
+.kit { margin-top: 16px; color: var(--text); font-family: var(--font-body), sans-serif; }
+.comps {
+  display: grid; grid-template-columns: auto auto 1fr; gap: 24px; align-items: start;
+  padding: 20px 24px; border-radius: 20px; background: var(--bg); border: 1px solid var(--line);
+}
+.comp { display: grid; gap: 10px; min-width: 0; }
+.comp-l { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.comp-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.comp-card { min-width: 240px; margin: 0; }
+
+.phones { display: flex; gap: 28px; overflow-x: auto; padding: 28px 4px 12px; scroll-snap-type: x proximity; }
+.phone-wrap { margin: 0; flex: 0 0 auto; scroll-snap-align: start; }
+.phone-wrap figcaption { display: grid; gap: 2px; max-width: 360px; margin-top: 12px; font-family: Inter, sans-serif; color: var(--page-text); }
+.phone-wrap figcaption span { color: var(--page-muted); font-size: 13px; }
+.phone {
+  position: relative; width: 360px; height: 760px; border-radius: 48px; padding: 10px;
+  background: #0b0b0b; box-shadow: 0 30px 60px -30px rgba(0, 0, 0, .45), 0 0 0 1px rgba(255, 255, 255, .06) inset;
+}
+.notch { position: absolute; top: 18px; left: 50%; width: 96px; height: 26px; transform: translateX(-50%); background: #0b0b0b; border-radius: 16px; z-index: 5; }
+.scr {
+  position: relative; height: 100%; overflow: hidden; border-radius: 38px; background: var(--bg); color: var(--text);
+  display: flex; flex-direction: column; font-size: 16px; line-height: 1.45;
+}
+.sb { display: flex; justify-content: space-between; align-items: center; height: 46px; padding: 0 28px 0 32px; font-size: 14px; font-weight: 600; flex: none; }
+.sb-r { display: inline-flex; gap: 6px; align-items: center; }
+.sig { width: 16px; height: 10px; background: linear-gradient(90deg, currentColor 20%, transparent 20% 27%, currentColor 27% 47%, transparent 47% 54%, currentColor 54% 74%, transparent 74% 81%, currentColor 81%); clip-path: polygon(0 100%, 100% 0, 100% 100%); }
+.bat { width: 22px; height: 11px; border: 1.5px solid currentColor; border-radius: 3px; position: relative; }
+.bat::after { content: ''; position: absolute; inset: 1.5px 6px 1.5px 1.5px; background: currentColor; border-radius: 1px; }
+.sb-light { color: var(--signalFg); }
+
+.pad { padding: 4px 20px 16px; }
+.scroll { flex: 1; overflow: hidden; }
+.row-between { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.h1 { margin: 0; font-family: var(--font-display), serif; font-weight: var(--dw); font-size: 30px; line-height: 1.12; letter-spacing: -.01em; }
+.h2 { margin: 0; font-family: var(--font-display), serif; font-weight: var(--dw); font-size: 23px; line-height: 1.2; }
+.h3 { margin: 0; font-family: var(--font-display), serif; font-weight: var(--dw); font-size: 18px; }
+.sub { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+.eyebrow { display: inline-flex; align-items: center; gap: 6px; margin: 4px 0 6px; font-size: 14px; font-weight: 600; color: var(--muted); }
+.label { font-size: 13px; font-weight: 600; color: var(--muted); }
+.hint { font-size: 13px; color: var(--muted); }
+.body { margin: 0; font-size: 16px; color: var(--text); }
+.strong { font-weight: 600; }
+.center { text-align: center; justify-content: center; }
+.nowrap { white-space: nowrap; }
+.fine { display: flex; gap: 8px; align-items: flex-start; margin: 12px 0 0; font-size: 13px; line-height: 1.4; color: var(--muted); }
+.fine.center { display: block; }
+.ico-s { flex: none; vertical-align: -2px; }
+.sec-h { margin: 18px 0 4px; }
+
+.card {
+  background: var(--surface); border-radius: var(--r-lg); padding: 16px; margin-top: 12px;
+  border: 1px solid var(--line);
+}
+.table-card .alias { font-family: var(--font-display), serif; font-weight: var(--dw); font-size: 26px; margin: 2px 0 8px; }
+.meta-i { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--muted); }
+.room-card { display: grid; gap: 4px; padding: 14px 16px; }
+.room-card .btn-block { margin-top: 6px; }
+.rc-name { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 17px; }
+.rc-meta { display: inline-flex; align-items: center; gap: 4px; font-size: 14px; color: var(--muted); margin-bottom: 6px; }
+
+.tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.tags.center { justify-content: center; margin-top: 10px; }
+.tag {
+  display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px;
+  font-size: 13px; font-weight: 700; line-height: 1.3; white-space: nowrap;
+}
+.tag-calm { background: var(--calmBg); color: var(--calmFg); }
+.tag-lively { background: var(--livelyBg); color: var(--livelyFg); }
+.tag-buzz { background: var(--buzzBg); color: var(--buzzFg); }
+.tag-event { background: var(--eventBg); color: var(--eventFg); }
+.tag-neutral { background: var(--surface2); color: var(--text); font-weight: 600; }
+.tag-profiled { background: var(--surface2); color: var(--text); border: 1px solid var(--line); }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 20px;
+  border-radius: var(--r-md); border: 1px solid transparent; font-family: var(--font-body), sans-serif;
+  font-size: 16px; font-weight: 700; text-decoration: none;
+}
+.btn small { font-weight: 600; opacity: .9; margin-left: 4px; }
+.btn-block { width: 100%; margin-top: 12px; }
+.btn-primary { background: var(--accent); color: var(--onAccent); }
+.btn-secondary { background: var(--surface); color: var(--text); border-color: var(--line); }
+.btn-danger { background: var(--danger); color: var(--onDanger); }
+.btn-success { background: var(--success); color: var(--onSuccess); }
+.btn-ghost { background: transparent; color: var(--muted); font-weight: 600; }
+.btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+.btn-row .btn { padding: 0 10px; white-space: nowrap; }
+.btn-col { display: grid; gap: 0; margin-top: 8px; }
+.icon-btn { width: 44px; height: 44px; display: inline-grid; place-items: center; border: 0; border-radius: 999px; background: transparent; color: var(--text); }
+
+/* Keşfet */
+.top { padding-bottom: 10px; }
+.top .sub { margin-top: 4px; }
+.seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px; background: var(--surface2); }
+.seg-b { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0 12px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font-size: 14px; font-weight: 700; }
+.seg-b.on { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, .15); }
+.map { position: relative; height: 262px; flex: none; overflow: hidden; }
+.map-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.osm { position: absolute; right: 8px; bottom: 26px; font-size: 11px; padding: 2px 6px; border-radius: 6px; background: var(--surface); color: var(--muted); }
+.pin { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 2px; transform: translate(-50%, -50%); }
+.pin-dot { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; border: 3px solid var(--surface); box-shadow: 0 4px 10px rgba(0, 0, 0, .25); }
+.pin-calm .pin-dot { background: var(--calmBg); color: var(--calmFg); }
+.pin-lively .pin-dot { background: var(--livelyBg); color: var(--livelyFg); }
+.pin-buzz .pin-dot { background: var(--buzzBg); color: var(--buzzFg); }
+.pin-ev { position: absolute; top: -6px; right: -8px; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; background: var(--eventBg); color: var(--eventFg); border: 2px solid var(--surface); }
+.pin-l { font-size: 12px; font-weight: 700; padding: 1px 6px; border-radius: 6px; background: var(--surface); color: var(--text); white-space: nowrap; }
+.sheet { position: relative; flex: 1; margin-top: -20px; padding: 8px 16px 0; background: var(--surface); border-radius: var(--r-lg) var(--r-lg) 0 0; overflow: hidden; }
+.handle { width: 40px; height: 5px; border-radius: 3px; background: var(--line); margin: 0 auto 8px; }
+.sheet-h { padding: 0 4px 4px; }
+.venue-list { list-style: none; margin: 0; padding: 0; }
+.venue-row { display: flex; align-items: center; gap: 8px; padding: 12px 4px; border-bottom: 1px solid var(--line); min-height: 64px; }
+.vr-main { flex: 1; min-width: 0; display: grid; gap: 4px; }
+.vr-name { font-weight: 700; font-size: 16px; }
+.vr-meta { font-size: 13px; color: var(--muted); }
+.vr-go { color: var(--muted); }
+
+/* Tab bar */
+.tabbar {
+  flex: none; display: grid; grid-template-columns: repeat(4, 1fr); align-items: end; height: 76px; padding: 0 8px 12px;
+  background: var(--surface); border-top: 1px solid var(--line); position: relative; z-index: 2;
+}
+.tab { position: relative; display: grid; justify-items: center; gap: 2px; min-height: 56px; align-content: end; color: var(--muted); text-decoration: none; }
+.tab.on { color: var(--text); }
+.tab-l { font-size: 12px; font-weight: 700; }
+.tab-badge { position: absolute; top: 4px; left: calc(50% + 6px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--danger); color: var(--onDanger); font-size: 11px; font-weight: 800; display: grid; place-items: center; }
+.venue-btn { width: 60px; height: 60px; margin-top: -26px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--onAccent); border: 4px solid var(--surface); box-shadow: 0 8px 18px -6px rgba(0, 0, 0, .45); }
+.tab-venue .tab-l { color: var(--text); }
+
+/* Katılma isteği */
+.dimmed { filter: saturate(.6); }
+.scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, .45); z-index: 3; }
+.modal-sheet {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; padding: 10px 22px 26px; text-align: center;
+  background: var(--surface); border-radius: var(--r-lg) var(--r-lg) 0 0;
+}
+.ms-icon { width: 56px; height: 56px; margin: 8px auto 12px; border-radius: 50%; display: grid; place-items: center; background: var(--surface2); color: var(--text); }
+.modal-sheet .h2 { margin-bottom: 8px; }
+.timer { display: flex; align-items: center; gap: 10px; margin-top: 16px; font-size: 14px; font-weight: 700; color: var(--muted); }
+.timer-bar { flex: 1; height: 6px; border-radius: 3px; background: var(--surface2); overflow: hidden; }
+.timer-bar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+.modal-sheet .fine { text-align: left; }
+
+/* Sesli Tabu */
+.clock-pill { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border-radius: 999px; background: var(--surface2); font-weight: 800; font-variant-numeric: tabular-nums; }
+.score { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.team { display: grid; gap: 2px; padding: 10px 12px; border-radius: var(--r-md); background: var(--surface); border: 1px solid var(--line); }
+.team-n { font-size: 14px; font-weight: 700; }
+.team-n em { display: block; font-style: normal; font-weight: 600; font-size: 12px; color: var(--muted); }
+.team-s { font-family: var(--font-display), serif; font-weight: var(--dw); font-size: 30px; line-height: 1.1; }
+.team-active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; }
+.role { display: flex; gap: 8px; align-items: flex-start; margin-top: 12px; padding: 10px 12px; border-radius: var(--r-md); background: var(--surface2); font-size: 14px; }
+.game-card { margin-top: 12px; padding: 20px 18px; border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); text-align: center; }
+.gc-word { font-family: var(--font-display), serif; font-weight: var(--dw); font-size: 38px; letter-spacing: .02em; line-height: 1.1; }
+.gc-label { margin: 12px 0 6px; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--danger); }
+.gc-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 18px; font-weight: 600; }
+.judge { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.judge .btn { min-height: 64px; font-size: 18px; padding: 0 12px; white-space: nowrap; }
+.judge .btn-pass { grid-column: 1 / -1; min-height: 52px; font-size: 16px; }
+
+/* Tanışalım sinyali */
+.scr-signal { background: var(--signalBg); color: var(--signalFg); }
+.signal { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 28px 36px; text-align: center; }
+.sig-top { margin: 0 0 28px; font-size: 14px; font-weight: 700; }
+.sig-mark { width: 180px; height: 180px; border-radius: 50%; display: grid; place-items: center; font-size: 104px; line-height: 1; background: rgba(255, 255, 255, .22); }
+.sig-h { margin: 28px 0 8px; font-family: var(--font-display), serif; font-weight: var(--dw); font-size: 28px; line-height: 1.15; }
+.sig-p { margin: 0; font-size: 16px; font-weight: 600; }
+.sig-actions { display: grid; gap: 10px; width: 100%; margin-top: 28px; }
+.btn-on-signal { background: var(--signalFg); color: var(--signalBg); }
+.btn-on-signal-ghost { background: transparent; color: var(--signalFg); border-color: var(--signalFg); }
+.sig-fine { margin: 14px 0 0; font-size: 13px; font-weight: 600; line-height: 1.4; }
+
+/* Profil */
+.profile-head { display: grid; justify-items: center; gap: 6px; margin-top: 8px; }
+.avatar { width: 104px; height: 104px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg, var(--accent), var(--signalBg)); color: var(--onAccent); font-family: var(--font-display), serif; font-weight: var(--dw); font-size: 36px; }
+.p-name { font-family: var(--font-display), serif; font-weight: var(--dw); font-size: 26px; }
+.badges { display: flex; flex-wrap: wrap; gap: 8px; }
+.badge { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border-radius: 999px; background: var(--surface2); font-size: 14px; font-weight: 700; }
+.privacy { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; }
+
+/* ---------- Gece Kafe: warm dusk, serif, soft glow ---------- */
+.dir-night .scr { background: radial-gradient(120% 60% at 50% -10%, color-mix(in srgb, var(--accent) 16%, var(--bg)) 0%, var(--bg) 60%); }
+.dir-night .scr-signal { background: radial-gradient(90% 70% at 50% 40%, color-mix(in srgb, var(--signalBg) 70%, #fff) 0%, var(--signalBg) 70%); }
+.dir-night .h1, .dir-night .alias { font-style: normal; }
+.dir-night .sub, .dir-night .eyebrow { font-style: italic; font-family: var(--font-display), serif; font-weight: 500; font-size: 15px; }
+.dir-night .card, .dir-night .game-card, .dir-night .team { border-color: transparent; box-shadow: 0 1px 0 rgba(255, 255, 255, .04) inset, 0 12px 24px -16px rgba(0, 0, 0, .6); }
+.dir-night .gc-word { font-style: italic; }
+.dir-night .btn-primary { box-shadow: 0 8px 20px -10px var(--accent); }
+.dir-night .tag-profiled { border-style: dashed; }
+
+/* ---------- Oyun Gecesi: outlines, hard shadows, stickers ---------- */
+.dir-play .card, .dir-play .team, .dir-play .game-card, .dir-play .btn, .dir-play .seg, .dir-play .role,
+.dir-play .modal-sheet, .dir-play .sheet, .dir-play .tabbar, .dir-play .badge, .dir-play .clock-pill {
+  border: 2px solid var(--line);
+}
+.dir-play .card, .dir-play .team, .dir-play .game-card, .dir-play .btn:not(.btn-ghost) { box-shadow: 3px 3px 0 var(--line); }
+.dir-play .btn-ghost { border-color: transparent; }
+.dir-play .tag { border: 2px solid var(--line); }
+.dir-play .tag-event { transform: rotate(-2deg); }
+.dir-play .h1, .dir-play .gc-word { letter-spacing: -.02em; }
+.dir-play .gc-word { font-size: 40px; }
+.dir-play .team-active { box-shadow: 3px 3px 0 var(--line); background: var(--buzzBg); color: var(--buzzFg); border-color: var(--line); }
+.dir-play .team-active .team-n em { color: var(--buzzFg); }
+.dir-play .venue-btn { border: 3px solid var(--line); box-shadow: 3px 3px 0 var(--line); }
+.dir-play .pin-dot { border-color: var(--line); border-width: 2px; }
+.dir-play .scr:not(.scr-signal)::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .5;
+  background-image: radial-gradient(circle, var(--accent) 1.5px, transparent 2px), radial-gradient(circle, var(--danger) 1.5px, transparent 2px);
+  background-size: 90px 110px, 130px 90px; background-position: 10px 20px, 60px 70px;
+  -webkit-mask-image: linear-gradient(180deg, #000 0, transparent 120px); mask-image: linear-gradient(180deg, #000 0, transparent 120px);
+}
+.dir-play .sig-mark { background: var(--signalFg); color: var(--signalBg); border: 4px solid var(--signalFg); box-shadow: 6px 6px 0 rgba(0, 0, 0, .25); }
+.dir-play .btn-on-signal, .dir-play .btn-on-signal-ghost { border: 2px solid var(--signalFg); box-shadow: none; }
+/* Invitations stay calm: no confetti, no sticker tilt, softer shadows. */
+.dir-play .modal-sheet .tag, .dir-play .scr-signal .tag { transform: none; }
+.dir-play .modal-sheet .btn { box-shadow: none; }
+.dir-play .scr:has(.modal-sheet)::before { display: none; }
+
+/* ---------- Sakin Liman: hairlines, space, quiet ---------- */
+.dir-calm .h1 { font-size: 28px; letter-spacing: -.015em; }
+.dir-calm .card, .dir-calm .team, .dir-calm .game-card { box-shadow: none; }
+.dir-calm .btn { font-weight: 600; }
+.dir-calm .pad { padding-left: 22px; padding-right: 22px; }
+.dir-calm .tag { font-weight: 600; }
+.dir-calm .venue-btn { box-shadow: 0 4px 12px -4px rgba(0, 0, 0, .3); }
+.dir-calm .sig-mark { background: rgba(255, 255, 255, .16); box-shadow: 0 0 0 12px rgba(255, 255, 255, .08); }
+.dir-calm .team-active { box-shadow: 0 0 0 1px var(--accent) inset; }
+/* Pale pins on a pale map need a ring to stay findable (3:1 for UI shapes). */
+.dir-calm .pin-dot { border-color: var(--surface); box-shadow: 0 0 0 2px var(--accent), 0 4px 10px rgba(0, 0, 0, .18); }
+
+.page-foot { max-width: 1600px; margin: 0 auto; padding: 0 32px 40px; color: var(--page-muted); font-size: 13px; }
+
+@media (max-width: 1100px) {
+  .tokens { grid-template-columns: 1fr; }
+  .dir-head { grid-template-columns: 1fr; }
+  .comps { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .page-head, main, .page-foot { padding-left: 16px; padding-right: 16px; }
+  .pals { grid-template-columns: 1fr; }
+  .phones { gap: 16px; }
+  .phone { transform-origin: top left; }
+}
+
+</style>
+</head>
+<body>
+<header class="page-head">
+  <div class="ph-text">
+    <p class="kicker">Masa · tasarım keşfi</p>
+    <h1>Üç görsel yön</h1>
+    <p class="lede">Aynı altı ekran, üç farklı karakter. Metinler ve veriler uygulamadaki gerçek akıştan; davet alan tarafın ekranları (katılma isteği, Tanışalım sinyali) her yönde bilerek sakin tutuldu.</p>
+  </div>
+  <div class="controls">
+    <div class="tabs" role="tablist" aria-label="Yönler">
+      <button role="tab" class="tab-btn" data-dir="night" aria-selected="true">Gece Kafe</button><button role="tab" class="tab-btn" data-dir="play" aria-selected="false">Oyun Gecesi</button><button role="tab" class="tab-btn" data-dir="calm" aria-selected="false">Sakin Liman</button>
+    </div>
+    <div class="modes" role="group" aria-label="Tema">
+      <button class="mode-btn" data-mode="light">Açık</button><button class="mode-btn" data-mode="dark">Koyu</button>
+    </div>
+  </div>
+</header>
+<main>
+
+<section class="dir dir-night" id="dir-night" data-default="dark" data-mode="dark" >
+  <style>
+    .dir-night[data-mode="light"] .kit {--bg:#FBF4EC;--surface:#FFFFFF;--surface2:#F4E7DA;--text:#2B1E15;--muted:#6B5746;--accent:#A94F18;--onAccent:#FFFFFF;--line:#E5D3C1;--danger:#B42318;--onDanger:#FFFFFF;--success:#2F6B2A;--onSuccess:#FFFFFF;--calmBg:#EFE6DC;--calmFg:#5A4838;--livelyBg:#FCE3C4;--livelyFg:#7A3E0B;--buzzBg:#FAD4CB;--buzzFg:#8A2412;--eventBg:#FFF1D6;--eventFg:#6E4300;--signalBg:#E08A3C;--signalFg:#1A0F06;--map:#F1E6DA;--mapRoad:#FFFFFF;--mapPark:#DDE8D0;--mapWater:#CFE1EA}
+    .dir-night[data-mode="dark"] .kit {--bg:#15100C;--surface:#211913;--surface2:#2C221A;--text:#F7EEE4;--muted:#C9B6A3;--accent:#F3A95E;--onAccent:#1E130A;--line:#3D3027;--danger:#FF9585;--onDanger:#2A0D08;--success:#A6D99E;--onSuccess:#0F2410;--calmBg:#2F2A24;--calmFg:#DCCFC1;--livelyBg:#4A3218;--livelyFg:#FFD2A1;--buzzBg:#5C2418;--buzzFg:#FFC2B3;--eventBg:#3A2A12;--eventFg:#FFD89A;--signalBg:#C9772E;--signalFg:#1A0F06;--map:#1E1814;--mapRoad:#3A2F27;--mapPark:#243021;--mapWater:#1B2A33}
+    .dir-night .kit {--font-display:'Fraunces';--font-body:'Inter';--dw:600;--r-lg:22px;--r-md:14px;--r-sm:10px}
+  </style>
+  <div class="dir-head">
+    <div>
+      <h2 class="dir-name">Gece Kafe</h2>
+      <p class="dir-feel">Loş ışıklı bir kafede, tanıdık bir masanın sıcaklığı: akşamın ritmine uyan, göz yormayan bir uygulama.</p>
+    </div>
+    <ul class="dir-why"><li>Uygulama çoğunlukla akşam, loş mekanlarda açılır: koyu tema varsayılan, parlaklık masadakileri rahatsız etmez.</li><li>Kehribar vurgu ve yumuşak serif başlıklar kafe menüsü ve tebeşir tahtası hissi verir.</li><li>Risk: koyu arka planda harita ve fotoğraflar daha az okunur; gündüz kullanımında açık tema şart.</li></ul>
+  </div>
+  
+<div class="tokens">
+  <div class="tok-block"><h3>Renk</h3><div class="pals"><div class="pal"><h4>Açık tema</h4><ul class="swatches"><li><span class="sw" style="background:#FBF4EC"></span><span class="sw-n">Zemin</span><code>#FBF4EC</code></li><li><span class="sw" style="background:#FFFFFF"></span><span class="sw-n">Yüzey</span><code>#FFFFFF</code></li><li><span class="sw" style="background:#F4E7DA"></span><span class="sw-n">Yüzey 2</span><code>#F4E7DA</code></li><li><span class="sw" style="background:#2B1E15"></span><span class="sw-n">Metin</span><code>#2B1E15</code></li><li><span class="sw" style="background:#6B5746"></span><span class="sw-n">İkincil</span><code>#6B5746</code></li><li><span class="sw" style="background:#A94F18"></span><span class="sw-n">Vurgu</span><code>#A94F18</code></li><li><span class="sw" style="background:#B42318"></span><span class="sw-n">Tehlike</span><code>#B42318</code></li><li><span class="sw" style="background:#2F6B2A"></span><span class="sw-n">Onay</span><code>#2F6B2A</code></li><li><span class="sw" style="background:#FFF1D6"></span><span class="sw-n">Etkinlik</span><code>#FFF1D6</code></li><li><span class="sw" style="background:#E08A3C"></span><span class="sw-n">Sinyal</span><code>#E08A3C</code></li></ul><p class="pal-note">En düşük metin kontrastı: 5.0:1 (AA ≥ 4.5)</p></div><div class="pal"><h4>Koyu tema</h4><ul class="swatches"><li><span class="sw" style="background:#15100C"></span><span class="sw-n">Zemin</span><code>#15100C</code></li><li><span class="sw" style="background:#211913"></span><span class="sw-n">Yüzey</span><code>#211913</code></li><li><span class="sw" style="background:#2C221A"></span><span class="sw-n">Yüzey 2</span><code>#2C221A</code></li><li><span class="sw" style="background:#F7EEE4"></span><span class="sw-n">Metin</span><code>#F7EEE4</code></li><li><span class="sw" style="background:#C9B6A3"></span><span class="sw-n">İkincil</span><code>#C9B6A3</code></li><li><span class="sw" style="background:#F3A95E"></span><span class="sw-n">Vurgu</span><code>#F3A95E</code></li><li><span class="sw" style="background:#FF9585"></span><span class="sw-n">Tehlike</span><code>#FF9585</code></li><li><span class="sw" style="background:#A6D99E"></span><span class="sw-n">Onay</span><code>#A6D99E</code></li><li><span class="sw" style="background:#3A2A12"></span><span class="sw-n">Etkinlik</span><code>#3A2A12</code></li><li><span class="sw" style="background:#C9772E"></span><span class="sw-n">Sinyal</span><code>#C9772E</code></li></ul><p class="pal-note">En düşük metin kontrastı: 5.5:1 (AA ≥ 4.5)</p></div></div></div>
+  <div class="tok-block"><h3>Tipografi</h3>
+    <div class="type-spec" style="font-family:'Fraunces'"><span class="ts-big" style="font-weight:600">Masa gecesi başlıyor</span><code>Fraunces · 600 · başlıklar</code></div>
+    <div class="type-spec" style="font-family:'Inter'"><span class="ts-body">Yeşil Kaplumbağa masası Tabu odana katılmak istiyor.</span><code>Inter · 400/600 · metin 16 / ikincil 14 / ince 13</code></div>
+  </div>
+  <div class="tok-block"><h3>Köşe ve boşluk</h3><div class="rads"><div class="rad"><span style="border-radius:22px"></span><code>lg 22</code></div><div class="rad"><span style="border-radius:14px"></span><code>md 14</code></div><div class="rad"><span style="border-radius:10px"></span><code>sm 10</code></div><div class="rad"><span style="border-radius:28px"></span><code>pill tam</code></div></div><div class="spcs"><div class="spc"><span style="width:4px;height:4px"></span><code>4</code></div><div class="spc"><span style="width:8px;height:8px"></span><code>8</code></div><div class="spc"><span style="width:12px;height:12px"></span><code>12</code></div><div class="spc"><span style="width:16px;height:16px"></span><code>16</code></div><div class="spc"><span style="width:24px;height:24px"></span><code>24</code></div><div class="spc"><span style="width:32px;height:32px"></span><code>32</code></div></div>
+    <p class="pal-note">Dokunma alanı: düğmeler en az 48 px, sekmeler 56 px, simge düğmeleri 44 × 44 px.</p></div>
+</div>
+  <div class="kit">
+    
+<div class="comps">
+  <div class="comp"><span class="comp-l">Düğmeler</span>
+    <div class="comp-row"><button class="btn btn-primary">Katılmak istiyorum</button><button class="btn btn-secondary">Geç</button><button class="btn btn-danger">Engelle</button></div></div>
+  <div class="comp"><span class="comp-l">Kart</span>
+    <div class="card room-card comp-card"><div class="row-between"><div class="rc-name">Mavi Kedi <span class="tag tag-profiled">profilli</span></div><span class="hint">4 dk</span></div><div class="rc-meta">2 kişi · Tabu · yüz yüze</div></div></div>
+  <div class="comp"><span class="comp-l">Etiketler</span>
+    <div class="tags"><span class="tag tag-calm">Sakin</span><span class="tag tag-lively">Hareketli</span><span class="tag tag-buzz">Çok canlı</span><span class="tag tag-profiled">profilli</span><span class="tag tag-event"><svg class="ico-s" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></svg>Bugün 21.00 · Masa gecesi</span></div></div>
+</div>
+    <div class="phones"><figure class="phone-wrap"><div class="phone"><div class="notch"></div>
+<div class="scr">
+  <div class="sb"><span>21:42</span><span class="sb-r"><i class="sig"></i><i class="bat"></i></span></div>
+  <div class="top pad">
+    <div class="row-between">
+      <h2 class="h1">Keşfet</h2>
+      <div class="seg" role="tablist"><button class="seg-b"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg><span>Liste</span></button><button class="seg-b on"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 4-6 2.5v13.5l6-2.5 6 2.5 6-2.5V4l-6 2.5z"/><path d="M9 4v13.5M15 6.5V20"/></svg><span>Harita</span></button></div>
+    </div>
+    <p class="sub">Beylikdüzü · bu akşam</p>
+  </div>
+  <div class="map">
+    <svg class="map-svg" viewBox="0 0 360 290" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <rect width="360" height="290" fill="var(--map)"/>
+  <path d="M0 232 C60 214 120 250 190 236 S300 206 360 222 V290 H0Z" fill="var(--mapWater)"/>
+  <path d="M232 40 h78 a12 12 0 0 1 12 12 v48 a12 12 0 0 1-12 12 h-78 a12 12 0 0 1-12-12 v-48 a12 12 0 0 1 12-12Z" fill="var(--mapPark)"/>
+  <path d="M30 150 h60 v44 h-60z" fill="var(--mapPark)" rx="10"/>
+  <g stroke="var(--mapRoad)" stroke-linecap="round" fill="none">
+    <path d="M-10 118 C80 104 160 132 370 96" stroke-width="14"/>
+    <path d="M118 -10 C126 70 108 150 134 300" stroke-width="10"/>
+    <path d="M-10 40 L370 58" stroke-width="6"/>
+    <path d="M200 -10 L214 300" stroke-width="6"/>
+    <path d="M-10 196 C90 186 180 204 370 178" stroke-width="6"/>
+    <path d="M300 -10 L286 300" stroke-width="5"/>
+    <path d="M40 -10 L60 300" stroke-width="4"/>
+  </g>
+</svg>
+    <div class="pin pin-lively" style="left:150px;top:78px"><span class="pin-dot"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1 1 1 1 2s-1 1-1 2M12 3.5c0 1 1 1 1 2s-1 1-1 2"/></svg></span><span class="pin-ev"><svg class="ico-s" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></svg></span><span class="pin-l">Togo Stüdyo</span></div>
+    <div class="pin pin-buzz" style="left:236px;top:138px"><span class="pin-dot"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1 1 1 1 2s-1 1-1 2M12 3.5c0 1 1 1 1 2s-1 1-1 2"/></svg></span><span class="pin-l">Cuba Cafe</span></div>
+    <div class="pin pin-calm" style="left:48px;top:120px"><span class="pin-dot"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1 1 1 1 2s-1 1-1 2M12 3.5c0 1 1 1 1 2s-1 1-1 2"/></svg></span><span class="pin-ev"><svg class="ico-s" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></svg></span><span class="pin-l">Meşale</span></div>
+    <div class="pin pin-calm" style="left:262px;top:34px"><span class="pin-dot"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1 1 1 1 2s-1 1-1 2M12 3.5c0 1 1 1 1 2s-1 1-1 2"/></svg></span><span class="pin-l">Happy Moon's</span></div>
+    <span class="osm">© OpenStreetMap</span>
+  </div>
+  <div class="sheet">
+    <div class="handle"></div>
+    <div class="row-between sheet-h"><span class="label">35 mekan</span><span class="hint">Konumun gösterilmez</span></div>
+    <ul class="venue-list"><li class="venue-row"><div class="vr-main"><div class="vr-name">Togo Stüdyo</div><div class="vr-meta">Adnan Kahveci · Beylikdüzü</div><div class="tags"><span class="tag tag-lively">Hareketli</span><span class="tag tag-event"><svg class="ico-s" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></svg>Bugün 21.00 · Masa gecesi</span></div></div><span class="vr-go"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span></li><li class="venue-row"><div class="vr-main"><div class="vr-name">Cuba Cafe</div><div class="vr-meta">Barış · Beylikdüzü</div><div class="tags"><span class="tag tag-buzz">Çok canlı</span></div></div><span class="vr-go"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span></li><li class="venue-row"><div class="vr-main"><div class="vr-name">Meşale Cafe & Restaurant</div><div class="vr-meta">Yakuplu · Beylikdüzü</div><div class="tags"><span class="tag tag-calm">Sakin</span><span class="tag tag-event"><svg class="ico-s" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></svg>Cumartesi 20.00 · Tabu turnuvası</span></div></div><span class="vr-go"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span></li><li class="venue-row"><div class="vr-main"><div class="vr-name">Happy Moon's</div><div class="vr-meta">Cumhuriyet · Beylikdüzü</div><div class="tags"><span class="tag tag-calm">Sakin</span></div></div><span class="vr-go"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span></li></ul>
+  </div>
+  <nav class="tabbar" aria-label="Sekmeler"><a class="tab on" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg><span class="tab-l">Keşfet</span></a><a class="tab tab-venue" href="#" aria-label="Mekan"><span class="venue-btn"><svg class="ico" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1 1 1 1 2s-1 1-1 2M12 3.5c0 1 1 1 1 2s-1 1-1 2"/></svg></span><span class="tab-l">Mekan</span></a><a class="tab" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14a6.5 6.5 0 0 1 3.5 6"/></svg><span class="tab-badge">2</span><span class="tab-l">Arkadaşlar</span></a><a class="tab" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab-l">Profil</span></a></nav>
+</div></div><figcaption><b>Keşfet</b><span>Harita + liste, kovalar ve planlı etkinlik etiketi. Kullanıcının konumu yok.</span></figcaption></figure><figure class="phone-wrap"><div class="phone"><div class="notch"></div>
+<div class="scr">
+  <div class="sb"><span>21:42</span><span class="sb-r"><i class="sig"></i><i class="bat"></i></span></div>
+  <div class="pad scroll">
+    <p class="eyebrow"><svg class="ico-s" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5a7 7 0 1 0-14 0C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Mekandasın</p>
+    <h2 class="h1">Togo Stüdyo</h2>
+    <div class="card table-card">
+      <div class="label">Masanın adı</div>
+      <div class="alias">Mor Baykuş</div>
+      <div class="row-between"><div class="tags"><span class="tag tag-neutral">3 kişi</span><span class="tag tag-neutral">Anonim</span></div><span class="meta-i"><svg class="ico-s" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>3 sa 12 dk</span></div>
+      <button class="btn btn-primary btn-block">Oda kur</button>
+    </div>
+    <div class="row-between sec-h"><h3 class="h3">Açık odalar</h3><span class="hint">2 oda</span></div>
+    <div class="card room-card">
+      <div class="row-between"><div class="rc-name">Mavi Kedi <span class="tag tag-profiled">profilli</span></div><span class="hint">4 dk</span></div>
+      <div class="rc-meta">2 kişi · Tabu · <svg class="ico-s" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>yüz yüze</div>
+      <button class="btn btn-secondary btn-block">Katılmak istiyorum</button>
+    </div>
+    <div class="card room-card">
+      <div class="row-between"><div class="rc-name">Turuncu Tilki</div><span class="hint">yeni açıldı</span></div>
+      <div class="rc-meta">4+ kişi · Sohbet</div>
+      <button class="btn btn-secondary btn-block">Katılmak istiyorum</button>
+    </div>
+  </div>
+  <nav class="tabbar" aria-label="Sekmeler"><a class="tab" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg><span class="tab-l">Keşfet</span></a><a class="tab tab-venue on" href="#" aria-label="Mekan"><span class="venue-btn"><svg class="ico" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1 1 1 1 2s-1 1-1 2M12 3.5c0 1 1 1 1 2s-1 1-1 2"/></svg></span><span class="tab-l">Mekan</span></a><a class="tab" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14a6.5 6.5 0 0 1 3.5 6"/></svg><span class="tab-badge">2</span><span class="tab-l">Arkadaşlar</span></a><a class="tab" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab-l">Profil</span></a></nav>
+</div></div><figcaption><b>Mekan / lobi</b><span>Aktif masa, “profilli” işareti ve açık odalar.</span></figcaption></figure><figure class="phone-wrap"><div class="phone"><div class="notch"></div>
+<div class="scr">
+  <div class="sb"><span>21:42</span><span class="sb-r"><i class="sig"></i><i class="bat"></i></span></div>
+  <div class="pad dimmed" aria-hidden="true">
+    <p class="eyebrow">Tabu odası · yüz yüze</p>
+    <h2 class="h1">Mor Baykuş</h2>
+    <div class="card"><p class="body">Odan lobide görünüyor. Bir masa katılmak isteyebilir; bu arada kendi masanla oynayabilirsin.</p></div>
+    <button class="btn btn-primary btn-block">Masanla oyna</button>
+  </div>
+  <div class="scrim"></div>
+  <div class="modal-sheet" role="dialog" aria-label="Katılma isteği">
+    <div class="handle"></div>
+    <div class="ms-icon"><svg class="ico" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14a6.5 6.5 0 0 1 3.5 6"/></svg></div>
+    <h3 class="h2">Katılma isteği</h3>
+    <p class="body strong">Yeşil Kaplumbağa masası <span class="nowrap">(2 kişi)</span> Tabu odana katılmak istiyor.</p>
+    <div class="tags center"><span class="tag tag-profiled">profilli</span></div>
+    <div class="timer" aria-label="42 saniye kaldı"><div class="timer-bar"><i style="width:70%"></i></div><span>42 sn</span></div>
+    <div class="btn-row"><button class="btn btn-secondary">Geç</button><button class="btn btn-primary">Kabul</button></div>
+    <p class="fine"><svg class="ico-s" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg>Geç dersen karşı masa yalnızca “Masa şu an müsait değil” görür. Kimse bilgilendirilmez.</p>
+  </div>
+</div></div><figcaption><b>Katılma isteği</b><span>Davet alan taraf: oda sahibinin 60 sn penceresi.</span></figcaption></figure><figure class="phone-wrap"><div class="phone"><div class="notch"></div>
+<div class="scr scr-game">
+  <div class="sb"><span>21:42</span><span class="sb-r"><i class="sig"></i><i class="bat"></i></span></div>
+  <div class="pad">
+    <div class="row-between">
+      <p class="eyebrow">Tabu · Tur 3/6</p>
+      <span class="clock-pill"><svg class="ico-s" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>0:37</span>
+    </div>
+    <div class="score">
+      <div class="team"><span class="team-n">Mor Baykuş <em>siz</em></span><span class="team-s">4</span></div>
+      <div class="team team-active"><span class="team-n">Mavi Kedi <em>anlatıyor</em></span><span class="team-s">3</span></div>
+    </div>
+    <div class="role"><svg class="ico-s" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg><span><b>Hakem sizsiniz.</b> Yasaklı kelime duyarsanız “Tabu”ya basın.</span></div>
+    <div class="game-card">
+      <div class="gc-word">ŞEMSİYE</div>
+      <div class="gc-label">Söylenmeyecekler</div>
+      <ul class="gc-list"><li>Yağmur</li><li>Açmak</li><li>Islanmak</li><li>Güneş</li><li>Sap</li></ul>
+    </div>
+    <div class="judge">
+      <button class="btn btn-success"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg><span>Doğru <small>+1</small></span></button>
+      <button class="btn btn-danger"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg><span>Tabu <small>−1</small></span></button>
+      <button class="btn btn-secondary btn-pass"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6v12M10 12l8-6v12z"/></svg><span>Pas <small>2 hak</small></span></button>
+    </div>
+    <p class="fine center">Kartı yalnızca bu odadaki iki masa görür.</p>
+  </div>
+</div></div><figcaption><b>Oda içi sesli Tabu</b><span>Hakem masanın ekranı. Oda tam ekran, sekme çubuğu yok.</span></figcaption></figure><figure class="phone-wrap"><div class="phone"><div class="notch"></div>
+<div class="scr scr-signal">
+  <div class="sb sb-light"><span>21:42</span><span class="sb-r"><i class="sig"></i><i class="bat"></i></span></div>
+  <div class="signal">
+    <p class="sig-top">Tanışalım mı? · İki masa da “Evet” dedi</p>
+    <div class="sig-mark"><span>🦊</span></div>
+    <h2 class="sig-h">Ekranını kaldır, birbirinizi bulun.</h2>
+    <p class="sig-p">Mavi Kedi masasında da aynı renk ve aynı işaret var.</p>
+    <div class="sig-actions">
+      <button class="btn btn-on-signal">Arkadaş ekle</button>
+      <button class="btn btn-on-signal-ghost">Mekana dön</button>
+    </div>
+    <p class="sig-fine">İki masa da “Arkadaş ekle”ye basarsa arkadaş olursunuz. Tek taraf basarsa kimse bilmez.</p>
+  </div>
+</div></div><figcaption><b>Tanışalım mı? sinyali</b><span>Karşılıklı Evet: iki masada aynı renk ve işaret.</span></figcaption></figure><figure class="phone-wrap"><div class="phone"><div class="notch"></div>
+<div class="scr">
+  <div class="sb"><span>21:42</span><span class="sb-r"><i class="sig"></i><i class="bat"></i></span></div>
+  <div class="pad scroll">
+    <div class="row-between"><h2 class="h1">Profil</h2><button class="icon-btn" aria-label="Ayarlar"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></div>
+    <div class="profile-head">
+      <div class="avatar"><span>DK</span></div>
+      <div class="p-name">Deniz K.</div>
+      <p class="body center">Tabu’da yasaklı kelimeyi ilk ben söylerim. Hafta sonları Togo’dayız.</p>
+    </div>
+    <div class="sec-h"><h3 class="h3">Rozetler</h3></div>
+    <div class="badges">
+      <span class="badge"><svg class="ico-s" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></svg>İlk oyun</span>
+      <span class="badge"><svg class="ico-s" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14a6.5 6.5 0 0 1 3.5 6"/></svg>5 farklı masa</span>
+      <span class="badge"><svg class="ico-s" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Sesli Tabu ustası</span>
+    </div>
+    <div class="card privacy">
+      <div><svg class="ico-s" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg></div>
+      <div><div class="label">Masaya varsayılan katılım</div><div class="body strong">Anonim</div><div class="hint">Diğer masalar yalnızca masa adını ve kişi sayısını görür.</div></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary">Profili düzenle</button><button class="btn btn-secondary">Fotoğraf</button></div>
+  </div>
+  <nav class="tabbar" aria-label="Sekmeler"><a class="tab" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg><span class="tab-l">Keşfet</span></a><a class="tab tab-venue" href="#" aria-label="Mekan"><span class="venue-btn"><svg class="ico" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1 1 1 1 2s-1 1-1 2M12 3.5c0 1 1 1 1 2s-1 1-1 2"/></svg></span><span class="tab-l">Mekan</span></a><a class="tab" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14a6.5 6.5 0 0 1 3.5 6"/></svg><span class="tab-badge">2</span><span class="tab-l">Arkadaşlar</span></a><a class="tab on" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab-l">Profil</span></a></nav>
+</div></div><figcaption><b>Profil</b><span>Ad, biyografi, rozetler; takipçi sayısı yok.</span></figcaption></figure></div>
+  </div>
+</section>
+<section class="dir dir-play" id="dir-play" data-default="light" data-mode="light" hidden>
+  <style>
+    .dir-play[data-mode="light"] .kit {--bg:#FFF7E6;--surface:#FFFFFF;--surface2:#FFF0CC;--text:#1B1433;--muted:#544A6B;--accent:#5B2EEA;--onAccent:#FFFFFF;--line:#1B1433;--danger:#D6331A;--onDanger:#FFFFFF;--success:#1F7A3A;--onSuccess:#FFFFFF;--calmBg:#E4F4FF;--calmFg:#0F4A73;--livelyBg:#FFE3F1;--livelyFg:#8A1454;--buzzBg:#D7F75B;--buzzFg:#1B1433;--eventBg:#FF6B3D;--eventFg:#1B1433;--signalBg:#D7F75B;--signalFg:#1B1433;--map:#FFEFC7;--mapRoad:#FFFFFF;--mapPark:#C9F0A8;--mapWater:#A9DBFF}
+    .dir-play[data-mode="dark"] .kit {--bg:#140E26;--surface:#211842;--surface2:#2C2156;--text:#FBF7FF;--muted:#C6BAE6;--accent:#A98BFF;--onAccent:#140E26;--line:#FBF7FF;--danger:#FF8B75;--onDanger:#1E0903;--success:#7FE08F;--onSuccess:#07210E;--calmBg:#1D3A57;--calmFg:#CDEBFF;--livelyBg:#4E1B3C;--livelyFg:#FFD1EA;--buzzBg:#D7F75B;--buzzFg:#140E26;--eventBg:#FF7A50;--eventFg:#140E26;--signalBg:#D7F75B;--signalFg:#140E26;--map:#1C1538;--mapRoad:#32285E;--mapPark:#20402E;--mapWater:#1B2F55}
+    .dir-play .kit {--font-display:'Bricolage Grotesque';--font-body:'Nunito';--dw:800;--r-lg:24px;--r-md:18px;--r-sm:12px}
+  </style>
+  <div class="dir-head">
+    <div>
+      <h2 class="dir-name">Oyun Gecesi</h2>
+      <p class="dir-feel">Masaya konfeti gibi dağılan enerji: her şey bir oyun kartı kadar net, kalın ve eğlenceli.</p>
+    </div>
+    <ul class="dir-why"><li>Kalın konturlar ve sert gölgeler kart oyunlarını hatırlatır; oyun anı ekranın en canlı yeri olur.</li><li>Doygun mor, mercan ve limon yeşili kalabalık bir mekanda bile tek bakışta seçilir.</li><li>Risk: davet ve güvenlik ekranlarında fazla enerji ciddiyeti azaltabilir; bu ekranlar bilerek sadeleştirildi.</li></ul>
+  </div>
+  
+<div class="tokens">
+  <div class="tok-block"><h3>Renk</h3><div class="pals"><div class="pal"><h4>Açık tema</h4><ul class="swatches"><li><span class="sw" style="background:#FFF7E6"></span><span class="sw-n">Zemin</span><code>#FFF7E6</code></li><li><span class="sw" style="background:#FFFFFF"></span><span class="sw-n">Yüzey</span><code>#FFFFFF</code></li><li><span class="sw" style="background:#FFF0CC"></span><span class="sw-n">Yüzey 2</span><code>#FFF0CC</code></li><li><span class="sw" style="background:#1B1433"></span><span class="sw-n">Metin</span><code>#1B1433</code></li><li><span class="sw" style="background:#544A6B"></span><span class="sw-n">İkincil</span><code>#544A6B</code></li><li><span class="sw" style="background:#5B2EEA"></span><span class="sw-n">Vurgu</span><code>#5B2EEA</code></li><li><span class="sw" style="background:#D6331A"></span><span class="sw-n">Tehlike</span><code>#D6331A</code></li><li><span class="sw" style="background:#1F7A3A"></span><span class="sw-n">Onay</span><code>#1F7A3A</code></li><li><span class="sw" style="background:#FF6B3D"></span><span class="sw-n">Etkinlik</span><code>#FF6B3D</code></li><li><span class="sw" style="background:#D7F75B"></span><span class="sw-n">Sinyal</span><code>#D7F75B</code></li></ul><p class="pal-note">En düşük metin kontrastı: 4.8:1 (AA ≥ 4.5)</p></div><div class="pal"><h4>Koyu tema</h4><ul class="swatches"><li><span class="sw" style="background:#140E26"></span><span class="sw-n">Zemin</span><code>#140E26</code></li><li><span class="sw" style="background:#211842"></span><span class="sw-n">Yüzey</span><code>#211842</code></li><li><span class="sw" style="background:#2C2156"></span><span class="sw-n">Yüzey 2</span><code>#2C2156</code></li><li><span class="sw" style="background:#FBF7FF"></span><span class="sw-n">Metin</span><code>#FBF7FF</code></li><li><span class="sw" style="background:#C6BAE6"></span><span class="sw-n">İkincil</span><code>#C6BAE6</code></li><li><span class="sw" style="background:#A98BFF"></span><span class="sw-n">Vurgu</span><code>#A98BFF</code></li><li><span class="sw" style="background:#FF8B75"></span><span class="sw-n">Tehlike</span><code>#FF8B75</code></li><li><span class="sw" style="background:#7FE08F"></span><span class="sw-n">Onay</span><code>#7FE08F</code></li><li><span class="sw" style="background:#FF7A50"></span><span class="sw-n">Etkinlik</span><code>#FF7A50</code></li><li><span class="sw" style="background:#D7F75B"></span><span class="sw-n">Sinyal</span><code>#D7F75B</code></li></ul><p class="pal-note">En düşük metin kontrastı: 6.1:1 (AA ≥ 4.5)</p></div></div></div>
+  <div class="tok-block"><h3>Tipografi</h3>
+    <div class="type-spec" style="font-family:'Bricolage Grotesque'"><span class="ts-big" style="font-weight:800">Masa gecesi başlıyor</span><code>Bricolage Grotesque · 800 · başlıklar</code></div>
+    <div class="type-spec" style="font-family:'Nunito'"><span class="ts-body">Yeşil Kaplumbağa masası Tabu odana katılmak istiyor.</span><code>Nunito · 400/600 · metin 16 / ikincil 14 / ince 13</code></div>
+  </div>
+  <div class="tok-block"><h3>Köşe ve boşluk</h3><div class="rads"><div class="rad"><span style="border-radius:24px"></span><code>lg 24</code></div><div class="rad"><span style="border-radius:18px"></span><code>md 18</code></div><div class="rad"><span style="border-radius:12px"></span><code>sm 12</code></div><div class="rad"><span style="border-radius:28px"></span><code>pill tam</code></div></div><div class="spcs"><div class="spc"><span style="width:4px;height:4px"></span><code>4</code></div><div class="spc"><span style="width:8px;height:8px"></span><code>8</code></div><div class="spc"><span style="width:12px;height:12px"></span><code>12</code></div><div class="spc"><span style="width:16px;height:16px"></span><code>16</code></div><div class="spc"><span style="width:24px;height:24px"></span><code>24</code></div><div class="spc"><span style="width:32px;height:32px"></span><code>32</code></div></div>
+    <p class="pal-note">Dokunma alanı: düğmeler en az 48 px, sekmeler 56 px, simge düğmeleri 44 × 44 px.</p></div>
+</div>
+  <div class="kit">
+    
+<div class="comps">
+  <div class="comp"><span class="comp-l">Düğmeler</span>
+    <div class="comp-row"><button class="btn btn-primary">Katılmak istiyorum</button><button class="btn btn-secondary">Geç</button><button class="btn btn-danger">Engelle</button></div></div>
+  <div class="comp"><span class="comp-l">Kart</span>
+    <div class="card room-card comp-card"><div class="row-between"><div class="rc-name">Mavi Kedi <span class="tag tag-profiled">profilli</span></div><span class="hint">4 dk</span></div><div class="rc-meta">2 kişi · Tabu · yüz yüze</div></div></div>
+  <div class="comp"><span class="comp-l">Etiketler</span>
+    <div class="tags"><span class="tag tag-calm">Sakin</span><span class="tag tag-lively">Hareketli</span><span class="tag tag-buzz">Çok canlı</span><span class="tag tag-profiled">profilli</span><span class="tag tag-event"><svg class="ico-s" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></svg>Bugün 21.00 · Masa gecesi</span></div></div>
+</div>
+    <div class="phones"><figure class="phone-wrap"><div class="phone"><div class="notch"></div>
+<div class="scr">
+  <div class="sb"><span>21:42</span><span class="sb-r"><i class="sig"></i><i class="bat"></i></span></div>
+  <div class="top pad">
+    <div class="row-between">
+      <h2 class="h1">Keşfet</h2>
+      <div class="seg" role="tablist"><button class="seg-b"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg><span>Liste</span></button><button class="seg-b on"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 4-6 2.5v13.5l6-2.5 6 2.5 6-2.5V4l-6 2.5z"/><path d="M9 4v13.5M15 6.5V20"/></svg><span>Harita</span></button></div>
+    </div>
+    <p class="sub">Beylikdüzü · bu akşam</p>
+  </div>
+  <div class="map">
+    <svg class="map-svg" viewBox="0 0 360 290" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <rect width="360" height="290" fill="var(--map)"/>
+  <path d="M0 232 C60 214 120 250 190 236 S300 206 360 222 V290 H0Z" fill="var(--mapWater)"/>
+  <path d="M232 40 h78 a12 12 0 0 1 12 12 v48 a12 12 0 0 1-12 12 h-78 a12 12 0 0 1-12-12 v-48 a12 12 0 0 1 12-12Z" fill="var(--mapPark)"/>
+  <path d="M30 150 h60 v44 h-60z" fill="var(--mapPark)" rx="10"/>
+  <g stroke="var(--mapRoad)" stroke-linecap="round" fill="none">
+    <path d="M-10 118 C80 104 160 132 370 96" stroke-width="14"/>
+    <path d="M118 -10 C126 70 108 150 134 300" stroke-width="10"/>
+    <path d="M-10 40 L370 58" stroke-width="6"/>
+    <path d="M200 -10 L214 300" stroke-width="6"/>
+    <path d="M-10 196 C90 186 180 204 370 178" stroke-width="6"/>
+    <path d="M300 -10 L286 300" stroke-width="5"/>
+    <path d="M40 -10 L60 300" stroke-width="4"/>
+  </g>
+</svg>
+    <div class="pin pin-lively" style="left:150px;top:78px"><span class="pin-dot"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1 1 1 1 2s-1 1-1 2M12 3.5c0 1 1 1 1 2s-1 1-1 2"/></svg></span><span class="pin-ev"><svg class="ico-s" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></svg></span><span class="pin-l">Togo Stüdyo</span></div>
+    <div class="pin pin-buzz" style="left:236px;top:138px"><span class="pin-dot"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1 1 1 1 2s-1 1-1 2M12 3.5c0 1 1 1 1 2s-1 1-1 2"/></svg></span><span class="pin-l">Cuba Cafe</span></div>
+    <div class="pin pin-calm" style="left:48px;top:120px"><span class="pin-dot"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1 1 1 1 2s-1 1-1 2M12 3.5c0 1 1 1 1 2s-1 1-1 2"/></svg></span><span class="pin-ev"><svg class="ico-s" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></svg></span><span class="pin-l">Meşale</span></div>
+    <div class="pin pin-calm" style="left:262px;top:34px"><span class="pin-dot"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1 1 1 1 2s-1 1-1 2M12 3.5c0 1 1 1 1 2s-1 1-1 2"/></svg></span><span class="pin-l">Happy Moon's</span></div>
+    <span class="osm">© OpenStreetMap</span>
+  </div>
+  <div class="sheet">
+    <div class="handle"></div>
+    <div class="row-between sheet-h"><span class="label">35 mekan</span><span class="hint">Konumun gösterilmez</span></div>
+    <ul class="venue-list"><li class="venue-row"><div class="vr-main"><div class="vr-name">Togo Stüdyo</div><div class="vr-meta">Adnan Kahveci · Beylikdüzü</div><div class="tags"><span class="tag tag-lively">Hareketli</span><span class="tag tag-event"><svg class="ico-s" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></svg>Bugün 21.00 · Masa gecesi</span></div></div><span class="vr-go"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span></li><li class="venue-row"><div class="vr-main"><div class="vr-name">Cuba Cafe</div><div class="vr-meta">Barış · Beylikdüzü</div><div class="tags"><span class="tag tag-buzz">Çok canlı</span></div></div><span class="vr-go"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span></li><li class="venue-row"><div class="vr-main"><div class="vr-name">Meşale Cafe & Restaurant</div><div class="vr-meta">Yakuplu · Beylikdüzü</div><div class="tags"><span class="tag tag-calm">Sakin</span><span class="tag tag-event"><svg class="ico-s" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></svg>Cumartesi 20.00 · Tabu turnuvası</span></div></div><span class="vr-go"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span></li><li class="venue-row"><div class="vr-main"><div class="vr-name">Happy Moon's</div><div class="vr-meta">Cumhuriyet · Beylikdüzü</div><div class="tags"><span class="tag tag-calm">Sakin</span></div></div><span class="vr-go"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span></li></ul>
+  </div>
+  <nav class="tabbar" aria-label="Sekmeler"><a class="tab on" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg><span class="tab-l">Keşfet</span></a><a class="tab tab-venue" href="#" aria-label="Mekan"><span class="venue-btn"><svg class="ico" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1 1 1 1 2s-1 1-1 2M12 3.5c0 1 1 1 1 2s-1 1-1 2"/></svg></span><span class="tab-l">Mekan</span></a><a class="tab" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14a6.5 6.5 0 0 1 3.5 6"/></svg><span class="tab-badge">2</span><span class="tab-l">Arkadaşlar</span></a><a class="tab" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab-l">Profil</span></a></nav>
+</div></div><figcaption><b>Keşfet</b><span>Harita + liste, kovalar ve planlı etkinlik etiketi. Kullanıcının konumu yok.</span></figcaption></figure><figure class="phone-wrap"><div class="phone"><div class="notch"></div>
+<div class="scr">
+  <div class="sb"><span>21:42</span><span class="sb-r"><i class="sig"></i><i class="bat"></i></span></div>
+  <div class="pad scroll">
+    <p class="eyebrow"><svg class="ico-s" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5a7 7 0 1 0-14 0C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Mekandasın</p>
+    <h2 class="h1">Togo Stüdyo</h2>
+    <div class="card table-card">
+      <div class="label">Masanın adı</div>
+      <div class="alias">Mor Baykuş</div>
+      <div class="row-between"><div class="tags"><span class="tag tag-neutral">3 kişi</span><span class="tag tag-neutral">Anonim</span></div><span class="meta-i"><svg class="ico-s" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>3 sa 12 dk</span></div>
+      <button class="btn btn-primary btn-block">Oda kur</button>
+    </div>
+    <div class="row-between sec-h"><h3 class="h3">Açık odalar</h3><span class="hint">2 oda</span></div>
+    <div class="card room-card">
+      <div class="row-between"><div class="rc-name">Mavi Kedi <span class="tag tag-profiled">profilli</span></div><span class="hint">4 dk</span></div>
+      <div class="rc-meta">2 kişi · Tabu · <svg class="ico-s" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>yüz yüze</div>
+      <button class="btn btn-secondary btn-block">Katılmak istiyorum</button>
+    </div>
+    <div class="card room-card">
+      <div class="row-between"><div class="rc-name">Turuncu Tilki</div><span class="hint">yeni açıldı</span></div>
+      <div class="rc-meta">4+ kişi · Sohbet</div>
+      <button class="btn btn-secondary btn-block">Katılmak istiyorum</button>
+    </div>
+  </div>
+  <nav class="tabbar" aria-label="Sekmeler"><a class="tab" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg><span class="tab-l">Keşfet</span></a><a class="tab tab-venue on" href="#" aria-label="Mekan"><span class="venue-btn"><svg class="ico" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1 1 1 1 2s-1 1-1 2M12 3.5c0 1 1 1 1 2s-1 1-1 2"/></svg></span><span class="tab-l">Mekan</span></a><a class="tab" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14a6.5 6.5 0 0 1 3.5 6"/></svg><span class="tab-badge">2</span><span class="tab-l">Arkadaşlar</span></a><a class="tab" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab-l">Profil</span></a></nav>
+</div></div><figcaption><b>Mekan / lobi</b><span>Aktif masa, “profilli” işareti ve açık odalar.</span></figcaption></figure><figure class="phone-wrap"><div class="phone"><div class="notch"></div>
+<div class="scr">
+  <div class="sb"><span>21:42</span><span class="sb-r"><i class="sig"></i><i class="bat"></i></span></div>
+  <div class="pad dimmed" aria-hidden="true">
+    <p class="eyebrow">Tabu odası · yüz yüze</p>
+    <h2 class="h1">Mor Baykuş</h2>
+    <div class="card"><p class="body">Odan lobide görünüyor. Bir masa katılmak isteyebilir; bu arada kendi masanla oynayabilirsin.</p></div>
+    <button class="btn btn-primary btn-block">Masanla oyna</button>
+  </div>
+  <div class="scrim"></div>
+  <div class="modal-sheet" role="dialog" aria-label="Katılma isteği">
+    <div class="handle"></div>
+    <div class="ms-icon"><svg class="ico" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14a6.5 6.5 0 0 1 3.5 6"/></svg></div>
+    <h3 class="h2">Katılma isteği</h3>
+    <p class="body strong">Yeşil Kaplumbağa masası <span class="nowrap">(2 kişi)</span> Tabu odana katılmak istiyor.</p>
+    <div class="tags center"><span class="tag tag-profiled">profilli</span></div>
+    <div class="timer" aria-label="42 saniye kaldı"><div class="timer-bar"><i style="width:70%"></i></div><span>42 sn</span></div>
+    <div class="btn-row"><button class="btn btn-secondary">Geç</button><button class="btn btn-primary">Kabul</button></div>
+    <p class="fine"><svg class="ico-s" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg>Geç dersen karşı masa yalnızca “Masa şu an müsait değil” görür. Kimse bilgilendirilmez.</p>
+  </div>
+</div></div><figcaption><b>Katılma isteği</b><span>Davet alan taraf: oda sahibinin 60 sn penceresi.</span></figcaption></figure><figure class="phone-wrap"><div class="phone"><div class="notch"></div>
+<div class="scr scr-game">
+  <div class="sb"><span>21:42</span><span class="sb-r"><i class="sig"></i><i class="bat"></i></span></div>
+  <div class="pad">
+    <div class="row-between">
+      <p class="eyebrow">Tabu · Tur 3/6</p>
+      <span class="clock-pill"><svg class="ico-s" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>0:37</span>
+    </div>
+    <div class="score">
+      <div class="team"><span class="team-n">Mor Baykuş <em>siz</em></span><span class="team-s">4</span></div>
+      <div class="team team-active"><span class="team-n">Mavi Kedi <em>anlatıyor</em></span><span class="team-s">3</span></div>
+    </div>
+    <div class="role"><svg class="ico-s" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg><span><b>Hakem sizsiniz.</b> Yasaklı kelime duyarsanız “Tabu”ya basın.</span></div>
+    <div class="game-card">
+      <div class="gc-word">ŞEMSİYE</div>
+      <div class="gc-label">Söylenmeyecekler</div>
+      <ul class="gc-list"><li>Yağmur</li><li>Açmak</li><li>Islanmak</li><li>Güneş</li><li>Sap</li></ul>
+    </div>
+    <div class="judge">
+      <button class="btn btn-success"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg><span>Doğru <small>+1</small></span></button>
+      <button class="btn btn-danger"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg><span>Tabu <small>−1</small></span></button>
+      <button class="btn btn-secondary btn-pass"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6v12M10 12l8-6v12z"/></svg><span>Pas <small>2 hak</small></span></button>
+    </div>
+    <p class="fine center">Kartı yalnızca bu odadaki iki masa görür.</p>
+  </div>
+</div></div><figcaption><b>Oda içi sesli Tabu</b><span>Hakem masanın ekranı. Oda tam ekran, sekme çubuğu yok.</span></figcaption></figure><figure class="phone-wrap"><div class="phone"><div class="notch"></div>
+<div class="scr scr-signal">
+  <div class="sb sb-light"><span>21:42</span><span class="sb-r"><i class="sig"></i><i class="bat"></i></span></div>
+  <div class="signal">
+    <p class="sig-top">Tanışalım mı? · İki masa da “Evet” dedi</p>
+    <div class="sig-mark"><span>⭐</span></div>
+    <h2 class="sig-h">Ekranını kaldır, birbirinizi bulun.</h2>
+    <p class="sig-p">Mavi Kedi masasında da aynı renk ve aynı işaret var.</p>
+    <div class="sig-actions">
+      <button class="btn btn-on-signal">Arkadaş ekle</button>
+      <button class="btn btn-on-signal-ghost">Mekana dön</button>
+    </div>
+    <p class="sig-fine">İki masa da “Arkadaş ekle”ye basarsa arkadaş olursunuz. Tek taraf basarsa kimse bilmez.</p>
+  </div>
+</div></div><figcaption><b>Tanışalım mı? sinyali</b><span>Karşılıklı Evet: iki masada aynı renk ve işaret.</span></figcaption></figure><figure class="phone-wrap"><div class="phone"><div class="notch"></div>
+<div class="scr">
+  <div class="sb"><span>21:42</span><span class="sb-r"><i class="sig"></i><i class="bat"></i></span></div>
+  <div class="pad scroll">
+    <div class="row-between"><h2 class="h1">Profil</h2><button class="icon-btn" aria-label="Ayarlar"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></div>
+    <div class="profile-head">
+      <div class="avatar"><span>DK</span></div>
+      <div class="p-name">Deniz K.</div>
+      <p class="body center">Tabu’da yasaklı kelimeyi ilk ben söylerim. Hafta sonları Togo’dayız.</p>
+    </div>
+    <div class="sec-h"><h3 class="h3">Rozetler</h3></div>
+    <div class="badges">
+      <span class="badge"><svg class="ico-s" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></svg>İlk oyun</span>
+      <span class="badge"><svg class="ico-s" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14a6.5 6.5 0 0 1 3.5 6"/></svg>5 farklı masa</span>
+      <span class="badge"><svg class="ico-s" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Sesli Tabu ustası</span>
+    </div>
+    <div class="card privacy">
+      <div><svg class="ico-s" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg></div>
+      <div><div class="label">Masaya varsayılan katılım</div><div class="body strong">Anonim</div><div class="hint">Diğer masalar yalnızca masa adını ve kişi sayısını görür.</div></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary">Profili düzenle</button><button class="btn btn-secondary">Fotoğraf</button></div>
+  </div>
+  <nav class="tabbar" aria-label="Sekmeler"><a class="tab" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg><span class="tab-l">Keşfet</span></a><a class="tab tab-venue" href="#" aria-label="Mekan"><span class="venue-btn"><svg class="ico" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1 1 1 1 2s-1 1-1 2M12 3.5c0 1 1 1 1 2s-1 1-1 2"/></svg></span><span class="tab-l">Mekan</span></a><a class="tab" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14a6.5 6.5 0 0 1 3.5 6"/></svg><span class="tab-badge">2</span><span class="tab-l">Arkadaşlar</span></a><a class="tab on" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab-l">Profil</span></a></nav>
+</div></div><figcaption><b>Profil</b><span>Ad, biyografi, rozetler; takipçi sayısı yok.</span></figcaption></figure></div>
+  </div>
+</section>
+<section class="dir dir-calm" id="dir-calm" data-default="light" data-mode="light" hidden>
+  <style>
+    .dir-calm[data-mode="light"] .kit {--bg:#F5F8F7;--surface:#FFFFFF;--surface2:#EBF2F0;--text:#13211E;--muted:#4B5D59;--accent:#1C6B62;--onAccent:#FFFFFF;--line:#D9E3E0;--danger:#A8261C;--onDanger:#FFFFFF;--success:#1F6B3F;--onSuccess:#FFFFFF;--calmBg:#E8EFED;--calmFg:#3C4E4A;--livelyBg:#E0F0EC;--livelyFg:#185E55;--buzzBg:#FDF0DC;--buzzFg:#7A4A0A;--eventBg:#EEF0FB;--eventFg:#34407A;--signalBg:#1E7268;--signalFg:#FFFFFF;--map:#EAF0EE;--mapRoad:#FFFFFF;--mapPark:#D8EAD9;--mapWater:#D3E6EF}
+    .dir-calm[data-mode="dark"] .kit {--bg:#0E1614;--surface:#15201D;--surface2:#1C2926;--text:#E7F0ED;--muted:#A2B4AF;--accent:#7DD0C2;--onAccent:#08201C;--line:#27352F;--danger:#FF8F84;--onDanger:#2A0906;--success:#86D9A6;--onSuccess:#062212;--calmBg:#223029;--calmFg:#C2D1CC;--livelyBg:#133B35;--livelyFg:#A9ECDF;--buzzBg:#3D2E14;--buzzFg:#F6D39B;--eventBg:#232A4A;--eventFg:#C9D1FF;--signalBg:#3FA596;--signalFg:#04110F;--map:#131D1A;--mapRoad:#243330;--mapPark:#1A2C20;--mapWater:#152632}
+    .dir-calm .kit {--font-display:'Figtree';--font-body:'Figtree';--dw:700;--r-lg:16px;--r-md:12px;--r-sm:8px}
+  </style>
+  <div class="dir-head">
+    <div>
+      <h2 class="dir-name">Sakin Liman</h2>
+      <p class="dir-feel">Sessiz, açık ve güvenli: her adımda ne olacağını bilirsin, kimse seni zorlamaz.</p>
+    </div>
+    <ul class="dir-why"><li>Anonimlik ve rıza ürünün merkezinde; bol boşluk, ince çizgiler ve açıklayıcı ikincil metinler güven verir.</li><li>Derin petrol yeşili tek vurgu rengidir; etiketler renk yerine yumuşak zeminlerle ayrışır.</li><li>Risk: oyun anı ve Keşfet daha az heyecanlı görünebilir; enerji içerikten ve sinyal renginden gelmeli.</li></ul>
+  </div>
+  
+<div class="tokens">
+  <div class="tok-block"><h3>Renk</h3><div class="pals"><div class="pal"><h4>Açık tema</h4><ul class="swatches"><li><span class="sw" style="background:#F5F8F7"></span><span class="sw-n">Zemin</span><code>#F5F8F7</code></li><li><span class="sw" style="background:#FFFFFF"></span><span class="sw-n">Yüzey</span><code>#FFFFFF</code></li><li><span class="sw" style="background:#EBF2F0"></span><span class="sw-n">Yüzey 2</span><code>#EBF2F0</code></li><li><span class="sw" style="background:#13211E"></span><span class="sw-n">Metin</span><code>#13211E</code></li><li><span class="sw" style="background:#4B5D59"></span><span class="sw-n">İkincil</span><code>#4B5D59</code></li><li><span class="sw" style="background:#1C6B62"></span><span class="sw-n">Vurgu</span><code>#1C6B62</code></li><li><span class="sw" style="background:#A8261C"></span><span class="sw-n">Tehlike</span><code>#A8261C</code></li><li><span class="sw" style="background:#1F6B3F"></span><span class="sw-n">Onay</span><code>#1F6B3F</code></li><li><span class="sw" style="background:#EEF0FB"></span><span class="sw-n">Etkinlik</span><code>#EEF0FB</code></li><li><span class="sw" style="background:#1E7268"></span><span class="sw-n">Sinyal</span><code>#1E7268</code></li></ul><p class="pal-note">En düşük metin kontrastı: 5.7:1 (AA ≥ 4.5)</p></div><div class="pal"><h4>Koyu tema</h4><ul class="swatches"><li><span class="sw" style="background:#0E1614"></span><span class="sw-n">Zemin</span><code>#0E1614</code></li><li><span class="sw" style="background:#15201D"></span><span class="sw-n">Yüzey</span><code>#15201D</code></li><li><span class="sw" style="background:#1C2926"></span><span class="sw-n">Yüzey 2</span><code>#1C2926</code></li><li><span class="sw" style="background:#E7F0ED"></span><span class="sw-n">Metin</span><code>#E7F0ED</code></li><li><span class="sw" style="background:#A2B4AF"></span><span class="sw-n">İkincil</span><code>#A2B4AF</code></li><li><span class="sw" style="background:#7DD0C2"></span><span class="sw-n">Vurgu</span><code>#7DD0C2</code></li><li><span class="sw" style="background:#FF8F84"></span><span class="sw-n">Tehlike</span><code>#FF8F84</code></li><li><span class="sw" style="background:#86D9A6"></span><span class="sw-n">Onay</span><code>#86D9A6</code></li><li><span class="sw" style="background:#232A4A"></span><span class="sw-n">Etkinlik</span><code>#232A4A</code></li><li><span class="sw" style="background:#3FA596"></span><span class="sw-n">Sinyal</span><code>#3FA596</code></li></ul><p class="pal-note">En düşük metin kontrastı: 6.4:1 (AA ≥ 4.5)</p></div></div></div>
+  <div class="tok-block"><h3>Tipografi</h3>
+    <div class="type-spec" style="font-family:'Figtree'"><span class="ts-big" style="font-weight:700">Masa gecesi başlıyor</span><code>Figtree · 700 · başlıklar</code></div>
+    <div class="type-spec" style="font-family:'Figtree'"><span class="ts-body">Yeşil Kaplumbağa masası Tabu odana katılmak istiyor.</span><code>Figtree · 400/600 · metin 16 / ikincil 14 / ince 13</code></div>
+  </div>
+  <div class="tok-block"><h3>Köşe ve boşluk</h3><div class="rads"><div class="rad"><span style="border-radius:16px"></span><code>lg 16</code></div><div class="rad"><span style="border-radius:12px"></span><code>md 12</code></div><div class="rad"><span style="border-radius:8px"></span><code>sm 8</code></div><div class="rad"><span style="border-radius:28px"></span><code>pill tam</code></div></div><div class="spcs"><div class="spc"><span style="width:4px;height:4px"></span><code>4</code></div><div class="spc"><span style="width:8px;height:8px"></span><code>8</code></div><div class="spc"><span style="width:12px;height:12px"></span><code>12</code></div><div class="spc"><span style="width:16px;height:16px"></span><code>16</code></div><div class="spc"><span style="width:24px;height:24px"></span><code>24</code></div><div class="spc"><span style="width:32px;height:32px"></span><code>32</code></div></div>
+    <p class="pal-note">Dokunma alanı: düğmeler en az 48 px, sekmeler 56 px, simge düğmeleri 44 × 44 px.</p></div>
+</div>
+  <div class="kit">
+    
+<div class="comps">
+  <div class="comp"><span class="comp-l">Düğmeler</span>
+    <div class="comp-row"><button class="btn btn-primary">Katılmak istiyorum</button><button class="btn btn-secondary">Geç</button><button class="btn btn-danger">Engelle</button></div></div>
+  <div class="comp"><span class="comp-l">Kart</span>
+    <div class="card room-card comp-card"><div class="row-between"><div class="rc-name">Mavi Kedi <span class="tag tag-profiled">profilli</span></div><span class="hint">4 dk</span></div><div class="rc-meta">2 kişi · Tabu · yüz yüze</div></div></div>
+  <div class="comp"><span class="comp-l">Etiketler</span>
+    <div class="tags"><span class="tag tag-calm">Sakin</span><span class="tag tag-lively">Hareketli</span><span class="tag tag-buzz">Çok canlı</span><span class="tag tag-profiled">profilli</span><span class="tag tag-event"><svg class="ico-s" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></svg>Bugün 21.00 · Masa gecesi</span></div></div>
+</div>
+    <div class="phones"><figure class="phone-wrap"><div class="phone"><div class="notch"></div>
+<div class="scr">
+  <div class="sb"><span>21:42</span><span class="sb-r"><i class="sig"></i><i class="bat"></i></span></div>
+  <div class="top pad">
+    <div class="row-between">
+      <h2 class="h1">Keşfet</h2>
+      <div class="seg" role="tablist"><button class="seg-b"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg><span>Liste</span></button><button class="seg-b on"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 4-6 2.5v13.5l6-2.5 6 2.5 6-2.5V4l-6 2.5z"/><path d="M9 4v13.5M15 6.5V20"/></svg><span>Harita</span></button></div>
+    </div>
+    <p class="sub">Beylikdüzü · bu akşam</p>
+  </div>
+  <div class="map">
+    <svg class="map-svg" viewBox="0 0 360 290" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <rect width="360" height="290" fill="var(--map)"/>
+  <path d="M0 232 C60 214 120 250 190 236 S300 206 360 222 V290 H0Z" fill="var(--mapWater)"/>
+  <path d="M232 40 h78 a12 12 0 0 1 12 12 v48 a12 12 0 0 1-12 12 h-78 a12 12 0 0 1-12-12 v-48 a12 12 0 0 1 12-12Z" fill="var(--mapPark)"/>
+  <path d="M30 150 h60 v44 h-60z" fill="var(--mapPark)" rx="10"/>
+  <g stroke="var(--mapRoad)" stroke-linecap="round" fill="none">
+    <path d="M-10 118 C80 104 160 132 370 96" stroke-width="14"/>
+    <path d="M118 -10 C126 70 108 150 134 300" stroke-width="10"/>
+    <path d="M-10 40 L370 58" stroke-width="6"/>
+    <path d="M200 -10 L214 300" stroke-width="6"/>
+    <path d="M-10 196 C90 186 180 204 370 178" stroke-width="6"/>
+    <path d="M300 -10 L286 300" stroke-width="5"/>
+    <path d="M40 -10 L60 300" stroke-width="4"/>
+  </g>
+</svg>
+    <div class="pin pin-lively" style="left:150px;top:78px"><span class="pin-dot"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1 1 1 1 2s-1 1-1 2M12 3.5c0 1 1 1 1 2s-1 1-1 2"/></svg></span><span class="pin-ev"><svg class="ico-s" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></svg></span><span class="pin-l">Togo Stüdyo</span></div>
+    <div class="pin pin-buzz" style="left:236px;top:138px"><span class="pin-dot"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1 1 1 1 2s-1 1-1 2M12 3.5c0 1 1 1 1 2s-1 1-1 2"/></svg></span><span class="pin-l">Cuba Cafe</span></div>
+    <div class="pin pin-calm" style="left:48px;top:120px"><span class="pin-dot"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1 1 1 1 2s-1 1-1 2M12 3.5c0 1 1 1 1 2s-1 1-1 2"/></svg></span><span class="pin-ev"><svg class="ico-s" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></svg></span><span class="pin-l">Meşale</span></div>
+    <div class="pin pin-calm" style="left:262px;top:34px"><span class="pin-dot"><svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1 1 1 1 2s-1 1-1 2M12 3.5c0 1 1 1 1 2s-1 1-1 2"/></svg></span><span class="pin-l">Happy Moon's</span></div>
+    <span class="osm">© OpenStreetMap</span>
+  </div>
+  <div class="sheet">
+    <div class="handle"></div>
+    <div class="row-between sheet-h"><span class="label">35 mekan</span><span class="hint">Konumun gösterilmez</span></div>
+    <ul class="venue-list"><li class="venue-row"><div class="vr-main"><div class="vr-name">Togo Stüdyo</div><div class="vr-meta">Adnan Kahveci · Beylikdüzü</div><div class="tags"><span class="tag tag-lively">Hareketli</span><span class="tag tag-event"><svg class="ico-s" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></svg>Bugün 21.00 · Masa gecesi</span></div></div><span class="vr-go"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span></li><li class="venue-row"><div class="vr-main"><div class="vr-name">Cuba Cafe</div><div class="vr-meta">Barış · Beylikdüzü</div><div class="tags"><span class="tag tag-buzz">Çok canlı</span></div></div><span class="vr-go"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span></li><li class="venue-row"><div class="vr-main"><div class="vr-name">Meşale Cafe & Restaurant</div><div class="vr-meta">Yakuplu · Beylikdüzü</div><div class="tags"><span class="tag tag-calm">Sakin</span><span class="tag tag-event"><svg class="ico-s" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></svg>Cumartesi 20.00 · Tabu turnuvası</span></div></div><span class="vr-go"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span></li><li class="venue-row"><div class="vr-main"><div class="vr-name">Happy Moon's</div><div class="vr-meta">Cumhuriyet · Beylikdüzü</div><div class="tags"><span class="tag tag-calm">Sakin</span></div></div><span class="vr-go"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span></li></ul>
+  </div>
+  <nav class="tabbar" aria-label="Sekmeler"><a class="tab on" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg><span class="tab-l">Keşfet</span></a><a class="tab tab-venue" href="#" aria-label="Mekan"><span class="venue-btn"><svg class="ico" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1 1 1 1 2s-1 1-1 2M12 3.5c0 1 1 1 1 2s-1 1-1 2"/></svg></span><span class="tab-l">Mekan</span></a><a class="tab" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14a6.5 6.5 0 0 1 3.5 6"/></svg><span class="tab-badge">2</span><span class="tab-l">Arkadaşlar</span></a><a class="tab" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab-l">Profil</span></a></nav>
+</div></div><figcaption><b>Keşfet</b><span>Harita + liste, kovalar ve planlı etkinlik etiketi. Kullanıcının konumu yok.</span></figcaption></figure><figure class="phone-wrap"><div class="phone"><div class="notch"></div>
+<div class="scr">
+  <div class="sb"><span>21:42</span><span class="sb-r"><i class="sig"></i><i class="bat"></i></span></div>
+  <div class="pad scroll">
+    <p class="eyebrow"><svg class="ico-s" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5a7 7 0 1 0-14 0C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Mekandasın</p>
+    <h2 class="h1">Togo Stüdyo</h2>
+    <div class="card table-card">
+      <div class="label">Masanın adı</div>
+      <div class="alias">Mor Baykuş</div>
+      <div class="row-between"><div class="tags"><span class="tag tag-neutral">3 kişi</span><span class="tag tag-neutral">Anonim</span></div><span class="meta-i"><svg class="ico-s" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>3 sa 12 dk</span></div>
+      <button class="btn btn-primary btn-block">Oda kur</button>
+    </div>
+    <div class="row-between sec-h"><h3 class="h3">Açık odalar</h3><span class="hint">2 oda</span></div>
+    <div class="card room-card">
+      <div class="row-between"><div class="rc-name">Mavi Kedi <span class="tag tag-profiled">profilli</span></div><span class="hint">4 dk</span></div>
+      <div class="rc-meta">2 kişi · Tabu · <svg class="ico-s" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>yüz yüze</div>
+      <button class="btn btn-secondary btn-block">Katılmak istiyorum</button>
+    </div>
+    <div class="card room-card">
+      <div class="row-between"><div class="rc-name">Turuncu Tilki</div><span class="hint">yeni açıldı</span></div>
+      <div class="rc-meta">4+ kişi · Sohbet</div>
+      <button class="btn btn-secondary btn-block">Katılmak istiyorum</button>
+    </div>
+  </div>
+  <nav class="tabbar" aria-label="Sekmeler"><a class="tab" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg><span class="tab-l">Keşfet</span></a><a class="tab tab-venue on" href="#" aria-label="Mekan"><span class="venue-btn"><svg class="ico" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1 1 1 1 2s-1 1-1 2M12 3.5c0 1 1 1 1 2s-1 1-1 2"/></svg></span><span class="tab-l">Mekan</span></a><a class="tab" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14a6.5 6.5 0 0 1 3.5 6"/></svg><span class="tab-badge">2</span><span class="tab-l">Arkadaşlar</span></a><a class="tab" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab-l">Profil</span></a></nav>
+</div></div><figcaption><b>Mekan / lobi</b><span>Aktif masa, “profilli” işareti ve açık odalar.</span></figcaption></figure><figure class="phone-wrap"><div class="phone"><div class="notch"></div>
+<div class="scr">
+  <div class="sb"><span>21:42</span><span class="sb-r"><i class="sig"></i><i class="bat"></i></span></div>
+  <div class="pad dimmed" aria-hidden="true">
+    <p class="eyebrow">Tabu odası · yüz yüze</p>
+    <h2 class="h1">Mor Baykuş</h2>
+    <div class="card"><p class="body">Odan lobide görünüyor. Bir masa katılmak isteyebilir; bu arada kendi masanla oynayabilirsin.</p></div>
+    <button class="btn btn-primary btn-block">Masanla oyna</button>
+  </div>
+  <div class="scrim"></div>
+  <div class="modal-sheet" role="dialog" aria-label="Katılma isteği">
+    <div class="handle"></div>
+    <div class="ms-icon"><svg class="ico" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14a6.5 6.5 0 0 1 3.5 6"/></svg></div>
+    <h3 class="h2">Katılma isteği</h3>
+    <p class="body strong">Yeşil Kaplumbağa masası <span class="nowrap">(2 kişi)</span> Tabu odana katılmak istiyor.</p>
+    <div class="tags center"><span class="tag tag-profiled">profilli</span></div>
+    <div class="timer" aria-label="42 saniye kaldı"><div class="timer-bar"><i style="width:70%"></i></div><span>42 sn</span></div>
+    <div class="btn-row"><button class="btn btn-secondary">Geç</button><button class="btn btn-primary">Kabul</button></div>
+    <p class="fine"><svg class="ico-s" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg>Geç dersen karşı masa yalnızca “Masa şu an müsait değil” görür. Kimse bilgilendirilmez.</p>
+  </div>
+</div></div><figcaption><b>Katılma isteği</b><span>Davet alan taraf: oda sahibinin 60 sn penceresi.</span></figcaption></figure><figure class="phone-wrap"><div class="phone"><div class="notch"></div>
+<div class="scr scr-game">
+  <div class="sb"><span>21:42</span><span class="sb-r"><i class="sig"></i><i class="bat"></i></span></div>
+  <div class="pad">
+    <div class="row-between">
+      <p class="eyebrow">Tabu · Tur 3/6</p>
+      <span class="clock-pill"><svg class="ico-s" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>0:37</span>
+    </div>
+    <div class="score">
+      <div class="team"><span class="team-n">Mor Baykuş <em>siz</em></span><span class="team-s">4</span></div>
+      <div class="team team-active"><span class="team-n">Mavi Kedi <em>anlatıyor</em></span><span class="team-s">3</span></div>
+    </div>
+    <div class="role"><svg class="ico-s" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg><span><b>Hakem sizsiniz.</b> Yasaklı kelime duyarsanız “Tabu”ya basın.</span></div>
+    <div class="game-card">
+      <div class="gc-word">ŞEMSİYE</div>
+      <div class="gc-label">Söylenmeyecekler</div>
+      <ul class="gc-list"><li>Yağmur</li><li>Açmak</li><li>Islanmak</li><li>Güneş</li><li>Sap</li></ul>
+    </div>
+    <div class="judge">
+      <button class="btn btn-success"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg><span>Doğru <small>+1</small></span></button>
+      <button class="btn btn-danger"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg><span>Tabu <small>−1</small></span></button>
+      <button class="btn btn-secondary btn-pass"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6v12M10 12l8-6v12z"/></svg><span>Pas <small>2 hak</small></span></button>
+    </div>
+    <p class="fine center">Kartı yalnızca bu odadaki iki masa görür.</p>
+  </div>
+</div></div><figcaption><b>Oda içi sesli Tabu</b><span>Hakem masanın ekranı. Oda tam ekran, sekme çubuğu yok.</span></figcaption></figure><figure class="phone-wrap"><div class="phone"><div class="notch"></div>
+<div class="scr scr-signal">
+  <div class="sb sb-light"><span>21:42</span><span class="sb-r"><i class="sig"></i><i class="bat"></i></span></div>
+  <div class="signal">
+    <p class="sig-top">Tanışalım mı? · İki masa da “Evet” dedi</p>
+    <div class="sig-mark"><span>🌿</span></div>
+    <h2 class="sig-h">Ekranını kaldır, birbirinizi bulun.</h2>
+    <p class="sig-p">Mavi Kedi masasında da aynı renk ve aynı işaret var.</p>
+    <div class="sig-actions">
+      <button class="btn btn-on-signal">Arkadaş ekle</button>
+      <button class="btn btn-on-signal-ghost">Mekana dön</button>
+    </div>
+    <p class="sig-fine">İki masa da “Arkadaş ekle”ye basarsa arkadaş olursunuz. Tek taraf basarsa kimse bilmez.</p>
+  </div>
+</div></div><figcaption><b>Tanışalım mı? sinyali</b><span>Karşılıklı Evet: iki masada aynı renk ve işaret.</span></figcaption></figure><figure class="phone-wrap"><div class="phone"><div class="notch"></div>
+<div class="scr">
+  <div class="sb"><span>21:42</span><span class="sb-r"><i class="sig"></i><i class="bat"></i></span></div>
+  <div class="pad scroll">
+    <div class="row-between"><h2 class="h1">Profil</h2><button class="icon-btn" aria-label="Ayarlar"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></div>
+    <div class="profile-head">
+      <div class="avatar"><span>DK</span></div>
+      <div class="p-name">Deniz K.</div>
+      <p class="body center">Tabu’da yasaklı kelimeyi ilk ben söylerim. Hafta sonları Togo’dayız.</p>
+    </div>
+    <div class="sec-h"><h3 class="h3">Rozetler</h3></div>
+    <div class="badges">
+      <span class="badge"><svg class="ico-s" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></svg>İlk oyun</span>
+      <span class="badge"><svg class="ico-s" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14a6.5 6.5 0 0 1 3.5 6"/></svg>5 farklı masa</span>
+      <span class="badge"><svg class="ico-s" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Sesli Tabu ustası</span>
+    </div>
+    <div class="card privacy">
+      <div><svg class="ico-s" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg></div>
+      <div><div class="label">Masaya varsayılan katılım</div><div class="body strong">Anonim</div><div class="hint">Diğer masalar yalnızca masa adını ve kişi sayısını görür.</div></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary">Profili düzenle</button><button class="btn btn-secondary">Fotoğraf</button></div>
+  </div>
+  <nav class="tabbar" aria-label="Sekmeler"><a class="tab" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg><span class="tab-l">Keşfet</span></a><a class="tab tab-venue" href="#" aria-label="Mekan"><span class="venue-btn"><svg class="ico" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1 1 1 1 2s-1 1-1 2M12 3.5c0 1 1 1 1 2s-1 1-1 2"/></svg></span><span class="tab-l">Mekan</span></a><a class="tab" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14a6.5 6.5 0 0 1 3.5 6"/></svg><span class="tab-badge">2</span><span class="tab-l">Arkadaşlar</span></a><a class="tab on" href="#"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab-l">Profil</span></a></nav>
+</div></div><figcaption><b>Profil</b><span>Ad, biyografi, rozetler; takipçi sayısı yok.</span></figcaption></figure></div>
+  </div>
+</section>
+</main>
+<footer class="page-foot">Mockup'lar statiktir; uygulama kodunu değiştirmez. Harita çizimi temsilidir (© OpenStreetMap katkıda bulunanlar).</footer>
+<script>
+(function () {
+  var dirs = document.querySelectorAll('.dir');
+  var tabs = document.querySelectorAll('.tab-btn');
+  var modes = document.querySelectorAll('.mode-btn');
+  function current() { return document.querySelector('.dir:not([hidden])'); }
+  function syncModes() {
+    var m = current().getAttribute('data-mode');
+    modes.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.mode === m)); });
+  }
+  function show(key) {
+    dirs.forEach(function (d) { d.hidden = d.id !== 'dir-' + key; });
+    tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.dir === key)); });
+    try { localStorage.setItem('masa-dir', key); } catch (e) {}
+    syncModes();
+  }
+  tabs.forEach(function (t) { t.addEventListener('click', function () { show(t.dataset.dir); }); });
+  modes.forEach(function (b) { b.addEventListener('click', function () { current().setAttribute('data-mode', b.dataset.mode); syncModes(); }); });
+  var params = new URLSearchParams(location.search);
+  var start = params.get('dir');
+  if (!start) { try { start = localStorage.getItem('masa-dir'); } catch (e) {} }
+  if (start && document.getElementById('dir-' + start)) show(start); else syncModes();
+  var m = params.get('mode');
+  if (m) { current().setAttribute('data-mode', m); syncModes(); }
+})();
+</script>
+</body>
+</html>
