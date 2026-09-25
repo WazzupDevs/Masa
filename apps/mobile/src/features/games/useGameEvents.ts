@@ -1,6 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
-
+import { privateChannel, useChannel } from '@/lib/realtime';
 import { supabase } from '@/lib/supabase';
 
 export const gameEventsKey = (roomId: string) => ['gameEvents', roomId] as const;
@@ -10,22 +9,21 @@ export const gameEventsKey = (roomId: string) => ['gameEvents', roomId] as const
 export function useGameEvents(roomId: string, onEvent?: () => void) {
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const channel = supabase
-      .channel(`game:${roomId}`, { config: { private: true } })
-      .on(
+  // `onEvent` may change every turn (describer); it never resubscribes the channel.
+  useChannel(
+    `game:${roomId}`,
+    (emit) => ({
+      channel: privateChannel(`game:${roomId}`).on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'game_events', filter: `room_id=eq.${roomId}` },
-        () => {
-          void queryClient.invalidateQueries({ queryKey: gameEventsKey(roomId) });
-          onEvent?.();
-        },
-      )
-      .subscribe();
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [roomId, queryClient, onEvent]);
+        () => emit(null),
+      ),
+    }),
+    () => {
+      void queryClient.invalidateQueries({ queryKey: gameEventsKey(roomId) });
+      onEvent?.();
+    },
+  );
 
   return useQuery({
     queryKey: gameEventsKey(roomId),

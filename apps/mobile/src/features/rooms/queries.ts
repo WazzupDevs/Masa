@@ -1,7 +1,8 @@
 import { BROADCAST, type RequesterStatus, sessionChannel, venueChannel } from '@shared/rooms.ts';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 
+import { privateChannel, useChannel } from '@/lib/realtime';
 import { supabase } from '@/lib/supabase';
 
 import { useBroadcast } from './useBroadcast';
@@ -48,20 +49,22 @@ export function useRoom(roomId: string) {
     },
   });
 
-  // Postgres Changes on this room (RLS applies).
-  useEffect(() => {
-    const channel = supabase
-      .channel(`room:${roomId}`, { config: { private: true } })
-      .on(
+  // Postgres Changes on this room (RLS applies). The table's current room is refetched too: a
+  // room that left 'waiting'/'active' must not send the home screen back into it from cache.
+  useChannel(
+    `room:${roomId}`,
+    (emit) => ({
+      channel: privateChannel(`room:${roomId}`).on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` },
-        () => void queryClient.invalidateQueries({ queryKey: roomKeys.room(roomId) }),
-      )
-      .subscribe();
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [roomId, queryClient]);
+        () => emit(null),
+      ),
+    }),
+    () => {
+      void queryClient.invalidateQueries({ queryKey: roomKeys.room(roomId) });
+      void queryClient.invalidateQueries({ queryKey: roomKeys.current });
+    },
+  );
 
   return query;
 }

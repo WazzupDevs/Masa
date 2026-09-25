@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
-import { supabase } from '@/lib/supabase';
+import { privateChannel, useChannel } from '@/lib/realtime';
 
 type Role = 'owner' | 'guest';
 
@@ -10,21 +10,20 @@ type Role = 'owner' | 'guest';
 export function useOtherTableOnline(roomId: string, role: Role, hasOtherTable: boolean): boolean {
   const [online, setOnline] = useState<Set<string>>(() => new Set());
 
-  useEffect(() => {
-    const channel = supabase.channel(`presence:${roomId}`, {
-      config: { private: true, presence: { key: role } },
-    });
-    channel
-      .on('presence', { event: 'sync' }, () =>
-        setOnline(new Set(Object.keys(channel.presenceState()))),
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') void channel.track({});
-      });
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [roomId, role]);
+  useChannel<string[]>(
+    `presence:${roomId}`,
+    (emit) => {
+      const channel = privateChannel(`presence:${roomId}`, role);
+      channel.on('presence', { event: 'sync' }, () => emit(Object.keys(channel.presenceState())));
+      return {
+        channel,
+        onStatus: (status, subscribed) => {
+          if (status === 'SUBSCRIBED') void subscribed.track({});
+        },
+      };
+    },
+    (keys) => setOnline(new Set(keys)),
+  );
 
   return !hasOtherTable || online.has(role === 'owner' ? 'guest' : 'owner');
 }

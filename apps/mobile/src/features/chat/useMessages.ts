@@ -1,6 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
-
+import { privateChannel, useChannel } from '@/lib/realtime';
 import { supabase } from '@/lib/supabase';
 
 export const messagesKey = (roomId: string) => ['messages', roomId] as const;
@@ -9,19 +8,17 @@ export const messagesKey = (roomId: string) => ['messages', roomId] as const;
 export function useMessages(roomId: string) {
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const channel = supabase
-      .channel(`messages:${roomId}`, { config: { private: true } })
-      .on(
+  useChannel(
+    `messages:${roomId}`,
+    (emit) => ({
+      channel: privateChannel(`messages:${roomId}`).on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` },
-        () => void queryClient.invalidateQueries({ queryKey: messagesKey(roomId) }),
-      )
-      .subscribe();
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [roomId, queryClient]);
+        () => emit(null),
+      ),
+    }),
+    () => void queryClient.invalidateQueries({ queryKey: messagesKey(roomId) }),
+  );
 
   return useQuery({
     queryKey: messagesKey(roomId),
