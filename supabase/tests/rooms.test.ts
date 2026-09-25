@@ -385,28 +385,111 @@ describe('leaving', () => {
 });
 
 describe('locks', () => {
+  type Tx = postgres.TransactionSql;
+  // Every path that locks a table's session, run inside a transaction that stays open.
+  const sessionLockers: [
+    string,
+    (tx: Tx, userId: string, sessionId: string) => Promise<unknown>,
+  ][] = [
+    [
+      'an action (active_session_for_update)',
+      (tx, userId) => tx`select id from private.active_session_for_update(${userId})`,
+    ],
+    ['leaving (end_table_session)', (tx, userId) => tx`select public.end_table_session(${userId})`],
+    [
+      'checking in again (start_table_session)',
+      (tx, userId) =>
+        tx`select public.start_table_session(${userId}, ${venue[V] ?? ''}, 'Kilit Testi',
+             2::smallint, 'test', null, 'anonymous')`,
+    ],
+    [
+      'the expiry job (end_expired_table_sessions)',
+      async (tx, _userId, sessionId) => {
+        await tx`update public.table_sessions set expires_at = now() - interval '1 minute'
+                 where id = ${sessionId}`;
+        return tx`select private.end_expired_table_sessions()`;
+      },
+    ],
+  ];
+
   // Both tables ending a Tabu turn at once deadlocked: the owner, holding the room, wrote the next
   // turn whose describer is the guest's session while the guest held that row FOR UPDATE.
-  it("lets rows reference a table's session while that table holds its session lock", async () => {
-    const client = await onboarded(PHONES[0]);
-    await checkInAt(client, venue, V);
-    const userId = await userIdOf(client);
-    const other = postgres(dbUrl, { max: 1, onnotice: () => {} });
-    try {
-      await sql.begin(async (tx) => {
-        const [held] = await tx`select id from private.active_session_for_update(${userId})`;
-        // What a foreign key check takes on the referenced row.
-        const referenced = await other.begin(async (otx) => {
-          await otx`set local lock_timeout = '2s'`;
-          return otx`select id from public.table_sessions where id = ${held?.id} for key share`;
+  it.each(sessionLockers)(
+    "lets rows reference a table's session while %s holds it",
+    async (_name, lock) => {
+      const client = await onboarded(PHONES[0]);
+      const { sessionId } = await checkInAt(client, venue, V);
+      const userId = await userIdOf(client);
+      const other = postgres(dbUrl, { max: 1, onnotice: () => {} });
+      try {
+        await sql.begin(async (tx) => {
+          await lock(tx, userId, sessionId);
+          // What a foreign key check takes on the referenced row.
+          const referenced = await other.begin(async (otx) => {
+            await otx`set local lock_timeout = '2s'`;
+            return otx`select id from public.table_sessions where id = ${sessionId} for key share`;
+          });
+          expect(referenced).toHaveLength(1);
         });
-        expect(referenced).toHaveLength(1);
+      } finally {
+        await other.end();
+      }
+    },
+  );
+
+  // rooms_respond locked the request and the room, then waited for the requester's session. The
+  // requester leaving at that moment held its session and waited for its room: a cycle. Now
+  // respond waits for the session before it holds the room.
+  it('lets the requester take its room while the owner accepts and waits for its session', async () => {
+    const [owner, requester] = (await Promise.all(PHONES.slice(0, 2).map((p) => onboarded(p)))) as [
+      Client,
+      Client,
+    ];
+    await checkInAt(owner, venue, V);
+    await checkInAt(requester, venue, V);
+    const roomId = await createRoom(owner);
+    expect((await rooms(requester, { action: 'request-join', roomId })).status).toBe(200);
+    const [request] =
+      await sql`select id from public.join_requests where room_id = ${roomId} and status = 'pending'`;
+    const [ownerId, requesterId] = await Promise.all([userIdOf(owner), userIdOf(requester)]);
+
+    const leaving = postgres(dbUrl, { max: 1, onnotice: () => {} });
+    const accepting = postgres(dbUrl, { max: 1, onnotice: () => {} });
+    try {
+      let accepted: Promise<unknown> = Promise.resolve();
+      await leaving.begin(async (tx) => {
+        // The requester's leave holds its session first, as every path does.
+        await tx`select id from private.active_session_for_update(${requesterId})`;
+        accepted = accepting`
+          select (public.rooms_respond(${ownerId}, ${request?.id}, true)).status
+        `
+          .execute()
+          .catch((err: unknown) => err);
+        await waitUntilBlocked('rooms_respond');
+        // Then it takes its room; respond must not be holding it.
+        await tx`set local lock_timeout = '2s'`;
+        const room = await tx`select id from public.rooms where id = ${roomId} for update`;
+        expect(room).toHaveLength(1);
       });
+      expect(await accepted).toEqual([{ status: 'accepted' }]);
     } finally {
-      await other.end();
+      await Promise.all([leaving.end(), accepting.end()]);
     }
   });
 });
+
+// Waits until a statement running `fn` waits on a row lock.
+async function waitUntilBlocked(fn: string): Promise<void> {
+  for (let i = 0; i < 50; i++) {
+    const [row] = await sql`
+      select count(*)::int as n from pg_stat_activity
+      where wait_event_type = 'Lock' and query like ${`%${fn}%`} and pid <> pg_backend_pid()
+    `;
+    if ((row?.n ?? 0) > 0) return;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error(`${fn} never waited on a lock`);
+}
 
 describe('scheduled jobs', () => {
   it('closes rooms idle for 10 minutes and expires old requests', async () => {
@@ -427,6 +510,36 @@ describe('scheduled jobs', () => {
     const jobs =
       await sql`select jobname from cron.job where jobname in ('close-idle-rooms', 'expire-join-requests') order by jobname`;
     expect(jobs.map((j) => j.jobname)).toEqual(['close-idle-rooms', 'expire-join-requests']);
+  });
+
+  it('skips a room or request a user action holds instead of waiting for it', async () => {
+    const [owner, requester] = await threeTables();
+    const roomId = await createRoom(owner);
+    await requestJoin(requester, roomId);
+    await expireRequestsOf(requester);
+    await sql`update public.rooms set last_activity_at = now() - interval '11 minutes' where id = ${roomId}`;
+
+    const job = postgres(dbUrl, { max: 1, onnotice: () => {} });
+    try {
+      await sql.begin(async (tx) => {
+        await tx`select id from public.rooms where id = ${roomId} for update`;
+        await tx`select id from public.join_requests where room_id = ${roomId} for update`;
+        const [ran] = await job.begin(async (jtx) => {
+          await jtx`set local lock_timeout = '2s'`;
+          return jtx`
+            select private.close_idle_rooms() as rooms, private.expire_join_requests() as requests
+          `;
+        });
+        expect(ran).toEqual({ rooms: 0, requests: 0 });
+      });
+    } finally {
+      await job.end();
+    }
+    // The next run takes them.
+    const [next] = await sql`
+      select private.close_idle_rooms() as rooms, private.expire_join_requests() as requests
+    `;
+    expect(next).toEqual({ rooms: 1, requests: 1 });
   });
 });
 
