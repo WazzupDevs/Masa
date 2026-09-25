@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, Redirect, router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { useEffect } from 'react';
 import { ActivityIndicator, Alert, Text, View } from 'react-native';
 
@@ -22,17 +22,9 @@ function endSession(tableId: string, startedAt: string) {
   });
 }
 
-function Header() {
-  return (
-    <View className="flex-row justify-end">
-      <Link href="/settings" className="text-base text-blue-600">
-        {tr.home.settings}
-      </Link>
-    </View>
-  );
-}
-
-export default function HomeScreen() {
+// The active table's venue: lobby, rooms, leaving (docs/SPEC_V2.md §2). Without an active table
+// it sends the user to Keşfet; an open room of the table opens directly.
+export default function VenueScreen() {
   const queryClient = useQueryClient();
   const table = useActiveTable();
   const currentRoom = useCurrentRoom(table.data?.id);
@@ -66,16 +58,7 @@ export default function HomeScreen() {
   }
 
   if (!table.data || expired || expiresAt === null) {
-    return (
-      <Screen>
-        <Header />
-        <Text className="mt-4 text-3xl font-bold text-black">{tr.home.title}</Text>
-        <Text className="mt-2 text-base text-neutral-600">{tr.home.hint}</Text>
-        <View className="mt-auto pt-8">
-          <Button label={tr.home.checkIn} onPress={() => router.push('/checkin')} />
-        </View>
-      </Screen>
-    );
+    return <Redirect href="/" />;
   }
 
   if (currentRoom.data) {
@@ -93,8 +76,7 @@ export default function HomeScreen() {
 
   return (
     <Screen>
-      <Header />
-      <Text className="mt-4 text-3xl font-bold text-black">{table.data.venue?.name}</Text>
+      <Text className="text-3xl font-bold text-black">{table.data.venue?.name}</Text>
       <Text className="mt-2 text-sm text-neutral-500">{tr.venue.yourTable}</Text>
       <Text className="text-2xl font-semibold text-black">{table.data.alias}</Text>
       <Text className="mt-1 text-base text-neutral-600">

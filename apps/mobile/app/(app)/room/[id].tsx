@@ -46,7 +46,7 @@ export default function RoomScreen() {
   const r = room.data;
   const member =
     r && sessionId && (r.owner_session_id === sessionId || r.guest_session_id === sessionId);
-  if (!r || !member) return <Redirect href="/" />;
+  if (!r || !member) return <Redirect href="/venue" />;
   if (r.status === 'closed') {
     // A two-table room shows its shared result once; otherwise back to the venue.
     return r.reveal_result === 'mutual' || r.reveal_result === 'none' ? (
@@ -57,7 +57,7 @@ export default function RoomScreen() {
         token={r.reveal_token}
       />
     ) : (
-      <Redirect href="/" />
+      <Redirect href="/venue" />
     );
   }
 

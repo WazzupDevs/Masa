@@ -8,5 +8,5 @@ export default function LegalScreen() {
   const { doc } = useLocalSearchParams<{ doc: string }>();
   if (doc === 'terms') return <LegalText title={tr.legal.termsTitle} body={tr.legal.termsBody} />;
   if (doc === 'kvkk') return <LegalText title={tr.legal.kvkkTitle} body={tr.legal.kvkkBody} />;
-  return <Redirect href="/settings" />;
+  return <Redirect href="/profile/settings" />;
 }

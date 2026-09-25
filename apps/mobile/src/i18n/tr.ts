@@ -51,6 +51,21 @@ export const tr = {
     kvkkBody:
       'Hesabını oluşturmak için telefon numaran işlenir. Numaran diğer kullanıcılarla paylaşılmaz. Hesabını istediğin zaman uygulama içinden silebilirsin.',
   },
+  tabs: {
+    explore: 'Keşfet',
+    venue: 'Mekan',
+    friends: 'Arkadaşlar',
+    profile: 'Profil',
+  },
+  explore: {
+    backToVenue: 'Mekan ekranına dön',
+  },
+  friends: {
+    soon: 'Birlikte oynadığın masalarla burada arkadaş olabileceksin.',
+  },
+  profile: {
+    soon: 'Profilin burada olacak.',
+  },
   home: {
     title: 'Hoş geldin',
     hint: 'Bir mekandaysan masanı açıp diğer masalarla oynayabilirsin.',

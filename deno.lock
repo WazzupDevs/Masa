@@ -82,6 +82,7 @@
       "apps/mobile": {
         "packageJson": {
           "dependencies": [
+            "npm:@expo/vector-icons@^15.1.1",
             "npm:@maplibre/maplibre-react-native@11.4.0",
             "npm:@react-native-async-storage/async-storage@2.2.0",
             "npm:@sentry/react-native@7.11",

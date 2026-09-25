@@ -62,7 +62,7 @@ export function RevealPrompt({ roomId, isOwner, revealEndsAt, score }: Props) {
       <View className="mt-6 items-center gap-6 rounded-2xl bg-neutral-100 p-6">
         <Text className="text-center text-3xl font-bold text-black">{tr.reveal.goodGame}</Text>
         <View className="w-full">
-          <Button label={tr.reveal.backToVenue} onPress={() => router.replace('/')} />
+          <Button label={tr.reveal.backToVenue} onPress={() => router.replace('/venue')} />
         </View>
       </View>
     );
