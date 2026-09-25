@@ -1,6 +1,8 @@
 -- One lock order for every function (CLAUDE.md, invariant 10):
 --   profiles → table_sessions → rooms → join_requests → a room's rows (tabu_turns, room_used_cards,
---   reveal_decisions, messages, game_events).
+--   reveal_decisions, messages, game_events, play_history);
+--   between two accounts: play_history → the pair lock (private.lock_pair) → friend_requests →
+--   friendships, mutual_friend_intents → dm_threads → dm_messages, dm_reads.
 -- A table session is locked FOR NO KEY UPDATE, never FOR UPDATE: FOR UPDATE also blocks the
 -- KEY SHARE that a foreign key check takes on the row it references (20261004100000). Scheduled jobs
 -- skip rows a user action holds instead of waiting for them.
@@ -214,5 +216,45 @@ begin
   );
   get diagnostics n = row_count;
   return n;
+end;
+$$;
+
+-- friends_respond locked the request, then the pair. friends_request and friends_add_from_room take
+-- the pair first and may then update the pair's requests (make_friends): a cycle when one account
+-- answers a request while the other completes the friendship. It now reads the request without a
+-- lock, takes the pair lock, then locks the request and checks it again.
+create or replace function public.friends_respond(
+  target_user_id uuid,
+  target_request_id uuid,
+  accept boolean
+)
+returns table (outcome text, other_user_id uuid)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  fr public.friend_requests;
+begin
+  select * into fr from public.friend_requests
+  where id = target_request_id and to_user_id = target_user_id and status = 'pending';
+  if fr.id is null or private.is_blocked_between(target_user_id, fr.from_user_id) then
+    raise exception using errcode = 'P0001', message = 'request_not_found';
+  end if;
+  perform private.lock_pair(target_user_id, fr.from_user_id);
+  select * into fr from public.friend_requests
+  where id = target_request_id and to_user_id = target_user_id and status = 'pending'
+  for update;
+  if fr.id is null then
+    raise exception using errcode = 'P0001', message = 'request_not_found';
+  end if;
+
+  if not accept then
+    update public.friend_requests set status = 'declined', responded_at = now() where id = fr.id;
+    return query select 'declined'::text, null::uuid;
+    return;
+  end if;
+  perform private.make_friends(target_user_id, fr.from_user_id, 'request');
+  return query select 'friendship_created'::text, fr.from_user_id;
 end;
 $$;

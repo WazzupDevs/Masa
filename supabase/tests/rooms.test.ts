@@ -3,7 +3,14 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { sessionChannel, venueChannel } from '../functions/_shared/pure/rooms.ts';
 import { deleteFixtureVenues, insertFixtureVenues } from './fixtures/venues.ts';
-import { checkInAt, errorBody, onboarded, PHONES, waitForBroadcast } from './helpers.ts';
+import {
+  checkInAt,
+  errorBody,
+  onboarded,
+  PHONES,
+  waitForBroadcast,
+  waitUntilBlocked,
+} from './helpers.ts';
 import { type Client, dbUrl, deleteUserByPhone, invoke, sql, userIdOf } from './local.ts';
 
 let venue: Record<string, string> = {};
@@ -477,19 +484,6 @@ describe('locks', () => {
     }
   });
 });
-
-// Waits until a statement running `fn` waits on a row lock.
-async function waitUntilBlocked(fn: string): Promise<void> {
-  for (let i = 0; i < 50; i++) {
-    const [row] = await sql`
-      select count(*)::int as n from pg_stat_activity
-      where wait_event_type = 'Lock' and query like ${`%${fn}%`} and pid <> pg_backend_pid()
-    `;
-    if ((row?.n ?? 0) > 0) return;
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
-  throw new Error(`${fn} never waited on a lock`);
-}
 
 describe('scheduled jobs', () => {
   it('closes rooms idle for 10 minutes and expires old requests', async () => {

@@ -3,6 +3,7 @@
 import { randomUUID } from 'node:crypto';
 
 import type { RealtimeChannel } from '@supabase/supabase-js';
+import postgres from 'postgres';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import type { FriendsListResponse } from '../functions/_shared/pure/api/friends.ts';
@@ -10,12 +11,13 @@ import type { ProfileUploadUrl } from '../functions/_shared/pure/api/profile.ts'
 import { PHOTO_BUCKET } from '../functions/_shared/pure/profile.ts';
 import { BROADCAST, dmChannel, inboxChannel } from '../functions/_shared/pure/rooms.ts';
 import { deleteFixtureVenues, insertFixtureVenues } from './fixtures/venues.ts';
-import { checkInAt, errorBody, onboarded, PHONES } from './helpers.ts';
+import { checkInAt, errorBody, onboarded, PHONES, waitUntilBlocked } from './helpers.ts';
 import {
   admin,
   anonKey,
   apiUrl,
   type Client,
+  dbUrl,
   deleteUserByPhone,
   invoke,
   sql,
@@ -961,5 +963,47 @@ describe('account deletion', () => {
     expect(await history(a)).toHaveLength(1);
     expect(await friends(a, { action: 'request', historyId: historyA })).toEqual(OK);
     expect(await sql`select 1 from public.friend_requests`).toHaveLength(0);
+  });
+});
+
+describe('locks', () => {
+  // friends_respond locked the request, then the pair. Completing a friendship takes the pair, then
+  // updates the pair's requests (make_friends): one account answering while the other completes the
+  // friendship closed a cycle. Now respond waits for the pair before it holds the request.
+  it("answers a request only after taking the pair's lock", async () => {
+    const [a, b] = (await Promise.all([onboarded(PHONES[0]), onboarded(PHONES[1])])) as [
+      Client,
+      Client,
+    ];
+    const [aId, bId] = await Promise.all([userIdOf(a), userIdOf(b)]);
+    const [request] = await sql`
+      insert into public.friend_requests (from_user_id, to_user_id, encounter_id)
+      values (${bId}, ${aId}, ${randomUUID()})
+      returning id
+    `;
+
+    const pair = postgres(dbUrl, { max: 1, onnotice: () => {} });
+    const answering = postgres(dbUrl, { max: 1, onnotice: () => {} });
+    try {
+      let answered: Promise<unknown> = Promise.resolve();
+      await pair.begin(async (tx) => {
+        // Completing the friendship from the other side holds the pair first.
+        await tx`select private.lock_pair(${aId}, ${bId})`;
+        answered = answering`
+          select outcome from public.friends_respond(${aId}, ${request?.id}, true)
+        `
+          .execute()
+          .catch((err: unknown) => err);
+        await waitUntilBlocked('friends_respond');
+        // Then it updates the pair's requests; respond must not be holding this one.
+        await tx`set local lock_timeout = '2s'`;
+        const held =
+          await tx`select id from public.friend_requests where id = ${request?.id} for update`;
+        expect(held).toHaveLength(1);
+      });
+      expect(await answered).toEqual([{ outcome: 'friendship_created' }]);
+    } finally {
+      await Promise.all([pair.end(), answering.end()]);
+    }
   });
 });

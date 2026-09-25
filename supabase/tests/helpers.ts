@@ -7,7 +7,7 @@ import {
   CURRENT_TERMS_VERSION,
 } from '../functions/_shared/pure/consent.ts';
 import { ANCHOR, FIXTURE_VENUES, offset } from './fixtures/venues.ts';
-import { type Client, invoke, signIn } from './local.ts';
+import { type Client, invoke, signIn, sql } from './local.ts';
 
 export const PHONES = ['+905550000001', '+905550000002', '+905550000003'] as const;
 
@@ -75,4 +75,17 @@ export function waitForBroadcast(
       });
   });
   return { subscribed, received, close: async () => void (await client.removeChannel(channel)) };
+}
+
+// Waits until another connection's statement running `fn` waits on a lock (tests of lock order).
+export async function waitUntilBlocked(fn: string): Promise<void> {
+  for (let i = 0; i < 50; i++) {
+    const [row] = await sql`
+      select count(*)::int as n from pg_stat_activity
+      where wait_event_type = 'Lock' and query like ${`%${fn}%`} and pid <> pg_backend_pid()
+    `;
+    if ((row?.n ?? 0) > 0) return;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error(`${fn} never waited on a lock`);
 }
