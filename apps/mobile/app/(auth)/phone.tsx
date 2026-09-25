@@ -2,10 +2,12 @@ import { toTrMobileE164 } from '@shared/phone.ts';
 import { AuthError } from '@supabase/supabase-js';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Text, TextInput, View } from 'react-native';
+import { View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { authErrorMessage } from '@/features/auth/authErrors';
 import { tr } from '@/i18n/tr';
 import { supabase } from '@/lib/supabase';
@@ -34,12 +36,11 @@ export default function PhoneScreen() {
 
   return (
     <Screen>
-      <Text className="text-3xl font-bold text-black">{tr.auth.phoneTitle}</Text>
-      <Text className="mt-2 text-base text-neutral-600">{tr.auth.phoneHint}</Text>
-      <View className="mt-8 h-14 flex-row items-center rounded-xl border border-neutral-300 px-4">
-        <Text className="mr-2 text-lg text-neutral-500">{tr.auth.phonePrefix}</Text>
-        <TextInput
-          className="flex-1 text-lg text-black"
+      <ScreenHeader title={tr.auth.phoneTitle} subtitle={tr.auth.phoneHint} />
+      <View className="mt-6">
+        <Input
+          prefix={tr.auth.phonePrefix}
+          accessibilityLabel={tr.auth.phoneTitle}
           keyboardType="phone-pad"
           autoComplete="tel"
           textContentType="telephoneNumber"
@@ -48,9 +49,9 @@ export default function PhoneScreen() {
           onChangeText={setInput}
           onSubmitEditing={sendCode}
           maxLength={16}
+          error={error}
         />
       </View>
-      {error ? <Text className="mt-3 text-sm text-red-600">{error}</Text> : null}
       <View className="mt-auto pt-8">
         <Button label={tr.auth.sendCode} onPress={sendCode} loading={sending} />
       </View>

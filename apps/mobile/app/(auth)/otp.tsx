@@ -1,9 +1,11 @@
-import { Redirect, useLocalSearchParams } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Text, TextInput, View } from 'react-native';
+import { View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { authErrorMessage } from '@/features/auth/authErrors';
 import { tr } from '@/i18n/tr';
 import { supabase } from '@/lib/supabase';
@@ -53,19 +55,25 @@ export default function OtpScreen() {
 
   return (
     <Screen>
-      <Text className="text-3xl font-bold text-black">{tr.auth.otpTitle}</Text>
-      <Text className="mt-2 text-base text-neutral-600">{tr.auth.otpHint(phone)}</Text>
-      <TextInput
-        className="mt-8 h-14 rounded-xl border border-neutral-300 px-4 text-center text-2xl tracking-[8px] text-black"
-        keyboardType="number-pad"
-        autoComplete="sms-otp"
-        textContentType="oneTimeCode"
-        autoFocus
-        value={code}
-        onChangeText={onChange}
-        maxLength={CODE_LENGTH}
+      <ScreenHeader
+        title={tr.auth.otpTitle}
+        subtitle={tr.auth.otpHint(phone)}
+        onBack={() => router.back()}
       />
-      {error ? <Text className="mt-3 text-sm text-red-600">{error}</Text> : null}
+      <View className="mt-6">
+        <Input
+          code
+          accessibilityLabel={tr.auth.otpTitle}
+          keyboardType="number-pad"
+          autoComplete="sms-otp"
+          textContentType="oneTimeCode"
+          autoFocus
+          value={code}
+          onChangeText={onChange}
+          maxLength={CODE_LENGTH}
+          error={error}
+        />
+      </View>
       <View className="mt-auto gap-3 pt-8">
         <Button
           label={tr.auth.verify}
