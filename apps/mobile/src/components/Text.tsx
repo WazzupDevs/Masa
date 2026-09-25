@@ -10,6 +10,8 @@ type Props = Omit<TextProps, 'style'> & {
   // A colour that is not a theme token: only the reveal signal's server colour.
   color?: string;
   align?: 'left' | 'center' | 'right';
+  // Equal-width digits for clocks and counters.
+  tabular?: boolean;
   className?: string;
   children: ReactNode;
 };
@@ -20,6 +22,7 @@ export function Text({
   tone,
   color,
   align,
+  tabular,
   className,
   children,
   ...rest
@@ -39,6 +42,7 @@ export function Text({
         typeStyle(theme, variant),
         { color: color ?? theme.colors[tone ?? defaultTone] },
         align ? { textAlign: align } : null,
+        tabular ? { fontVariant: ['tabular-nums'] } : null,
       ]}
     >
       {children}

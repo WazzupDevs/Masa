@@ -130,6 +130,7 @@ export type TypeVariant =
   | 'heading' // section title (h3)
   | 'alias' // table alias, profile name
   | 'word' // the Tabu card word
+  | 'forbidden' // the Tabu card's forbidden words
   | 'score' // a Tabu team score
   | 'mark' // a large number or mark: headcount choice
   | 'body'
@@ -199,6 +200,7 @@ export function baseTypography(overrides: Partial<Typography> = {}): Typography 
     heading: { font: 'display', size: 18, lineHeight: 24 },
     alias: { font: 'display', size: 26, lineHeight: 32 },
     word: { font: 'display', size: 38, lineHeight: 42, letterSpacing: 0.8 },
+    forbidden: { font: 'semibold', size: 18, lineHeight: 24 },
     score: { font: 'display', size: 30, lineHeight: 34 },
     mark: { font: 'display', size: 20, lineHeight: 24 },
     body: { font: 'regular', size: 16, lineHeight: 23 },
