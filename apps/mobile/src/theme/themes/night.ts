@@ -76,6 +76,8 @@ export const night: ThemeDefinition = {
       primaryButton: '0px 8px 20px -10px {accent}',
       button: null,
       venueButton: '0px 8px 18px -6px rgba(0, 0, 0, 0.45)',
+      raised: '0px 1px 3px rgba(0, 0, 0, 0.15)',
+      pin: '0px 4px 10px rgba(0, 0, 0, 0.25)',
     },
     selectedTeam: 'ring',
     screenPadding: 20,

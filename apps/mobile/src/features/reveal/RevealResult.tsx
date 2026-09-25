@@ -2,7 +2,7 @@ import { isRevealToken, REVEAL } from '@shared/reveal.ts';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { Modal, Text as Glyph, View } from 'react-native';
+import { Modal, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
@@ -20,8 +20,8 @@ import { AddFriendButton } from './AddFriendButton';
 
 type Props = { roomId: string; isOwner: boolean; result: 'mutual' | 'none'; token: unknown };
 
-// The mockup's mark: a 180 disc with a 104 emoji.
-const MARK = { size: 180, emoji: 104, lineHeight: 126 } as const;
+// The mockup's mark: a 180 disc around the emoji (type variant `signalMark`).
+const MARK = { size: 180 } as const;
 
 // On a mutual yes both screens show the same full-screen color and emoji for 60 seconds; in every
 // other case both tables see the same "Güzel oyundu" (MVP_SPEC §4.6). v2: the mutual signal also
@@ -68,9 +68,9 @@ export function RevealResult({ roomId, isOwner, result, token }: Props) {
                   boxShadow: `0px 0px 0px 12px ${withAlpha(fg, 0.08)}`,
                 }}
               >
-                <Glyph style={{ fontSize: MARK.emoji, lineHeight: MARK.lineHeight }}>
+                <Text variant="signalMark" color={fg}>
                   {token.emoji}
-                </Glyph>
+                </Text>
               </View>
               <Text variant="display" color={fg} align="center" className="mb-2 mt-7">
                 {tr.reveal.signal}

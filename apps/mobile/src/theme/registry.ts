@@ -66,5 +66,7 @@ export function resolveShadows(
     primaryButton: resolveShadow(set.primaryButton, palette),
     button: resolveShadow(set.button, palette),
     venueButton: resolveShadow(set.venueButton, palette),
+    raised: resolveShadow(set.raised, palette),
+    pin: resolveShadow(set.pin, palette),
   };
 }

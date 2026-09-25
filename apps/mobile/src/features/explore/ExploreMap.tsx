@@ -60,7 +60,9 @@ export function ExploreMap({ venues }: { venues: readonly ExploreVenue[] }) {
                   backgroundColor: colors[fill],
                   borderWidth: PIN.ring,
                   borderColor: colors.surface,
-                  boxShadow: `0px 0px 0px 2px ${ring}, 0px 4px 10px rgba(0, 0, 0, 0.2)`,
+                  boxShadow: [`0px 0px 0px 2px ${ring}`, shape.shadow.pin]
+                    .filter(Boolean)
+                    .join(', '),
                 }}
               >
                 <Ionicons name="cafe" size={ICON.sm} color={colors[glyph]} />

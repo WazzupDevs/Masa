@@ -76,6 +76,8 @@ export const play: ThemeDefinition = {
       primaryButton: '3px 3px 0px {border}',
       button: '3px 3px 0px {border}',
       venueButton: '3px 3px 0px {border}',
+      raised: null,
+      pin: '0px 4px 10px rgba(0, 0, 0, 0.25)',
     },
     selectedTeam: 'fill',
     screenPadding: 20,
