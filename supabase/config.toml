@@ -453,5 +453,8 @@ verify_jwt = false
 [functions.profile]
 verify_jwt = false
 
+[functions.ping]
+verify_jwt = false
+
 [functions.reveal]
 verify_jwt = false

@@ -53,6 +53,15 @@ async function invoke<T>(fn: string, body: Record<string, unknown>): Promise<T> 
   return data;
 }
 
+// Update gate check on launch and foreground (the ping function does nothing else). Failures other
+// than update_required are ignored: the next real call will show them.
+export function pingUpdateGate(): Promise<void> {
+  return invoke<{ ok: true }>('ping', {}).then(
+    () => undefined,
+    () => undefined,
+  );
+}
+
 export function callAccount(body: AccountRequest): Promise<AccountResponse> {
   return invoke<AccountResponse>('account', body);
 }

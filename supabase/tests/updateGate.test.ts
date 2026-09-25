@@ -15,8 +15,8 @@ afterAll(async () => {
 
 // A raw call, so the header is exactly what the test sets. account/complete-onboarding without a
 // user token answers 401 once past the gate.
-async function call(build: string | null, method = 'POST') {
-  const res = await fetch(`${apiUrl}/functions/v1/account`, {
+async function call(build: string | null, method = 'POST', fn = 'account') {
+  const res = await fetch(`${apiUrl}/functions/v1/${fn}`, {
     method,
     headers: {
       apikey: anonKey,
@@ -30,6 +30,11 @@ async function call(build: string | null, method = 'POST') {
 }
 
 describe.runIf(gateMin === 0)('update gate, open (MIN_APP_BUILD unset)', () => {
+  it('answers the launch and foreground ping without a user', async () => {
+    expect(await call(null, 'POST', 'ping')).toEqual({ status: 200, body: { ok: true } });
+    expect(await call('3', 'POST', 'ping')).toEqual({ status: 200, body: { ok: true } });
+  });
+
   it('lets every build through, with or without the header', async () => {
     for (const build of [null, '1', 'abc']) {
       const res = await call(build);
@@ -48,6 +53,18 @@ describe.runIf(gateMin > 0)('update gate, closed (MIN_APP_BUILD set)', () => {
     }
     // Even a request the function would reject for another reason.
     expect((await call(null, 'GET')).body.error?.code).toBe('update_required');
+  });
+
+  it('catches an old build on the ping alone, before any other call', async () => {
+    for (const build of [null, String(gateMin - 1)]) {
+      expect((await call(build, 'POST', 'ping')).body.error?.code, String(build)).toBe(
+        'update_required',
+      );
+    }
+    expect(await call(String(gateMin), 'POST', 'ping')).toEqual({
+      status: 200,
+      body: { ok: true },
+    });
   });
 
   it('lets the minimum build and newer ones through', async () => {

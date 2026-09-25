@@ -11,7 +11,8 @@ import { useProfile } from '@/features/account/useProfile';
 import { startSessionSync, useSessionStore } from '@/features/auth/session';
 import { configureNotifications } from '@/features/push/push';
 import { UpdateRequired } from '@/features/update/UpdateRequired';
-import { useUpdateGate } from '@/features/update/updateGate';
+import { useUpdateGate, watchUpdateGate } from '@/features/update/updateGate';
+import { pingUpdateGate } from '@/lib/api';
 import { initErrorReporting } from '@/lib/errorReporting';
 import { queryClient } from '@/lib/queryClient';
 
@@ -56,6 +57,7 @@ export default function RootLayout() {
   useEffect(() => {
     startSessionSync();
     configureNotifications();
+    return watchUpdateGate(pingUpdateGate);
   }, []);
 
   return (

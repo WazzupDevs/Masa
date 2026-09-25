@@ -82,6 +82,13 @@ Node 22, pnpm 10, Docker (yerel Supabase için). Supabase CLI ve Deno root devDe
 - Sunucu değişikliği istemciden önce yayınlanır: yeni bir alan ya da action'ı kullanan JS güncellemesi, migration ve fonksiyonlar yayında olduktan sonra gönderilir.
 - Yeni native bağımlılık eklendiyse önce build, sonra o build'i hedefleyen `eas update`. Parmak izi değiştiği için eski APK'lar bu güncellemeyi almaz, yanlış koda düşmez.
 
+### Build numarası (Android versionCode) ve zorunlu güncelleme
+- `apps/mobile/eas.json` → `cli.appVersionSource: "remote"`: versionCode EAS sunucusunda tutulur. `app.json`/`app.config.ts`'te versionCode yoktur (dinamik config'e yerel olarak yazılamaz; remote kaynakta yazılsa da yok sayılır).
+- Android için **tek sayaç** vardır; `preview` ve `production` aynı sayacı paylaşır. İkisinde de `autoIncrement: true`: her build başlarken sayaç 1 artar ve build o sayıyı taşır. Böylece bir preview APK'sı ile bir production AAB'si hiçbir zaman aynı numarayı almaz, `MIN_APP_BUILD` ikisini de doğru ayırır. `development` profili artırmaz, o anki değeri kullanır.
+- İlk değer: sayaç hiç ayarlanmadıysa ilk build'de EAS başlangıç değerini sorar ya da 1'den başlatır. Açıkça ayarlamak ya da görmek için (Expo girişi gerekir): `cd apps/mobile && pnpm dlx eas-cli build:version:set --platform android` / `pnpm dlx eas-cli build:version:get --platform android`. Sayaç geri alınmaz; Play Console da küçük versionCode'u kabul etmez.
+- Uygulama bu sayıyı (`expo-application` `nativeBuildVersion`) her Edge Function çağrısında `x-app-build` header'ında gönderir; açılışta ve her öne gelişte `ping` fonksiyonunu çağırır, böylece yalnızca okuyan bir oturum (Keşfet) da kapıya takılır. `version` ("0.1.0") kullanıcıya görünen sürümdür, kapı onu kullanmaz.
+- Eski build'leri kapatmak: yeni build'in numarasını `build:version:get` ya da build sayfasından al, dağıttıktan sonra `pnpm supabase secrets set MIN_APP_BUILD=<numara>`. Ayarsız ya da `0`: kapı açık.
+
 ### Analitik, yasal metinler, mağaza (M7)
 - Mobil `.env` (hepsi isteğe bağlı): `EXPO_PUBLIC_POSTHOG_KEY` (yoksa analitik hiçbir şey yapmaz), `EXPO_PUBLIC_POSTHOG_HOST` (varsayılan AB), `EXPO_PUBLIC_PRIVACY_URL` (yoksa uygulama içi taslak metin), `EXPO_PUBLIC_CONTACT_EMAIL`.
 - Fonksiyon sırları (hesap silmede PostHog kişi silme; yoksa atlanır): `pnpm supabase secrets set POSTHOG_PERSONAL_API_KEY=… POSTHOG_PROJECT_ID=…` (`POSTHOG_HOST` isteğe bağlı). `pnpm admin:ban` aynı değişkenleri ortamdan okur.
