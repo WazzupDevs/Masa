@@ -2,7 +2,11 @@ import { FunctionsHttpError } from '@supabase/supabase-js';
 import type { AccountRequest, AccountResponse } from '@shared/api/account.ts';
 import type { ChatResponse, SafetyResponse } from '@shared/api/chat.ts';
 import type { RevealResponse } from '@shared/api/reveal.ts';
-import type { GameOkResponse, TabuCardResponse, TabuStartResponse } from '@shared/api/games.ts';
+import type {
+  GameOkResponse,
+  TabuStartResponse,
+  TabuTurnCardsResponse,
+} from '@shared/api/games.ts';
 import type {
   CreateRoomRequest,
   CreateRoomResponse,
@@ -13,7 +17,7 @@ import type { CheckInRequest, CheckInResponse, LeaveResponse } from '@shared/api
 import type { DmOkResponse, FriendsListResponse, FriendsOkResponse } from '@shared/api/friends.ts';
 import type { ProfileRequest, ProfileUploadUrl, ProfileView } from '@shared/api/profile.ts';
 import type { ReportReason } from '@shared/chat.ts';
-import type { JudgeResult } from '@shared/tabu.ts';
+import type { Mark } from '@shared/tabu.ts';
 import { type ErrorCode, isApiErrorBody } from '@shared/errors.ts';
 
 import { useUpdateGate } from '@/features/update/updateGate';
@@ -106,12 +110,12 @@ export const safetyApi = {
 
 export const gamesApi = {
   // Two-table rooms start the voice game (docs/SPEC_V2.md §8.2); one-table rooms get the deck.
-  tabuStart: (roomId: string) =>
-    invoke<TabuStartResponse>('tabu', { action: 'start', roomId, mode: 'voice' }),
-  tabuJudge: (roomId: string, cardId: string, result: JudgeResult) =>
-    invoke<GameOkResponse>('tabu', { action: 'judge', roomId, cardId, result }),
-  tabuCard: (roomId: string) =>
-    invoke<TabuCardResponse>('tabu', { action: 'current-card', roomId }),
+  // One-table rooms get the deck; two-table rooms start the face-to-face game.
+  tabuStart: (roomId: string) => invoke<TabuStartResponse>('tabu', { action: 'start', roomId }),
+  tabuTurnCards: (roomId: string) =>
+    invoke<TabuTurnCardsResponse>('tabu', { action: 'turn-cards', roomId }),
+  tabuMark: (roomId: string, mark: Mark) =>
+    invoke<GameOkResponse>('tabu', { action: 'mark', roomId, ...mark }),
   tabuEndTurn: (roomId: string) => invoke<GameOkResponse>('tabu', { action: 'end-turn', roomId }),
   sohbetNext: (roomId: string) => invoke<GameOkResponse>('sohbet', { action: 'next-card', roomId }),
 };

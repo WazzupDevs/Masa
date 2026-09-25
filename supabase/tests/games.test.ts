@@ -47,30 +47,15 @@ async function gameState(roomId: string) {
   return row?.game_state as Record<string, unknown>;
 }
 
-async function currentWord(owner: Client, roomId: string): Promise<string> {
-  const res = await tabu(owner, { action: 'current-card', roomId });
-  expect(res.status).toBe(200);
-  return (res.body as { word: string }).word;
-}
-
-// Everything the guesser's client can read about the room, as one string.
-async function readableByGuesser(guest: Client, roomId: string): Promise<string> {
+// Everything a member's client can read about the room outside tabu/turn-cards, as one string.
+async function readableBy(guest: Client, roomId: string): Promise<string> {
   const reads = await Promise.all([
     guest.from('rooms').select('*').eq('id', roomId),
     guest.from('game_events').select('*').eq('room_id', roomId),
     guest.from('messages').select('*').eq('room_id', roomId),
-    guest.from('cards').select('*'),
     guest.from('my_join_requests').select('*'),
   ]);
   return normalize(JSON.stringify(reads.map((r) => r.data)));
-}
-
-// Pins the current turn's card, for tests that depend on the word itself.
-async function pinCard(roomId: string, word: string) {
-  await sql`
-    update public.tabu_turns set card_id = (select id from public.cards where deck = 'tabu' and word = ${word})
-    where room_id = ${roomId}
-  `;
 }
 
 async function expireTurn(roomId: string) {
@@ -105,44 +90,70 @@ describe('tabu, one table', () => {
   });
 });
 
-describe('tabu, two tables', () => {
-  it('lets only the owner start and keeps the card out of the public state', async () => {
+describe('tabu, two tables face to face (docs/SPEC_V2.md §8.2)', () => {
+  async function started() {
+    const r = await room('tabu', true);
+    expect(await tabu(r.owner, { action: 'start', roomId: r.roomId })).toEqual({
+      status: 200,
+      body: { mode: 'server' },
+    });
+    return r;
+  }
+
+  async function turnCards(client: Client, roomId: string) {
+    return (await tabu(client, { action: 'turn-cards', roomId })) as {
+      status: number;
+      body: { turnNo: number; cards: { word: string; forbidden: string[] }[] };
+    };
+  }
+
+  const mark = (
+    client: Client,
+    roomId: string,
+    turnNo: number,
+    cardIndex: number,
+    result: string,
+  ) => tabu(client, { action: 'mark', roomId, turnNo, cardIndex, result });
+  const OK = { status: 200, body: { ok: true } };
+
+  it('lets only the owner start, the owner table describes first, and the state holds no card', async () => {
     const { owner, guest, roomId } = await room('tabu', true);
     expect(await tabu(guest, { action: 'start', roomId })).toEqual({
       status: 403,
       body: errorBody('not_owner'),
     });
-    expect(await tabu(owner, { action: 'start', roomId })).toEqual({
-      status: 200,
-      body: { mode: 'server' },
-    });
+    expect((await tabu(owner, { action: 'start', roomId })).status).toBe(200);
     expect(await tabu(owner, { action: 'start', roomId })).toEqual({
       status: 409,
       body: errorBody('game_in_progress'),
     });
-
     const state = await gameState(roomId);
-    const [r] = await sql`select owner_session_id from public.rooms where id = ${roomId}`;
     expect(state).toMatchObject({
       concept: 'tabu',
+      mode: 'voice',
       phase: 'playing',
       turnNo: 1,
       totalTurns: 6,
       turnSeconds: 60,
-      describerSessionId: r?.owner_session_id,
+      cardsPerTurn: 40,
+      describingTable: 'owner',
+      scores: { owner: 0, guest: 0 },
       passesUsed: 0,
       maxPasses: 3,
-      score: 0,
+      cardIndex: 0,
     });
     expect(Object.keys(state).sort()).toEqual(
       [
+        'cardIndex',
+        'cardsPerTurn',
         'concept',
-        'describerSessionId',
+        'describingTable',
         'gameNo',
         'maxPasses',
+        'mode',
         'passesUsed',
         'phase',
-        'score',
+        'scores',
         'totalTurns',
         'turnEndsAt',
         'turnNo',
@@ -151,188 +162,163 @@ describe('tabu, two tables', () => {
     );
   });
 
-  it('never lets the guesser see the word before the card closes', async () => {
-    const { owner, guest, roomId } = await room('tabu', true);
-    await tabu(owner, { action: 'start', roomId });
-    // A card whose word appears nowhere else the guesser can read (aliases, Sohbet prompts), so any
-    // occurrence can only be a leak.
-    await pinCard(roomId, 'Termometre');
-    const word = await currentWord(owner, roomId);
-    expect(word).toBe('Termometre');
-    expect(await readableByGuesser(guest, roomId)).not.toContain(normalize(word));
+  it("hands the turn's ordered card list to both tables, and to nobody outside the room", async () => {
+    const { owner, guest, third, roomId } = await started();
+    const [a, b] = await Promise.all([turnCards(owner, roomId), turnCards(guest, roomId)]);
+    expect(a.status).toBe(200);
+    expect(b.body).toEqual(a.body);
+    expect(a.body.turnNo).toBe(1);
+    expect(a.body.cards).toHaveLength(40);
+    expect(new Set(a.body.cards.map((c) => c.word)).size).toBe(40);
+    expect(await turnCards(third, roomId)).toEqual({
+      status: 403,
+      body: errorBody('not_in_room'),
+    });
+    // The public room row and events carry no card of the list.
+    const readable = await readableBy(guest, roomId);
+    // The Tabu deck is not readable by the app (the Sohbet deck is, by design).
+    const deck = await guest.from('cards').select('word').eq('deck', 'tabu');
+    expect(deck.data ?? []).toEqual([]);
+    // Whole words only: the text is normalized with spaces around every word.
+    for (const c of a.body.cards) expect(` ${readable} `).not.toContain(` ${normalize(c.word)} `);
+  });
 
-    expect(await tabu(guest, { action: 'current-card', roomId })).toEqual({
+  it('lets the judge say Tabu, the describer say Pas, and both say Doğru', async () => {
+    const { owner, guest, roomId } = await started();
+    // Turn 1: the owner table describes, the guest table judges.
+    expect(await mark(owner, roomId, 1, 0, 'taboo')).toEqual({
+      status: 403,
+      body: errorBody('not_judge'),
+    });
+    expect(await mark(guest, roomId, 1, 0, 'pass')).toEqual({
       status: 403,
       body: errorBody('not_describer'),
     });
-    await tabu(owner, { action: 'clue', roomId, text: 'ipucu bir' });
-    await tabu(guest, { action: 'guess', roomId, text: 'yanlış tahmin' });
-    expect(await readableByGuesser(guest, roomId)).not.toContain(normalize(word));
-    const tabuCards = await guest.from('cards').select('id').not('word', 'is', null);
-    expect(tabuCards.data).toEqual([]);
-    expect((await guest.from('tabu_turns').select('id')).error?.code).toBe('42501');
-
-    // Once the card closes, its word becomes public.
-    await tabu(owner, { action: 'pass', roomId });
-    expect(await readableByGuesser(guest, roomId)).toContain(normalize(word));
+    expect(await mark(owner, roomId, 1, 0, 'correct')).toEqual(OK);
+    expect(await mark(guest, roomId, 1, 1, 'correct')).toEqual(OK);
+    expect(await mark(guest, roomId, 1, 2, 'taboo')).toEqual(OK);
+    expect(await mark(owner, roomId, 1, 3, 'pass')).toEqual(OK);
+    expect(await gameState(roomId)).toMatchObject({
+      scores: { owner: 1, guest: 0 },
+      passesUsed: 1,
+      cardIndex: 4,
+    });
+    const closed = await sql`
+      select payload ->> 'cardIndex' as i, payload ->> 'result' as result from public.game_events
+      where room_id = ${roomId} and type = 'card_closed' order by created_at
+    `;
+    expect(closed.map((e) => [Number(e.i), e.result])).toEqual([
+      [0, 'correct'],
+      [1, 'correct'],
+      [2, 'taboo'],
+      [3, 'pass'],
+    ]);
   });
 
-  it('checks clues on the server: forbidden words, roots, profanity, describer only', async () => {
-    const { owner, guest, roomId } = await room('tabu', true);
-    await tabu(owner, { action: 'start', roomId });
-    // A root of 4+ letters, so suffixed forms count too (short roots match whole words only, §6).
-    await pinCard(roomId, 'Termometre');
-    const word = await currentWord(owner, roomId);
-
-    expect(await tabu(owner, { action: 'clue', roomId, text: `${word}ler gibi` })).toEqual({
-      status: 422,
-      body: errorBody('clue_forbidden'),
-    });
-    expect(await tabu(owner, { action: 'clue', roomId, text: word.split('').join(' ') })).toEqual({
-      status: 422,
-      body: errorBody('clue_forbidden'),
-    });
-    expect(await tabu(owner, { action: 'clue', roomId, text: 'şerefsiz' })).toEqual({
-      status: 422,
-      body: errorBody('profanity_rejected'),
-    });
-    expect(await tabu(guest, { action: 'clue', roomId, text: 'ipucu' })).toEqual({
-      status: 403,
-      body: errorBody('not_describer'),
-    });
-    expect(await tabu(owner, { action: 'clue', roomId, text: 'güzel bir ipucu' })).toEqual({
-      status: 200,
-      body: { ok: true },
-    });
-
-    const { data: events } = await guest
-      .from('game_events')
-      .select('type, payload')
-      .eq('room_id', roomId)
-      .eq('type', 'clue');
-    expect(events).toEqual([{ type: 'clue', payload: { text: 'güzel bir ipucu' } }]);
+  it('ignores a second mark on the same card, a stale turn and a card ahead, without an error', async () => {
+    const { owner, guest, roomId } = await started();
+    expect(await mark(guest, roomId, 1, 0, 'correct')).toEqual(OK);
+    const after = await gameState(roomId);
+    // Both tables pressed on card 0: the server's first answer stands.
+    expect(await mark(owner, roomId, 1, 0, 'correct')).toEqual(OK);
+    expect(await mark(guest, roomId, 1, 0, 'taboo')).toEqual(OK);
+    expect(await mark(guest, roomId, 2, 1, 'correct')).toEqual(OK);
+    expect(await mark(guest, roomId, 1, 5, 'correct')).toEqual(OK);
+    expect(await gameState(roomId)).toEqual(after);
+    const events = await sql`
+      select count(*)::int as n from public.game_events where room_id = ${roomId} and type = 'card_closed'
+    `;
+    expect(events[0]?.n).toBe(1);
   });
 
-  it('scores a correct guess, closes the card and deals a new one', async () => {
-    const { owner, guest, roomId } = await room('tabu', true);
-    await tabu(owner, { action: 'start', roomId });
-    const word = await currentWord(owner, roomId);
-
-    expect(await tabu(guest, { action: 'guess', roomId, text: 'kesinlikle yanlış' })).toEqual({
-      status: 200,
-      body: { correct: false },
-    });
-    expect(await tabu(owner, { action: 'guess', roomId, text: word })).toEqual({
-      status: 403,
-      body: errorBody('not_guesser'),
-    });
-    expect(
-      await tabu(guest, { action: 'guess', roomId, text: word.toLocaleUpperCase('tr-TR') }),
-    ).toEqual({ status: 200, body: { correct: true } });
-
-    expect((await gameState(roomId)).score).toBe(1);
-    const closed =
-      await sql`select payload from public.game_events where room_id = ${roomId} and type = 'card_closed'`;
-    expect(closed.map((e) => e.payload)).toEqual([{ word, result: 'correct' }]);
-    expect(await currentWord(owner, roomId)).not.toBe(word);
-  });
-
-  it('allows 3 passes per turn', async () => {
-    const { owner, roomId } = await room('tabu', true);
-    await tabu(owner, { action: 'start', roomId });
-    for (let i = 0; i < 3; i++)
-      expect((await tabu(owner, { action: 'pass', roomId })).status).toBe(200);
-    expect(await tabu(owner, { action: 'pass', roomId })).toEqual({
+  it('allows 3 passes per turn and refuses marks after ends_at', async () => {
+    const { owner, roomId } = await started();
+    for (let i = 0; i < 3; i++) expect(await mark(owner, roomId, 1, i, 'pass')).toEqual(OK);
+    expect(await mark(owner, roomId, 1, 3, 'pass')).toEqual({
       status: 409,
       body: errorBody('no_passes_left'),
     });
-    expect((await gameState(roomId)).passesUsed).toBe(3);
+    await expireTurn(roomId);
+    expect(await mark(owner, roomId, 1, 3, 'correct')).toEqual({
+      status: 409,
+      body: errorBody('turn_over'),
+    });
   });
 
-  it('rejects clues and guesses after ends_at and ends turns idempotently', async () => {
-    const { owner, guest, roomId } = await room('tabu', true);
-    await tabu(owner, { action: 'start', roomId });
-    const [r] = await sql`select guest_session_id from public.rooms where id = ${roomId}`;
-
-    expect(await tabu(guest, { action: 'end-turn', roomId })).toEqual({
-      status: 200,
-      body: { ok: true },
-    });
-    expect((await gameState(roomId)).turnNo).toBe(1);
-
+  it('alternates the tables, deals a new list per turn, and ends turns idempotently', async () => {
+    const { owner, guest, roomId } = await started();
+    const first = await turnCards(guest, roomId);
+    expect((await tabu(guest, { action: 'end-turn', roomId })).status).toBe(200);
+    expect(await gameState(roomId)).toMatchObject({ turnNo: 1 });
     await expireTurn(roomId);
-    expect(await tabu(owner, { action: 'clue', roomId, text: 'geç kalan ipucu' })).toEqual({
-      status: 409,
-      body: errorBody('turn_over'),
-    });
-    expect(await tabu(guest, { action: 'guess', roomId, text: 'geç tahmin' })).toEqual({
-      status: 409,
-      body: errorBody('turn_over'),
-    });
-
-    await Promise.all([
-      tabu(owner, { action: 'end-turn', roomId }),
-      tabu(guest, { action: 'end-turn', roomId }),
-    ]);
-    const state = await gameState(roomId);
-    expect(state).toMatchObject({
+    expect((await tabu(owner, { action: 'end-turn', roomId })).status).toBe(200);
+    expect((await tabu(guest, { action: 'end-turn', roomId })).status).toBe(200);
+    expect(await gameState(roomId)).toMatchObject({
       turnNo: 2,
-      describerSessionId: r?.guest_session_id,
+      describingTable: 'guest',
+      cardIndex: 0,
       passesUsed: 0,
     });
-    const timeouts =
-      await sql`select 1 from public.game_events where room_id = ${roomId} and type = 'card_closed' and payload->>'result' = 'timeout'`;
-    expect(timeouts).toHaveLength(1);
+    const second = await turnCards(owner, roomId);
+    expect(second.body.turnNo).toBe(2);
+    const firstWords = new Set(first.body.cards.map((c) => c.word));
+    expect(second.body.cards.some((c) => firstWords.has(c.word))).toBe(false);
+    // Roles swap: the owner table judges now.
+    expect(await mark(owner, roomId, 2, 0, 'taboo')).toEqual(OK);
+    expect(await mark(guest, roomId, 2, 1, 'pass')).toEqual(OK);
+    expect(await gameState(roomId)).toMatchObject({ scores: { owner: 0, guest: -1 } });
   });
 
-  it('plays 6 turns, alternating describers, then shows the score and lets the owner play again', async () => {
-    const { owner, guest, roomId } = await room('tabu', true);
-    await tabu(owner, { action: 'start', roomId });
-    const [r] =
-      await sql`select owner_session_id, guest_session_id from public.rooms where id = ${roomId}`;
-    const describers: string[] = [];
+  it('writes a result per account at the end, and the owner can play again', async () => {
+    const { owner, guest, roomId } = await started();
+    await mark(guest, roomId, 1, 0, 'correct');
     for (let turn = 1; turn <= 6; turn++) {
-      const state = await gameState(roomId);
-      describers.push(state.describerSessionId === r?.owner_session_id ? 'A' : 'B');
       await expireTurn(roomId);
-      await tabu(guest, { action: 'end-turn', roomId });
+      await tabu(owner, { action: 'end-turn', roomId });
     }
-    expect(describers).toEqual(['A', 'B', 'A', 'B', 'A', 'B']);
-    expect((await gameState(roomId)).phase).toBe('finished');
-    const done =
-      await sql`select payload from public.game_events where room_id = ${roomId} and type = 'game_completed'`;
-    expect(done.map((e) => e.payload)).toEqual([{ score: 0 }]);
-    // MVP_SPEC §4.6: a finished game keeps the room; only "Odayı bitir" opens "Tanışalım mı?".
-    const [after] = await sql`select status, reveal_ends_at from public.rooms where id = ${roomId}`;
-    expect(after).toEqual({ status: 'active', reveal_ends_at: null });
-    expect(await tabu(guest, { action: 'start', roomId })).toEqual({
-      status: 403,
-      body: errorBody('not_owner'),
-    });
-    expect((await tabu(owner, { action: 'start', roomId })).status).toBe(200);
     expect(await gameState(roomId)).toMatchObject({
-      phase: 'playing',
-      gameNo: 2,
-      turnNo: 1,
-      score: 0,
-      describerSessionId: r?.owner_session_id,
+      phase: 'finished',
+      scores: { owner: 1, guest: 0 },
     });
+    const results = await sql`
+      select u.phone, g.concept, g.mode, g.score, g.won from public.game_results g
+      join auth.users u on u.id = g.user_id order by u.phone
+    `;
+    expect(results).toEqual([
+      { phone: PHONES[0].replace(/\D/g, ''), concept: 'tabu', mode: 'voice', score: 1, won: true },
+      { phone: PHONES[1].replace(/\D/g, ''), concept: 'tabu', mode: 'voice', score: 0, won: false },
+    ]);
+    expect((await tabu(guest, { action: 'start', roomId })).status).toBe(403);
+    expect((await tabu(owner, { action: 'start', roomId })).status).toBe(200);
+    expect(await gameState(roomId)).toMatchObject({ gameNo: 2, scores: { owner: 0, guest: 0 } });
   });
 
   it('resets the game when the guest leaves', async () => {
-    const { owner, guest, roomId } = await room('tabu', true);
-    await tabu(owner, { action: 'start', roomId });
+    const { guest, roomId } = await started();
     await invoke(guest, 'rooms', { action: 'leave' });
     expect(await gameState(roomId)).toEqual({});
   });
 
-  it('keeps the game functions server-side only', async () => {
-    const { owner, roomId } = await room('tabu', true);
-    const { error } = await owner.rpc('tabu_current_card', {
-      target_user_id: '00000000-0000-4000-8000-000000000000',
-      target_room_id: roomId,
-    });
-    expect(error?.code).toBe('42501');
+  it('keeps the game functions server-side only, and the written flow is gone', async () => {
+    const { owner, roomId } = await started();
+    for (const fn of ['tabu_mark', 'tabu_turn_cards', 'tabu_start']) {
+      const { error } = await owner.rpc(
+        fn as never,
+        {
+          target_user_id: '00000000-0000-4000-8000-000000000000',
+          target_room_id: roomId,
+        } as never,
+      );
+      expect(error, fn).not.toBeNull();
+    }
+    for (const action of ['clue', 'guess', 'pass', 'current-card', 'judge']) {
+      expect((await tabu(owner, { action, roomId, text: 'deniz' })).status, action).toBe(400);
+    }
+    const gone = await sql`
+      select proname from pg_proc
+      where proname in ('tabu_add_clue', 'tabu_guess', 'tabu_pass', 'tabu_current_card')
+    `;
+    expect(gone).toEqual([]);
   });
 });
 
@@ -367,163 +353,5 @@ describe('sohbet', () => {
     expect((await invoke(owner, 'sohbet', { action: 'next-card', roomId })).status).toBe(200);
     const { data } = await owner.from('cards').select('deck').limit(5);
     expect(new Set((data ?? []).map((c) => c.deck))).toEqual(new Set(['sohbet']));
-  });
-});
-
-describe('tabu, two tables by voice (docs/SPEC_V2.md §8.2)', () => {
-  async function voiceRoom() {
-    const r = await room('tabu', true);
-    expect(await tabu(r.owner, { action: 'start', roomId: r.roomId, mode: 'voice' })).toEqual({
-      status: 200,
-      body: { mode: 'server' },
-    });
-    return r;
-  }
-
-  async function card(client: Client, roomId: string) {
-    const res = await tabu(client, { action: 'current-card', roomId });
-    return res as { status: number; body: { cardId: string; word: string; forbidden: string[] } };
-  }
-
-  const judge = (client: Client, roomId: string, cardId: string, result: string) =>
-    tabu(client, { action: 'judge', roomId, cardId, result });
-
-  it('starts with the owner table describing and one score per table, without the card', async () => {
-    const { roomId } = await voiceRoom();
-    const state = await gameState(roomId);
-    expect(state).toMatchObject({
-      concept: 'tabu',
-      mode: 'voice',
-      phase: 'playing',
-      turnNo: 1,
-      totalTurns: 6,
-      turnSeconds: 60,
-      describingTable: 'owner',
-      scores: { owner: 0, guest: 0 },
-      passesUsed: 0,
-      maxPasses: 3,
-    });
-    expect(JSON.stringify(state)).not.toMatch(/word|forbidden|card/i);
-  });
-
-  it('gives the card to both tables and to nobody outside the room', async () => {
-    const { owner, guest, third, roomId } = await voiceRoom();
-    const [a, b] = await Promise.all([card(owner, roomId), card(guest, roomId)]);
-    expect(a.status).toBe(200);
-    expect(b.body).toEqual(a.body);
-    expect(a.body.forbidden.length).toBeGreaterThan(0);
-    expect(await card(third, roomId)).toEqual({ status: 403, body: errorBody('not_in_room') });
-  });
-
-  it('lets only the judging table act, and scores +1, −1 and 0 for the describing table', async () => {
-    const { owner, guest, roomId } = await voiceRoom();
-    let current = (await card(guest, roomId)).body.cardId;
-    expect(await judge(owner, roomId, current, 'correct')).toEqual({
-      status: 403,
-      body: errorBody('not_judge'),
-    });
-
-    expect((await judge(guest, roomId, current, 'correct')).status).toBe(200);
-    const afterCorrect = (await card(guest, roomId)).body.cardId;
-    expect(afterCorrect).not.toBe(current);
-    // A second press on the closed card is refused, not counted twice.
-    expect(await judge(guest, roomId, current, 'correct')).toEqual({
-      status: 409,
-      body: errorBody('card_changed'),
-    });
-    current = afterCorrect;
-    expect((await judge(guest, roomId, current, 'taboo')).status).toBe(200);
-    current = (await card(guest, roomId)).body.cardId;
-    expect((await judge(guest, roomId, current, 'pass')).status).toBe(200);
-
-    expect(await gameState(roomId)).toMatchObject({
-      scores: { owner: 0, guest: 0 },
-      passesUsed: 1,
-    });
-    const events = await sql`
-      select type, payload ->> 'result' as result from public.game_events
-      where room_id = ${roomId} and type in ('correct', 'taboo', 'pass', 'card_closed')
-      order by created_at
-    `;
-    expect(events.map((e) => e.result ?? e.type)).toEqual([
-      'correct',
-      'correct',
-      'taboo',
-      'taboo',
-      'pass',
-      'pass',
-    ]);
-  });
-
-  it('limits passes per turn and refuses judging after the turn ended', async () => {
-    const { guest, roomId } = await voiceRoom();
-    for (let i = 0; i < 3; i++) {
-      const id = (await card(guest, roomId)).body.cardId;
-      expect((await judge(guest, roomId, id, 'pass')).status).toBe(200);
-    }
-    const id = (await card(guest, roomId)).body.cardId;
-    expect(await judge(guest, roomId, id, 'pass')).toEqual({
-      status: 409,
-      body: errorBody('no_passes_left'),
-    });
-    await expireTurn(roomId);
-    expect(await judge(guest, roomId, id, 'correct')).toEqual({
-      status: 409,
-      body: errorBody('turn_over'),
-    });
-  });
-
-  it('alternates the tables and hands the judge buttons to the other one', async () => {
-    const { owner, guest, roomId } = await voiceRoom();
-    await expireTurn(roomId);
-    expect((await tabu(owner, { action: 'end-turn', roomId })).status).toBe(200);
-    expect(await gameState(roomId)).toMatchObject({
-      turnNo: 2,
-      describingTable: 'guest',
-      passesUsed: 0,
-    });
-    const id = (await card(owner, roomId)).body.cardId;
-    expect(await judge(guest, roomId, id, 'correct')).toEqual({
-      status: 403,
-      body: errorBody('not_judge'),
-    });
-    expect((await judge(owner, roomId, id, 'correct')).status).toBe(200);
-    expect(await gameState(roomId)).toMatchObject({ scores: { owner: 0, guest: 1 } });
-    // Ending the turn again before it is over changes nothing.
-    expect((await tabu(guest, { action: 'end-turn', roomId })).status).toBe(200);
-    expect(await gameState(roomId)).toMatchObject({ turnNo: 2 });
-  });
-
-  it('writes a result per account at the end, with its table score and whether it won', async () => {
-    const { owner, guest, roomId } = await voiceRoom();
-    const id = (await card(guest, roomId)).body.cardId;
-    await judge(guest, roomId, id, 'correct');
-    for (let turn = 1; turn <= 6; turn++) {
-      await expireTurn(roomId);
-      await tabu(owner, { action: 'end-turn', roomId });
-    }
-    expect(await gameState(roomId)).toMatchObject({
-      phase: 'finished',
-      scores: { owner: 1, guest: 0 },
-    });
-    const results = await sql`
-      select u.phone, g.concept, g.mode, g.score, g.won from public.game_results g
-      join auth.users u on u.id = g.user_id order by u.phone
-    `;
-    expect(results).toEqual([
-      { phone: PHONES[0].replace(/\D/g, ''), concept: 'tabu', mode: 'voice', score: 1, won: true },
-      { phone: PHONES[1].replace(/\D/g, ''), concept: 'tabu', mode: 'voice', score: 0, won: false },
-    ]);
-    // The owner can start the next game; the room stays open.
-    expect((await tabu(owner, { action: 'start', roomId, mode: 'voice' })).status).toBe(200);
-    expect(await gameState(roomId)).toMatchObject({ gameNo: 2, scores: { owner: 0, guest: 0 } });
-  });
-
-  it('still opens the written game for a client that does not ask for voice', async () => {
-    const { owner, roomId } = await room('tabu', true);
-    await tabu(owner, { action: 'start', roomId });
-    const state = await gameState(roomId);
-    expect(state).toHaveProperty('describerSessionId');
-    expect(state).not.toHaveProperty('mode');
   });
 });

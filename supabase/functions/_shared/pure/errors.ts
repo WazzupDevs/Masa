@@ -17,8 +17,6 @@ export type ErrorCode =
   | 'nothing_to_block'
   | 'message_invalid'
   | 'profanity_rejected'
-  | 'clue_forbidden'
-  | 'clue_invalid'
   | 'wrong_concept'
   | 'two_tables'
   | 'not_owner'
@@ -26,9 +24,7 @@ export type ErrorCode =
   | 'game_in_progress'
   | 'no_game'
   | 'not_describer'
-  | 'not_guesser'
   | 'turn_over'
-  | 'card_changed'
   | 'no_passes_left'
   | 'too_soon'
   | 'no_cards'
@@ -90,9 +86,7 @@ export const DOMAIN_ERROR_CODES: readonly ErrorCode[] = [
   'game_in_progress',
   'no_game',
   'not_describer',
-  'not_guesser',
   'turn_over',
-  'card_changed',
   'no_passes_left',
   'too_soon',
   'no_cards',

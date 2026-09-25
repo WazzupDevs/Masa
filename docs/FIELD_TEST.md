@@ -329,3 +329,75 @@ Bu senaryo iki kez oynanır. Her turda **odayı bitirmeyen telefon** izlenir: ek
 1. İki telefonda **Mekandan ayrıl**; Mekan sekmesi yine Keşfet'e götürür.
 2. (İsteğe bağlı) B: Profil → **Fotoğraf değiştir** → **Fotoğrafı kaldır**; profil dairesi boşalır.
 3. Etkinlikleri kaldır: `pnpm admin:event list`, sonra her biri için `pnpm admin:event remove <id>`.
+
+---
+
+# v2 adım 5: sesli Tabu (iki telefon)
+
+Yaklaşık 20 dakika. **A** oda sahibi masa, **B** misafir masa; iki telefon aynı yerde. Bir **üçüncü telefon** (ya da kamera) gecikme ölçümü için video çeker.
+
+## Test öncesi
+
+- [ ] Adım 5'in migration'ı ve `tabu` fonksiyonu yayında (`pnpm supabase db push`, `pnpm supabase functions deploy tabu`); uygulama OTA ile güncel.
+- [ ] İki telefonda tarih/saat otomatik.
+- [ ] Ölçüm telefonunda mümkünse 60 fps video (Ayarlar → Kamera → video biçimi).
+
+## T1. Oyunu başlat
+
+1. A bir **Tabu** odası kurar. "Oda kur" ekranında Tabu seçeneğinin altında **"Bu oyun yüz yüze oynanır…"** notu görünür.
+2. B lobide odayı **"Tabu · yüz yüze"** olarak görür, katılır. A'nın istek penceresinde de aynı not var.
+3. B'de "Oda sahibinin oyunu başlatması bekleniyor." A: **Oyunu başlat**.
+
+**Bak:** İki ekranda "Tur 1/6", aynı sayaç (en fazla 1 sn fark), iki masa kutusu ve 0–0 skor. A'nın kutusunda "anlatıyor", B'nin ekranında "A … anlatıyor. Hakem sizsiniz."
+
+## T2. Anlatanın kartı kapalı başlar (A)
+
+1. A'nın ekranında kart yerine siyah alan: **"Kartı görmek için dokun"** ve **"Önce telefonu takım arkadaşlarından sakla."**
+2. A telefonu kendi masasından saklayıp dokunur: kart ve yasaklı kelimeler görünür; tur boyunca açık kalır.
+
+**Bak:** Kart kapalıyken A'nın düğmeleri pasif. B (hakem) kartı baştan görüyor.
+
+## T3. Kim neye basabilir
+
+Anlatan A'da düğmeler: **Doğru +1** ve **Pas · 3**. Hakem B'de: **Doğru +1** ve **Tabu −1**.
+
+1. A masası kelimeyi bilince **B** Doğru'ya basar: iki ekranda A'nın skoru 1, yeni kart.
+2. A anlatırken yasaklı kelime söylerse **B** Tabu'ya basar: A'nın skoru bir düşer.
+3. **A** Pas'a basar: "Pas · 2", skor değişmez, yeni kart. 3 pastan sonra Pas düğmesi pasif.
+4. Bir kartta **ikisi aynı anda** Doğru'ya bassın: skor yalnızca **1** artmalı, iki ekran aynı karta geçmeli.
+
+**Hata olursa:** skorun iki kez arttığını ya da iki ekranın farklı kartlarda kaldığını gördüysen saati ve kartları yaz.
+
+## T4. Gecikmeyi ölç
+
+Basışla **karşı telefonda** kartın değişmesi arasındaki süre. Basan telefon anında değişir; ölçülen, diğer telefonun ne kadar geç yetiştiği.
+
+1. İki telefonu yan yana koy, ekranlar aynı yöne baksın. Üçüncü telefon ikisini birden çeksin.
+2. Videoyu başlat. **B** (hakem) 10 kez, 3–4 saniye arayla Doğru'ya bassın. Parmak ekrana değdiği an görünsün.
+3. Videoyu kare kare izle (60 fps'de bir kare ≈ 17 ms). Her basış için:
+   - parmağın B'nin ekranına değdiği kare,
+   - **A**'nın ekranında yeni kartın belirdiği kare.
+4. İki kare arasındaki farkı milisaniyeye çevir, 10 basışın ortalamasını ve en kötüsünü yaz. Ayrıca B'nin kendi kartının değişme süresine bak (neredeyse sıfır olmalı).
+5. Aynı ölçümü **A**'nın Pas'ıyla (B'de değişme) 5 kez tekrarla.
+
+Not biçimi:
+
+```
+Gecikme (B basar → A değişir): ortalama … ms, en kötü … ms (10 basış). Ağ: Wi-Fi/mobil
+Gecikme (A basar → B değişir): ortalama … ms, en kötü … ms (5 basış)
+Basan telefon: anında / gecikmeli
+```
+
+**Bak:** Basan telefon beklemeden sonraki karta geçer. Karşı telefonun gecikmesi turu bozmayacak düzeyde (önceki ölçüm: ~1,5 sn, her kartta bekleme). 1,5 sn'nin üstündeyse ya da basan telefon da bekliyorsa ❌.
+
+## T5. Tur geçişi ve oyun sonu
+
+1. Süre bitince iki ekranda "Tur bitiyor…", ardından "Tur 2/6": anlatan B, hakem A. B'nin kartı kapalı başlar.
+2. 6 tur sonunda iki ekranda skorlar ve **"… kazandı!"** ya da **"Berabere!"**
+3. A'da **Yeniden oyna**; B'de bekleme metni.
+
+**Bak:** Profil → Rozetler: iki hesapta da **İlk oyun** görünür.
+
+## T6. Oda sonu
+
+A **Odayı bitir**: "Tanışalım mı?" ekranında skor satırı yok (sesli oyunda ortak skor yok); akış önceki adımlardaki gibi.

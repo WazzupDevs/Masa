@@ -1,14 +1,19 @@
 import {
+  applyMark,
   type GameState,
   isVoiceTabu,
-  type JudgeResult,
+  type Mark,
+  type MarkResult,
+  optimisticView,
+  pendingAfter,
+  roleOf,
   type TableSide,
   type VoiceTabuState,
   voiceWinner,
 } from '@shared/tabu.ts';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useRef } from 'react';
-import { Text, View } from 'react-native';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { errorMessage } from '@/i18n/errors';
@@ -17,7 +22,6 @@ import { gamesApi } from '@/lib/api';
 import { useNow } from '@/lib/useNow';
 
 import { TabuCardView } from './TabuCardView';
-import { useGameEvents } from './useGameEvents';
 
 type Props = {
   roomId: string;
@@ -27,9 +31,9 @@ type Props = {
   aliases: Record<TableSide, string>;
 };
 
-// Two-table Tabu, face to face (docs/SPEC_V2.md §8.2). Team = table: the describing table talks,
-// the other table sees the same card and judges with Doğru / Tabu / Pas. The server keeps time,
-// turns, passes and scores; this screen only shows them and sends the judge's press.
+// Two-table Tabu, face to face (docs/SPEC_V2.md §8.2). Team = table. Both phones hold the turn's
+// card list; a press moves this phone to the next card at once and is sent in order; the server
+// checks it and the room row brings the other phone along. The server's order wins.
 export function VoiceTabu({ roomId, state, side, isOwner, aliases }: Props) {
   const start = useMutation({ mutationFn: () => gamesApi.tabuStart(roomId) });
   const voice = isVoiceTabu(state) ? state : null;
@@ -42,17 +46,13 @@ export function VoiceTabu({ roomId, state, side, isOwner, aliases }: Props) {
           <>
             <Scores scores={voice.scores} aliases={aliases} side={side} />
             <Text className="text-center text-xl font-bold text-black">
-              {winner === 'draw'
+              {winner === 'draw' || winner === null
                 ? tr.games.voiceDraw
-                : tr.games.voiceWinner(aliases[winner ?? 'owner'])}
+                : tr.games.voiceWinner(aliases[winner])}
             </Text>
           </>
         ) : (
-          <Text className="text-center text-base text-neutral-600">
-            {state?.concept === 'tabu' && state.phase === 'playing'
-              ? tr.games.legacyGame
-              : tr.games.voiceIntro}
-          </Text>
+          <Text className="text-center text-base text-neutral-600">{tr.games.voiceIntro}</Text>
         )}
         {start.isError ? (
           <Text className="text-sm text-red-600">{errorMessage(start.error)}</Text>
@@ -72,7 +72,7 @@ export function VoiceTabu({ roomId, state, side, isOwner, aliases }: Props) {
     );
   }
 
-  return <Turn roomId={roomId} state={voice} side={side} aliases={aliases} />;
+  return <Turn roomId={roomId} server={voice} side={side} aliases={aliases} />;
 }
 
 function Scores({
@@ -106,109 +106,160 @@ function Scores({
   );
 }
 
+// This phone's presses the server has not answered yet, sent one at a time in order.
+function usePressQueue(roomId: string) {
+  const [pending, setPending] = useState<Mark[]>([]);
+  const [error, setError] = useState<unknown>(null);
+  const sending = useRef(false);
+  const queue = useRef<Mark[]>([]);
+
+  const pump = useCallback(async () => {
+    if (sending.current) return;
+    sending.current = true;
+    while (queue.current.length > 0) {
+      const next = queue.current[0] as Mark;
+      try {
+        await gamesApi.tabuMark(roomId, next);
+      } catch (err) {
+        // Rejected (turn over, no passes left) or lost: the server state stands; drop the rest of
+        // this turn's presses, which were built on this one.
+        setError(err);
+        queue.current = queue.current.filter((m) => m.turnNo !== next.turnNo);
+        setPending([...queue.current]);
+        continue;
+      }
+      queue.current = queue.current.slice(1);
+      setPending([...queue.current]);
+    }
+    sending.current = false;
+  }, [roomId]);
+
+  const push = (mark: Mark) => {
+    setError(null);
+    queue.current = [...queue.current, mark];
+    setPending([...queue.current]);
+    void pump();
+  };
+  return { pending, push, error };
+}
+
 function Turn({
   roomId,
-  state,
+  server,
   side,
   aliases,
 }: {
   roomId: string;
-  state: VoiceTabuState;
+  server: VoiceTabuState;
   side: TableSide;
   aliases: Record<TableSide, string>;
 }) {
-  const queryClient = useQueryClient();
   const now = useNow(250);
-  const describing = state.describingTable === side;
+  const role = roleOf(server, side);
+  const { pending, push, error } = usePressQueue(roomId);
+  const view = optimisticView(server, pendingAfter(server, pending), role, now);
 
-  // Every judged card deals a new one: both phones refetch the card on game events.
-  const refreshCard = useCallback(
-    () => void queryClient.invalidateQueries({ queryKey: ['tabuCard', roomId] }),
-    [queryClient, roomId],
-  );
-  useGameEvents(roomId, refreshCard);
-  const card = useQuery({
-    queryKey: ['tabuCard', roomId, state.gameNo, state.turnNo],
-    queryFn: () => gamesApi.tabuCard(roomId),
+  // The whole turn's list, fetched once when the turn starts.
+  const cards = useQuery({
+    queryKey: ['tabuTurnCards', roomId, server.gameNo, server.turnNo],
+    queryFn: () => gamesApi.tabuTurnCards(roomId),
+    staleTime: Infinity,
   });
+  const card = cards.data?.turnNo === server.turnNo ? cards.data.cards[view.cardIndex] : undefined;
 
-  const secondsLeft = Math.max(0, Math.ceil((Date.parse(state.turnEndsAt) - now) / 1000));
+  // The describing table starts with the card covered, so the phone can be held away from its
+  // own team first.
+  const [revealedTurn, setRevealedTurn] = useState<number | null>(null);
+  const covered = role === 'describer' && revealedTurn !== server.turnNo;
+
+  const secondsLeft = Math.max(0, Math.ceil((Date.parse(server.turnEndsAt) - now) / 1000));
 
   // Any table ends the turn when the countdown reaches zero; the server checks and is idempotent.
   const endedTurn = useRef<number | null>(null);
   useEffect(() => {
-    if (secondsLeft === 0 && endedTurn.current !== state.turnNo) {
-      endedTurn.current = state.turnNo;
+    if (secondsLeft === 0 && endedTurn.current !== server.turnNo) {
+      endedTurn.current = server.turnNo;
       void gamesApi.tabuEndTurn(roomId);
     }
-  }, [secondsLeft, state.turnNo, roomId]);
+  }, [secondsLeft, server.turnNo, roomId]);
 
-  const judge = useMutation({
-    mutationFn: (result: JudgeResult) => {
-      if (!card.data) throw new Error('No card');
-      return gamesApi.tabuJudge(roomId, card.data.cardId, result);
-    },
-    onSettled: refreshCard,
-  });
-  const passesLeft = state.maxPasses - state.passesUsed;
-  const busy = judge.isPending || card.isFetching;
+  const press = (result: MarkResult) => {
+    const mark = { turnNo: view.turnNo, cardIndex: view.cardIndex, result };
+    if (applyMark(view, mark, role, now).kind === 'applied') push(mark);
+  };
+  const passesLeft = view.maxPasses - view.passesUsed;
+  const disabled = !card || covered || secondsLeft === 0;
 
   return (
     <View className="gap-3">
       <View className="flex-row justify-between">
         <Text className="text-sm text-neutral-600">
-          {tr.games.turn(state.turnNo, state.totalTurns)}
+          {tr.games.turn(server.turnNo, server.totalTurns)}
         </Text>
         <Text className="text-sm font-semibold text-black">
           {tr.games.secondsLeft(secondsLeft)}
         </Text>
       </View>
       <Scores
-        scores={state.scores}
+        scores={view.scores}
         aliases={aliases}
         side={side}
-        describing={state.describingTable}
+        describing={view.describingTable}
       />
       <Text className="rounded-xl bg-white p-3 text-base text-black">
-        {describing ? tr.games.voiceDescribe : tr.games.voiceJudge(aliases[state.describingTable])}
+        {role === 'describer'
+          ? tr.games.voiceDescribe
+          : tr.games.voiceJudge(aliases[view.describingTable])}
       </Text>
 
-      {card.data ? <TabuCardView word={card.data.word} forbidden={card.data.forbidden} /> : null}
+      {covered ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => setRevealedTurn(server.turnNo)}
+          className="min-h-48 items-center justify-center gap-2 rounded-2xl bg-black p-6"
+        >
+          <Text className="text-xl font-bold text-white">{tr.games.tapToReveal}</Text>
+          <Text className="text-center text-sm text-neutral-300">{tr.games.hideFromTeam}</Text>
+        </Pressable>
+      ) : card ? (
+        <TabuCardView word={card.word} forbidden={card.forbidden} />
+      ) : (
+        <Text className="text-center text-sm text-neutral-500">
+          {cards.isError ? errorMessage(cards.error) : tr.games.cardsLoading}
+        </Text>
+      )}
 
       {secondsLeft === 0 ? (
         <Text className="text-sm text-neutral-500">{tr.games.turnOverWait}</Text>
-      ) : describing ? (
-        <Text className="text-center text-sm text-neutral-500">{tr.games.voiceDescribeHint}</Text>
       ) : (
-        <View className="gap-2">
-          <View className="flex-row gap-2">
-            <View className="flex-1">
-              <Button
-                label={tr.games.judgeCorrect}
-                onPress={() => judge.mutate('correct')}
-                disabled={busy}
-              />
-            </View>
-            <View className="flex-1">
+        <View className="flex-row gap-2">
+          <View className="flex-1">
+            <Button
+              label={tr.games.judgeCorrect}
+              onPress={() => press('correct')}
+              disabled={disabled}
+            />
+          </View>
+          <View className="flex-1">
+            {role === 'judge' ? (
               <Button
                 variant="danger"
                 label={tr.games.judgeTaboo}
-                onPress={() => judge.mutate('taboo')}
-                disabled={busy}
+                onPress={() => press('taboo')}
+                disabled={disabled}
               />
-            </View>
+            ) : (
+              <Button
+                variant="secondary"
+                label={`${tr.games.pass} · ${passesLeft}`}
+                onPress={() => press('pass')}
+                disabled={disabled || passesLeft <= 0}
+              />
+            )}
           </View>
-          <Button
-            variant="secondary"
-            label={`${tr.games.pass} · ${tr.games.passesLeft(passesLeft)}`}
-            onPress={() => judge.mutate('pass')}
-            disabled={busy || passesLeft <= 0}
-          />
-          {judge.isError ? (
-            <Text className="text-sm text-red-600">{errorMessage(judge.error)}</Text>
-          ) : null}
         </View>
       )}
+      {error ? <Text className="text-sm text-red-600">{errorMessage(error)}</Text> : null}
       <Text className="text-center text-xs text-neutral-500">{tr.games.cardOnlyHere}</Text>
     </View>
   );

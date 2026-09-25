@@ -875,6 +875,8 @@ export type Database = {
       tabu_turns: {
         Row: {
           card_id: string;
+          card_ids: string[];
+          card_index: number;
           describer_session_id: string;
           ends_at: string;
           game_no: number;
@@ -887,6 +889,8 @@ export type Database = {
         };
         Insert: {
           card_id: string;
+          card_ids?: string[];
+          card_index?: number;
           describer_session_id: string;
           ends_at: string;
           game_no: number;
@@ -899,6 +903,8 @@ export type Database = {
         };
         Update: {
           card_id?: string;
+          card_ids?: string[];
+          card_index?: number;
           describer_session_id?: string;
           ends_at?: string;
           game_no?: number;
@@ -1549,112 +1555,8 @@ export type Database = {
           isSetofReturn: false;
         };
       };
-      tabu_add_clue: {
-        Args: {
-          checked_card_id: string;
-          clue: string;
-          target_room_id: string;
-          target_user_id: string;
-        };
-        Returns: {
-          created_at: string;
-          id: string;
-          payload: Json;
-          room_id: string;
-          session_id: string | null;
-          turn_id: string | null;
-          type: string;
-        };
-        SetofOptions: {
-          from: '*';
-          to: 'game_events';
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
-      };
-      tabu_current_card: {
-        Args: { target_room_id: string; target_user_id: string };
-        Returns: {
-          card_id: string;
-          forbidden: string[];
-          word: string;
-        }[];
-      };
       tabu_end_turn: {
         Args: { target_room_id: string; target_user_id: string };
-        Returns: {
-          closed_at: string | null;
-          concept: string;
-          created_at: string;
-          game_state: Json;
-          guest_alias: string | null;
-          guest_headcount: number | null;
-          guest_joined_at: string | null;
-          guest_session_id: string | null;
-          id: string;
-          last_activity_at: string;
-          owner_alias: string;
-          owner_headcount: number;
-          owner_session_id: string;
-          reveal_ends_at: string | null;
-          reveal_result: string | null;
-          reveal_token: Json | null;
-          status: string;
-          venue_id: string;
-          visibility: string;
-          waiting_since: string;
-        };
-        SetofOptions: {
-          from: '*';
-          to: 'rooms';
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
-      };
-      tabu_guess: {
-        Args: {
-          checked_card_id: string;
-          correct: boolean;
-          guess: string;
-          target_room_id: string;
-          target_user_id: string;
-        };
-        Returns: {
-          closed_at: string | null;
-          concept: string;
-          created_at: string;
-          game_state: Json;
-          guest_alias: string | null;
-          guest_headcount: number | null;
-          guest_joined_at: string | null;
-          guest_session_id: string | null;
-          id: string;
-          last_activity_at: string;
-          owner_alias: string;
-          owner_headcount: number;
-          owner_session_id: string;
-          reveal_ends_at: string | null;
-          reveal_result: string | null;
-          reveal_token: Json | null;
-          status: string;
-          venue_id: string;
-          visibility: string;
-          waiting_since: string;
-        };
-        SetofOptions: {
-          from: '*';
-          to: 'rooms';
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
-      };
-      tabu_judge: {
-        Args: {
-          checked_card_id: string;
-          result: string;
-          target_room_id: string;
-          target_user_id: string;
-        };
         Returns: {
           closed_at: string | null;
           concept: string;
@@ -1695,8 +1597,14 @@ export type Database = {
           word: string;
         }[];
       };
-      tabu_pass: {
-        Args: { target_room_id: string; target_user_id: string };
+      tabu_mark: {
+        Args: {
+          index: number;
+          result: string;
+          target_room_id: string;
+          target_user_id: string;
+          turn_number: number;
+        };
         Returns: {
           closed_at: string | null;
           concept: string;
@@ -1728,6 +1636,7 @@ export type Database = {
       };
       tabu_start: {
         Args: {
+          cards_per_turn: number;
           max_passes: number;
           target_room_id: string;
           target_user_id: string;
@@ -1763,42 +1672,14 @@ export type Database = {
           isSetofReturn: false;
         };
       };
-      tabu_start_voice: {
-        Args: {
-          max_passes: number;
-          target_room_id: string;
-          target_user_id: string;
-          total_turns: number;
-          turn_seconds: number;
-        };
+      tabu_turn_cards: {
+        Args: { target_room_id: string; target_user_id: string };
         Returns: {
-          closed_at: string | null;
-          concept: string;
-          created_at: string;
-          game_state: Json;
-          guest_alias: string | null;
-          guest_headcount: number | null;
-          guest_joined_at: string | null;
-          guest_session_id: string | null;
-          id: string;
-          last_activity_at: string;
-          owner_alias: string;
-          owner_headcount: number;
-          owner_session_id: string;
-          reveal_ends_at: string | null;
-          reveal_result: string | null;
-          reveal_token: Json | null;
-          status: string;
-          venue_id: string;
-          visibility: string;
-          waiting_since: string;
-        };
-        SetofOptions: {
-          from: '*';
-          to: 'rooms';
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
+          card_index: number;
+          forbidden: string[];
+          turn_no: number;
+          word: string;
+        }[];
       };
       user_stats: {
         Args: { target_user_id: string };

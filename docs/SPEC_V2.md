@@ -437,7 +437,7 @@ Masalar bir araya gelir. **Takım = masa:** A masası B masasına karşı oynar.
 - **Kart:** İki masaya da gider. Anlatanın takım arkadaşları kartı telefondan değil anlatandan duyar. Karşı masa hakem olduğu için kartı görmek zorundadır. Oda dışındaki hiçbir masa kartı alamaz.
 - **Oyun sonu:** Skorlar gösterilir. Oda sahibi "Yeniden oyna" ile yeni oyun açar. `game_results` her hesap için `score` ve `won` ile yazılır. Pencere yalnızca "Odayı bitir" ile açılır (değişmez).
 - **Tek masa Tabu** bugünkü yerel reducer'la aynen kalır.
-- _Adım 5 notu: `tabu/start` sesli oyun için `mode: 'voice'` alır (yeni uygulama her zaman gönderir); göndermeyen eski APK'lar yazılı oyunu açmaya devam eder. Hakem eylemi `tabu/judge { cardId, result }`. `trText` yardımcılarının silinmesi `…_drop_text_tabu.sql` adımına kaldı, çünkü yazılı eylemler onları hâlâ kullanıyor. Ayrıntı: `docs/DECISIONS.md`, v2 adım 5._
+- _Adım 5 notu (proje sahibinin düzeltmeleriyle): yazılı akış tamamen silindi (§8.3'teki bir sürüm bekleme yok). Eylem yetkisi: Tabu yalnızca hakem masa, Pas yalnızca anlatan masa, Doğru ikisi de. Tur başında turun sıralı kart listesi iki masaya gider (`tabu/turn-cards`); basan telefon anında sonraki karta geçer, her eylem `{ turnNo, cardIndex }` ile idempotenttir, çakışmada sunucunun sırası esastır. Anlatan masanın kartı kapalı başlar. Ayrıntı: `docs/DECISIONS.md`, v2 adım 5._
 
 ### 8.3 Yazılı ipucu/tahmin akışı kaldırılır
 

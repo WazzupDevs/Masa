@@ -1,22 +1,17 @@
-import type { JudgeResult, TabuCard } from '../tabu.ts';
+import type { MarkResult, TabuCard } from '../tabu.ts';
 
 // `tabu` and `sohbet` Edge Functions, shared with the mobile app.
 export type TabuRequest =
-  // mode 'voice' (docs/SPEC_V2.md §8.2) from this release on; without it a two-table room still
-  // gets the written game, for older APKs that cannot take the update (§8.3).
-  | { action: 'start'; roomId: string; mode?: 'voice' }
-  | { action: 'current-card'; roomId: string }
-  // Voice: the table that is not describing, on the card it sees.
-  | { action: 'judge'; roomId: string; cardId: string; result: JudgeResult }
-  | { action: 'clue'; roomId: string; text: string }
-  | { action: 'guess'; roomId: string; text: string }
-  | { action: 'pass'; roomId: string }
+  // One-table room: the deck for the phone. Two-table room: the face-to-face game.
+  | { action: 'start'; roomId: string }
+  // The ordered card list of the current turn, for the two tables of the room.
+  | { action: 'turn-cards'; roomId: string }
+  // A press on card `cardIndex` of turn `turnNo`; a second press on the same card is ignored.
+  | { action: 'mark'; roomId: string; turnNo: number; cardIndex: number; result: MarkResult }
   | { action: 'end-turn'; roomId: string };
 
-// start: a one-table room gets its deck; a two-table room starts the server game.
 export type TabuStartResponse = { mode: 'local'; deck: TabuCard[] } | { mode: 'server' };
-export type TabuCardResponse = { cardId: string; word: string; forbidden: string[] };
-export type TabuGuessResponse = { correct: boolean };
+export type TabuTurnCardsResponse = { turnNo: number; cards: TabuCard[] };
 export type GameOkResponse = { ok: true };
 
 export type SohbetRequest = { action: 'next-card'; roomId: string };
