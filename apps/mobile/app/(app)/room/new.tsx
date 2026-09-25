@@ -1,4 +1,5 @@
 import { CONCEPTS, type Concept, VISIBILITIES, type Visibility } from '@shared/rooms.ts';
+import { conceptMode } from '@shared/concepts.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -41,6 +42,7 @@ export default function NewRoomScreen() {
           <Choice
             key={c}
             label={tr.concepts[c]}
+            hint={conceptMode(c) === 'voice' ? tr.voiceNote : undefined}
             selected={concept === c}
             onPress={() => setConcept(c)}
           />

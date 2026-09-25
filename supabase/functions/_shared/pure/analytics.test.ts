@@ -68,10 +68,9 @@ describe('analytics events', () => {
       analyticsProperties('friendship_created', { source: 'request', publicId: 'x' } as never),
     ).toEqual({ source: 'request' });
     expect(analyticsProperties('dm_sent', { body: 'selam' } as never)).toEqual({});
-    expect(analyticsProperties('game_completed', { concept: 'tabu', score: 4 })).toEqual({
-      concept: 'tabu',
-      score: 4,
-    });
+    expect(
+      analyticsProperties('game_completed', { concept: 'tabu', score: 4, mode: 'voice' }),
+    ).toEqual({ concept: 'tabu', score: 4, mode: 'voice' });
   });
 
   it('measures a table session in whole minutes', () => {

@@ -1,3 +1,4 @@
+import type { Database } from '@shared/database.ts';
 import { BROADCAST, type RequesterStatus, sessionChannel, venueChannel } from '@shared/rooms.ts';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
@@ -6,6 +7,8 @@ import { privateChannel, useChannel } from '@/lib/realtime';
 import { supabase } from '@/lib/supabase';
 
 import { useBroadcast } from './useBroadcast';
+
+type RoomRow = Database['public']['Tables']['rooms']['Row'];
 
 export const roomKeys = {
   current: ['currentRoom'] as const,
@@ -49,19 +52,23 @@ export function useRoom(roomId: string) {
     },
   });
 
-  // Postgres Changes on this room (RLS applies). The table's current room is refetched too: a
-  // room that left 'waiting'/'active' must not send the home screen back into it from cache.
-  useChannel(
+  // Postgres Changes on this room (RLS applies). The new row is used as it arrives, without a
+  // second round trip (the other table's Tabu press shows up at once); a delete or an empty
+  // payload refetches. The table's current room is refetched too: a room that left
+  // 'waiting'/'active' must not send the home screen back into it from cache.
+  useChannel<RoomRow | null>(
     `room:${roomId}`,
     (emit) => ({
       channel: privateChannel(`room:${roomId}`).on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` },
-        () => emit(null),
+        (payload: { new?: Partial<RoomRow> }) =>
+          emit(payload.new && payload.new.id === roomId ? (payload.new as RoomRow) : null),
       ),
     }),
-    () => {
-      void queryClient.invalidateQueries({ queryKey: roomKeys.room(roomId) });
+    (row) => {
+      if (row) queryClient.setQueryData(roomKeys.room(roomId), row);
+      else void queryClient.invalidateQueries({ queryKey: roomKeys.room(roomId) });
       void queryClient.invalidateQueries({ queryKey: roomKeys.current });
     },
   );

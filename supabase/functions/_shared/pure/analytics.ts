@@ -1,5 +1,6 @@
 // Product analytics (MVP_SPEC §12, docs/SPEC_V2.md §13). Only these events, only these properties, and the user id as
 // the distinct id: never a phone number, alias, message, venue or position.
+import type { GameMode } from './concepts.ts';
 import type { FriendRequestSource, FriendshipSource } from './friends.ts';
 import type { Participation } from './profile.ts';
 import type { Concept, Visibility } from './rooms.ts';
@@ -14,7 +15,8 @@ export type AnalyticsEventProps = {
   join_accepted: Record<string, never>;
   join_unavailable: Record<string, never>;
   room_two_tables: Record<string, never>;
-  game_completed: { concept: Concept; score: number };
+  // v2: + mode (docs/SPEC_V2.md §13); for voice Tabu the owner table's score.
+  game_completed: { concept: Concept; score: number; mode: GameMode };
   reveal_mutual: Record<string, never>;
   reveal_none: Record<string, never>;
   report_submitted: Record<string, never>;
@@ -44,7 +46,7 @@ const ALLOWED: { [E in AnalyticsEvent]: readonly (keyof AnalyticsEventProps[E])[
   join_accepted: [],
   join_unavailable: [],
   room_two_tables: [],
-  game_completed: ['concept', 'score'],
+  game_completed: ['concept', 'score', 'mode'],
   reveal_mutual: [],
   reveal_none: [],
   report_submitted: [],

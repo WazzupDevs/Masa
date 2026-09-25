@@ -4,9 +4,8 @@ import type { ChatResponse, SafetyResponse } from '@shared/api/chat.ts';
 import type { RevealResponse } from '@shared/api/reveal.ts';
 import type {
   GameOkResponse,
-  TabuCardResponse,
-  TabuGuessResponse,
   TabuStartResponse,
+  TabuTurnCardsResponse,
 } from '@shared/api/games.ts';
 import type {
   CreateRoomRequest,
@@ -18,6 +17,7 @@ import type { CheckInRequest, CheckInResponse, LeaveResponse } from '@shared/api
 import type { DmOkResponse, FriendsListResponse, FriendsOkResponse } from '@shared/api/friends.ts';
 import type { ProfileRequest, ProfileUploadUrl, ProfileView } from '@shared/api/profile.ts';
 import type { ReportReason } from '@shared/chat.ts';
+import type { Mark } from '@shared/tabu.ts';
 import { type ErrorCode, isApiErrorBody } from '@shared/errors.ts';
 
 import { useUpdateGate } from '@/features/update/updateGate';
@@ -109,14 +109,13 @@ export const safetyApi = {
 };
 
 export const gamesApi = {
+  // Two-table rooms start the voice game (docs/SPEC_V2.md §8.2); one-table rooms get the deck.
+  // One-table rooms get the deck; two-table rooms start the face-to-face game.
   tabuStart: (roomId: string) => invoke<TabuStartResponse>('tabu', { action: 'start', roomId }),
-  tabuCard: (roomId: string) =>
-    invoke<TabuCardResponse>('tabu', { action: 'current-card', roomId }),
-  tabuClue: (roomId: string, text: string) =>
-    invoke<GameOkResponse>('tabu', { action: 'clue', roomId, text }),
-  tabuGuess: (roomId: string, text: string) =>
-    invoke<TabuGuessResponse>('tabu', { action: 'guess', roomId, text }),
-  tabuPass: (roomId: string) => invoke<GameOkResponse>('tabu', { action: 'pass', roomId }),
+  tabuTurnCards: (roomId: string) =>
+    invoke<TabuTurnCardsResponse>('tabu', { action: 'turn-cards', roomId }),
+  tabuMark: (roomId: string, mark: Mark) =>
+    invoke<GameOkResponse>('tabu', { action: 'mark', roomId, ...mark }),
   tabuEndTurn: (roomId: string) => invoke<GameOkResponse>('tabu', { action: 'end-turn', roomId }),
   sohbetNext: (roomId: string) => invoke<GameOkResponse>('sohbet', { action: 'next-card', roomId }),
 };

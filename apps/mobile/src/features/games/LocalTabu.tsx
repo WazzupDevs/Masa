@@ -37,7 +37,7 @@ export function LocalTabu({ roomId }: { roomId: string }) {
   const finished = state.phase === 'finished';
   const { A, B } = state.scores;
   useEffect(() => {
-    if (finished) track('game_completed', { concept: 'tabu', score: A + B });
+    if (finished) track('game_completed', { concept: 'tabu', mode: 'voice', score: A + B });
   }, [finished, A, B]);
 
   if (deck.isError) return <Text className="text-sm text-red-600">{errorMessage(deck.error)}</Text>;

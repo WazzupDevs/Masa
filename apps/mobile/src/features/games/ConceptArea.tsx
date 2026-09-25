@@ -3,21 +3,21 @@ import { parseGameState } from '@shared/tabu.ts';
 import { View } from 'react-native';
 
 import { LocalTabu } from './LocalTabu';
-import { ServerTabu } from './ServerTabu';
 import { SohbetCard } from './SohbetCard';
+import { VoiceTabu } from './VoiceTabu';
 
 type Props = {
   roomId: string;
   concept: Concept;
   gameState: unknown;
   hasGuest: boolean;
-  sessionId: string;
   isOwner: boolean;
+  aliases: { owner: string; guest: string };
 };
 
 // The top of the room screen (MVP_SPEC §4.5). One-table Tabu runs locally; when a second table
-// joins, the room switches to the server game and the local one is dropped (§5.1).
-export function ConceptArea({ roomId, concept, gameState, hasGuest, sessionId, isOwner }: Props) {
+// joins, the room switches to the server game, played face to face (docs/SPEC_V2.md §8.2).
+export function ConceptArea({ roomId, concept, gameState, hasGuest, isOwner, aliases }: Props) {
   const state = parseGameState(gameState);
   return (
     <View className="mt-6 rounded-2xl bg-neutral-100 p-4">
@@ -28,11 +28,12 @@ export function ConceptArea({ roomId, concept, gameState, hasGuest, sessionId, i
           state={state?.concept === 'sohbet' ? state : null}
         />
       ) : hasGuest ? (
-        <ServerTabu
+        <VoiceTabu
           roomId={roomId}
-          state={state?.concept === 'tabu' ? state : null}
-          sessionId={sessionId}
+          state={state}
+          side={isOwner ? 'owner' : 'guest'}
           isOwner={isOwner}
+          aliases={aliases}
         />
       ) : (
         <LocalTabu roomId={roomId} />

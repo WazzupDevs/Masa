@@ -17,8 +17,6 @@ export type ErrorCode =
   | 'nothing_to_block'
   | 'message_invalid'
   | 'profanity_rejected'
-  | 'clue_forbidden'
-  | 'clue_invalid'
   | 'wrong_concept'
   | 'two_tables'
   | 'not_owner'
@@ -26,9 +24,7 @@ export type ErrorCode =
   | 'game_in_progress'
   | 'no_game'
   | 'not_describer'
-  | 'not_guesser'
   | 'turn_over'
-  | 'card_changed'
   | 'no_passes_left'
   | 'too_soon'
   | 'no_cards'
@@ -40,6 +36,7 @@ export type ErrorCode =
   | 'photo_invalid'
   | 'already_friends'
   | 'not_friends'
+  | 'not_judge'
   | 'method_not_allowed'
   | 'update_required'
   | 'internal';
@@ -89,14 +86,13 @@ export const DOMAIN_ERROR_CODES: readonly ErrorCode[] = [
   'game_in_progress',
   'no_game',
   'not_describer',
-  'not_guesser',
   'turn_over',
-  'card_changed',
   'no_passes_left',
   'too_soon',
   'no_cards',
   'reveal_closed',
   'not_friends',
+  'not_judge',
 ];
 
 export function isDomainErrorCode(value: string): value is ErrorCode {

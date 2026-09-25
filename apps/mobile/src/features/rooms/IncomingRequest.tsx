@@ -1,3 +1,4 @@
+import { conceptMode } from '@shared/concepts.ts';
 import type { Concept } from '@shared/rooms.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Modal, Text, View } from 'react-native';
@@ -47,6 +48,9 @@ export function IncomingRequest({ roomId, ownerSessionId, concept }: Props) {
               tr.concepts[concept],
             )}
           </Text>
+          {conceptMode(concept) === 'voice' ? (
+            <Text className="mt-2 text-sm text-neutral-600">{tr.voiceNote}</Text>
+          ) : null}
           {request.requester_profiled ? (
             <View className="mt-3 flex-row">
               <ProfiledTag />
