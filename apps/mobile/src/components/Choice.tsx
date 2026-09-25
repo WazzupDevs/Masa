@@ -1,14 +1,21 @@
 import { Pressable, Text } from 'react-native';
 
-type Props = { label: string; hint?: string; selected: boolean; onPress: () => void };
+type Props = {
+  label: string;
+  hint?: string;
+  selected: boolean;
+  onPress: () => void;
+  disabled?: boolean;
+};
 
-export function Choice({ label, hint, selected, onPress }: Props) {
+export function Choice({ label, hint, selected, onPress, disabled }: Props) {
   return (
     <Pressable
       accessibilityRole="radio"
-      accessibilityState={{ selected }}
+      accessibilityState={{ selected, disabled }}
+      disabled={disabled}
       onPress={onPress}
-      className={`rounded-xl border-2 px-4 py-3 ${selected ? 'border-black bg-neutral-100' : 'border-neutral-200'}`}
+      className={`rounded-xl border-2 px-4 py-3 ${selected ? 'border-black bg-neutral-100' : 'border-neutral-200'} ${disabled ? 'opacity-40' : ''}`}
     >
       <Text className="text-base font-semibold text-black">{label}</Text>
       {hint ? <Text className="mt-1 text-sm text-neutral-500">{hint}</Text> : null}

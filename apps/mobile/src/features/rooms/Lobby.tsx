@@ -12,6 +12,7 @@ import { track, trackOnce } from '@/lib/analytics';
 import { roomsApi } from '@/lib/api';
 import { useNow } from '@/lib/useNow';
 
+import { ProfiledTag } from './ProfiledTag';
 import { roomKeys, useLobby, useMyRequest } from './queries';
 
 type Props = { venueId: string; sessionId: string; since: string };
@@ -87,7 +88,10 @@ export function Lobby({ venueId, sessionId, since }: Props) {
             const waitedMin = Math.floor((now - Date.parse(room.waiting_since)) / 60_000);
             return (
               <View key={room.room_id} className="rounded-xl border border-neutral-200 p-4">
-                <Text className="text-base font-semibold text-black">{room.alias}</Text>
+                <View className="flex-row items-center gap-2">
+                  <Text className="text-base font-semibold text-black">{room.alias}</Text>
+                  {room.profiled ? <ProfiledTag /> : null}
+                </View>
                 <Text className="text-sm text-neutral-500">
                   {tr.rooms.people(room.headcount)} · {tr.concepts[room.concept as Concept]} ·{' '}
                   {tr.rooms.waitingFor(waitedMin)}

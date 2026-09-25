@@ -9,6 +9,7 @@ import { track } from '@/lib/analytics';
 import { roomsApi } from '@/lib/api';
 import { useNow } from '@/lib/useNow';
 
+import { ProfiledTag } from './ProfiledTag';
 import { roomKeys, useIncomingRequests } from './queries';
 
 type Props = { roomId: string; ownerSessionId: string | null; concept: Concept };
@@ -46,6 +47,11 @@ export function IncomingRequest({ roomId, ownerSessionId, concept }: Props) {
               tr.concepts[concept],
             )}
           </Text>
+          {request.requester_profiled ? (
+            <View className="mt-3 flex-row">
+              <ProfiledTag />
+            </View>
+          ) : null}
           <Text className="mt-2 text-sm text-neutral-500">{tr.rooms.secondsLeft(seconds)}</Text>
           {respond.isError ? (
             <Text className="mt-3 text-sm text-red-600">{errorMessage(respond.error)}</Text>

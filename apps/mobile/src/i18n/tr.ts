@@ -1,10 +1,56 @@
+import { headcountLabel } from '@shared/checkin.ts';
 import type { EventTime } from '@shared/explore.ts';
+
+const MONTHS = [
+  'Ocak',
+  'Şubat',
+  'Mart',
+  'Nisan',
+  'Mayıs',
+  'Haziran',
+  'Temmuz',
+  'Ağustos',
+  'Eylül',
+  'Ekim',
+  'Kasım',
+  'Aralık',
+];
+// "12 Eylül'de": the locative suffix follows the month's last vowel and consonant.
+const MONTH_SUFFIX = [
+  "'ta",
+  "'ta",
+  "'ta",
+  "'da",
+  "'ta",
+  "'da",
+  "'da",
+  "'ta",
+  "'de",
+  "'de",
+  "'da",
+  "'ta",
+];
+
+function dayMonth(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getDate()} ${MONTHS[d.getMonth()] ?? ''}`;
+}
+
+function dayMonthAt(iso: string): string {
+  return `${dayMonth(iso)}${MONTH_SUFFIX[new Date(iso).getMonth()] ?? ''}`;
+}
 
 const WEEKDAYS = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
 
 export const tr = {
   app: {
     name: 'Masa',
+  },
+  update: {
+    title: 'Güncelleme gerekli',
+    body: 'Uygulamanın bu sürümü artık çalışmıyor. Devam etmek için yeni sürümü yükle.',
+    action: 'Güncelle',
+    build: (b: string) => `Yüklü sürüm: ${b}`,
   },
   errorScreen: {
     title: 'Bir şeyler ters gitti',
@@ -15,6 +61,7 @@ export const tr = {
   common: {
     continue: 'Devam',
     cancel: 'Vazgeç',
+    retry: 'Tekrar dene',
     loading: 'Yükleniyor…',
     genericError: 'Bir şeyler ters gitti. Tekrar dener misin?',
   },
@@ -87,10 +134,98 @@ export const tr = {
     checkInHere: 'Buraya giriş yap',
   },
   friends: {
-    soon: 'Birlikte oynadığın masalarla burada arkadaş olabileceksin.',
+    empty: 'Henüz arkadaşın yok. Birlikte oynadığın masaları "Geçmiş ve istekler"de bulabilirsin.',
+    requestsAndHistory: 'Geçmiş ve istekler',
+    newRequests: (n: number) => `${n} yeni arkadaşlık isteği`,
+    unread: 'Yeni mesaj',
+    noMessagesYet: 'Henüz mesaj yok. İlk mesajı sen yaz.',
+    // Ablative: the locative suffix plus "n" (Eylül'den, Ocak'tan).
+    since: (iso: string) => `${dayMonthAt(iso)}n beri arkadaşsınız`,
+    incomingTitle: 'Gelen istekler',
+    noIncoming: 'Yeni istek yok.',
+    incoming: (playedAt: string, concept: 'tabu' | 'sohbet', alias: string) =>
+      concept === 'tabu'
+        ? `${dayMonthAt(playedAt)} Tabu oynadığınız ${alias} masası arkadaşın olmak istiyor`
+        : `${dayMonthAt(playedAt)} sohbet ettiğiniz ${alias} masası arkadaşın olmak istiyor`,
+    accept: 'Kabul et',
+    decline: 'Reddet',
+    sentTitle: 'Gönderilen istekler',
+    sent: (alias: string) => `${alias} masasına istek gönderildi`,
+    sentAccepted: (alias: string) => `${alias} masası isteğini kabul etti`,
+    historyTitle: 'Oyun geçmişi',
+    noHistory: 'Başka bir masayla en az 3 dakika oynadığınızda burada görünür.',
+    historyRow: (alias: string, concept: 'tabu' | 'sohbet', playedAt: string) =>
+      `${alias} masasıyla ${concept === 'tabu' ? 'Tabu' : 'Sohbet'} · ${dayMonth(playedAt)}`,
+    people: (n: number) => `${headcountLabel(n)} kişi`,
+    sendRequest: 'İstek gönder',
+    addFriend: 'Arkadaş ekle',
+    actionDone: 'Gönderildi',
+    addFriendHint: 'İki masa da basarsa arkadaş olursunuz. Karşı taraf basmazsa hiçbir şey olmaz.',
+    more: 'Diğer',
+    moreTitle: 'Bu masa',
+    report: 'Şikayet et',
+    block: 'Engelle',
+    alsoReport: 'Şikayet de et',
+    blockConfirm: 'Engelle',
+    blockHint:
+      'Birbirinizi lobide, isteklerde ve arkadaş listesinde bir daha görmezsiniz. Karşı tarafa bildirilmez.',
+    removeFriend: 'Arkadaşlıktan çıkar',
+    removeConfirm: 'Çıkar',
+    removeHint: 'Konuşmanız silinir. Karşı tarafa bildirilmez.',
+    friendMenuTitle: 'Arkadaşlık',
+    viewProfile: 'Profili gör',
+    done: 'Tamam',
+    back: 'Geri',
+  },
+  dm: {
+    placeholder: 'Mesaj yaz…',
+    send: 'Gönder',
+    report: 'Konuşmayı şikayet et',
+    olderMessages: 'Daha eski mesajlar',
   },
   profile: {
-    soon: 'Profilin burada olacak.',
+    noName: 'Henüz bir adın yok',
+    addName: 'Ad ekle',
+    edit: 'Profili düzenle',
+    editTitle: 'Profili düzenle',
+    nameLabel: 'Görünen ad',
+    nameHint: '2–24 karakter. Arkadaşların ve profille katıldığın odalardaki masa bu adı görür.',
+    bioLabel: 'Tanıtım',
+    bioHint: (n: number, max: number) => `${n}/${max}`,
+    save: 'Kaydet',
+    photo: 'Fotoğraf',
+    photoChange: 'Fotoğrafı değiştir',
+    photoAdd: 'Fotoğraf ekle',
+    photoFromLibrary: 'Galeriden seç',
+    photoFromCamera: 'Fotoğraf çek',
+    photoRemove: 'Fotoğrafı kaldır',
+    photoNeedsName: 'Fotoğraf eklemek için önce bir ad seç.',
+    photoHidden:
+      'Fotoğrafın şikayetler nedeniyle gizlendi; kimse göremiyor. Yeni bir fotoğraf yükleyebilirsin.',
+    photoPermission: 'Fotoğraf seçmek için izin gerekiyor. İzni ayarlardan verebilirsin.',
+    photoInvalid: 'Bu fotoğraf kullanılamadı. Başka bir fotoğraf dene.',
+    photoPrivacy:
+      'Fotoğrafın konum ve cihaz bilgisi gibi bütün ek bilgilerden arındırılarak yüklenir.',
+    badgesTitle: 'Rozetler',
+    noBadges: 'Oynadıkça rozet kazanırsın.',
+    badges: {
+      first_game: 'İlk oyun',
+      ten_games: '10 oyun',
+      voice_tabu_five_wins: 'Sesli Tabu ustası',
+      five_tables: '5 farklı masa',
+    },
+    notVisible: 'Bu profil artık görüntülenemiyor.',
+    report: 'Profili şikayet et',
+    back: 'Geri dön',
+  },
+  participation: {
+    title: 'Nasıl katılıyorsunuz?',
+    anonymous: 'Anonim',
+    anonymousHint: 'Diğer masalar yalnızca masa adını ve kişi sayısını görür.',
+    profile: 'Profille',
+    profileHint:
+      'Lobide "profilli" işareti görünür. Aynı odadaki masa, oda sürerken profilini görebilir.',
+    profileNeedsName: 'Profille katılmak için önce Profil sekmesinden bir ad seç.',
   },
   home: {
     title: 'Hoş geldin',
@@ -115,7 +250,8 @@ export const tr = {
     distance: (meters: number) => `${meters} m`,
     osmAttribution: '© OpenStreetMap katkıda bulunanlar',
     headcountTitle: 'Masada kaç kişisiniz?',
-    headcountHint: 'Sen dahil. Diğer masalar yalnızca bu sayıyı görür.',
+    headcountOption: (n: number) => headcountLabel(n),
+    headcountHint: 'Sen dahil. Dört ya da daha fazlaysanız 4+ seçin.',
     open: 'Masayı aç',
     doneTitle: 'Masan hazır',
     doneBody: 'Bu mekanda diğer masalar sizi bu adla görecek:',
@@ -127,7 +263,8 @@ export const tr = {
     playWithTable: 'Masanla oyna',
     playWithTableHint: 'Şu an mekanda açık oda yok. Kendi masanla oynayabilirsin.',
     lobbyTitle: 'Açık odalar',
-    people: (n: number) => `${n} kişi`,
+    profiled: 'profilli',
+    people: (n: number) => `${headcountLabel(n)} kişi`,
     waitingFor: (minutes: number) => (minutes < 1 ? 'yeni açıldı' : `${minutes} dk bekliyor`),
     requestJoin: 'Katılmak istiyorum',
     requestPending: (seconds: number) => `İsteğin gönderildi. Yanıt bekleniyor (${seconds} sn).`,
@@ -148,9 +285,10 @@ export const tr = {
     end: 'Odayı bitir',
     incomingTitle: 'Katılma isteği',
     incomingBody: (alias: string, headcount: number, concept: string) =>
-      `${alias} (${headcount} kişi) ${concept} odana katılmak istiyor.`,
+      `${alias} (${headcountLabel(headcount)} kişi) ${concept} odana katılmak istiyor.`,
     accept: 'Kabul',
     decline: 'Geç',
+    viewProfile: 'Diğer masanın profilini gör',
     secondsLeft: (s: number) => `${s} sn`,
   },
   chat: {
@@ -239,10 +377,12 @@ export const tr = {
     goodGame: 'Güzel oyundu 👋',
     backToVenue: 'Mekana dön',
     score: (n: number) => `Ortak skor: ${n}`,
+    addFriend: 'Arkadaş ekle',
+    addFriendDone: 'Eklendi. İkiniz de basarsanız arkadaş olursunuz.',
   },
   venue: {
     yourTable: 'Masanın adı',
-    people: (n: number) => `${n} kişi`,
+    people: (n: number) => `${headcountLabel(n)} kişi`,
     remaining: (h: number, m: number) => (h > 0 ? `${h} sa ${m} dk kaldı` : `${m} dk kaldı`),
     leave: 'Mekandan ayrıl',
     leaveConfirmTitle: 'Mekandan ayrılıyor musun?',
@@ -251,6 +391,13 @@ export const tr = {
   },
   settings: {
     title: 'Ayarlar',
+    privacySection: 'Gizlilik',
+    defaultParticipation: 'Masaya varsayılan katılım',
+    defaultParticipationHint: 'Her girişte o masa için değiştirebilirsin.',
+    notificationsSection: 'Bildirimler',
+    notifyDm: 'Mesajlar',
+    notifyFriendRequests: 'Arkadaşlık istekleri',
+    legalSection: 'Yasal',
     signOut: 'Çıkış yap',
     deleteAccount: 'Hesabımı sil',
     deleteConfirmTitle: 'Hesabın silinsin mi?',
@@ -299,7 +446,15 @@ export const tr = {
     too_soon: 'Biraz bekle.',
     no_cards: 'Kart kalmadı.',
     reveal_closed: 'Süre doldu.',
+    not_found: 'Bulunamadı.',
+    already_friends: 'Zaten arkadaşsınız.',
+    not_friends: 'Artık arkadaş değilsiniz.',
+    display_name_required: 'Önce profilinde bir ad seç.',
+    display_name_invalid: 'Ad 2–24 karakter olmalı ve uygun olmayan ifade içermemeli.',
+    bio_invalid: 'Tanıtım en fazla 160 karakter olmalı ve uygun olmayan ifade içermemeli.',
+    photo_invalid: 'Fotoğraf yüklenemedi. Başka bir fotoğraf dene.',
     method_not_allowed: 'İstek geçersiz.',
+    update_required: 'Uygulamanın yeni sürümünü yüklemen gerekiyor.',
     internal: 'Bir şeyler ters gitti. Tekrar dener misin?',
   },
 } as const;

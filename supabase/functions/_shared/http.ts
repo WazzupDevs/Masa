@@ -1,4 +1,5 @@
 import { z } from './deps.ts';
+import { APP_BUILD_HEADER, minBuildFrom, needsUpdate } from './pure/appVersion.ts';
 import { AppError, type ErrorCode, toErrorBody } from './pure/errors.ts';
 
 const STATUS: Record<ErrorCode, number> = {
@@ -35,8 +36,16 @@ const STATUS: Record<ErrorCode, number> = {
   reveal_closed: 409,
   clue_forbidden: 422,
   clue_invalid: 400,
+  not_found: 404,
+  display_name_required: 409,
+  display_name_invalid: 422,
+  bio_invalid: 422,
+  photo_invalid: 422,
+  already_friends: 409,
+  not_friends: 403,
   unauthorized: 401,
   method_not_allowed: 405,
+  update_required: 426,
   internal: 500,
 };
 
@@ -52,8 +61,15 @@ function errorResponse(code: ErrorCode, message: string): Response {
 }
 
 // Wraps a handler: POST + JSON only, and every failure leaves as `{ error: { code, message } }`.
+// Every function refuses builds older than MIN_APP_BUILD before doing anything (forced update gate;
+// pure/appVersion.ts). Read per request, so a new minimum applies without a redeploy.
 export function handle(fn: (req: Request, body: unknown) => Promise<unknown>) {
   return async (req: Request): Promise<Response> => {
+    if (
+      needsUpdate(req.headers.get(APP_BUILD_HEADER), minBuildFrom(Deno.env.get('MIN_APP_BUILD')))
+    ) {
+      return errorResponse('update_required', 'This version of the app is too old. Update it.');
+    }
     if (req.method !== 'POST') {
       return errorResponse('method_not_allowed', 'Only POST is supported.');
     }

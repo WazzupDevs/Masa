@@ -29,6 +29,7 @@ export async function checkInAt(
   venues: Record<string, string>,
   key: string,
   headcount = 3,
+  participation?: 'anonymous' | 'profile',
 ): Promise<{ sessionId: string; alias: string }> {
   const fixture = FIXTURE_VENUES.find((v) => v.key === key);
   const id = venues[key];
@@ -42,6 +43,7 @@ export async function checkInAt(
     accuracyM: 10,
     headcount,
     locationConsentVersion: CURRENT_LOCATION_CONSENT_VERSION,
+    ...(participation ? { participation } : {}),
   });
   expect(res.status, JSON.stringify(res.body)).toBe(200);
   return res.body as { sessionId: string; alias: string };

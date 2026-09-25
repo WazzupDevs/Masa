@@ -167,7 +167,13 @@ describe('checkin/check-in', () => {
 
   it('validates headcount and coordinates', async () => {
     const client = await onboarded(PHONE_A);
-    for (const bad of [{ headcount: 0 }, { headcount: 7 }, { lat: 91 }, { accuracyM: -1 }]) {
+    for (const bad of [
+      { headcount: 0 },
+      { headcount: 5 },
+      { lat: 91 },
+      { accuracyM: -1 },
+      { participation: 'public' as never },
+    ]) {
       expect((await checkIn(client, bad)).status, JSON.stringify(bad)).toBe(400);
     }
   });

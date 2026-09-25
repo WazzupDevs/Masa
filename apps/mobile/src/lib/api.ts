@@ -15,9 +15,14 @@ import type {
   RoomsOkResponse,
 } from '@shared/api/rooms.ts';
 import type { CheckInRequest, CheckInResponse, LeaveResponse } from '@shared/api/checkin.ts';
+import type { DmOkResponse, FriendsListResponse, FriendsOkResponse } from '@shared/api/friends.ts';
+import type { ProfileRequest, ProfileUploadUrl, ProfileView } from '@shared/api/profile.ts';
 import type { ReportReason } from '@shared/chat.ts';
 import { type ErrorCode, isApiErrorBody } from '@shared/errors.ts';
 
+import { useUpdateGate } from '@/features/update/updateGate';
+
+import { appBuildHeaders } from './appBuild';
 import { supabase } from './supabase';
 
 export class ApiError extends Error {
@@ -30,15 +35,32 @@ export class ApiError extends Error {
   }
 }
 
+// Every Edge Function call goes through here: it carries the native build number, and an
+// update_required answer switches the whole app to the "Güncelleme gerekli" screen.
 async function invoke<T>(fn: string, body: Record<string, unknown>): Promise<T> {
-  const { data, error } = await supabase.functions.invoke<T>(fn, { body });
+  const { data, error } = await supabase.functions.invoke<T>(fn, {
+    body,
+    headers: appBuildHeaders,
+  });
   if (error instanceof FunctionsHttpError) {
     const payload: unknown = await error.context.json().catch(() => null);
-    if (isApiErrorBody(payload)) throw new ApiError(payload.error.code, payload.error.message);
+    if (isApiErrorBody(payload)) {
+      if (payload.error.code === 'update_required') useUpdateGate.getState().markRequired();
+      throw new ApiError(payload.error.code, payload.error.message);
+    }
     throw new ApiError('internal', error.message);
   }
   if (error || data === null) throw new ApiError('internal', error?.message ?? 'Empty response');
   return data;
+}
+
+// Update gate check on launch and foreground (the ping function does nothing else). Failures other
+// than update_required are ignored: the next real call will show them.
+export function pingUpdateGate(): Promise<void> {
+  return invoke<{ ok: true }>('ping', {}).then(
+    () => undefined,
+    () => undefined,
+  );
 }
 
 export function callAccount(body: AccountRequest): Promise<AccountResponse> {
@@ -72,6 +94,16 @@ export const chatApi = {
 export const safetyApi = {
   report: (roomId: string, reason: ReportReason) =>
     invoke<SafetyResponse>('safety', { action: 'report', roomId, reason }),
+  reportProfile: (publicId: string, reason: ReportReason) =>
+    invoke<SafetyResponse>('safety', { action: 'report', target: 'profile', publicId, reason }),
+  reportHistory: (historyId: string, reason: ReportReason) =>
+    invoke<SafetyResponse>('safety', { action: 'report', target: 'history', historyId, reason }),
+  reportDm: (threadId: string, reason: ReportReason) =>
+    invoke<SafetyResponse>('safety', { action: 'report', target: 'dm', threadId, reason }),
+  blockFriend: (publicId: string, report?: ReportReason) =>
+    invoke<SafetyResponse>('safety', { action: 'block', publicId, ...(report ? { report } : {}) }),
+  blockHistory: (historyId: string, report?: ReportReason) =>
+    invoke<SafetyResponse>('safety', { action: 'block', historyId, ...(report ? { report } : {}) }),
   block: (roomId: string) => invoke<SafetyResponse>('safety', { action: 'block', roomId }),
   unblock: (blockId: string) => invoke<SafetyResponse>('safety', { action: 'unblock', blockId }),
 };
@@ -93,4 +125,37 @@ export const revealApi = {
   decide: (roomId: string, wantsMeet: boolean) =>
     invoke<RevealResponse>('reveal', { action: 'decide', roomId, wantsMeet }),
   finalize: (roomId: string) => invoke<RevealResponse>('reveal', { action: 'finalize', roomId }),
+};
+
+type ProfileUpdate = Omit<Extract<ProfileRequest, { action: 'update' }>, 'action'>;
+
+export const profileApi = {
+  get: (publicId: string) => invoke<ProfileView>('profile', { action: 'get', publicId }),
+  update: (changes: ProfileUpdate) =>
+    invoke<{ ok: true }>('profile', { action: 'update', ...changes }),
+  photoUploadUrl: () => invoke<ProfileUploadUrl>('profile', { action: 'photo-upload-url' }),
+  photoCommit: (path: string) => invoke<{ ok: true }>('profile', { action: 'photo-commit', path }),
+  photoRemove: () => invoke<{ ok: true }>('profile', { action: 'photo-remove' }),
+};
+
+export const friendsApi = {
+  list: () => invoke<FriendsListResponse>('friends', { action: 'list' }),
+  request: (historyId: string) =>
+    invoke<FriendsOkResponse>('friends', { action: 'request', historyId }),
+  respond: (requestId: string, accept: boolean) =>
+    invoke<FriendsOkResponse>('friends', { action: 'respond', requestId, accept }),
+  addFromRoom: (historyId: string) =>
+    invoke<FriendsOkResponse>('friends', { action: 'add-from-room', historyId }),
+  remove: (publicId: string, report?: ReportReason) =>
+    invoke<FriendsOkResponse>('friends', {
+      action: 'remove',
+      publicId,
+      ...(report ? { report } : {}),
+    }),
+};
+
+export const dmApi = {
+  send: (threadId: string, body: string) =>
+    invoke<DmOkResponse>('dm', { action: 'send', threadId, body }),
+  read: (threadId: string) => invoke<DmOkResponse>('dm', { action: 'read', threadId }),
 };

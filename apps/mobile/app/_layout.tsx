@@ -10,6 +10,9 @@ import { ActivityIndicator, View } from 'react-native';
 import { useProfile } from '@/features/account/useProfile';
 import { startSessionSync, useSessionStore } from '@/features/auth/session';
 import { configureNotifications } from '@/features/push/push';
+import { UpdateRequired } from '@/features/update/UpdateRequired';
+import { useUpdateGate, watchUpdateGate } from '@/features/update/updateGate';
+import { pingUpdateGate } from '@/lib/api';
 import { initErrorReporting } from '@/lib/errorReporting';
 import { queryClient } from '@/lib/queryClient';
 
@@ -18,9 +21,12 @@ export { RouteError as ErrorBoundary } from '@/components/RouteError';
 initErrorReporting();
 
 function RootNavigator() {
+  const updateRequired = useUpdateGate((s) => s.required);
   const initialized = useSessionStore((s) => s.initialized);
   const signedIn = useSessionStore((s) => s.session !== null);
   const profile = useProfile();
+
+  if (updateRequired) return <UpdateRequired />;
 
   if (!initialized || (signedIn && profile.isPending)) {
     return (
@@ -51,6 +57,7 @@ export default function RootLayout() {
   useEffect(() => {
     startSessionSync();
     configureNotifications();
+    return watchUpdateGate(pingUpdateGate);
   }, []);
 
   return (

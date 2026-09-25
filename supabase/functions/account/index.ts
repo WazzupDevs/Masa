@@ -3,6 +3,7 @@ import { inBackground } from '../_shared/background.ts';
 import { dbError } from '../_shared/db.ts';
 import { z } from '../_shared/deps.ts';
 import { handle } from '../_shared/http.ts';
+import { deleteProfilePhotos } from '../_shared/photos.ts';
 import { deletePosthogPerson } from '../_shared/posthog.ts';
 import type { AccountRequest, AccountResponse } from '../_shared/pure/api/account.ts';
 import { CURRENT_KVKK_VERSION, CURRENT_TERMS_VERSION } from '../_shared/pure/consent.ts';
@@ -56,6 +57,14 @@ Deno.serve(
         // End the table first so its rooms close or go back to waiting for the other table.
         const ended = await db.rpc('end_table_session', { target_user_id: user.id });
         if (ended.error) throw dbError('end_table_session', ended.error);
+        // Photos before the account: the profile row holds the folder name.
+        const profile = await db
+          .from('profiles')
+          .select('public_id')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (profile.error) throw dbError('profiles', profile.error);
+        if (profile.data) await deleteProfilePhotos(db, profile.data.public_id);
         const { error } = await db.auth.admin.deleteUser(user.id);
         if (error) throw error;
         inBackground(deletePosthogPerson(user.id));

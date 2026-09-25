@@ -165,7 +165,7 @@ dm_reads           thread_id, user_id, last_read_at   (okunmamış rozeti; karş
 
 - **Silme:** Hesap silme ve ban (bugünkü `admin:ban` = hesabı silmek), FK'lar üzerinden hepsini temizler: arkadaşlıklar, DM'ler, kendi geçmişi, istekleri, niyetleri ve sonuçları. Karşı tarafın `play_history.other_user_id` kolonu `null` olur; o satır geçmişte kalır, ama ondan istek, engel ya da şikayet yapılamaz (sessizce `ok`).
 - **Fotoğraflar:** Storage nesneleri FK ile silinmez. Bunları `account/delete` ve `admin:ban` açıkça siler (§5.3).
-- **Şikayet kopyaları:** `reports` 30 gün sonra silinir (mevcut cron). Şikayetle kopyalanan fotoğraflar (`reports/{report_id}.jpg`) aynı cron'la silinir.
+- **Şikayet kopyaları:** `reports` 30 gün sonra silinir (mevcut cron). Şikayetle kopyalanan fotoğraf şikayet satırında durur (`reports.photo_copy`, bytea) ve satırla birlikte aynı cron'la silinir. _Adım 3 sapması (proje sahibi onayladı): ilk metin `reports/{report_id}.jpg` diyordu; Storage nesneleri SQL'den silinemediği için (`storage.protect_delete()`) kopya satıra alındı._
 
 ---
 
@@ -204,7 +204,6 @@ dm_reads           thread_id, user_id, last_read_at   (okunmamış rozeti; karş
   - 10 iki masalı oyun
   - Sesli Tabu'da 5 galibiyet
   - 5 farklı masayla oynamış
-  - Sohbet kartlarında 3 tema
 
   Kurallar ve eşikler saf modülde ve testlidir. Ünvan metinleri `tr.ts`'te.
 
@@ -239,7 +238,7 @@ dm_reads           thread_id, user_id, last_read_at   (okunmamış rozeti; karş
   4. İstemci dosyayı bu URL'e yükler.
   5. `profile/photo-commit { path }` nesnenin kullanıcıya ait yolda olduğunu, boyutunu, türünü ve metadata'sızlığını doğrular, `profiles.photo_path`'i yazar, `photo_hidden_at`'i temizler ve eski fotoğrafı siler.
 - **Şikayet ve gizleme:**
-  - Profil ve fotoğraf şikayet edilebilir. `safety/report { target: 'profile', publicId, reason }` fotoğrafı `reports/{report_id}.jpg`'e kopyalar (30 gün) ve görünen adı ve biyografiyi `profile_snapshot`'a yazar. Arkadaşlık öncesi bağlamda aynı şikayet `historyId` ile yapılır (§6.2).
+  - Profil ve fotoğraf şikayet edilebilir. `safety/report { target: 'profile', publicId, reason }` fotoğrafı şikayet satırına kopyalar (`reports.photo_copy`, 30 gün; onaylı adım 3 sapması, §3.2) ve görünen adı ve biyografiyi `profile_snapshot`'a yazar. Şikayet eden o an profili göremiyorsa yanıt `profile/get` ile aynıdır (`not_found`) ve hiçbir şey yazılmaz. Arkadaşlık öncesi bağlamda aynı şikayet `historyId` ile yapılır (§6.2).
   - Aynı fotoğraf için **2 ayrı hesaptan** şikayet gelince `photo_hidden_at` dolar ve fotoğraf hiç kimseye verilmez. Sahibi yeni fotoğraf yükleyene ya da inceleme sonucu geri açılana kadar gizli kalır.
   - İnceleme sonrası kaldırma: `pnpm admin:remove-photo <publicId>` fotoğrafı siler ve `photo_path`'i boşaltır. Geliştirici makinesinde, `admin:ban` gibi ortam değişkenleriyle çalışır.
   - Otomatik içerik denetimi yok (kapsam dışı).
@@ -338,6 +337,7 @@ Arkadaşlık kurulana kadar hiçbir yanıt karşı tarafın `public_id`'sini ta�
   - Test bunu tüm dönüş kolonları üzerinden doğrular (§11).
 - **Arkadaşlığı bitirme ve engelleme, isteğe bağlı şikayetle:**
   - `friends/remove { publicId, report?: reason }` sessizdir. Karşı taraf yalnızca arkadaşın listeden çıktığını görür.
+  - **Çıkarma, çıkarılan için kalıcı reddir** (proje sahibi kararı, adım 4): çıkarılanın çıkarana yeni isteği sessizce yutulur ve gönderende süresiz `pending` görünür; çıkaran yeniden istek gönderebilir. Engelleme de arkadaşlığı aynı yolla bitirir, bu yüzden çıkarılan taraf ikisini ayırt edemez. Önceden verilmiş red kayıtları silinmez. `my_sent_requests()` bu yüzden istek satırlarından değil, gönderenin kendi geçmiş kaydındaki basıştan (`friend_action_at`) üretilir: hangi sebeple yutulursa yutulsun istek bekliyor görünür.
   - `safety/block { publicId, report?: reason }` bugünkü `blocks`'a yazar ve arkadaşlığı siler. Karşı tarafa bildirilmez.
   - Engellemede de karşı tarafın gördüğü aynıdır: arkadaş listeden çıkar. Karşı taraf ikisini ayırt edemez.
   - **"Şikayet de et":** İki akışta da bir seçenek olarak sunulur. Seçilirse, konuşmanın son 50 mesajının kopyası arkadaşlık ve konuşma cascade ile silinmeden önce, **aynı transaction'da** `reports`'a yazılır (`target_type = 'dm'`). Silme ve kopya birlikte başarılı olur ya da birlikte geri alınır.
@@ -470,6 +470,8 @@ Yazılı kalır, değişmez. Yeni oyun yok.
 | `safety`  | `report`: `target` room/dm/profile/history (`historyId` kabul eder). `block`: `publicId` (arkadaş, DM, profil) ya da `historyId` (arkadaşlık öncesi), isteğe bağlı `report`. Engel arkadaşlığı siler; şikayet kopyası aynı transaction'da alınır                            | Değişir |
 | `account` | `delete`: Storage klasörü + PostHog (mevcut)                                                                                                                                                                                                                                | Değişir |
 
+_Adım 4 notu: arkadaş listesi `my_friends()` RPC'si yerine `friends/list` eylemiyle gelir (fotoğraf URL'leri yalnızca fonksiyonda imzalanabilir); `dm_threads()` bu listeye katıldı; `my_history` tabloya RLS okumasıdır; DM sayfası `dm_messages_page`. `safety/report` ayrıca `target: 'history'` ile oda bittikten sonra da çalışır ve karşı masa profille katıldıysa profilin o anki kopyasını alır (proje sahibinin ek şartı). Ayrıntı: `docs/DECISIONS.md`, v2 adım 4._
+
 Hepsi bugünkü kalıbı izler: tek endpoint, `action`, zod v4, `{ error: { code, message } }`. Yazan SQL fonksiyonları yalnızca service role'e açıktır. İstemcinin çağırdığı RPC'ler yalnızca okur: `explore_venues`, `venue_lobby` (+ `profiled`), `room_member_profile`, `my_friends`, `my_incoming_requests`, `my_sent_requests`, `my_history`, `dm_threads`, `dm_messages`. Hepsi `set search_path = ''`.
 
 **Admin script'leri** (geliştirici makinesi, `SUPABASE_URL` ve `SUPABASE_SECRET_KEY` ortamdan; secret key hiçbir dosyaya yazılmaz):
@@ -600,6 +602,7 @@ Yeni olaylar `_shared/pure/analytics.ts` izin listesine eklenir. Hepsi yalnızca
 | `friendship_created`                   | `source: 'room_end_mutual' \| 'request'` |
 | `dm_sent`                              | —                                        |
 | `game_completed`                       | mevcut + `mode: 'voice' \| 'text'`       |
+| `sohbet_card_opened`                   | `theme` (kart metni yok; oda sahibinden) |
 
 `reveal_mutual` ve `reveal_none` kalır. Arkadaşlık oranı `friendship_created` / iki masalı odalar olarak ölçülür.
 

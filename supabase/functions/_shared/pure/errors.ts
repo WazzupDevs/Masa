@@ -33,7 +33,15 @@ export type ErrorCode =
   | 'too_soon'
   | 'no_cards'
   | 'reveal_closed'
+  | 'not_found'
+  | 'display_name_required'
+  | 'display_name_invalid'
+  | 'bio_invalid'
+  | 'photo_invalid'
+  | 'already_friends'
+  | 'not_friends'
   | 'method_not_allowed'
+  | 'update_required'
   | 'internal';
 
 export type ApiErrorBody = { error: { code: ErrorCode; message: string } };
@@ -88,6 +96,7 @@ export const DOMAIN_ERROR_CODES: readonly ErrorCode[] = [
   'too_soon',
   'no_cards',
   'reveal_closed',
+  'not_friends',
 ];
 
 export function isDomainErrorCode(value: string): value is ErrorCode {

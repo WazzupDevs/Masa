@@ -6,6 +6,7 @@ import { Alert, Linking, Pressable, Text, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { BlockedList } from '@/features/chat/BlockedList';
+import { ProfileSettings } from '@/features/profile/ProfileSettings';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { unregisterPush } from '@/features/push/push';
@@ -66,9 +67,13 @@ export default function SettingsScreen() {
     <Screen>
       <Text className="text-3xl font-bold text-black">{tr.settings.title}</Text>
       <View className="mt-6">
+        <ProfileSettings />
+      </View>
+      <View className="mt-6">
         <BlockedList />
       </View>
       <View className="mt-6">
+        <Text className="text-sm font-semibold text-neutral-500">{tr.settings.legalSection}</Text>
         <Row
           label={tr.settings.privacy}
           onPress={() =>

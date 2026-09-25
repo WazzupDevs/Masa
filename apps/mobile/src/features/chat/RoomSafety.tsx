@@ -1,7 +1,7 @@
-import { REPORT_REASONS, type ReportReason } from '@shared/chat.ts';
+import type { ReportReason } from '@shared/chat.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Alert, Modal, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { roomKeys } from '@/features/rooms/queries';
@@ -9,6 +9,8 @@ import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { track } from '@/lib/analytics';
 import { safetyApi } from '@/lib/api';
+
+import { ReportModal } from './ReportModal';
 
 type Props = { roomId: string; hasOtherTable: boolean };
 
@@ -56,31 +58,13 @@ export function RoomSafety({ roomId, hasOtherTable }: Props) {
         />
       ) : null}
 
-      <Modal
-        transparent
-        animationType="fade"
+      <ReportModal
         visible={reporting}
-        onRequestClose={() => setReporting(false)}
-      >
-        <View className="flex-1 items-center justify-center bg-black/50 px-6">
-          <View className="w-full gap-3 rounded-2xl bg-white p-6">
-            <Text className="text-xl font-bold text-black">{tr.safety.reportTitle}</Text>
-            {REPORT_REASONS.map((reason) => (
-              <Button
-                key={reason}
-                variant="secondary"
-                label={tr.safety.reasons[reason]}
-                onPress={() => report.mutate(reason)}
-                disabled={report.isPending}
-              />
-            ))}
-            {report.isError ? (
-              <Text className="text-sm text-red-600">{errorMessage(report.error)}</Text>
-            ) : null}
-            <Button label={tr.common.cancel} onPress={() => setReporting(false)} />
-          </View>
-        </View>
-      </Modal>
+        pending={report.isPending}
+        error={report.error}
+        onReport={(reason) => report.mutate(reason)}
+        onClose={() => setReporting(false)}
+      />
     </View>
   );
 }

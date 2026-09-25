@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { isExpoPushToken, joinAcceptedPush, joinRequestPush } from './push.ts';
+import {
+  isExpoPushToken,
+  dmPush,
+  friendRequestPush,
+  joinAcceptedPush,
+  joinRequestPush,
+} from './push.ts';
 
 describe('isExpoPushToken', () => {
   it('accepts Expo push tokens only', () => {
@@ -17,6 +23,12 @@ describe('push texts', () => {
       'Mor Baykuş (3 kişi) Tabu odana katılmak istiyor.',
     );
     expect(joinRequestPush('Mavi Kedi', 2, 'sohbet').body).toContain('Sohbet odana');
+    expect(joinRequestPush('Mor Baykuş', 4, 'tabu').body).toContain('(4+ kişi)');
     expect(joinAcceptedPush().body.length).toBeGreaterThan(0);
+  });
+
+  it('say nothing about who wrote or asked, and nothing of the message', () => {
+    expect(dmPush()).toEqual({ title: 'Masa', body: 'Yeni bir mesajın var' });
+    expect(friendRequestPush()).toEqual({ title: 'Masa', body: 'Yeni bir arkadaşlık isteğin var' });
   });
 });
