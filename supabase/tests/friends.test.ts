@@ -587,6 +587,8 @@ describe('no profile id before a friendship', () => {
       ].sort(),
     );
     expect(friend).toMatchObject({ displayName: 'Ayşe', photoUrl: null, unread: false });
+    // Sent twice, the same answer: the app may resend it after a 5xx (pure/apiRetry.ts).
+    expect(await friendList(b)).toEqual([friend]);
   });
 });
 
@@ -815,6 +817,13 @@ describe('DMs', () => {
     expect(Object.keys(page?.[0] ?? {}).sort()).toEqual(['body', 'created_at', 'from_me', 'id']);
     expect((await friendList(b))[0]?.unread).toBe(true);
     expect(await dm(b, { action: 'read', threadId })).toEqual(OK);
+    expect((await friendList(b))[0]?.unread).toBe(false);
+    // Sent twice: the same answer and still one read marker per account (pure/apiRetry.ts).
+    const readRows = async () =>
+      sql`select user_id from public.dm_reads where thread_id = ${threadId} order by user_id`;
+    const before = await readRows();
+    expect(await dm(b, { action: 'read', threadId })).toEqual(OK);
+    expect(await readRows()).toEqual(before);
     expect((await friendList(b))[0]?.unread).toBe(false);
 
     // A third account: no thread, no page.
