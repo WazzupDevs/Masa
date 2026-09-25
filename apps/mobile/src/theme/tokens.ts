@@ -103,6 +103,8 @@ export type ShadowSet = {
   primaryButton: string | null;
   button: string | null; // secondary, danger and success buttons
   venueButton: string | null; // the raised Mekan tab
+  raised: string | null; // the selected segment of a switch
+  pin: string | null; // map pins
 };
 
 export type Shape = {
@@ -144,7 +146,8 @@ export type TypeVariant =
   | 'buttonDetail'
   | 'tag'
   | 'caption' // tab labels, small counters
-  | 'overline'; // "Söylenmeyecekler"
+  | 'overline' // "Söylenmeyecekler"
+  | 'signalMark'; // the emoji of the "Tanışalım mı?" signal
 
 export type Typography = Record<TypeVariant, TypeStyle>;
 
@@ -179,6 +182,7 @@ export const SPACING = {
   6: 24,
   7: 28,
   8: 32,
+  9: 36,
   10: 40,
   11: 44,
   12: 48,
@@ -215,6 +219,7 @@ export function baseTypography(overrides: Partial<Typography> = {}): Typography 
     tag: { font: 'bold', size: 13, lineHeight: 17 },
     caption: { font: 'bold', size: 12, lineHeight: 16 },
     overline: { font: 'extrabold', size: 12, lineHeight: 16, letterSpacing: 1, uppercase: true },
+    signalMark: { font: 'regular', size: 104, lineHeight: 126 },
     ...overrides,
   };
 }

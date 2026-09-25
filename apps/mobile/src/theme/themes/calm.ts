@@ -75,6 +75,8 @@ export const calm: ThemeDefinition = {
       primaryButton: null,
       button: null,
       venueButton: '0px 4px 12px -4px rgba(0, 0, 0, 0.3)',
+      raised: '0px 1px 3px rgba(0, 0, 0, 0.15)',
+      pin: '0px 4px 10px rgba(0, 0, 0, 0.18)',
     },
     selectedTeam: 'ring',
     screenPadding: 22,

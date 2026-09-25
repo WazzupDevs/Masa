@@ -55,7 +55,7 @@ export function Segmented<T extends string>({
               paddingHorizontal: SPACING[3],
               borderRadius: shape.radius.pill,
               backgroundColor: on ? colors.surface : 'transparent',
-              boxShadow: on && !outlined ? '0px 1px 3px rgba(0, 0, 0, 0.15)' : undefined,
+              boxShadow: on ? shape.shadow.raised : undefined,
             }}
           >
             {o.icon ? (
