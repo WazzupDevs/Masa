@@ -11,3 +11,16 @@ export async function deleteProfilePhotos(db: Db, publicId: string): Promise<voi
   const removed = await bucket.remove(data.map((f) => `${publicId}/${f.name}`));
   if (removed.error) throw new Error(`storage remove failed (${removed.error.message})`);
 }
+
+// A reported photo as hex bytea for the report row (docs/SPEC_V2.md §5.3: the copy lives in
+// reports.photo_copy and goes with the row after 30 days). undefined if it cannot be read.
+export async function photoCopyHex(db: Db, path: string | null): Promise<string | undefined> {
+  if (!path) return undefined;
+  const file = await db.storage.from(PHOTO_BUCKET).download(path);
+  if (file.error) return undefined;
+  let hex = '\\x';
+  for (const b of new Uint8Array(await file.data.arrayBuffer())) {
+    hex += b.toString(16).padStart(2, '0');
+  }
+  return hex;
+}

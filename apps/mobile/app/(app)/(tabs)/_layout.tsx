@@ -4,6 +4,7 @@ import { router, Tabs } from 'expo-router';
 import { View } from 'react-native';
 
 import { useActiveTable } from '@/features/checkin/useActiveTable';
+import { useFriends, useIncomingFriendRequests, useInbox } from '@/features/friends/queries';
 import { tr } from '@/i18n/tr';
 
 export { RouteError as ErrorBoundary } from '@/components/RouteError';
@@ -25,6 +26,11 @@ function VenueIcon({ focused }: { focused: boolean }) {
 // the tabs, so the tab bar is hidden there.
 export default function TabsLayout() {
   const table = useActiveTable();
+  useInbox();
+  const incoming = useIncomingFriendRequests();
+  const friends = useFriends();
+  const waiting =
+    (incoming.data?.length ?? 0) + (friends.data?.filter((f) => f.unread).length ?? 0);
 
   return (
     <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: 'black' }}>
@@ -56,6 +62,7 @@ export default function TabsLayout() {
         name="friends"
         options={{
           title: tr.tabs.friends,
+          tabBarBadge: waiting > 0 ? waiting : undefined,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="people-outline" color={color} size={size} />
           ),

@@ -337,6 +337,7 @@ Arkadaşlık kurulana kadar hiçbir yanıt karşı tarafın `public_id`'sini ta�
   - Test bunu tüm dönüş kolonları üzerinden doğrular (§11).
 - **Arkadaşlığı bitirme ve engelleme, isteğe bağlı şikayetle:**
   - `friends/remove { publicId, report?: reason }` sessizdir. Karşı taraf yalnızca arkadaşın listeden çıktığını görür.
+  - **Çıkarma, çıkarılan için kalıcı reddir** (proje sahibi kararı, adım 4): çıkarılanın çıkarana yeni isteği sessizce yutulur ve gönderende süresiz `pending` görünür; çıkaran yeniden istek gönderebilir. Engelleme de arkadaşlığı aynı yolla bitirir, bu yüzden çıkarılan taraf ikisini ayırt edemez. Önceden verilmiş red kayıtları silinmez. `my_sent_requests()` bu yüzden istek satırlarından değil, gönderenin kendi geçmiş kaydındaki basıştan (`friend_action_at`) üretilir: hangi sebeple yutulursa yutulsun istek bekliyor görünür.
   - `safety/block { publicId, report?: reason }` bugünkü `blocks`'a yazar ve arkadaşlığı siler. Karşı tarafa bildirilmez.
   - Engellemede de karşı tarafın gördüğü aynıdır: arkadaş listeden çıkar. Karşı taraf ikisini ayırt edemez.
   - **"Şikayet de et":** İki akışta da bir seçenek olarak sunulur. Seçilirse, konuşmanın son 50 mesajının kopyası arkadaşlık ve konuşma cascade ile silinmeden önce, **aynı transaction'da** `reports`'a yazılır (`target_type = 'dm'`). Silme ve kopya birlikte başarılı olur ya da birlikte geri alınır.
@@ -468,6 +469,8 @@ Yazılı kalır, değişmez. Yeni oyun yok.
 | `tabu`    | Sesli mod: `start`, `current-card` (iki masa), `judge { result: correct/taboo/pass }`, `end-turn`; `clue`/`guess` bir sürüm sonra kalkar                                                                                                                                    | Değişir |
 | `safety`  | `report`: `target` room/dm/profile/history (`historyId` kabul eder). `block`: `publicId` (arkadaş, DM, profil) ya da `historyId` (arkadaşlık öncesi), isteğe bağlı `report`. Engel arkadaşlığı siler; şikayet kopyası aynı transaction'da alınır                            | Değişir |
 | `account` | `delete`: Storage klasörü + PostHog (mevcut)                                                                                                                                                                                                                                | Değişir |
+
+_Adım 4 notu: arkadaş listesi `my_friends()` RPC'si yerine `friends/list` eylemiyle gelir (fotoğraf URL'leri yalnızca fonksiyonda imzalanabilir); `dm_threads()` bu listeye katıldı; `my_history` tabloya RLS okumasıdır; DM sayfası `dm_messages_page`. `safety/report` ayrıca `target: 'history'` ile oda bittikten sonra da çalışır ve karşı masa profille katıldıysa profilin o anki kopyasını alır (proje sahibinin ek şartı). Ayrıntı: `docs/DECISIONS.md`, v2 adım 4._
 
 Hepsi bugünkü kalıbı izler: tek endpoint, `action`, zod v4, `{ error: { code, message } }`. Yazan SQL fonksiyonları yalnızca service role'e açıktır. İstemcinin çağırdığı RPC'ler yalnızca okur: `explore_venues`, `venue_lobby` (+ `profiled`), `room_member_profile`, `my_friends`, `my_incoming_requests`, `my_sent_requests`, `my_history`, `dm_threads`, `dm_messages`. Hepsi `set search_path = ''`.
 

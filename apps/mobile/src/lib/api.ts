@@ -15,6 +15,7 @@ import type {
   RoomsOkResponse,
 } from '@shared/api/rooms.ts';
 import type { CheckInRequest, CheckInResponse, LeaveResponse } from '@shared/api/checkin.ts';
+import type { DmOkResponse, FriendsListResponse, FriendsOkResponse } from '@shared/api/friends.ts';
 import type { ProfileRequest, ProfileUploadUrl, ProfileView } from '@shared/api/profile.ts';
 import type { ReportReason } from '@shared/chat.ts';
 import { type ErrorCode, isApiErrorBody } from '@shared/errors.ts';
@@ -95,6 +96,14 @@ export const safetyApi = {
     invoke<SafetyResponse>('safety', { action: 'report', roomId, reason }),
   reportProfile: (publicId: string, reason: ReportReason) =>
     invoke<SafetyResponse>('safety', { action: 'report', target: 'profile', publicId, reason }),
+  reportHistory: (historyId: string, reason: ReportReason) =>
+    invoke<SafetyResponse>('safety', { action: 'report', target: 'history', historyId, reason }),
+  reportDm: (threadId: string, reason: ReportReason) =>
+    invoke<SafetyResponse>('safety', { action: 'report', target: 'dm', threadId, reason }),
+  blockFriend: (publicId: string, report?: ReportReason) =>
+    invoke<SafetyResponse>('safety', { action: 'block', publicId, ...(report ? { report } : {}) }),
+  blockHistory: (historyId: string, report?: ReportReason) =>
+    invoke<SafetyResponse>('safety', { action: 'block', historyId, ...(report ? { report } : {}) }),
   block: (roomId: string) => invoke<SafetyResponse>('safety', { action: 'block', roomId }),
   unblock: (blockId: string) => invoke<SafetyResponse>('safety', { action: 'unblock', blockId }),
 };
@@ -127,4 +136,26 @@ export const profileApi = {
   photoUploadUrl: () => invoke<ProfileUploadUrl>('profile', { action: 'photo-upload-url' }),
   photoCommit: (path: string) => invoke<{ ok: true }>('profile', { action: 'photo-commit', path }),
   photoRemove: () => invoke<{ ok: true }>('profile', { action: 'photo-remove' }),
+};
+
+export const friendsApi = {
+  list: () => invoke<FriendsListResponse>('friends', { action: 'list' }),
+  request: (historyId: string) =>
+    invoke<FriendsOkResponse>('friends', { action: 'request', historyId }),
+  respond: (requestId: string, accept: boolean) =>
+    invoke<FriendsOkResponse>('friends', { action: 'respond', requestId, accept }),
+  addFromRoom: (historyId: string) =>
+    invoke<FriendsOkResponse>('friends', { action: 'add-from-room', historyId }),
+  remove: (publicId: string, report?: ReportReason) =>
+    invoke<FriendsOkResponse>('friends', {
+      action: 'remove',
+      publicId,
+      ...(report ? { report } : {}),
+    }),
+};
+
+export const dmApi = {
+  send: (threadId: string, body: string) =>
+    invoke<DmOkResponse>('dm', { action: 'send', threadId, body }),
+  read: (threadId: string) => invoke<DmOkResponse>('dm', { action: 'read', threadId }),
 };

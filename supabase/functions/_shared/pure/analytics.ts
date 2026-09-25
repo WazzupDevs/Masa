@@ -1,5 +1,6 @@
 // Product analytics (MVP_SPEC §12, docs/SPEC_V2.md §13). Only these events, only these properties, and the user id as
 // the distinct id: never a phone number, alias, message, venue or position.
+import type { FriendRequestSource, FriendshipSource } from './friends.ts';
 import type { Participation } from './profile.ts';
 import type { Concept, Visibility } from './rooms.ts';
 import type { SohbetTheme } from './sohbet.ts';
@@ -26,6 +27,11 @@ export type AnalyticsEventProps = {
   profile_bio_set: Record<string, never>;
   // A Sohbet card was opened in a room; the theme only, never the prompt.
   sohbet_card_opened: { theme: SohbetTheme };
+  friend_request_sent: { source: FriendRequestSource };
+  friend_request_accepted: Record<string, never>;
+  friend_add_pressed: Record<string, never>;
+  friendship_created: { source: FriendshipSource };
+  dm_sent: Record<string, never>;
 };
 
 export type AnalyticsEvent = keyof AnalyticsEventProps;
@@ -50,6 +56,11 @@ const ALLOWED: { [E in AnalyticsEvent]: readonly (keyof AnalyticsEventProps[E])[
   profile_photo_set: [],
   profile_bio_set: [],
   sohbet_card_opened: ['theme'],
+  friend_request_sent: ['source'],
+  friend_request_accepted: [],
+  friend_add_pressed: [],
+  friendship_created: ['source'],
+  dm_sent: [],
 };
 
 export const ANALYTICS_EVENTS = Object.keys(ALLOWED) as AnalyticsEvent[];

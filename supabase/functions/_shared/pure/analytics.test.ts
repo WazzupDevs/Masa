@@ -32,6 +32,11 @@ describe('analytics events', () => {
         'profile_photo_set',
         'profile_bio_set',
         'sohbet_card_opened',
+        'friend_request_sent',
+        'friend_request_accepted',
+        'friend_add_pressed',
+        'friendship_created',
+        'dm_sent',
       ].sort(),
     );
   });
@@ -59,6 +64,10 @@ describe('analytics events', () => {
         cardId: 'c1',
       } as never),
     ).toEqual({ theme: 'derin' });
+    expect(
+      analyticsProperties('friendship_created', { source: 'request', publicId: 'x' } as never),
+    ).toEqual({ source: 'request' });
+    expect(analyticsProperties('dm_sent', { body: 'selam' } as never)).toEqual({});
     expect(analyticsProperties('game_completed', { concept: 'tabu', score: 4 })).toEqual({
       concept: 'tabu',
       score: 4,

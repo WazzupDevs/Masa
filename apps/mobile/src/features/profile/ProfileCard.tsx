@@ -35,14 +35,22 @@ export function ProfileCard({ profile }: { profile: ProfileView }) {
   );
 }
 
-export function ProfilePhoto({ url }: { url: string | null }) {
+const PHOTO_SIZE = { large: 'h-28 w-28', small: 'h-12 w-12' } as const;
+
+export function ProfilePhoto({
+  url,
+  size = 'large',
+}: {
+  url: string | null;
+  size?: keyof typeof PHOTO_SIZE;
+}) {
   return url ? (
     <Image
       source={{ uri: url }}
       accessibilityIgnoresInvertColors
-      className="h-28 w-28 rounded-full bg-neutral-100"
+      className={`${PHOTO_SIZE[size]} rounded-full bg-neutral-100`}
     />
   ) : (
-    <View className="h-28 w-28 rounded-full bg-neutral-200" />
+    <View className={`${PHOTO_SIZE[size]} rounded-full bg-neutral-200`} />
   );
 }

@@ -1,6 +1,45 @@
 import { headcountLabel } from '@shared/checkin.ts';
 import type { EventTime } from '@shared/explore.ts';
 
+const MONTHS = [
+  'Ocak',
+  'Şubat',
+  'Mart',
+  'Nisan',
+  'Mayıs',
+  'Haziran',
+  'Temmuz',
+  'Ağustos',
+  'Eylül',
+  'Ekim',
+  'Kasım',
+  'Aralık',
+];
+// "12 Eylül'de": the locative suffix follows the month's last vowel and consonant.
+const MONTH_SUFFIX = [
+  "'ta",
+  "'ta",
+  "'ta",
+  "'da",
+  "'ta",
+  "'da",
+  "'da",
+  "'ta",
+  "'de",
+  "'de",
+  "'da",
+  "'ta",
+];
+
+function dayMonth(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getDate()} ${MONTHS[d.getMonth()] ?? ''}`;
+}
+
+function dayMonthAt(iso: string): string {
+  return `${dayMonth(iso)}${MONTH_SUFFIX[new Date(iso).getMonth()] ?? ''}`;
+}
+
 const WEEKDAYS = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
 
 export const tr = {
@@ -95,7 +134,54 @@ export const tr = {
     checkInHere: 'Buraya giriş yap',
   },
   friends: {
-    soon: 'Birlikte oynadığın masalarla burada arkadaş olabileceksin.',
+    empty: 'Henüz arkadaşın yok. Birlikte oynadığın masaları "Geçmiş ve istekler"de bulabilirsin.',
+    requestsAndHistory: 'Geçmiş ve istekler',
+    newRequests: (n: number) => `${n} yeni arkadaşlık isteği`,
+    unread: 'Yeni mesaj',
+    noMessagesYet: 'Henüz mesaj yok. İlk mesajı sen yaz.',
+    // Ablative: the locative suffix plus "n" (Eylül'den, Ocak'tan).
+    since: (iso: string) => `${dayMonthAt(iso)}n beri arkadaşsınız`,
+    incomingTitle: 'Gelen istekler',
+    noIncoming: 'Yeni istek yok.',
+    incoming: (playedAt: string, concept: 'tabu' | 'sohbet', alias: string) =>
+      concept === 'tabu'
+        ? `${dayMonthAt(playedAt)} Tabu oynadığınız ${alias} masası arkadaşın olmak istiyor`
+        : `${dayMonthAt(playedAt)} sohbet ettiğiniz ${alias} masası arkadaşın olmak istiyor`,
+    accept: 'Kabul et',
+    decline: 'Reddet',
+    sentTitle: 'Gönderilen istekler',
+    sent: (alias: string) => `${alias} masasına istek gönderildi`,
+    sentAccepted: (alias: string) => `${alias} masası isteğini kabul etti`,
+    historyTitle: 'Oyun geçmişi',
+    noHistory: 'Başka bir masayla en az 3 dakika oynadığınızda burada görünür.',
+    historyRow: (alias: string, concept: 'tabu' | 'sohbet', playedAt: string) =>
+      `${alias} masasıyla ${concept === 'tabu' ? 'Tabu' : 'Sohbet'} · ${dayMonth(playedAt)}`,
+    people: (n: number) => `${headcountLabel(n)} kişi`,
+    sendRequest: 'İstek gönder',
+    addFriend: 'Arkadaş ekle',
+    actionDone: 'Gönderildi',
+    addFriendHint: 'İki masa da basarsa arkadaş olursunuz. Karşı taraf basmazsa hiçbir şey olmaz.',
+    more: 'Diğer',
+    moreTitle: 'Bu masa',
+    report: 'Şikayet et',
+    block: 'Engelle',
+    alsoReport: 'Şikayet de et',
+    blockConfirm: 'Engelle',
+    blockHint:
+      'Birbirinizi lobide, isteklerde ve arkadaş listesinde bir daha görmezsiniz. Karşı tarafa bildirilmez.',
+    removeFriend: 'Arkadaşlıktan çıkar',
+    removeConfirm: 'Çıkar',
+    removeHint: 'Konuşmanız silinir. Karşı tarafa bildirilmez.',
+    friendMenuTitle: 'Arkadaşlık',
+    viewProfile: 'Profili gör',
+    done: 'Tamam',
+    back: 'Geri',
+  },
+  dm: {
+    placeholder: 'Mesaj yaz…',
+    send: 'Gönder',
+    report: 'Konuşmayı şikayet et',
+    olderMessages: 'Daha eski mesajlar',
   },
   profile: {
     noName: 'Henüz bir adın yok',
@@ -291,6 +377,8 @@ export const tr = {
     goodGame: 'Güzel oyundu 👋',
     backToVenue: 'Mekana dön',
     score: (n: number) => `Ortak skor: ${n}`,
+    addFriend: 'Arkadaş ekle',
+    addFriendDone: 'Eklendi. İkiniz de basarsanız arkadaş olursunuz.',
   },
   venue: {
     yourTable: 'Masanın adı',
@@ -359,6 +447,8 @@ export const tr = {
     no_cards: 'Kart kalmadı.',
     reveal_closed: 'Süre doldu.',
     not_found: 'Bulunamadı.',
+    already_friends: 'Zaten arkadaşsınız.',
+    not_friends: 'Artık arkadaş değilsiniz.',
     display_name_required: 'Önce profilinde bir ad seç.',
     display_name_invalid: 'Ad 2–24 karakter olmalı ve uygun olmayan ifade içermemeli.',
     bio_invalid: 'Tanıtım en fazla 160 karakter olmalı ve uygun olmayan ifade içermemeli.',
