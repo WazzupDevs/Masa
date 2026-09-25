@@ -54,7 +54,22 @@ Node 22, pnpm 10, Docker (yerel Supabase için). Supabase CLI ve Deno root devDe
    - Hooks → **Before User Created** → Postgres → şema `private`, fonksiyon `before_user_created`.
    - **Realtime → Settings → Allow public access: kapalı.** Tüm kanallar özeldir; kimin abone olup yayın yapacağına `realtime.messages` politikaları karar verir.
 8. **Mobil:** `cp apps/mobile/.env.example apps/mobile/.env`; URL `https://<ref>.supabase.co`, anahtar Settings → API Keys'teki publishable key.
-9. Sonraki değişikliklerde: yeni migration ya da içerik → `pnpm supabase db push --include-seed`; fonksiyon değişikliği → `pnpm supabase functions deploy <ad>`.
+9. Sonraki değişikliklerde: "main'den dev projesine yayın" (aşağıda).
+
+### main'den dev projesine yayın
+Tek seferlik kurulum (yukarıda) yapılmış bir projeye main'in güncel hâlini gönderir. Repo kökünde, sırayla. `supabase login` gerekirse tarayıcıdan giriş ister; uzak veritabanına bağlanan komutlar (2–4, 6) veritabanı parolasını sorabilir (panel → Settings → Database).
+1. `git checkout main && git pull && pnpm install`
+2. `pnpm supabase migration list`: bağlı projeyi ve uygulanmamış migration'ları gösterir (Local dolu, Remote boş satırlar). Proje yanlışsa: `pnpm supabase link --project-ref <ref>`.
+3. `pnpm supabase db push --include-seed --dry-run`: uygulanacakları yalnızca listeler.
+4. `pnpm supabase db push --include-seed`: migration'lar, ardından `seed.sql` (takma ad kelimeleri, kartlar, küfür listesi, mekanlar; tekrar çalıştırılabilir; silmez, ekler ya da günceller). Profil fotoğrafı kovası ve cron işleri migration'larla gelir.
+5. Fonksiyonların hepsi (12): `pnpm supabase functions deploy account chat checkin dm friends ping profile reveal rooms safety sohbet tabu`. `verify_jwt = false` her birinin `config.toml` bloğundan gelir; yeni bir fonksiyon eklenince bu listeye ve `config.toml`'a birlikte eklenir.
+6. Kontrol: `pnpm supabase functions list` (12'si de `ACTIVE`, sürümleri artmış) ve `pnpm supabase migration list` (her satırda Local ve Remote aynı).
+7. Sırlar, yalnızca gerektiğinde (`pnpm supabase secrets list` ile bak):
+   - `MIN_APP_BUILD`: yalnızca eski build'leri kapatırken (bkz. "Build numarası").
+   - `POSTHOG_PERSONAL_API_KEY`, `POSTHOG_PROJECT_ID`, isteğe bağlı `POSTHOG_HOST`: hesap silmede PostHog kişi silme; yoksa atlanır.
+8. Panel: Realtime → Settings → **Allow public access kapalı** (değişmedi, kontrol et). Bu sürüm yeni bir panel ayarı istemez.
+9. Sonra istemci: native değişiklik varsa yeni `eas build`, yoksa `eas update` (bkz. "Neyi ne zaman yayınlamalı").
+- Asla: `supabase config push`, `supabase/local/secrets.sql`'i barındırılan projede çalıştırmak, secret key'i bir dosyaya yazmak.
 
 ### Push (isteğe bağlı; hesaplar olmadan build kırılmaz)
 - `EAS_PROJECT_ID`: `eas init` ile alınan Expo proje id'si. Yoksa uygulama push token kaydını sessizce atlar.
