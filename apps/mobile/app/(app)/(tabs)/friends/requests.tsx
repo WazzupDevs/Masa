@@ -3,10 +3,16 @@ import { historyAction } from '@shared/friends.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, Modal, Text, View } from 'react-native';
+import { Alert, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
+import { EmptyState } from '@/components/EmptyState';
+import { Quiet } from '@/components/Quiet';
 import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { Sheet } from '@/components/Sheet';
+import { Text } from '@/components/Text';
 import { ReportModal } from '@/features/chat/ReportModal';
 import { ConfirmWithReport } from '@/features/friends/ConfirmWithReport';
 import {
@@ -88,52 +94,59 @@ export default function RequestsScreen() {
 
   return (
     <Screen>
-      <Text className="text-3xl font-bold text-black">{tr.friends.requestsAndHistory}</Text>
+      <ScreenHeader title={tr.friends.requestsAndHistory} onBack={() => router.back()} />
 
       <Section title={tr.friends.incomingTitle}>
-        {incoming.data?.length === 0 ? (
-          <Text className="text-base text-neutral-500">{tr.friends.noIncoming}</Text>
-        ) : null}
-        {incoming.data?.map((r) => (
-          <View key={r.request_id} className="gap-3 rounded-xl border border-neutral-200 p-4">
-            <Text className="text-base text-black">
-              {tr.friends.incoming(r.played_at, concept(r.concept), r.other_alias)}
-            </Text>
-            <Text className="text-sm text-neutral-500">{tr.friends.people(r.other_headcount)}</Text>
-            <View className="flex-row gap-3">
-              <View className="flex-1">
+        {incoming.data?.length === 0 ? <Text tone="muted">{tr.friends.noIncoming}</Text> : null}
+        {/* A friend request is a trust moment: hairline card, the rule spelled out, one clear
+            action. */}
+        <Quiet value>
+          {incoming.data?.map((r) => (
+            <Card key={r.request_id}>
+              <View className="gap-3">
+                <Text variant="bodyStrong">
+                  {tr.friends.incoming(r.played_at, concept(r.concept), r.other_alias)}
+                </Text>
+                <Text variant="fine">{tr.friends.people(r.other_headcount)}</Text>
+                <View className="flex-row gap-2.5">
+                  <View className="flex-1">
+                    <Button
+                      variant="secondary"
+                      label={tr.friends.decline}
+                      disabled={respond.isPending}
+                      onPress={() => respond.mutate({ requestId: r.request_id, accept: false })}
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <Button
+                      label={tr.friends.accept}
+                      loading={respond.isPending && respond.variables.requestId === r.request_id}
+                      disabled={respond.isPending}
+                      onPress={() => respond.mutate({ requestId: r.request_id, accept: true })}
+                    />
+                  </View>
+                </View>
+                <Text variant="fine">{tr.friends.declineNote}</Text>
                 <Button
-                  label={tr.friends.accept}
-                  loading={respond.isPending && respond.variables.requestId === r.request_id}
-                  disabled={respond.isPending}
-                  onPress={() => respond.mutate({ requestId: r.request_id, accept: true })}
+                  variant="ghost"
+                  label={tr.friends.more}
+                  onPress={() => setMenuFor(r.history_id)}
                 />
               </View>
-              <View className="flex-1">
-                <Button
-                  variant="secondary"
-                  label={tr.friends.decline}
-                  disabled={respond.isPending}
-                  onPress={() => respond.mutate({ requestId: r.request_id, accept: false })}
-                />
-              </View>
-            </View>
-            <Button
-              variant="secondary"
-              label={tr.friends.more}
-              onPress={() => setMenuFor(r.history_id)}
-            />
-          </View>
-        ))}
+            </Card>
+          ))}
+        </Quiet>
         {respond.isError ? (
-          <Text className="text-sm text-red-600">{errorMessage(respond.error)}</Text>
+          <Text variant="fine" tone="danger">
+            {errorMessage(respond.error)}
+          </Text>
         ) : null}
       </Section>
 
       {sent.data && sent.data.length > 0 ? (
         <Section title={tr.friends.sentTitle}>
           {sent.data.map((r) => (
-            <Text key={r.history_id} className="text-base text-neutral-700">
+            <Text key={r.history_id}>
               {r.status === 'accepted'
                 ? tr.friends.sentAccepted(r.other_alias)
                 : tr.friends.sent(r.other_alias)}
@@ -144,22 +157,24 @@ export default function RequestsScreen() {
 
       <Section title={tr.friends.historyTitle}>
         {history.data?.length === 0 ? (
-          <Text className="text-base text-neutral-500">{tr.friends.noHistory}</Text>
+          <EmptyState icon="time-outline" body={tr.friends.noHistory} />
         ) : null}
         {history.data?.map((h) => {
           const action = historyAction(h);
           return (
-            <View key={h.id} className="gap-2 rounded-xl border border-neutral-200 p-4">
-              <Text className="text-base font-semibold text-black">
+            <Card key={h.id}>
+              <Text variant="bodyStrong">
                 {tr.friends.historyRow(h.other_alias, concept(h.concept), h.played_at)}
               </Text>
-              <Text className="text-sm text-neutral-500">
+              <Text variant="fine" className="mt-0.5">
                 {tr.friends.people(h.other_headcount)}
               </Text>
               {action === 'add_friend' ? (
-                <Text className="text-sm text-neutral-500">{tr.friends.addFriendHint}</Text>
+                <Text variant="fine" className="mt-1">
+                  {tr.friends.addFriendHint}
+                </Text>
               ) : null}
-              <View className="flex-row gap-3">
+              <View className="mt-3 flex-row gap-2.5">
                 <View className="flex-1">
                   <Button
                     label={
@@ -187,47 +202,39 @@ export default function RequestsScreen() {
                   />
                 </View>
               </View>
-            </View>
+            </Card>
           );
         })}
         {act.isError ? (
-          <Text className="text-sm text-red-600">{errorMessage(act.error)}</Text>
+          <Text variant="fine" tone="danger">
+            {errorMessage(act.error)}
+          </Text>
         ) : null}
       </Section>
 
-      <View className="mt-8">
-        <Button variant="secondary" label={tr.friends.back} onPress={() => router.back()} />
-      </View>
-
-      <Modal
-        transparent
-        animationType="fade"
+      <Sheet
         visible={menuFor !== null}
-        onRequestClose={() => setMenuFor(null)}
+        onClose={() => setMenuFor(null)}
+        title={tr.friends.moreTitle}
       >
-        <View className="flex-1 items-center justify-center bg-black/50 px-6">
-          <View className="w-full gap-3 rounded-2xl bg-white p-6">
-            <Text className="text-xl font-bold text-black">{tr.friends.moreTitle}</Text>
-            <Button
-              variant="secondary"
-              label={tr.friends.report}
-              onPress={() => {
-                setReporting(menuFor);
-                setMenuFor(null);
-              }}
-            />
-            <Button
-              variant="danger"
-              label={tr.friends.block}
-              onPress={() => {
-                setBlocking(menuFor);
-                setMenuFor(null);
-              }}
-            />
-            <Button label={tr.common.cancel} onPress={() => setMenuFor(null)} />
-          </View>
-        </View>
-      </Modal>
+        <Button
+          variant="secondary"
+          label={tr.friends.report}
+          onPress={() => {
+            setReporting(menuFor);
+            setMenuFor(null);
+          }}
+        />
+        <Button
+          variant="danger"
+          label={tr.friends.block}
+          onPress={() => {
+            setBlocking(menuFor);
+            setMenuFor(null);
+          }}
+        />
+        <Button variant="ghost" label={tr.common.cancel} onPress={() => setMenuFor(null)} />
+      </Sheet>
 
       <ReportModal
         visible={reporting !== null}
@@ -252,8 +259,10 @@ export default function RequestsScreen() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <View className="mt-8 gap-3">
-      <Text className="text-sm font-semibold text-neutral-500">{title}</Text>
+    <View className="mt-6 gap-3">
+      <Text variant="heading" accessibilityRole="header">
+        {title}
+      </Text>
       {children}
     </View>
   );

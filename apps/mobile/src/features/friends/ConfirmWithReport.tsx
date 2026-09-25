@@ -1,9 +1,10 @@
 import type { ReportReason } from '@shared/chat.ts';
 import { useState } from 'react';
-import { Modal, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Checkbox } from '@/components/Checkbox';
+import { Sheet } from '@/components/Sheet';
+import { Text } from '@/components/Text';
 import { ReportModal } from '@/features/chat/ReportModal';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
@@ -27,34 +28,31 @@ export function ConfirmWithReport(props: Props) {
 
   return (
     <>
-      <Modal
-        transparent
-        animationType="fade"
+      <Sheet
         visible={props.visible && !pickingReason}
-        onRequestClose={props.onClose}
+        onClose={props.onClose}
+        title={props.title}
+        icon="shield-outline"
       >
-        <View className="flex-1 items-center justify-center bg-black/50 px-6">
-          <View className="w-full gap-3 rounded-2xl bg-white p-6">
-            <Text className="text-xl font-bold text-black">{props.title}</Text>
-            <Text className="text-sm text-neutral-600">{props.hint}</Text>
-            <Checkbox
-              label={tr.friends.alsoReport}
-              checked={alsoReport}
-              onToggle={() => setAlsoReport((v) => !v)}
-            />
-            {props.error ? (
-              <Text className="text-sm text-red-600">{errorMessage(props.error)}</Text>
-            ) : null}
-            <Button
-              variant="danger"
-              label={props.confirmLabel}
-              loading={props.pending}
-              onPress={() => (alsoReport ? setPickingReason(true) : props.onConfirm(undefined))}
-            />
-            <Button variant="secondary" label={tr.common.cancel} onPress={props.onClose} />
-          </View>
-        </View>
-      </Modal>
+        <Text variant="fine">{props.hint}</Text>
+        <Checkbox
+          label={tr.friends.alsoReport}
+          checked={alsoReport}
+          onToggle={() => setAlsoReport((v) => !v)}
+        />
+        {props.error ? (
+          <Text variant="fine" tone="danger">
+            {errorMessage(props.error)}
+          </Text>
+        ) : null}
+        <Button
+          variant="danger"
+          label={props.confirmLabel}
+          loading={props.pending}
+          onPress={() => (alsoReport ? setPickingReason(true) : props.onConfirm(undefined))}
+        />
+        <Button variant="ghost" label={tr.common.cancel} onPress={props.onClose} />
+      </Sheet>
       <ReportModal
         visible={props.visible && pickingReason}
         pending={props.pending}
