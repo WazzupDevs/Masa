@@ -3,11 +3,13 @@ import { conceptMode } from '@shared/concepts.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Choice } from '@/components/Choice';
 import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { Text } from '@/components/Text';
 import { registerForPush } from '@/features/push/push';
 import { roomKeys } from '@/features/rooms/queries';
 import { errorMessage } from '@/i18n/errors';
@@ -35,9 +37,11 @@ export default function NewRoomScreen() {
 
   return (
     <Screen>
-      <Text className="text-3xl font-bold text-black">{tr.rooms.newTitle}</Text>
-      <Text className="mt-6 text-sm font-semibold text-neutral-500">{tr.rooms.conceptLabel}</Text>
-      <View className="mt-2 gap-2">
+      <ScreenHeader title={tr.rooms.newTitle} onBack={() => router.back()} />
+      <Text variant="label" className="mt-4">
+        {tr.rooms.conceptLabel}
+      </Text>
+      <View accessibilityRole="radiogroup" className="mt-2 gap-2">
         {CONCEPTS.map((c) => (
           <Choice
             key={c}
@@ -48,10 +52,10 @@ export default function NewRoomScreen() {
           />
         ))}
       </View>
-      <Text className="mt-6 text-sm font-semibold text-neutral-500">
+      <Text variant="label" className="mt-6">
         {tr.rooms.visibilityLabel}
       </Text>
-      <View className="mt-2 gap-2">
+      <View accessibilityRole="radiogroup" className="mt-2 gap-2">
         {VISIBILITIES.map((v) => (
           <Choice
             key={v}
@@ -63,7 +67,9 @@ export default function NewRoomScreen() {
         ))}
       </View>
       {create.isError ? (
-        <Text className="mt-4 text-sm text-red-600">{errorMessage(create.error)}</Text>
+        <Text variant="fine" tone="danger" className="mt-4">
+          {errorMessage(create.error)}
+        </Text>
       ) : null}
       <View className="mt-auto pt-8">
         <Button
