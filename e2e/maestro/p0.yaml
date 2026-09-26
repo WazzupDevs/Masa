@@ -1,0 +1,13 @@
+# FIELD_TEST.md P0 order, automated. Env: OUT_DIR (screenshots), INSIDE_LAT/INSIDE_LNG and
+# OUTSIDE_LAT/OUTSIDE_LNG (the E2E venue and a point 310 m away; printed by `bot-table.ts setup`).
+# The bot table (scripts/e2e/bot-table.ts serve) plays the second table.
+appId: app.masa.mobile
+name: P0 kritik yol
+---
+- runFlow: flows/01-login.yaml
+- runFlow: flows/02-checkin.yaml
+- runFlow: flows/03-name.yaml
+- runFlow: flows/04-room-tabu.yaml
+- runFlow: flows/05-reveal-friend-dm.yaml
+- runFlow: flows/06-white-screen.yaml
+- runFlow: flows/07-history-block.yaml

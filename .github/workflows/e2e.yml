@@ -1,20 +1,167 @@
+# End-to-end: the FIELD_TEST.md P0 path on an Android emulator against the local stack, with a bot
+# as the second table (scripts/e2e/bot-table.ts). The APK is built with Gradle in the `apk` job
+# while each `e2e` job starts Supabase and boots the emulator; the emulator script waits for it.
 name: e2e
+
 on:
+  # TEMPORARY (remove before review): runs on pushes to the development branch, with screenshots.
   push:
     branches: [claude/e2e-maestro]
+  pull_request:
+    paths:
+      - apps/mobile/**
+      - supabase/**
+      - e2e/**
+      - scripts/e2e/**
+      - .github/workflows/e2e.yml
   workflow_dispatch:
+    inputs:
+      publish_screenshots:
+        description: Also push the screenshots to the e2e-screenshots branch (to read them without artifact access)
+        type: boolean
+        default: false
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  # The emulator reaches the runner's local stack at 10.0.2.2. The publishable key is the fixed
+  # key of every local stack; the e2e job checks it after `supabase start`.
+  E2E_SUPABASE_URL: http://10.0.2.2:54321
+  E2E_PUBLISHABLE_KEY: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
+
 jobs:
-  probe:
+  apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 25
     steps:
-      - run: |
-          ls -l /dev/kvm || true
-          nproc; free -g; df -h / | tail -1
-          echo "sdk: $ANDROID_HOME"; ls "$ANDROID_HOME" || true
-          java -version 2>&1 | head -1
-          echo probe > probe.txt
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Prebuild
+        working-directory: apps/mobile
+        run: npx expo prebuild --platform android --no-install --clean
+      - name: Local-stack settings (cleartext HTTP, no OTA)
+        run: bash scripts/e2e/patch-android.sh
+      - name: Release APK, x86_64 only
+        working-directory: apps/mobile/android
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ env.E2E_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ env.E2E_PUBLISHABLE_KEY }}
+          SENTRY_DISABLE_AUTO_UPLOAD: 'true'
+          NODE_ENV: production
+        run: ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 --no-daemon
       - uses: actions/upload-artifact@v4
         with:
-          name: probe
-          path: probe.txt
+          name: e2e-apk
+          path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 7
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        scheme: [light, dark]
+    env:
+      SCHEME: ${{ matrix.scheme }}
+      OUT: ${{ github.workspace }}/e2e-out/${{ matrix.scheme }}
+      APK: ${{ github.workspace }}/apk/app-release.apk
+      GH_TOKEN: ${{ github.token }}
+      RUN_ID: ${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Local Supabase
+        run: |
+          cp supabase/.env.example supabase/.env
+          pnpm supabase start -x studio,imgproxy,mailpit,logflare,vector,supavisor,postgres-meta
+          pnpm --filter scripts apply-local-secrets
+          key=$(pnpm -s supabase status -o env | sed -n 's/^PUBLISHABLE_KEY="\(.*\)"$/\1/p')
+          test "$key" = "$E2E_PUBLISHABLE_KEY" || { echo "local publishable key changed: $key"; exit 1; }
+      - name: Edge Functions, E2E venue, bot table
+        run: |
+          mkdir -p "$OUT"
+          nohup pnpm supabase functions serve > "$OUT/functions.log" 2>&1 &
+          timeout 180 bash -c 'until curl -sf -X POST http://127.0.0.1:54321/functions/v1/ping -H "apikey: $E2E_PUBLISHABLE_KEY" -H "content-type: application/json" -d "{}" > /dev/null; do sleep 2; done'
+          node --experimental-strip-types scripts/e2e/bot-table.ts setup > "$OUT/setup.json"
+          node -e 'const s = require(process.argv[1]);
+            console.log(`INSIDE_LAT=${s.inside.lat}\nINSIDE_LNG=${s.inside.lng}\nOUTSIDE_LAT=${s.outside.lat}\nOUTSIDE_LNG=${s.outside.lng}`)' \
+            "$OUT/setup.json" >> "$GITHUB_ENV"
+          nohup node --experimental-strip-types scripts/e2e/bot-table.ts serve > "$OUT/bot.log" 2>&1 &
+      - name: Maestro
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+          "$HOME/.maestro/bin/maestro" --version
+      - name: Emulator and P0 flows
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          ram-size: 4096M
+          emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: bash scripts/e2e/run-on-emulator.sh
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-${{ matrix.scheme }}
+          path: e2e-out/${{ matrix.scheme }}
+          retention-days: 14
+
+  # On request only: the PNGs on a branch, for readers without access to artifact storage.
+  publish-screenshots:
+    if: ${{ always() && ((github.event_name == 'workflow_dispatch' && inputs.publish_screenshots) || github.event_name == 'push') }}
+    needs: e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: e2e-{light,dark}
+          path: out
+      - name: Push to e2e-screenshots
+        run: |
+          mkdir site
+          for dir in out/*; do
+            scheme=${dir#out/e2e-}
+            mkdir -p "site/$scheme"
+            find "$dir" -name '*.png' -exec cp {} "site/$scheme/" \;
+            cp "$dir/report.xml" "site/$scheme/" 2>/dev/null || true
+          done
+          cd site
+          git init -q -b e2e-screenshots
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "E2E screenshots, run ${{ github.run_id }} (${{ github.sha }})"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" e2e-screenshots

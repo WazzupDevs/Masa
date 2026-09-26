@@ -1,0 +1,72 @@
+# T6, F1, F3: end the room, mutual Evet, "Arkadaş ekle" from both tables, DM both ways.
+appId: app.masa.mobile
+---
+# The encounter must be at least 3 minutes old for the play history (and "Arkadaş ekle").
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: backdate-encounter
+- scrollUntilVisible:
+    element: Odayı bitir
+    timeout: 20000
+- tapOn: Odayı bitir
+- extendedWaitUntil:
+    visible: Tanışalım mı\?
+    timeout: 15000
+- takeScreenshot: ${OUT_DIR}/21-reveal-question
+- tapOn: Evet
+- extendedWaitUntil:
+    visible: Cevabın alındı. Sonuç birazdan.
+    timeout: 10000
+- takeScreenshot: ${OUT_DIR}/22-reveal-answered
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: reveal
+      BODY: '{"yes":true}'
+- extendedWaitUntil:
+    visible: Ekranını kaldır, birbirinizi bulun.
+    timeout: 15000
+- takeScreenshot: ${OUT_DIR}/23-reveal-mutual
+- tapOn: Arkadaş ekle
+- extendedWaitUntil:
+    visible: Eklendi. İkiniz de basarsanız arkadaş olursunuz.
+    timeout: 10000
+- takeScreenshot: ${OUT_DIR}/24-add-friend-done
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: add-friend
+- tapOn: Mekana dön
+- tapOn: Arkadaşlar
+- extendedWaitUntil:
+    visible: Bot Masa
+    timeout: 20000
+- takeScreenshot: ${OUT_DIR}/25-friends
+- tapOn: Bot Masa
+- extendedWaitUntil:
+    visible: Henüz mesaj yok. İlk mesajı sen yaz.
+    timeout: 15000
+- takeScreenshot: ${OUT_DIR}/26-dm-empty
+- tapOn:
+    id: dm-input
+- inputText: Merhaba bot
+- tapOn: Gönder
+- extendedWaitUntil:
+    visible: Merhaba bot
+    timeout: 10000
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: dm-last
+      EXPECT_DM: Merhaba bot
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: dm-send
+      BODY: '{"body":"Selam cihaz"}'
+- extendedWaitUntil:
+    visible: Selam cihaz
+    timeout: 20000
+- takeScreenshot: ${OUT_DIR}/27-dm
+- hideKeyboard

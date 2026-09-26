@@ -1,0 +1,17 @@
+# V5, first step: a display name (friend requests need one).
+appId: app.masa.mobile
+---
+- tapOn: Profil
+- extendedWaitUntil:
+    visible: Ad ekle
+    timeout: 10000
+- tapOn: Ad ekle
+- tapOn:
+    id: name-input
+- inputText: Cihaz Masa
+- hideKeyboard
+- tapOn: Kaydet
+- extendedWaitUntil:
+    visible: Profili düzenle
+    timeout: 10000
+- takeScreenshot: ${OUT_DIR}/12-profile
