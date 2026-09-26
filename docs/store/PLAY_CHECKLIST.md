@@ -7,7 +7,7 @@ Masa'yı Google Play'de **kapalı test** kanalına çıkarmak için Play Console
 - `apps/mobile/eas.json` → `production` profili **AAB** üretir: `"android": { "buildType": "app-bundle" }`.
   - Alan eklenmeden önce de varsayılan AAB'ydi. eas-cli 24.8.0, `buildType` verilmemişse yalnızca `distribution: "internal"` profillerini APK yapıyor (`build/android/prepareJob.js`). `production`'da bu alan yok. Belirsizlik kalmasın diye açıkça yazıldı.
 - Build: `cd apps/mobile && pnpm dlx eas-cli build --platform android --profile production`.
-  - EAS ortamında `production` için de `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` ve `EAS_PROJECT_ID` tanımlı olmalı (CLAUDE.md → "Test APK'sı", ortam adı `production`).
+  - EAS ortamında `production` için de `EXPO_PUBLIC_SUPABASE_URL` ve `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` tanımlı olmalı (CLAUDE.md → "Test APK'sı", ortam adı `production`).
   - Push için `GOOGLE_SERVICES_JSON` dosya değişkeni gerekir.
 - `versionCode`'u EAS yönetir (`appVersionSource: remote`, `autoIncrement`). İmzalama anahtarını (upload key) EAS üretir ve saklar.
 
