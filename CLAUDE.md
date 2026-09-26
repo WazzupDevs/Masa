@@ -72,7 +72,7 @@ Tek seferlik kurulum (yukarıda) yapılmış bir projeye main'in güncel hâlini
 - Asla: `supabase config push`, `supabase/local/secrets.sql`'i barındırılan projede çalıştırmak, secret key'i bir dosyaya yazmak.
 
 ### Push (isteğe bağlı; hesaplar olmadan build kırılmaz)
-- Expo proje id'si (`@wazzupdevs/masa`) `app.config.ts`'te sabit (`EAS_PROJECT_ID`); push token kaydı ve OTA onu kullanır. Ortam değişkeninden okunmaz: native parmak izi config'i kapsar ve build'i başlatan makinede ve EAS sunucusunda aynı çıkmalıdır.
+- Expo proje id'si (`@wazzupdevs/masa`) `app.config.ts`'te sabit (`EAS_PROJECT_ID`); push token kaydı ve OTA onu kullanır. Ortam değişkeninden okunmaz (bkz. `docs/DECISIONS.md` → "EAS proje kimliği").
 - `GOOGLE_SERVICES_JSON`: Firebase'in `google-services.json` yolu (varsayılan `apps/mobile/google-services.json`, git'e girmez). Dosya yoksa Android build'e eklenmez. FCM V1 anahtarı Expo paneline yüklenir.
 - Gönderim Expo push API'si ile yapılır, sunucuda anahtar gerekmez.
 
@@ -83,26 +83,29 @@ Tek seferlik kurulum (yukarıda) yapılmış bir projeye main'in güncel hâlini
 - Her rota grubunun `_layout.tsx`'i `RouteError`'ı `ErrorBoundary` olarak dışa verir: beyaz ekran yerine kısa bir mesaj, "Tekrar dene" ve "Ana ekrana dön".
 
 ### Neyi ne zaman yayınlamalı
-`expo-updates` açık (`app.config.ts`, `updates.url` sabit). `runtimeVersion` native parmak izidir: bir OTA güncellemesi yalnızca aynı native koda sahip build'lere gider. Kanallar: `preview` build'i `preview` kanalını, `production` build'i `production` kanalını dinler.
+`expo-updates` açık (`app.config.ts`, `updates.url` sabit). `runtimeVersion` `app.json`'daki `version`'dır (`appVersion` politikası): bir OTA güncellemesi yalnızca aynı `version`'la alınmış build'lere gider. Kanallar: `preview` build'i `preview` kanalını, `production` build'i `production` kanalını dinler.
+
+**Kural:** native bağımlılık, config plugin ya da `app.json`/`app.config.ts`'teki native bir alan değişirse `app.json` → `version` artırılır (ör. `0.1.0` → `0.2.0`) ve yeni build alınır; aksi hâlde OTA. Artırmayı unutmak, eski APK'lara onlarda olmayan native kodu çağıran bir JS paketi gönderir ve uygulama açılışta çöker; bunu artık hiçbir şey otomatik yakalamaz (native parmak izi bırakıldı, bkz. `docs/DECISIONS.md` → "runtimeVersion"). Kural PR şablonunda da madde olarak durur (`.github/pull_request_template.md`).
 
 | Değişiklik | Gereken |
 | --- | --- |
 | Yalnızca JS/TS, metin, stil, `@shared` kodu | `pnpm dlx eas-cli update --channel preview --message "…"` (`apps/mobile` içinde) |
 | `EXPO_PUBLIC_*` değeri | EAS ortam değişkenini güncelle, sonra `eas update` (değerler JS paketine girer) |
-| Yeni native modül, config plugin, `app.json`/`app.config.ts` native alanı (izin, paket adı, ikon, splash), Expo SDK yükseltmesi, `google-services.json` | Yeni `eas build --profile preview` ve APK'nın yeniden kurulması |
+| Yeni ya da güncellenen native modül, config plugin, `app.json`/`app.config.ts` native alanı (izin, paket adı, ikon, splash, `userInterfaceStyle`), Expo SDK yükseltmesi, `google-services.json` | Önce `app.json` → `version` artır, sonra yeni `eas build --profile preview` ve APK'nın yeniden kurulması |
 | Migration ya da `content/` (seed) | `pnpm supabase db push --include-seed` |
 | Edge Function | `pnpm supabase functions deploy <ad>` |
 | Panel ayarı (Auth, Realtime, Storage) | Panelden; `config push` asla |
 | Eski build'leri kapatmak (zorunlu güncelleme) | Yeni build dağıtıldıktan sonra `pnpm supabase secrets set MIN_APP_BUILD=<yeni versionCode>`; bu build'den eski uygulamalar her fonksiyon çağrısında `update_required` alır ve "Güncelleme gerekli" ekranını gösterir. `0` ya da ayarsız: kapı kapalı değil, açık |
 
 - Sunucu değişikliği istemciden önce yayınlanır: yeni bir alan ya da action'ı kullanan JS güncellemesi, migration ve fonksiyonlar yayında olduktan sonra gönderilir.
-- Yeni native bağımlılık eklendiyse önce build, sonra o build'i hedefleyen `eas update`. Parmak izi değiştiği için eski APK'lar bu güncellemeyi almaz, yanlış koda düşmez.
+- Yeni native bağımlılık eklendiyse önce `version` artırılıp build alınır, sonra o build'i hedefleyen `eas update`. `version` değiştiği için eski APK'lar bu güncellemeyi almaz, yanlış koda düşmez.
+- `version` artırılmadan yalnızca JS değişikliği içeren her şey (tasarım, metin, `@shared` kodu) aynı `version`'daki bütün build'lere OTA ile gider.
 
 ### Build numarası (Android versionCode) ve zorunlu güncelleme
 - `apps/mobile/eas.json` → `cli.appVersionSource: "remote"`: versionCode EAS sunucusunda tutulur. `app.json`/`app.config.ts`'te versionCode yoktur (dinamik config'e yerel olarak yazılamaz; remote kaynakta yazılsa da yok sayılır).
 - Android için **tek sayaç** vardır; `preview` ve `production` aynı sayacı paylaşır. İkisinde de `autoIncrement: true`: her build başlarken sayaç 1 artar ve build o sayıyı taşır. Böylece bir preview APK'sı ile bir production AAB'si hiçbir zaman aynı numarayı almaz, `MIN_APP_BUILD` ikisini de doğru ayırır. `development` profili artırmaz, o anki değeri kullanır.
 - İlk değer: sayaç hiç ayarlanmadıysa ilk build'de EAS başlangıç değerini sorar ya da 1'den başlatır. Açıkça ayarlamak ya da görmek için (Expo girişi gerekir): `cd apps/mobile && pnpm dlx eas-cli build:version:set --platform android` / `pnpm dlx eas-cli build:version:get --platform android`. Sayaç geri alınmaz; Play Console da küçük versionCode'u kabul etmez.
-- Uygulama bu sayıyı (`expo-application` `nativeBuildVersion`) her Edge Function çağrısında `x-app-build` header'ında gönderir; açılışta ve her öne gelişte `ping` fonksiyonunu çağırır, böylece yalnızca okuyan bir oturum (Keşfet) da kapıya takılır. `version` ("0.1.0") kullanıcıya görünen sürümdür, kapı onu kullanmaz.
+- Uygulama bu sayıyı (`expo-application` `nativeBuildVersion`) her Edge Function çağrısında `x-app-build` header'ında gönderir; açılışta ve her öne gelişte `ping` fonksiyonunu çağırır, böylece yalnızca okuyan bir oturum (Keşfet) da kapıya takılır. `version` ("0.1.0") kullanıcıya görünen sürümdür ve OTA uyumunun anahtarıdır (`runtimeVersion`); kapı onu değil versionCode'u kullanır.
 - Eski build'leri kapatmak: yeni build'in numarasını `build:version:get` ya da build sayfasından al, dağıttıktan sonra `pnpm supabase secrets set MIN_APP_BUILD=<numara>`. Ayarsız ya da `0`: kapı açık.
 
 ### Analitik, yasal metinler, mağaza (M7)
