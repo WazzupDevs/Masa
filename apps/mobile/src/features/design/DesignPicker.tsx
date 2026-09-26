@@ -44,7 +44,6 @@ export function DesignPicker() {
         onChange={(value) => setDesignPreference({ scheme: value })}
         options={SCHEME_PREFERENCES.map((value) => ({ value, label: tr.design.schemes[value] }))}
       />
-      {scheme === 'system' ? <Text variant="fine">{tr.design.systemNote}</Text> : null}
     </View>
   );
 }
