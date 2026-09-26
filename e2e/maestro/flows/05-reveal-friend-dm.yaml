@@ -54,6 +54,10 @@ appId: app.masa.mobile
 - tapOn:
     id: dm-input
 - inputText: Merhaba bot
+# The composer sits under the keyboard on this screen (listed in the PR as a visual bug); the
+# screenshot keeps it visible, hideKeyboard lets the flow reach the send button.
+- takeScreenshot: 26b-dm-keyboard
+- hideKeyboard
 - tapOn:
     id: dm-send
 - extendedWaitUntil:
