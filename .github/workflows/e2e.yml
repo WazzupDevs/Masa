@@ -4,9 +4,6 @@
 name: e2e
 
 on:
-  # TEMPORARY (remove before review): runs on pushes to the development branch.
-  push:
-    branches: [claude/e2e-maestro]
   # On a PR only with the `e2e` label: when it is added, and on every push while it is on.
   pull_request:
     types: [opened, synchronize, reopened, labeled]
@@ -101,7 +98,8 @@ jobs:
         run: |
           curl -Ls "https://get.maestro.mobile.dev" | bash
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
-          "$HOME/.maestro/bin/maestro" --version
+          mkdir -p "$OUT"
+          "$HOME/.maestro/bin/maestro" --version | tee "$OUT/maestro-version.txt"
       - name: Emulator and P0 flows
         uses: reactivecircus/android-emulator-runner@v2
         with:

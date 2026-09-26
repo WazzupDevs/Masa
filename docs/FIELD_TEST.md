@@ -23,7 +23,7 @@ Beyaz ekran, check-in, sesli Tabu ve gecikme ölçümü, tanışma sızıntısı
 
 ## Otomatik testler (e2e)
 
-P0'ın telefonsuz yapılabilen kısmı her PR'da CI'da koşar: `e2e/maestro/p0.yaml`, Android emülatöründe, yerel stack'e karşı. İkinci masayı bot oynar (`scripts/e2e/bot-table.ts`). Açık ve koyu görünüm için ayrı ayrı her ekranın görüntüsü alınır. Sıra tablosundaki **Otomatik** kolonu ve adımlardaki "Otomatik:" notu neyin kapsandığını söyler.
+P0'ın telefonsuz yapılabilen kısmı CI'da koşar (PR'da `e2e` etiketiyle, elle ve her gece main'de): `e2e/maestro/p0.yaml`, Android emülatöründe, yerel stack'e karşı. İkinci masayı bot oynar (`scripts/e2e/bot-table.ts`). Her ekranın görüntüsü alınır; koyu görünüm tasarım dalı (#13) merge edilince eklenir. Sahada ikinci telefon yoksa bot dev projesinde karşı masa olarak oynayabilir (CLAUDE.md → "Karşı masa"). Sıra tablosundaki **Otomatik** kolonu ve adımlardaki "Otomatik:" notu neyin kapsandığını söyler.
 
 Otomatiklenmeyen ve sahada elle kalanlar:
 
