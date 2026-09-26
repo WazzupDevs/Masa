@@ -35,7 +35,8 @@ appId: app.masa.mobile
 # No display name yet: joining with a profile is off.
 - assertVisible: Profille katılmak için önce Profil sekmesinden bir ad seç.
 - takeScreenshot: ${OUT_DIR}/09-headcount
-- tapOn: '2'
+- tapOn:
+    id: headcount-2
 - tapOn: Masayı aç
 - extendedWaitUntil:
     visible: Masan hazır

@@ -15,7 +15,8 @@ appId: app.masa.mobile
     visible: Tanışalım mı\?
     timeout: 15000
 - takeScreenshot: ${OUT_DIR}/21-reveal-question
-- tapOn: Evet
+- tapOn:
+    id: reveal-yes
 - extendedWaitUntil:
     visible: Cevabın alındı. Sonuç birazdan.
     timeout: 10000
@@ -39,7 +40,8 @@ appId: app.masa.mobile
     env:
       ACTION: add-friend
 - tapOn: Mekana dön
-- tapOn: Arkadaşlar
+- tapOn:
+    id: tab-friends
 - extendedWaitUntil:
     visible: Bot Masa
     timeout: 20000
@@ -52,7 +54,8 @@ appId: app.masa.mobile
 - tapOn:
     id: dm-input
 - inputText: Merhaba bot
-- tapOn: Gönder
+- tapOn:
+    id: dm-send
 - extendedWaitUntil:
     visible: Merhaba bot
     timeout: 10000

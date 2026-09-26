@@ -9,7 +9,8 @@ appId: app.masa.mobile
     file: ../scripts/bot.js
     env:
       ACTION: checkin
-- tapOn: Mekan
+- tapOn:
+    id: tab-venue
 - extendedWaitUntil:
     visible: Oda kur
     timeout: 10000
@@ -32,7 +33,8 @@ appId: app.masa.mobile
     visible: Katılma isteği
     timeout: 20000
 - takeScreenshot: ${OUT_DIR}/15-join-request
-- tapOn: Kabul
+- tapOn:
+    id: join-accept
 - extendedWaitUntil:
     visible: Oyunu başlat
     timeout: 15000

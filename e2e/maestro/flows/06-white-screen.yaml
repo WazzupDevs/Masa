@@ -1,7 +1,8 @@
 # V8: the bot table ends the room; this phone must move to "Tanışalım mı?" without a blank screen.
 appId: app.masa.mobile
 ---
-- tapOn: Mekan
+- tapOn:
+    id: tab-venue
 - extendedWaitUntil:
     visible: Oda kur
     timeout: 10000
@@ -21,7 +22,8 @@ appId: app.masa.mobile
 - extendedWaitUntil:
     visible: Katılma isteği
     timeout: 20000
-- tapOn: Kabul
+- tapOn:
+    id: join-accept
 - extendedWaitUntil:
     visible: Oyunu başlat
     timeout: 15000
@@ -38,7 +40,8 @@ appId: app.masa.mobile
     timeout: 20000
 - assertNotVisible: Bir şeyler ters gitti
 - takeScreenshot: ${OUT_DIR}/28-ended-by-bot
-- tapOn: Hayır
+- tapOn:
+    id: reveal-no
 - extendedWaitUntil:
     visible: Güzel oyundu.*
     timeout: 15000

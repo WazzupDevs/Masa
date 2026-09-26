@@ -6,6 +6,8 @@ type Props = {
   disabled?: boolean;
   loading?: boolean;
   variant?: 'primary' | 'secondary' | 'danger';
+  // For end-to-end tests where the same label appears more than once (e2e/maestro).
+  testID?: string;
 };
 
 const containerClass = {
@@ -20,10 +22,11 @@ const labelClass = {
   danger: 'text-white',
 } as const;
 
-export function Button({ label, onPress, disabled, loading, variant = 'primary' }: Props) {
+export function Button({ label, onPress, disabled, loading, variant = 'primary', testID }: Props) {
   const inactive = disabled || loading;
   return (
     <Pressable
+      testID={testID}
       accessibilityRole="button"
       accessibilityState={{ disabled: inactive, busy: loading }}
       disabled={inactive}

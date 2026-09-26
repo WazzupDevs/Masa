@@ -39,6 +39,7 @@ export default function TabsLayout() {
         name="explore"
         options={{
           title: tr.tabs.explore,
+          tabBarButtonTestID: 'tab-explore',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="compass-outline" color={color} size={size} />
           ),
@@ -46,7 +47,7 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="venue"
-        options={{ title: tr.tabs.venue, tabBarIcon: VenueIcon }}
+        options={{ title: tr.tabs.venue, tabBarButtonTestID: 'tab-venue', tabBarIcon: VenueIcon }}
         listeners={{
           // Without an active table the Mekan tab opens Keşfet instead.
           tabPress: (event) => {
@@ -62,6 +63,7 @@ export default function TabsLayout() {
         name="friends"
         options={{
           title: tr.tabs.friends,
+          tabBarButtonTestID: 'tab-friends',
           tabBarBadge: waiting > 0 ? waiting : undefined,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="people-outline" color={color} size={size} />
@@ -72,6 +74,7 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: tr.tabs.profile,
+          tabBarButtonTestID: 'tab-profile',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-circle-outline" color={color} size={size} />
           ),

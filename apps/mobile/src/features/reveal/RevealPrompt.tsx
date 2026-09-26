@@ -87,6 +87,7 @@ export function RevealPrompt({ roomId, isOwner, revealEndsAt, score }: Props) {
         <View className="w-full flex-row gap-3">
           <View className="flex-1">
             <Button
+              testID="reveal-yes"
               label={tr.reveal.yes}
               onPress={() => decide.mutate(true)}
               disabled={decide.isPending || secondsLeft === 0}
@@ -95,6 +96,7 @@ export function RevealPrompt({ roomId, isOwner, revealEndsAt, score }: Props) {
           <View className="flex-1">
             <Button
               variant="secondary"
+              testID="reveal-no"
               label={tr.reveal.no}
               onPress={() => decide.mutate(false)}
               disabled={decide.isPending || secondsLeft === 0}

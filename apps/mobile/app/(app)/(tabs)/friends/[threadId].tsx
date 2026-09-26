@@ -126,6 +126,7 @@ export default function DmScreen() {
         />
         <View className="w-24">
           <Button
+            testID="dm-send"
             label={tr.dm.send}
             disabled={!body}
             loading={send.isPending}

@@ -1,7 +1,8 @@
 # V5, first step: a display name (friend requests need one).
 appId: app.masa.mobile
 ---
-- tapOn: Profil
+- tapOn:
+    id: tab-profile
 - extendedWaitUntil:
     visible: Ad ekle
     timeout: 10000
