@@ -74,8 +74,11 @@ appId: app.masa.mobile
     file: ../scripts/bot.js
     env:
       ACTION: expire-turn
-- extendedWaitUntil:
-    visible: Tur 2/6
+# The screen is scrolled down to the buttons; the turn counter is at the top.
+- scrollUntilVisible:
+    element:
+      text: Tur 2/6
+    direction: UP
     timeout: 20000
 - scrollUntilVisible:
     element:
