@@ -72,7 +72,7 @@ Tek seferlik kurulum (yukarıda) yapılmış bir projeye main'in güncel hâlini
 - Asla: `supabase config push`, `supabase/local/secrets.sql`'i barındırılan projede çalıştırmak, secret key'i bir dosyaya yazmak.
 
 ### Push (isteğe bağlı; hesaplar olmadan build kırılmaz)
-- `EAS_PROJECT_ID`: `eas init` ile alınan Expo proje id'si. Yoksa uygulama push token kaydını sessizce atlar.
+- Expo proje id'si (`@wazzupdevs/masa`) `app.config.ts`'te sabit (`EAS_PROJECT_ID`); push token kaydı ve OTA onu kullanır. Ortam değişkeninden okunmaz: native parmak izi config'i kapsar ve build'i başlatan makinede ve EAS sunucusunda aynı çıkmalıdır.
 - `GOOGLE_SERVICES_JSON`: Firebase'in `google-services.json` yolu (varsayılan `apps/mobile/google-services.json`, git'e girmez). Dosya yoksa Android build'e eklenmez. FCM V1 anahtarı Expo paneline yüklenir.
 - Gönderim Expo push API'si ile yapılır, sunucuda anahtar gerekmez.
 
@@ -83,7 +83,7 @@ Tek seferlik kurulum (yukarıda) yapılmış bir projeye main'in güncel hâlini
 - Her rota grubunun `_layout.tsx`'i `RouteError`'ı `ErrorBoundary` olarak dışa verir: beyaz ekran yerine kısa bir mesaj, "Tekrar dene" ve "Ana ekrana dön".
 
 ### Neyi ne zaman yayınlamalı
-`expo-updates` açık (`app.config.ts`, `EAS_PROJECT_ID` varsa). `runtimeVersion` native parmak izidir: bir OTA güncellemesi yalnızca aynı native koda sahip build'lere gider. Kanallar: `preview` build'i `preview` kanalını, `production` build'i `production` kanalını dinler.
+`expo-updates` açık (`app.config.ts`, `updates.url` sabit). `runtimeVersion` native parmak izidir: bir OTA güncellemesi yalnızca aynı native koda sahip build'lere gider. Kanallar: `preview` build'i `preview` kanalını, `production` build'i `production` kanalını dinler.
 
 | Değişiklik | Gereken |
 | --- | --- |
@@ -119,12 +119,11 @@ Tek seferlik kurulum (yukarıda) yapılmış bir projeye main'in güncel hâlini
 ### Test APK'sı (`preview` profili): alma ve paylaşma
 Dev client olmadan, tek başına çalışan bir Android APK'sı. Arkadaşa link ile gönderilir, USB ve Metro gerekmez. `EXPO_PUBLIC_*` değerleri yerel `.env`'den değil EAS ortam değişkenlerinden gelir: `.env` git'e girmediği için EAS'a yüklenmez.
 1. **Expo hesabı** (ücretsiz) aç. `eas-cli` bağımlılık değildir, `pnpm dlx` ile çalıştırılır: `cd apps/mobile && pnpm dlx eas-cli login`
-2. **Proje:** `pnpm dlx eas-cli init`. `app.config.ts` dinamik olduğu için id dosyaya yazılamaz; CLI'nin verdiği proje id'sini not et. Bu id `eas` komutlarını çalıştırdığın kabukta gerekir: `export EAS_PROJECT_ID=<id>`
+2. **Proje:** `@wazzupdevs/masa`; id `app.config.ts`'te sabit, `eas init` ve kabukta `EAS_PROJECT_ID` gerekmez. Başka bir Expo hesabına taşınırsa `pnpm dlx eas-cli init` ile yeni id alınır ve `app.config.ts`'teki sabit değiştirilir.
 3. **Ortam değişkenleri** (`preview` ortamı; bir kez, değer değişince tekrar):
    ```
    pnpm dlx eas-cli env:create --environment preview --name EXPO_PUBLIC_SUPABASE_URL --value https://<ref>.supabase.co --visibility plaintext
    pnpm dlx eas-cli env:create --environment preview --name EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY --value <publishable key> --visibility plaintext
-   pnpm dlx eas-cli env:create --environment preview --name EAS_PROJECT_ID --value <id> --visibility plaintext
    ```
    İsteğe bağlı: `EXPO_PUBLIC_POSTHOG_KEY`, `EXPO_PUBLIC_PRIVACY_URL`, `EXPO_PUBLIC_CONTACT_EMAIL`. Kontrol: `pnpm dlx eas-cli env:list --environment preview`. Publishable key zaten uygulamanın içindedir, gizli değildir. **Secret key asla eklenmez.**
 4. **Build:** `pnpm dlx eas-cli build --platform android --profile preview`. İlk seferde Android keystore'u EAS'ın üretmesini kabul et (sonraki APK'lar aynı anahtarla imzalanır, üstüne kurulur). Ücretsiz planda kuyrukla birlikte 15–40 dk sürebilir.

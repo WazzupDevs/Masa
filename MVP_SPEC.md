@@ -250,7 +250,7 @@ banned_phones     phone_hash (HMAC, sunucu gizli anahtarı) PK, created_at
 - Expo push token `account/register-push` ile kaydedilir (M3).
 - Bildirim izni ilk anlamlı anda istenir: açık oda kurarken ya da katılma isteği gönderirken. Onboarding'de istenmez.
 - Gönderim Edge Function'dan Expo push API'sine yapılır, en iyi çabayla (başarısızlık isteği bozmaz). İki olay var: oda sahibine katılma isteği, istek sahibine kabul. Metinler `_shared/pure/push.ts` içinde.
-- Yapılandırma env'den: `EAS_PROJECT_ID` yoksa token kaydı sessizce atlanır; `google-services.json` yoksa Android build'e eklenmez. Build hiçbir koşulda bu hesaplara bağlı değildir.
+- Expo proje id'si `app.config.ts`'te sabit; `google-services.json` yoksa Android build'e eklenmez. Build hiçbir koşulda bu hesaplara bağlı değildir.
 
 ## 10. Ekranlar
 1. **Onboarding:** Telefon, OTP, 18+ ve onaylar.
