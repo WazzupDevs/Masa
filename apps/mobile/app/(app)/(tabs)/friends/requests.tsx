@@ -181,6 +181,7 @@ export default function RequestsScreen() {
                 </View>
                 <View className="flex-1">
                   <Button
+                    testID="history-more"
                     variant="secondary"
                     label={tr.friends.more}
                     onPress={() => setMenuFor(h.id)}
@@ -217,6 +218,7 @@ export default function RequestsScreen() {
               }}
             />
             <Button
+              testID="menu-block"
               variant="danger"
               label={tr.friends.block}
               onPress={() => {

@@ -56,6 +56,7 @@ export default function OtpScreen() {
       <Text className="text-3xl font-bold text-black">{tr.auth.otpTitle}</Text>
       <Text className="mt-2 text-base text-neutral-600">{tr.auth.otpHint(phone)}</Text>
       <TextInput
+        testID="otp-input"
         className="mt-8 h-14 rounded-xl border border-neutral-300 px-4 text-center text-2xl tracking-[8px] text-black"
         keyboardType="number-pad"
         autoComplete="sms-otp"

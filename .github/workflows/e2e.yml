@@ -1,0 +1,151 @@
+# End-to-end: the FIELD_TEST.md P0 path on an Android emulator against the local stack, with a bot
+# as the second table (scripts/e2e/bot-table.ts). Each job builds the APK with Gradle in the
+# background while it starts Supabase and boots the emulator; the emulator script waits for it.
+name: e2e
+
+on:
+  # On a PR only with the `e2e` label: when it is added, and on every push while it is on.
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+  workflow_dispatch:
+  # Nightly on main, 04:23 İstanbul. Also the run that fills the Gradle cache (only the default
+  # branch writes it; PR runs read it).
+  schedule:
+    - cron: '23 1 * * *'
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # The emulator reaches the runner's local stack at 10.0.2.2. The publishable key is the fixed
+  # key of every local stack; the e2e job checks it after `supabase start`.
+  E2E_SUPABASE_URL: http://10.0.2.2:54321
+  E2E_PUBLISHABLE_KEY: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
+
+jobs:
+  e2e:
+    if: >-
+      github.event_name != 'pull_request' ||
+      (contains(github.event.pull_request.labels.*.name, 'e2e') &&
+       (github.event.action != 'labeled' || github.event.label.name == 'e2e'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        # Dark joins after the design branch (#13) merges: until then the app has one look.
+        scheme: [light]
+    env:
+      SCHEME: ${{ matrix.scheme }}
+      OUT: ${{ github.workspace }}/e2e-out/${{ matrix.scheme }}
+      APK: ${{ github.workspace }}/apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      # Gradle's dependency and build caches (~/.gradle): written by main's nightly run, read by the
+      # rest; --build-cache below lets unchanged tasks come from it.
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Prebuild, local-stack settings (cleartext HTTP, no OTA)
+        run: |
+          (cd apps/mobile && npx expo prebuild --platform android --no-install --clean)
+          bash scripts/e2e/patch-android.sh
+      - name: Release APK in the background, x86_64 only
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ env.E2E_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ env.E2E_PUBLISHABLE_KEY }}
+          SENTRY_DISABLE_AUTO_UPLOAD: 'true'
+          NODE_ENV: production
+        run: |
+          mkdir -p "$OUT"
+          nohup bash -c 'cd apps/mobile/android &&
+            ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 --no-daemon --build-cache > "$OUT/gradle.log" 2>&1;
+            echo $? > "$OUT/gradle.exit"' > /dev/null 2>&1 &
+      - name: Local Supabase
+        run: |
+          cp supabase/.env.example supabase/.env
+          pnpm supabase start -x studio,imgproxy,mailpit,logflare,vector,supavisor,postgres-meta
+          pnpm --filter scripts apply-local-secrets
+          key=$(pnpm -s supabase status -o env | sed -n 's/^PUBLISHABLE_KEY="\(.*\)"$/\1/p')
+          test "$key" = "$E2E_PUBLISHABLE_KEY" || { echo "local publishable key changed: $key"; exit 1; }
+      - name: Edge Functions, E2E venue, bot table
+        run: |
+          nohup pnpm supabase functions serve > "$OUT/functions.log" 2>&1 &
+          timeout 180 bash -c 'until curl -sf -X POST http://127.0.0.1:54321/functions/v1/ping -H "apikey: $E2E_PUBLISHABLE_KEY" -H "content-type: application/json" -d "{}" > /dev/null; do sleep 2; done'
+          node --experimental-strip-types scripts/e2e/bot-table.ts setup > "$OUT/setup.json"
+          node -e 'const s = require(process.argv[1]);
+            console.log(`INSIDE_LAT=${s.inside.lat}\nINSIDE_LNG=${s.inside.lng}\nOUTSIDE_LAT=${s.outside.lat}\nOUTSIDE_LNG=${s.outside.lng}`)' \
+            "$OUT/setup.json" >> "$GITHUB_ENV"
+          nohup node --experimental-strip-types scripts/e2e/bot-table.ts serve > "$OUT/bot.log" 2>&1 &
+      - name: Maestro
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | MAESTRO_VERSION=2.10.0 bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+          mkdir -p "$OUT"
+          "$HOME/.maestro/bin/maestro" --version | tee "$OUT/maestro-version.txt"
+      - name: Emulator and P0 flows
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          ram-size: 4096M
+          emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: bash scripts/e2e/run-on-emulator.sh
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-${{ matrix.scheme }}
+          path: e2e-out/${{ matrix.scheme }}
+          retention-days: 14
+
+  # Screenshots and logs (no video) on the e2e-screenshots branch, for readers without access to
+  # artifact storage: an orphan branch with a single commit, force-pushed by every run, so binaries
+  # never pile up in history.
+  publish-screenshots:
+    if: ${{ always() && needs.e2e.result != 'skipped' }}
+    needs: e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: e2e-*
+          path: out
+      - name: Push to e2e-screenshots
+        run: |
+          mkdir site
+          for dir in out/*; do
+            scheme=${dir#out/e2e-}
+            mkdir -p "site/$scheme"
+            (cd "$dir" && find . -type f ! -name '*.webm' ! -name 'logcat.txt' ! -name 'gradle.log' -exec cp --parents {} "../../site/$scheme/" \;)
+            tail -n 3000 "$dir/logcat.txt" > "site/$scheme/logcat-tail.txt" 2>/dev/null || true
+            tail -n 200 "$dir/gradle.log" > "site/$scheme/gradle-tail.txt" 2>/dev/null || true
+          done
+          cd site
+          git init -q -b e2e-screenshots
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q --allow-empty -m "E2E screenshots, run ${{ github.run_id }} (${{ github.sha }})"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" e2e-screenshots

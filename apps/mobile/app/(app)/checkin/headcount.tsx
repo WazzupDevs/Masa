@@ -68,6 +68,7 @@ export default function HeadcountScreen() {
         {HEADCOUNT_OPTIONS.map((n) => (
           <Pressable
             key={n}
+            testID={`headcount-${n}`}
             accessibilityRole="radio"
             accessibilityState={{ selected: headcount === n }}
             onPress={() => setHeadcount(n)}

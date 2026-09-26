@@ -62,6 +62,7 @@ export function IncomingRequest({ roomId, ownerSessionId, concept }: Props) {
           ) : null}
           <View className="mt-6 gap-3">
             <Button
+              testID="join-accept"
               label={tr.rooms.accept}
               onPress={() => respond.mutate({ id: request.id, accept: true })}
               loading={respond.isPending}

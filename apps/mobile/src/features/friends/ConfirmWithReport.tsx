@@ -47,6 +47,7 @@ export function ConfirmWithReport(props: Props) {
             ) : null}
             <Button
               variant="danger"
+              testID="confirm-action"
               label={props.confirmLabel}
               loading={props.pending}
               onPress={() => (alsoReport ? setPickingReason(true) : props.onConfirm(undefined))}

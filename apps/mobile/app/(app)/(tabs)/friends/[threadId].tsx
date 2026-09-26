@@ -116,6 +116,7 @@ export default function DmScreen() {
       ) : null}
       <View className="mt-4 flex-row items-end gap-2">
         <TextInput
+          testID="dm-input"
           className="min-h-12 flex-1 rounded-xl border border-neutral-300 px-4 py-3 text-base text-black"
           placeholder={tr.dm.placeholder}
           value={draft}
@@ -125,6 +126,7 @@ export default function DmScreen() {
         />
         <View className="w-24">
           <Button
+            testID="dm-send"
             label={tr.dm.send}
             disabled={!body}
             loading={send.isPending}

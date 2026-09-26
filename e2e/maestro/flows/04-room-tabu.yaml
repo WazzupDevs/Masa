@@ -1,0 +1,89 @@
+# V7 and T1–T3: open Tabu room, the bot table asks to join, accept, one voice Tabu turn.
+appId: app.masa.mobile
+---
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: login
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: checkin
+- tapOn:
+    id: tab-venue
+- extendedWaitUntil:
+    visible: Oda kur
+    timeout: 10000
+- tapOn: Oda kur
+- extendedWaitUntil:
+    visible: Odayı kur
+    timeout: 10000
+- tapOn: Mekana açık
+- takeScreenshot: 13-new-room
+- tapOn: Odayı kur
+- extendedWaitUntil:
+    visible: Tabu odası
+    timeout: 15000
+- takeScreenshot: 14-room-waiting
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: request-join
+- extendedWaitUntil:
+    visible: Katılma isteği
+    timeout: 20000
+- takeScreenshot: 15-join-request
+- tapOn:
+    id: join-accept
+- extendedWaitUntil:
+    visible: Oyunu başlat
+    timeout: 15000
+- takeScreenshot: 16-room-two-tables
+- tapOn: Oyunu başlat
+# Turn 1: the owner table (this phone) describes; its card starts covered.
+- extendedWaitUntil:
+    visible: Kartı görmek için dokun
+    timeout: 20000
+- takeScreenshot: 17-card-covered
+- tapOn: Kartı görmek için dokun
+- extendedWaitUntil:
+    visible: Yasaklı kelimeler
+    timeout: 20000
+- takeScreenshot: 18-card-open
+# The buttons are under the card; with a two-line room title they are below the fold.
+- scrollUntilVisible:
+    element:
+      text: Pas · 3
+    centerElement: true
+    timeout: 10000
+- tapOn: Pas · 3
+- scrollUntilVisible:
+    element:
+      text: Pas · 2
+    centerElement: true
+    timeout: 10000
+# The judging table (the bot) says Doğru.
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: mark
+      BODY: '{"result":"correct"}'
+- takeScreenshot: 19-after-marks
+# Turn 2 without waiting 60 s: the bot table's turn, this phone judges.
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: expire-turn
+# The screen is scrolled down to the buttons; the turn counter is at the top.
+- scrollUntilVisible:
+    element:
+      text: Tur 2/6
+    direction: UP
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      text: Tabu −1
+    centerElement: true
+    timeout: 20000
+- takeScreenshot: 20-judge
+- tapOn: Doğru \+1
