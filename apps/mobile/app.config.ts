@@ -1,13 +1,13 @@
 // Dynamic Expo config on top of app.json.
 // - EAS_PROJECT_ID: the Expo project (@wazzupdevs/masa), fixed here rather than read from the
-//   environment. The runtime version is the native fingerprint, which covers this config: EAS
-//   computes it once on the machine that starts the build and again on the build server, and the
-//   two must match. With the id from the environment they differed (the server had it, a laptop
-//   without `EAS_PROJECT_ID` did not) and "Configure expo-updates" failed.
+//   environment (push token registration and OTA updates use it).
 // - GOOGLE_SERVICES_JSON: path to Firebase's google-services.json (default ./google-services.json);
 //   added to the Android build only when the file exists.
-// OTA updates (expo-updates) use the same project id; an update only reaches builds with the same
-// native code.
+// - runtimeVersion follows app.json's `version` (appVersion policy): an OTA update reaches only builds
+//   of the same version. A change to native code (native dependency, config plugin, native field in
+//   app.json) therefore bumps `version` and ships as a new build. The native fingerprint was dropped:
+//   computed on Windows (where builds and updates start) and on the Linux build server it differed
+//   (docs/DECISIONS.md, "runtimeVersion").
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -31,7 +31,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ...config.extra,
       eas: { projectId: EAS_PROJECT_ID },
     },
-    runtimeVersion: { policy: 'fingerprint' },
+    runtimeVersion: { policy: 'appVersion' },
     updates: { url: `https://u.expo.dev/${EAS_PROJECT_ID}`, enabled: true },
   };
 };

@@ -71,7 +71,7 @@ Masa'yı Google Play'de **kapalı test** kanalına çıkarmak için Play Console
   - Bu metin bu oturumda yeniden okunamadı (`support.google.com` ağ politikasınca engelli). Yukarıdaki özet politikanın bilinen hâlinden. Yayından önce proje sahibi güncel metni kontrol etmeli.
 - **Uygulamaya etkisi:**
   - `eas update` yalnızca JS paketi ve varlık (asset) gönderir; native kod göndermez. Bu yüzden istisna kapsamındadır. Expo da EAS Update'in mağaza kurallarıyla uyumlu kullanımını bu çerçevede anlatır: https://docs.expo.dev/eas-update/introduction/ (bu oturumda erişilemedi).
-  - `runtimeVersion` native parmak izi olduğu için native değişiklik içeren bir güncelleme zaten eski build'lere gitmez; yeni native kod her zaman Play'e yüklenen yeni bir AAB ile gelir.
+  - `runtimeVersion` `app.json`'daki `version`'dır: native değişiklik içeren her sürümde `version` artırılır (CLAUDE.md, PR şablonu), bu yüzden o değişikliğe dayanan bir güncelleme eski build'lere gitmez; yeni native kod her zaman Play'e yüklenen yeni bir AAB ile gelir.
   - **Sınır:** OTA, incelemeden geçmiş uygulamanın amacını ya da Veri güvenliği formunda beyan edilmemiş veri toplamayı değiştirmek için kullanılmaz. v2 adımları yeni veri türleri getiriyor (profil fotoğrafı, DM). Bu adımlar OTA ile gitse bile **önce** Veri güvenliği formu ve gizlilik politikası güncellenir.
 - Kapalı test kanalı `production` kanalını dinleyen production build'i kullanır: `eas update --channel production`. Test APK'ları `preview` kanalını dinler.
 
