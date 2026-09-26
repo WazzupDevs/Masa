@@ -434,8 +434,6 @@ export const tr = {
     },
     schemeLabel: 'Görünüm',
     schemes: { light: 'Açık', dark: 'Koyu', system: 'Sistem' },
-    systemNote:
-      'Sistem seçeneği bu sürümde açık görünür; telefonun ayarını bir sonraki uygulama sürümü izleyecek.',
   },
   settings: {
     title: 'Ayarlar',
