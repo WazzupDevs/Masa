@@ -1,0 +1,20 @@
+name: e2e
+on:
+  push:
+    branches: [claude/e2e-maestro]
+  workflow_dispatch:
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: |
+          ls -l /dev/kvm || true
+          nproc; free -g; df -h / | tail -1
+          echo "sdk: $ANDROID_HOME"; ls "$ANDROID_HOME" || true
+          java -version 2>&1 | head -1
+          echo probe > probe.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: probe
+          path: probe.txt
