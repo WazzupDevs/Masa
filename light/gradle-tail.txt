@@ -1,0 +1,200 @@
+> Task :react-native-masked-view_masked-view:syncReleaseLibJars
+> Task :react-native-masked-view_masked-view:bundleReleaseAar
+> Task :react-native-masked-view_masked-view:mapReleaseSourceSetPaths
+> Task :react-native-gesture-handler:mergeReleaseResources
+> Task :react-native-gesture-handler:verifyReleaseResources
+> Task :react-native-gesture-handler:assembleRelease
+> Task :react-native-masked-view_masked-view:mergeReleaseResources
+> Task :react-native-reanimated:stripReleaseDebugSymbols
+> Task :react-native-reanimated:copyReleaseJniLibsProjectAndLocalJars
+> Task :react-native-reanimated:extractDeepLinksForAarRelease FROM-CACHE
+> Task :react-native-reanimated:extractReleaseAnnotations
+> Task :react-native-reanimated:mergeReleaseGeneratedProguardFiles
+> Task :app:buildCMakeRelWithDebInfo[x86_64]
+> Task :react-native-reanimated:mergeReleaseConsumerProguardFiles
+> Task :react-native-reanimated:prepareLintJarForPublish
+> Task :react-native-reanimated:mergeReleaseJavaResource
+> Task :react-native-reanimated:syncReleaseLibJars
+> Task :react-native-masked-view_masked-view:verifyReleaseResources
+> Task :react-native-masked-view_masked-view:assembleRelease
+> Task :react-native-safe-area-context:stripReleaseDebugSymbols NO-SOURCE
+> Task :react-native-safe-area-context:copyReleaseJniLibsProjectAndLocalJars
+> Task :react-native-safe-area-context:extractDeepLinksForAarRelease FROM-CACHE
+> Task :react-native-safe-area-context:extractReleaseAnnotations
+> Task :react-native-safe-area-context:mergeReleaseGeneratedProguardFiles
+> Task :react-native-safe-area-context:mergeReleaseConsumerProguardFiles
+> Task :react-native-safe-area-context:prepareLintJarForPublish
+> Task :react-native-safe-area-context:mergeReleaseJavaResource
+> Task :react-native-safe-area-context:syncReleaseLibJars
+> Task :react-native-safe-area-context:bundleReleaseAar
+> Task :react-native-safe-area-context:mapReleaseSourceSetPaths
+> Task :expo-updates:compileReleaseJavaWithJavac
+> Task :expo-updates:bundleLibCompileToJarRelease
+> Task :react-native-safe-area-context:mergeReleaseResources
+> Task :expo-updates:bundleLibRuntimeToDirRelease
+> Task :react-native-reanimated:bundleReleaseAar
+> Task :expo-updates:bundleLibRuntimeToJarRelease
+> Task :expo-updates:processReleaseJavaRes
+> Task :expo-updates:extractReleaseAnnotations
+> Task :expo-updates:mergeReleaseGeneratedProguardFiles
+> Task :expo-updates:mergeReleaseConsumerProguardFiles
+> Task :expo-updates:mergeReleaseJavaResource
+> Task :react-native-reanimated:mapReleaseSourceSetPaths
+
+> Task :expo:compileReleaseKotlin
+w: file:///home/runner/work/Masa/Masa/node_modules/expo/android/src/main/java/expo/modules/ExpoModulesPackage.kt:34:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/runner/work/Masa/Masa/node_modules/expo/android/src/main/java/expo/modules/ReactActivityDelegateWrapper.kt:22:8 'class ReactInstanceManager : Any' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/Masa/Masa/node_modules/expo/android/src/main/java/expo/modules/ReactActivityDelegateWrapper.kt:102:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/runner/work/Masa/Masa/node_modules/expo/android/src/main/java/expo/modules/ReactActivityDelegateWrapper.kt:102:43 'class ReactInstanceManager : Any' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/Masa/Masa/node_modules/expo/android/src/main/java/expo/modules/ReactActivityDelegateWrapper.kt:103:21 'val reactInstanceManager: ReactInstanceManager' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/Masa/Masa/node_modules/expo/android/src/main/java/expo/modules/fetch/ExpoFetchModule.kt:33:39 'constructor(reactContext: ReactContext): ForwardingCookieHandler' is deprecated. Use the default constructor.
+w: file:///home/runner/work/Masa/Masa/node_modules/expo/android/src/main/java/expo/modules/fetch/NativeResponse.kt:44:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/runner/work/Masa/Masa/node_modules/expo/android/src/main/java/expo/modules/fetch/NativeResponse.kt:46:11 'fun deallocate(): Unit' is deprecated. Use sharedObjectDidRelease() instead.
+
+> Task :expo-updates:syncReleaseLibJars
+> Task :expo-updates:bundleReleaseAar
+> Task :expo-updates:assembleRelease
+> Task :react-native-reanimated:mergeReleaseResources
+> Task :expo:compileReleaseJavaWithJavac
+> Task :expo:bundleLibRuntimeToDirRelease
+> Task :react-native-safe-area-context:verifyReleaseResources
+> Task :expo:bundleLibCompileToJarRelease
+> Task :expo:bundleLibRuntimeToJarRelease
+> Task :react-native-reanimated:verifyReleaseResources
+> Task :expo:processReleaseJavaRes
+> Task :expo:extractReleaseAnnotations
+> Task :expo:mergeReleaseGeneratedProguardFiles
+> Task :expo:mergeReleaseConsumerProguardFiles
+> Task :expo:mergeReleaseJavaResource
+> Task :expo:syncReleaseLibJars
+> Task :expo:bundleReleaseAar
+> Task :expo:assembleRelease
+> Task :react-native-reanimated:assembleRelease
+> Task :react-native-safe-area-context:assembleRelease
+> Task :react-native-screens:stripReleaseDebugSymbols
+> Task :react-native-screens:copyReleaseJniLibsProjectAndLocalJars
+> Task :react-native-screens:extractDeepLinksForAarRelease FROM-CACHE
+> Task :react-native-screens:extractReleaseAnnotations
+> Task :react-native-screens:mergeReleaseGeneratedProguardFiles
+> Task :react-native-screens:mergeReleaseConsumerProguardFiles
+> Task :react-native-screens:prepareLintJarForPublish
+> Task :react-native-screens:mergeReleaseJavaResource
+> Task :react-native-worklets:stripReleaseDebugSymbols
+> Task :react-native-worklets:copyReleaseJniLibsProjectAndLocalJars
+> Task :react-native-screens:syncReleaseLibJars
+> Task :react-native-worklets:extractDeepLinksForAarRelease FROM-CACHE
+> Task :react-native-worklets:extractReleaseAnnotations
+> Task :react-native-worklets:mergeReleaseGeneratedProguardFiles
+> Task :react-native-worklets:mergeReleaseConsumerProguardFiles
+> Task :react-native-worklets:prepareLintJarForPublish
+> Task :react-native-worklets:mergeReleaseJavaResource
+> Task :react-native-worklets:syncReleaseLibJars
+> Task :sentry_react-native:stripReleaseDebugSymbols NO-SOURCE
+> Task :sentry_react-native:copyReleaseJniLibsProjectAndLocalJars
+> Task :sentry_react-native:extractDeepLinksForAarRelease FROM-CACHE
+> Task :sentry_react-native:extractReleaseAnnotations
+> Task :sentry_react-native:mergeReleaseGeneratedProguardFiles
+> Task :react-native-screens:bundleReleaseAar
+> Task :sentry_react-native:mergeReleaseConsumerProguardFiles
+> Task :sentry_react-native:prepareLintJarForPublish
+> Task :sentry_react-native:mergeReleaseJavaResource
+> Task :react-native-screens:mapReleaseSourceSetPaths
+> Task :sentry_react-native:syncReleaseLibJars
+> Task :sentry_react-native:bundleReleaseAar
+> Task :sentry_react-native:mapReleaseSourceSetPaths
+> Task :react-native-worklets:bundleReleaseAar
+> Task :react-native-worklets:mapReleaseSourceSetPaths
+> Task :react-native-worklets:mergeReleaseResources
+> Task :sentry_react-native:mergeReleaseResources
+> Task :react-native-screens:mergeReleaseResources
+> Task :sentry_react-native:verifyReleaseResources
+> Task :sentry_react-native:assembleRelease
+> Task :react-native-worklets:verifyReleaseResources
+> Task :react-native-worklets:assembleRelease
+> Task :react-native-screens:verifyReleaseResources
+> Task :react-native-screens:assembleRelease
+> Task :app:createBundleReleaseJsAndAssets_SentryUpload_app.masa.mobile@0.1.0+1_1 SKIPPED
+> Task :app:generateReleaseResValues
+> Task :app:checkReleaseAarMetadata
+> Task :app:mapReleaseSourceSetPaths
+> Task :app:generateReleaseResources
+> Task :app:mergeReleaseNativeLibs
+> Task :app:packageReleaseResources
+> Task :app:createReleaseCompatibleScreenManifests
+> Task :app:extractDeepLinksRelease
+> Task :app:parseReleaseLocalResources
+> Task :app:mergeReleaseResources
+> Task :app:stripReleaseDebugSymbols
+
+> Task :app:processReleaseMainManifest
+/home/runner/work/Masa/Masa/apps/mobile/android/app/src/main/AndroidManifest.xml:6:3-88 Warning:
+	uses-permission#android.permission.RECORD_AUDIO was tagged at AndroidManifest.xml:6 to remove other declarations but no other declaration present
+/home/runner/work/Masa/Masa/apps/mobile/android/app/src/main/AndroidManifest.xml Warning:
+	provider#expo.modules.filesystem.FileSystemFileProvider@android:authorities was tagged at AndroidManifest.xml:0 to replace other declarations but no other declaration present
+/home/runner/work/Masa/Masa/apps/mobile/android/app/src/main/AndroidManifest.xml Warning:
+	activity#expo.modules.imagepicker.ExpoCropImageActivity@android:exported was tagged at AndroidManifest.xml:0 to replace other declarations but no other declaration present
+
+> Task :app:expoReleaseOverrideMaxSdkConflicts
+[33m---------- Expo Max Sdk Override Plugin ----------[0m
+[32m>>> No 'android:maxSdkVersion' conflicts found[0m
+[33m--------------------------------------------------[0m
+
+> Task :app:processReleaseManifest
+> Task :app:javaPreCompileRelease FROM-CACHE
+> Task :app:desugarReleaseFileDependencies
+> Task :app:mergeReleaseStartupProfile
+> Task :app:processReleaseManifestForPackage
+> Task :app:extractReleaseNativeSymbolTables
+> Task :app:processReleaseResources
+> Task :app:mergeExtDexRelease
+> Task :app:mergeReleaseNativeDebugMetadata
+> Task :app:mergeReleaseArtProfile
+> Task :app:mergeReleaseShaders
+> Task :app:compileReleaseShaders NO-SOURCE
+> Task :app:compileReleaseKotlin
+
+> Task :app:createReleaseUpdatesResources
+[33m› [1m[@sentry/react-native/expo][22m Missing config for [1morganization, project[22m. Environment variables will be used as a fallback during the build. https://docs.sentry.io/platforms/react-native/manual-setup/[0m
+Expo Autolinking module resolution enabled
+
+> Task :app:compileReleaseJavaWithJavac
+> Task :app:dexBuilderRelease
+> Task :app:generateReleaseAssets UP-TO-DATE
+> Task :app:mergeReleaseAssets
+> Task :app:createBundleReleaseJsAndAssets_SentryUploadCleanUp SKIPPED
+
+> Task :app:createBundleReleaseJsAndAssets_SentryCollectModules_app.masa.mobile@0.1.0+1_1
+Sentry Logger [log]: Reading source map from /home/runner/work/Masa/Masa/apps/mobile/android/app/build/generated/sourcemaps/react/release/index.android.bundle.map
+Sentry Logger [log]: Saving modules to /home/runner/work/Masa/Masa/apps/mobile/android/app/src/main/assets/modules.json
+Sentry Logger [log]: Resolving modules from paths /home/runner/work/Masa/Masa/apps/mobile/node_modules
+Sentry Logger [error]: Modules path does not exist at /home/runner/work/Masa/Masa/apps/mobile/node_modules
+
+> Task :app:extractReleaseVersionControlInfo
+> Task :app:processReleaseJavaRes
+> Task :app:mergeReleaseGlobalSynthetics
+> Task :app:compressReleaseAssets
+> Task :app:mergeReleaseJavaResource
+> Task :app:collectReleaseDependencies
+> Task :app:sdkReleaseDependencyData
+> Task :app:validateSigningRelease
+> Task :app:writeReleaseAppMetadata
+> Task :app:writeReleaseSigningConfigVersions
+> Task :app:optimizeReleaseResources
+> Task :app:mergeDexRelease
+> Task :app:compileReleaseArtProfile
+> Task :app:packageRelease
+> Task :app:createReleaseApkListingFileRedirect
+> Task :app:createBundleReleaseJsAndAssets_SentryCollectModulesCleanUp UP-TO-DATE
+> Task :app:assembleRelease
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_4-1790456708591.json
+
+[Incubating] Problems report is available at: file:///home/runner/work/Masa/Masa/apps/mobile/android/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.3.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 13m 24s
+920 actionable tasks: 771 executed, 148 from cache, 1 up-to-date
