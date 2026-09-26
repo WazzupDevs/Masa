@@ -4,11 +4,14 @@ import { PARTICIPATIONS, type Participation } from '@shared/profile.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Choice } from '@/components/Choice';
+import { ChoiceChip } from '@/components/ChoiceChip';
 import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { Text } from '@/components/Text';
 import { useProfile } from '@/features/account/useProfile';
 import { useCheckinDraft } from '@/features/checkin/draft';
 import { participationHint } from '@/features/profile/ProfileSettings';
@@ -61,29 +64,28 @@ export default function HeadcountScreen() {
 
   return (
     <Screen>
-      <Text className="text-sm text-neutral-500">{venue.name}</Text>
-      <Text className="mt-1 text-3xl font-bold text-black">{tr.checkin.headcountTitle}</Text>
-      <Text className="mt-2 text-base text-neutral-600">{tr.checkin.headcountHint}</Text>
-      <View className="mt-6 flex-row flex-wrap gap-3">
+      <ScreenHeader
+        eyebrow={venue.name}
+        eyebrowIcon="location-outline"
+        title={tr.checkin.headcountTitle}
+        subtitle={tr.checkin.headcountHint}
+        onBack={() => router.back()}
+      />
+      <View accessibilityRole="radiogroup" className="mt-4 flex-row flex-wrap gap-3">
         {HEADCOUNT_OPTIONS.map((n) => (
-          <Pressable
+          <ChoiceChip
             key={n}
-            accessibilityRole="radio"
-            accessibilityState={{ selected: headcount === n }}
+            label={tr.checkin.headcountOption(n)}
+            selected={headcount === n}
             onPress={() => setHeadcount(n)}
-            className={`h-14 w-14 items-center justify-center rounded-xl border-2 ${headcount === n ? 'border-black bg-black' : 'border-neutral-300'}`}
-          >
-            <Text
-              className={`text-xl font-semibold ${headcount === n ? 'text-white' : 'text-black'}`}
-            >
-              {tr.checkin.headcountOption(n)}
-            </Text>
-          </Pressable>
+          />
         ))}
       </View>
 
-      <Text className="mt-8 text-xl font-bold text-black">{tr.participation.title}</Text>
-      <View className="mt-3 gap-2">
+      <Text variant="heading" className="mt-8">
+        {tr.participation.title}
+      </Text>
+      <View accessibilityRole="radiogroup" className="mt-3 gap-2">
         {PARTICIPATIONS.map((mode) => (
           <Choice
             key={mode}
@@ -97,7 +99,9 @@ export default function HeadcountScreen() {
       </View>
 
       {checkIn.isError ? (
-        <Text className="mt-4 text-sm text-red-600">{errorMessage(checkIn.error)}</Text>
+        <Text variant="fine" tone="danger" className="mt-4">
+          {errorMessage(checkIn.error)}
+        </Text>
       ) : null}
       <View className="mt-auto pt-8">
         <Button

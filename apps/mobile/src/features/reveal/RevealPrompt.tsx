@@ -1,15 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useEffect, useRef } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
+import { Countdown } from '@/components/Countdown';
+import { Quiet } from '@/components/Quiet';
+import { Text } from '@/components/Text';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { trackOnce } from '@/lib/analytics';
 import { revealApi } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import { useNow } from '@/lib/useNow';
+import { REVEAL } from '@shared/reveal.ts';
 
 type Props = { roomId: string; isOwner: boolean; revealEndsAt: string; score: number | null };
 
@@ -59,49 +64,70 @@ export function RevealPrompt({ roomId, isOwner, revealEndsAt, score }: Props) {
 
   if (saidNo) {
     return (
-      <View className="mt-6 items-center gap-6 rounded-2xl bg-neutral-100 p-6">
-        <Text className="text-center text-3xl font-bold text-black">{tr.reveal.goodGame}</Text>
-        <View className="w-full">
-          <Button label={tr.reveal.backToVenue} onPress={() => router.replace('/venue')} />
-        </View>
-      </View>
+      <Quiet value>
+        <Card className="mt-4">
+          <View className="items-center gap-4 py-2">
+            <Text variant="title" align="center">
+              {tr.reveal.goodGame}
+            </Text>
+            <View className="self-stretch">
+              <Button label={tr.reveal.backToVenue} onPress={() => router.replace('/venue')} />
+            </View>
+          </View>
+        </Card>
+      </Quiet>
     );
   }
 
+  // A trust moment in every theme: hairline card, the rule spelled out, one clear "Evet".
   return (
-    <View className="mt-6 items-center gap-4 rounded-2xl bg-neutral-100 p-6">
-      {score !== null ? (
-        <Text className="text-lg text-neutral-700">{tr.reveal.score(score)}</Text>
-      ) : null}
-      <Text className="text-3xl font-bold text-black">{tr.reveal.question}</Text>
-      <Text className="text-center text-sm text-neutral-500">{tr.reveal.hint}</Text>
-      <Text className="text-base font-semibold text-black">
-        {tr.reveal.secondsLeft(secondsLeft)}
-      </Text>
-      {decide.isError ? (
-        <Text className="text-sm text-red-600">{errorMessage(decide.error)}</Text>
-      ) : null}
-      {answered ? (
-        <Text className="text-base text-neutral-600">{tr.reveal.answered}</Text>
-      ) : (
-        <View className="w-full flex-row gap-3">
-          <View className="flex-1">
-            <Button
-              label={tr.reveal.yes}
-              onPress={() => decide.mutate(true)}
-              disabled={decide.isPending || secondsLeft === 0}
-            />
-          </View>
-          <View className="flex-1">
-            <Button
-              variant="secondary"
-              label={tr.reveal.no}
-              onPress={() => decide.mutate(false)}
-              disabled={decide.isPending || secondsLeft === 0}
-            />
-          </View>
+    <Quiet value>
+      <Card className="mt-4">
+        <View className="items-center gap-3 py-1">
+          {score !== null ? <Text variant="label">{tr.reveal.score(score)}</Text> : null}
+          <Text variant="display" align="center" accessibilityRole="header">
+            {tr.reveal.question}
+          </Text>
+          <Text variant="fine" align="center">
+            {tr.reveal.hint}
+          </Text>
+          <Countdown
+            secondsLeft={secondsLeft}
+            totalSeconds={REVEAL.decisionSeconds}
+            label={tr.reveal.secondsLeft(secondsLeft)}
+          />
+          {decide.isError ? (
+            <Text variant="fine" tone="danger">
+              {errorMessage(decide.error)}
+            </Text>
+          ) : null}
+          {answered ? (
+            <Card tone="note" className="self-stretch">
+              <Text align="center" accessibilityLiveRegion="polite">
+                {tr.reveal.answered}
+              </Text>
+            </Card>
+          ) : (
+            <View className="mt-1 flex-row gap-2.5 self-stretch">
+              <View className="flex-1">
+                <Button
+                  variant="secondary"
+                  label={tr.reveal.no}
+                  onPress={() => decide.mutate(false)}
+                  disabled={decide.isPending || secondsLeft === 0}
+                />
+              </View>
+              <View className="flex-1">
+                <Button
+                  label={tr.reveal.yes}
+                  onPress={() => decide.mutate(true)}
+                  disabled={decide.isPending || secondsLeft === 0}
+                />
+              </View>
+            </View>
+          )}
         </View>
-      )}
-    </View>
+      </Card>
+    </Quiet>
   );
 }

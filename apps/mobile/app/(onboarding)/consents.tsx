@@ -2,11 +2,13 @@ import { CURRENT_KVKK_VERSION, CURRENT_TERMS_VERSION } from '@shared/consent.ts'
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'expo-router';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Checkbox } from '@/components/Checkbox';
 import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { Text } from '@/components/Text';
 import { useProfile } from '@/features/account/useProfile';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
@@ -36,23 +38,21 @@ export default function ConsentsScreen() {
 
   return (
     <Screen>
-      <Text className="text-3xl font-bold text-black">{tr.consents.title}</Text>
-      {profile.data ? (
-        <Text className="mt-2 text-base text-neutral-600">{tr.consents.outdated}</Text>
-      ) : null}
-      <View className="mt-8 gap-2">
+      <ScreenHeader
+        title={tr.consents.title}
+        subtitle={profile.data ? tr.consents.outdated : undefined}
+      />
+      <View className="mt-6 gap-1">
         <Checkbox label={tr.consents.age} checked={age} onToggle={() => setAge((v) => !v)} />
         <Checkbox label={tr.consents.terms} checked={terms} onToggle={() => setTerms((v) => !v)} />
-        <Link href="/terms" className="ml-9 text-base text-blue-600 underline">
-          {tr.consents.read}
-        </Link>
+        <ReadLink href="/terms" />
         <Checkbox label={tr.consents.kvkk} checked={kvkk} onToggle={() => setKvkk((v) => !v)} />
-        <Link href="/kvkk" className="ml-9 text-base text-blue-600 underline">
-          {tr.consents.read}
-        </Link>
+        <ReadLink href="/kvkk" />
       </View>
       {accept.isError ? (
-        <Text className="mt-4 text-sm text-red-600">{errorMessage(accept.error)}</Text>
+        <Text variant="fine" tone="danger" className="mt-4">
+          {errorMessage(accept.error)}
+        </Text>
       ) : null}
       <View className="mt-auto pt-8">
         <Button
@@ -63,5 +63,18 @@ export default function ConsentsScreen() {
         />
       </View>
     </Screen>
+  );
+}
+
+// "Oku" under a consent, aligned with the checkbox label; 44 high for the finger.
+function ReadLink({ href }: { href: '/terms' | '/kvkk' }) {
+  return (
+    <Link href={href} asChild>
+      <Pressable accessibilityRole="link" className="ml-9 min-h-11 justify-center self-start">
+        <Text tone="accent" variant="bodyStrong">
+          {tr.consents.read}
+        </Text>
+      </Pressable>
+    </Link>
   );
 }

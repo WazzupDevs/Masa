@@ -3,7 +3,6 @@ import '../global.css';
 import { needsConsent } from '@shared/consent.ts';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
@@ -15,6 +14,7 @@ import { useUpdateGate, watchUpdateGate } from '@/features/update/updateGate';
 import { pingUpdateGate } from '@/lib/api';
 import { initErrorReporting } from '@/lib/errorReporting';
 import { queryClient } from '@/lib/queryClient';
+import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
 
 export { RouteError as ErrorBoundary } from '@/components/RouteError';
 
@@ -25,13 +25,14 @@ function RootNavigator() {
   const initialized = useSessionStore((s) => s.initialized);
   const signedIn = useSessionStore((s) => s.session !== null);
   const profile = useProfile();
+  const theme = useTheme();
 
   if (updateRequired) return <UpdateRequired />;
 
   if (!initialized || (signedIn && profile.isPending)) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
-        <ActivityIndicator />
+      <View className="flex-1 items-center justify-center bg-canvas">
+        <ActivityIndicator color={theme.colors.muted} />
       </View>
     );
   }
@@ -62,8 +63,9 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <StatusBar style="dark" />
-      <RootNavigator />
+      <ThemeProvider>
+        <RootNavigator />
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

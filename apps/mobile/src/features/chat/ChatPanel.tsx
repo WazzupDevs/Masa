@@ -2,16 +2,25 @@ import { MAX_MESSAGE_LENGTH, prepareMessage } from '@shared/chat.ts';
 import { canRetry, type OutboxMessage, outboxReducer } from '@shared/chatOutbox.ts';
 import { useQueryClient } from '@tanstack/react-query';
 import { useReducer, useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
+import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
+import { Input } from '@/components/Input';
+import { Text } from '@/components/Text';
 import { tr } from '@/i18n/tr';
 import { ApiError, chatApi } from '@/lib/api';
+import { useTheme } from '@/theme/ThemeProvider';
+import { SPACING, TOUCH } from '@/theme/tokens';
 
 import { messagesKey, useMessages } from './useMessages';
 
 type Props = { roomId: string; sessionId: string };
 
 let nextLocalId = 0;
+
+// The message list's height before it is cut (as before the design pass).
+const MESSAGES_MAX_HEIGHT = 288;
 
 // Collapsible chat at the bottom of the room (MVP_SPEC §4.5, screen 5). Sending is optimistic: the
 // message shows at once and is replaced by the server's copy; a failed one offers a retry when
@@ -54,84 +63,123 @@ export function ChatPanel({ roomId, sessionId }: Props) {
   };
 
   return (
-    <View className="mt-6 rounded-2xl border border-neutral-200">
+    <Card className="mt-6">
       <Pressable
         accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
         onPress={() => setOpen((v) => !v)}
-        className="flex-row items-center justify-between px-4 py-3"
+        className="flex-row items-center justify-between"
+        style={{ minHeight: TOUCH.min }}
       >
-        <Text className="text-base font-semibold text-black">{tr.chat.title}</Text>
-        <Text className="text-sm text-blue-600">{open ? tr.chat.hide : tr.chat.show}</Text>
+        <Text variant="heading">{tr.chat.title}</Text>
+        <Text variant="label" tone="accent">
+          {open ? tr.chat.hide : tr.chat.show}
+        </Text>
       </Pressable>
       {open ? (
-        <View className="border-t border-neutral-200 px-4 pb-4">
-          <View className="max-h-72 gap-2 py-3">
+        <View>
+          <View className="gap-2 py-3" style={{ maxHeight: MESSAGES_MAX_HEIGHT }}>
             {messages.data?.length === 0 && outbox.length === 0 ? (
-              <Text className="text-sm text-neutral-500">{tr.chat.empty}</Text>
+              <Text variant="fine">{tr.chat.empty}</Text>
             ) : null}
-            {messages.data?.map((m) => (
-              <View key={m.id} className={m.session_id === sessionId ? 'items-end' : 'items-start'}>
-                <Text className="text-xs text-neutral-500">{m.sender_alias}</Text>
-                <Text
-                  className={`rounded-xl px-3 py-2 text-base ${m.session_id === sessionId ? 'bg-black text-white' : 'bg-neutral-100 text-black'}`}
-                >
-                  {m.body}
-                </Text>
-              </View>
-            ))}
+            {messages.data?.map((m) => {
+              const mine = m.session_id === sessionId;
+              return (
+                <View key={m.id} className={mine ? 'items-end' : 'items-start'}>
+                  <Text variant="fine">{m.sender_alias}</Text>
+                  <Bubble tone={mine ? 'mine' : 'theirs'}>{m.body}</Bubble>
+                </View>
+              );
+            })}
             {outbox.map((m) => (
               <View key={m.localId} className="items-end">
-                <Text
-                  className={`rounded-xl px-3 py-2 text-base text-white ${m.status === 'sending' ? 'bg-neutral-500' : 'bg-red-700'}`}
-                >
-                  {m.body}
-                </Text>
+                <Bubble tone={m.status === 'sending' ? 'sending' : 'failed'}>{m.body}</Bubble>
                 {m.status === 'sending' ? (
-                  <Text className="text-xs text-neutral-400">{tr.chat.sending}</Text>
+                  <Text variant="fine">{tr.chat.sending}</Text>
                 ) : (
-                  <View className="flex-row items-center gap-3">
-                    <Text className="text-xs text-red-600">
+                  <View className="flex-row items-center gap-1">
+                    <Text variant="fine" tone="danger">
                       {m.errorCode ? tr.errors[m.errorCode] : tr.chat.notSent}
                     </Text>
                     {canRetry(m) ? (
-                      <Pressable accessibilityRole="button" onPress={() => retry(m)}>
-                        <Text className="text-xs font-semibold text-blue-600">{tr.chat.retry}</Text>
-                      </Pressable>
+                      <SmallAction label={tr.chat.retry} onPress={() => retry(m)} />
                     ) : null}
-                    <Pressable
-                      accessibilityRole="button"
+                    <SmallAction
+                      label={tr.chat.discard}
+                      muted
                       onPress={() => dispatch({ type: 'remove', localId: m.localId })}
-                    >
-                      <Text className="text-xs text-neutral-500">{tr.chat.discard}</Text>
-                    </Pressable>
+                    />
                   </View>
                 )}
               </View>
             ))}
           </View>
-          <View className="flex-row items-center gap-2">
-            <TextInput
-              className="h-11 flex-1 rounded-xl border border-neutral-300 px-3 text-base text-black"
-              placeholder={tr.chat.placeholder}
-              value={draft}
-              onChangeText={setDraft}
-              maxLength={MAX_MESSAGE_LENGTH}
-              onSubmitEditing={submit}
-            />
-            <Pressable
-              accessibilityRole="button"
-              disabled={!body}
-              onPress={submit}
-              className={`h-11 justify-center rounded-xl bg-black px-4 ${!body ? 'opacity-40' : ''}`}
-            >
-              <Text className="text-base font-semibold text-white">{tr.chat.send}</Text>
-            </Pressable>
+          <View className="flex-row items-start gap-2">
+            <View className="flex-1">
+              <Input
+                accessibilityLabel={tr.chat.placeholder}
+                placeholder={tr.chat.placeholder}
+                value={draft}
+                onChangeText={setDraft}
+                maxLength={MAX_MESSAGE_LENGTH}
+                onSubmitEditing={submit}
+                counter={tr.chat.counter([...draft].length, MAX_MESSAGE_LENGTH)}
+              />
+            </View>
+            <Button label={tr.chat.send} disabled={!body} onPress={submit} />
           </View>
-          <Text className="mt-1 text-right text-xs text-neutral-400">
-            {tr.chat.counter([...draft].length, MAX_MESSAGE_LENGTH)}
-          </Text>
         </View>
       ) : null}
+    </Card>
+  );
+}
+
+type BubbleTone = 'mine' | 'theirs' | 'sending' | 'failed';
+
+function Bubble({ tone, children }: { tone: BubbleTone; children: string }) {
+  const { colors, shape } = useTheme();
+  const fill = {
+    mine: { bg: colors.accent, fg: colors.onAccent },
+    theirs: { bg: colors.surface2, fg: colors.text },
+    sending: { bg: colors.accent, fg: colors.onAccent },
+    failed: { bg: colors.danger, fg: colors.onDanger },
+  }[tone];
+  return (
+    <View
+      style={{
+        maxWidth: '85%',
+        borderRadius: shape.radius.md,
+        paddingHorizontal: SPACING[3],
+        paddingVertical: SPACING[2],
+        backgroundColor: fill.bg,
+        opacity: tone === 'sending' ? 0.6 : 1,
+      }}
+    >
+      <Text color={fill.fg}>{children}</Text>
     </View>
+  );
+}
+
+// "Tekrar dene" / "Sil" under a failed message: text buttons, 44 high for the finger.
+function SmallAction({
+  label,
+  onPress,
+  muted,
+}: {
+  label: string;
+  onPress: () => void;
+  muted?: boolean;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      className="justify-center px-2"
+      style={{ minHeight: TOUCH.min }}
+    >
+      <Text variant="label" tone={muted ? 'muted' : 'accent'}>
+        {label}
+      </Text>
+    </Pressable>
   );
 }

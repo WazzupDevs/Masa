@@ -64,6 +64,8 @@ export const tr = {
     retry: 'Tekrar dene',
     loading: 'Yükleniyor…',
     genericError: 'Bir şeyler ters gitti. Tekrar dener misin?',
+    close: 'Kapat',
+    back: 'Geri',
   },
   auth: {
     phoneTitle: 'Telefon numaran',
@@ -127,6 +129,9 @@ export const tr = {
       }
     },
     empty: 'Şu an listede mekan yok.',
+    count: (n: number) => `${n} mekan`,
+    locationHidden: 'Konumun gösterilmez',
+    viewSwitch: 'Görünüm',
     notFound: 'Bu mekan artık listede değil.',
     back: 'Geri dön',
     checkInHint:
@@ -149,6 +154,7 @@ export const tr = {
         : `${dayMonthAt(playedAt)} sohbet ettiğiniz ${alias} masası arkadaşın olmak istiyor`,
     accept: 'Kabul et',
     decline: 'Reddet',
+    declineNote: 'Reddedersen karşı tarafa bildirilmez.',
     sentTitle: 'Gönderilen istekler',
     sent: (alias: string) => `${alias} masasına istek gönderildi`,
     sentAccepted: (alias: string) => `${alias} masası isteğini kabul etti`,
@@ -269,6 +275,7 @@ export const tr = {
     playWithTable: 'Masanla oyna',
     playWithTableHint: 'Şu an mekanda açık oda yok. Kendi masanla oynayabilirsin.',
     lobbyTitle: 'Açık odalar',
+    roomCount: (n: number) => `${n} oda`,
     profiled: 'profilli',
     people: (n: number) => `${headcountLabel(n)} kişi`,
     waitingFor: (minutes: number) => (minutes < 1 ? 'yeni açıldı' : `${minutes} dk bekliyor`),
@@ -285,6 +292,9 @@ export const tr = {
     },
     createConfirm: 'Odayı kur',
     roomTitle: (concept: string) => `${concept} odası`,
+    // The room's eyebrow; voice games say they are played face to face (docs/SPEC_V2.md §8.1).
+    roomEyebrow: (concept: 'tabu' | 'sohbet') =>
+      concept === 'tabu' ? 'Tabu odası · yüz yüze' : 'Sohbet odası',
     withGuest: (owner: string, guest: string) => `${owner} ve ${guest}`,
     waitingForGuest: 'Başka bir masa katılmak isteyebilir. Bu arada kendi masanla oynayabilirsin.',
     leave: 'Odadan çık',
@@ -294,6 +304,8 @@ export const tr = {
       `${alias} (${headcountLabel(headcount)} kişi) ${concept} odana katılmak istiyor.`,
     accept: 'Kabul',
     decline: 'Geç',
+    declineNote:
+      'Geç dersen karşı masa yalnızca "Masa şu an müsait değil" görür. Kimse bilgilendirilmez.',
     viewProfile: 'Diğer masanın profilini gör',
     secondsLeft: (s: number) => `${s} sn`,
   },
@@ -356,8 +368,15 @@ export const tr = {
     startServer: 'Oyunu başlat',
     waitingForOwner: 'Oda sahibinin oyunu başlatması bekleniyor.',
     turn: (n: number, total: number) => `Tur ${n}/${total}`,
+    turnEyebrow: (n: number, total: number) => `Tabu · Tur ${n}/${total}`,
     passesLeft: (n: number) => `${n} pas hakkı`,
+    passDetail: (n: number) => `${n} hak`,
     secondsLeft: (s: number) => `${s} sn`,
+    // The turn clock, "0:37".
+    clock: (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`,
+    clockLabel: (s: number) => `${s} saniye kaldı`,
+    correctPoints: '+1',
+    tabooPoints: '−1',
     turnOverWait: 'Tur bitiyor…',
     voiceIntro:
       'Yüz yüze oynanır: masalar sırayla anlatır, diğer masa kartı görür ve hakemlik yapar. 6 tur, her tur 60 saniye.',
@@ -382,6 +401,8 @@ export const tr = {
     secondsLeft: (s: number) => `${s} sn`,
     answered: 'Cevabın alındı. Sonuç birazdan.',
     signal: 'Ekranını kaldır, birbirinizi bulun.',
+    signalTop: 'Tanışalım mı? · İki masa da "Evet" dedi',
+    signalSame: 'Diğer masada da aynı renk ve aynı işaret var.',
     goodGame: 'Güzel oyundu 👋',
     backToVenue: 'Mekana dön',
     score: (n: number) => `Ortak skor: ${n}`,
@@ -389,6 +410,7 @@ export const tr = {
     addFriendDone: 'Eklendi. İkiniz de basarsanız arkadaş olursunuz.',
   },
   venue: {
+    here: 'Mekandasın',
     yourTable: 'Masanın adı',
     people: (n: number) => `${headcountLabel(n)} kişi`,
     remaining: (h: number, m: number) => (h > 0 ? `${h} sa ${m} dk kaldı` : `${m} dk kaldı`),
@@ -396,6 +418,22 @@ export const tr = {
     leaveConfirmTitle: 'Mekandan ayrılıyor musun?',
     leaveConfirmBody: 'Masan kapanır. Sonra yeniden giriş yapabilirsin.',
     leaveConfirm: 'Ayrıl',
+  },
+  design: {
+    title: 'Tasarım (test)',
+    hint: 'Yalnızca test sürümünde görünür. Seçimin bu cihazda saklanır.',
+    themes: {
+      night: 'Gece Kafe',
+      play: 'Oyun Gecesi',
+      calm: 'Sakin Liman',
+    },
+    themeHints: {
+      night: 'Loş bir kafede, sıcak ve koyu.',
+      play: 'Kalın çizgiler, canlı renkler.',
+      calm: 'Sade, açık, bol boşluk.',
+    },
+    schemeLabel: 'Görünüm',
+    schemes: { light: 'Açık', dark: 'Koyu', system: 'Sistem' },
   },
   settings: {
     title: 'Ayarlar',

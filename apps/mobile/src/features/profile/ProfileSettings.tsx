@@ -1,12 +1,15 @@
 import { PARTICIPATIONS, type Participation } from '@shared/profile.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Switch, Text, View } from 'react-native';
+import { Switch, View } from 'react-native';
 
 import { Choice } from '@/components/Choice';
+import { ListRow } from '@/components/ListRow';
+import { Text } from '@/components/Text';
 import { useProfile } from '@/features/account/useProfile';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { profileApi } from '@/lib/api';
+import { useTheme } from '@/theme/ThemeProvider';
 
 type Changes = {
   defaultParticipation?: Participation;
@@ -33,9 +36,11 @@ export function ProfileSettings() {
 
   return (
     <View className="gap-6">
-      <View className="gap-2">
-        <Text className="text-sm font-semibold text-neutral-500">{tr.settings.privacySection}</Text>
-        <Text className="text-base text-black">{tr.settings.defaultParticipation}</Text>
+      <View accessibilityRole="radiogroup" className="gap-2">
+        <Text variant="heading" accessibilityRole="header">
+          {tr.settings.privacySection}
+        </Text>
+        <Text>{tr.settings.defaultParticipation}</Text>
         {PARTICIPATIONS.map((mode) => (
           <Choice
             key={mode}
@@ -46,11 +51,11 @@ export function ProfileSettings() {
             onPress={() => update.mutate({ defaultParticipation: mode })}
           />
         ))}
-        <Text className="text-sm text-neutral-500">{tr.settings.defaultParticipationHint}</Text>
+        <Text variant="fine">{tr.settings.defaultParticipationHint}</Text>
       </View>
 
-      <View className="gap-2">
-        <Text className="text-sm font-semibold text-neutral-500">
+      <View>
+        <Text variant="heading" accessibilityRole="header">
           {tr.settings.notificationsSection}
         </Text>
         <ToggleRow
@@ -68,7 +73,9 @@ export function ProfileSettings() {
       </View>
 
       {update.isError ? (
-        <Text className="text-sm text-red-600">{errorMessage(update.error)}</Text>
+        <Text variant="fine" tone="danger">
+          {errorMessage(update.error)}
+        </Text>
       ) : null}
     </View>
   );
@@ -80,15 +87,21 @@ function ToggleRow(props: {
   disabled: boolean;
   onChange: (value: boolean) => void;
 }) {
+  const { colors } = useTheme();
   return (
-    <View className="flex-row items-center justify-between border-b border-neutral-200 py-2">
-      <Text className="text-base text-black">{props.label}</Text>
-      <Switch
-        accessibilityLabel={props.label}
-        value={props.value}
-        disabled={props.disabled}
-        onValueChange={props.onChange}
-      />
-    </View>
+    <ListRow
+      title={props.label}
+      trailing={
+        <Switch
+          accessibilityLabel={props.label}
+          value={props.value}
+          disabled={props.disabled}
+          onValueChange={props.onChange}
+          trackColor={{ false: colors.surface2, true: colors.accent }}
+          thumbColor={colors.surface}
+          ios_backgroundColor={colors.surface2}
+        />
+      }
+    />
   );
 }

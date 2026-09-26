@@ -1,11 +1,16 @@
 import { useMutation } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
-import { Alert, Linking, Pressable, Text, View } from 'react-native';
+import { Alert, Linking, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { ListRow } from '@/components/ListRow';
 import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { Text } from '@/components/Text';
 import { BlockedList } from '@/features/chat/BlockedList';
+import { DesignPicker } from '@/features/design/DesignPicker';
+import { designPickerEnabled } from '@/theme/ThemeProvider';
 import { ProfileSettings } from '@/features/profile/ProfileSettings';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
@@ -20,15 +25,7 @@ const privacyUrl = process.env.EXPO_PUBLIC_PRIVACY_URL;
 const contactEmail = process.env.EXPO_PUBLIC_CONTACT_EMAIL;
 
 function Row({ label, onPress }: { label: string; onPress: () => void }) {
-  return (
-    <Pressable
-      accessibilityRole="link"
-      onPress={onPress}
-      className="border-b border-neutral-200 py-3"
-    >
-      <Text className="text-base text-black">{label}</Text>
-    </Pressable>
-  );
+  return <ListRow title={label} onPress={onPress} accessibilityRole="link" />;
 }
 
 async function signOutLocally() {
@@ -65,15 +62,22 @@ export default function SettingsScreen() {
 
   return (
     <Screen>
-      <Text className="text-3xl font-bold text-black">{tr.settings.title}</Text>
-      <View className="mt-6">
+      <ScreenHeader title={tr.settings.title} onBack={() => router.back()} />
+      {designPickerEnabled ? (
+        <View className="mb-4 mt-4">
+          <DesignPicker />
+        </View>
+      ) : null}
+      <View className="mt-4">
         <ProfileSettings />
       </View>
-      <View className="mt-6">
+      <View className="mt-8">
         <BlockedList />
       </View>
-      <View className="mt-6">
-        <Text className="text-sm font-semibold text-neutral-500">{tr.settings.legalSection}</Text>
+      <View className="mt-8">
+        <Text variant="heading" accessibilityRole="header">
+          {tr.settings.legalSection}
+        </Text>
         <Row
           label={tr.settings.privacy}
           onPress={() =>
@@ -93,16 +97,18 @@ export default function SettingsScreen() {
           />
         ) : null}
       </View>
-      <View className="mt-6 gap-1">
-        <Text className="text-sm font-semibold text-neutral-500">{tr.settings.about}</Text>
-        <Text className="text-sm text-neutral-500">
-          {tr.settings.version(Constants.expoConfig?.version ?? '')}
+      <View className="mt-8 gap-1">
+        <Text variant="heading" accessibilityRole="header">
+          {tr.settings.about}
         </Text>
-        <Text className="text-sm text-neutral-500">{tr.settings.osm}</Text>
+        <Text variant="fine">{tr.settings.version(Constants.expoConfig?.version ?? '')}</Text>
+        <Text variant="fine">{tr.settings.osm}</Text>
       </View>
       <View className="mt-auto gap-3 pt-8">
         {deleteAccount.isError ? (
-          <Text className="text-sm text-red-600">{errorMessage(deleteAccount.error)}</Text>
+          <Text variant="fine" tone="danger">
+            {errorMessage(deleteAccount.error)}
+          </Text>
         ) : null}
         <Button
           variant="secondary"

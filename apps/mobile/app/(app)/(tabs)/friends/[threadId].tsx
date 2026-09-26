@@ -4,10 +4,14 @@ import { BROADCAST, dmChannel } from '@shared/rooms.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Modal, Pressable, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { IconButton } from '@/components/IconButton';
+import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
+import { Sheet } from '@/components/Sheet';
+import { Text } from '@/components/Text';
 import { ReportModal } from '@/features/chat/ReportModal';
 import { ConfirmWithReport } from '@/features/friends/ConfirmWithReport';
 import { friendKeys, useDmMessages } from '@/features/friends/queries';
@@ -16,6 +20,8 @@ import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { track } from '@/lib/analytics';
 import { dmApi, friendsApi, safetyApi } from '@/lib/api';
+import { useTheme } from '@/theme/ThemeProvider';
+import { SPACING, TOUCH } from '@/theme/tokens';
 
 type Params = { threadId: string; publicId: string; name: string };
 
@@ -23,6 +29,7 @@ type Params = { threadId: string; publicId: string; name: string };
 // reread through dm_messages_page (`from_me`, never the sender's account id). Read state stays
 // with the reader.
 export default function DmScreen() {
+  const { colors, shape } = useTheme();
   const { threadId, publicId, name } = useLocalSearchParams<Params>();
   const queryClient = useQueryClient();
   const messages = useDmMessages(threadId);
@@ -82,97 +89,103 @@ export default function DmScreen() {
   const list = messages.data ?? [];
   return (
     <Screen>
-      <View className="flex-row items-center justify-between">
-        <Pressable accessibilityRole="button" hitSlop={12} onPress={() => router.back()}>
-          <Text className="text-base text-neutral-600">{tr.friends.back}</Text>
-        </Pressable>
-        <Pressable accessibilityRole="button" hitSlop={12} onPress={() => setMenu(true)}>
-          <Text className="text-base font-semibold text-black">{tr.friends.more}</Text>
-        </Pressable>
+      <View className="-mx-3 flex-row items-center justify-between">
+        <IconButton icon="chevron-back" label={tr.friends.back} onPress={() => router.back()} />
+        <IconButton
+          icon="ellipsis-horizontal"
+          label={tr.friends.more}
+          onPress={() => setMenu(true)}
+        />
       </View>
       <Pressable
         accessibilityRole="link"
         onPress={() => router.push({ pathname: '/people/[publicId]', params: { publicId } })}
+        className="mt-1 self-start"
+        style={{ minHeight: TOUCH.min }}
       >
-        <Text className="mt-4 text-2xl font-bold text-black">{name}</Text>
+        <Text variant="display">{name}</Text>
       </Pressable>
 
-      <View className="mt-6 flex-1 gap-2">
+      <View className="mt-4 flex-1 gap-2">
         {list.length === 0 && !messages.isPending ? (
-          <Text className="text-base text-neutral-500">{tr.friends.noMessagesYet}</Text>
+          <Text tone="muted">{tr.friends.noMessagesYet}</Text>
         ) : null}
         {[...list].reverse().map((m) => (
           <View
             key={m.id}
-            className={`max-w-[80%] rounded-2xl px-4 py-2 ${m.from_me ? 'self-end bg-black' : 'self-start bg-neutral-100'}`}
+            style={{
+              maxWidth: '80%',
+              alignSelf: m.from_me ? 'flex-end' : 'flex-start',
+              borderRadius: shape.radius.md,
+              paddingHorizontal: SPACING[4],
+              paddingVertical: SPACING[2],
+              backgroundColor: m.from_me ? colors.accent : colors.surface2,
+            }}
           >
-            <Text className={`text-base ${m.from_me ? 'text-white' : 'text-black'}`}>{m.body}</Text>
+            <Text tone={m.from_me ? 'onAccent' : 'text'}>{m.body}</Text>
           </View>
         ))}
       </View>
 
       {send.isError ? (
-        <Text className="mt-3 text-sm text-red-600">{errorMessage(send.error)}</Text>
+        <Text variant="fine" tone="danger" className="mt-3">
+          {errorMessage(send.error)}
+        </Text>
       ) : null}
       <View className="mt-4 flex-row items-end gap-2">
-        <TextInput
-          className="min-h-12 flex-1 rounded-xl border border-neutral-300 px-4 py-3 text-base text-black"
-          placeholder={tr.dm.placeholder}
-          value={draft}
-          onChangeText={setDraft}
-          maxLength={DM_MAX_LENGTH}
-          multiline
-        />
-        <View className="w-24">
-          <Button
-            label={tr.dm.send}
-            disabled={!body}
-            loading={send.isPending}
-            onPress={() => body && send.mutate(body)}
+        <View className="flex-1">
+          <Input
+            accessibilityLabel={tr.dm.placeholder}
+            placeholder={tr.dm.placeholder}
+            value={draft}
+            onChangeText={setDraft}
+            maxLength={DM_MAX_LENGTH}
+            multiline
           />
         </View>
+        <Button
+          label={tr.dm.send}
+          disabled={!body}
+          loading={send.isPending}
+          onPress={() => body && send.mutate(body)}
+        />
       </View>
 
-      <Modal transparent animationType="fade" visible={menu} onRequestClose={() => setMenu(false)}>
-        <View className="flex-1 items-center justify-center bg-black/50 px-6">
-          <View className="w-full gap-3 rounded-2xl bg-white p-6">
-            <Text className="text-xl font-bold text-black">{tr.friends.friendMenuTitle}</Text>
-            <Button
-              variant="secondary"
-              label={tr.friends.viewProfile}
-              onPress={() => {
-                setMenu(false);
-                router.push({ pathname: '/people/[publicId]', params: { publicId } });
-              }}
-            />
-            <Button
-              variant="secondary"
-              label={tr.dm.report}
-              onPress={() => {
-                setMenu(false);
-                setReporting(true);
-              }}
-            />
-            <Button
-              variant="secondary"
-              label={tr.friends.removeFriend}
-              onPress={() => {
-                setMenu(false);
-                setConfirm('remove');
-              }}
-            />
-            <Button
-              variant="danger"
-              label={tr.friends.block}
-              onPress={() => {
-                setMenu(false);
-                setConfirm('block');
-              }}
-            />
-            <Button label={tr.common.cancel} onPress={() => setMenu(false)} />
-          </View>
-        </View>
-      </Modal>
+      <Sheet visible={menu} onClose={() => setMenu(false)} title={tr.friends.friendMenuTitle}>
+        <Button
+          variant="secondary"
+          label={tr.friends.viewProfile}
+          onPress={() => {
+            setMenu(false);
+            router.push({ pathname: '/people/[publicId]', params: { publicId } });
+          }}
+        />
+        <Button
+          variant="secondary"
+          label={tr.dm.report}
+          onPress={() => {
+            setMenu(false);
+            setReporting(true);
+          }}
+        />
+        <Button
+          variant="secondary"
+          label={tr.friends.removeFriend}
+          onPress={() => {
+            setMenu(false);
+            setConfirm('remove');
+          }}
+        />
+        <Button
+          variant="danger"
+          label={tr.friends.block}
+          onPress={() => {
+            setMenu(false);
+            setConfirm('block');
+          }}
+        />
+        <Button variant="ghost" label={tr.common.cancel} onPress={() => setMenu(false)} />
+      </Sheet>
 
       <ReportModal
         visible={reporting}

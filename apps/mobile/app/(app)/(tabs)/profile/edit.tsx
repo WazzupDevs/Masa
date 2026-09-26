@@ -2,25 +2,30 @@ import { BIO_MAX, DISPLAY_NAME_MAX, DISPLAY_NAME_MIN } from '@shared/profile.ts'
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { Text } from '@/components/Text';
 import { useProfile } from '@/features/account/useProfile';
 import { profileViewKeys } from '@/features/profile/queries';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { track } from '@/lib/analytics';
 import { profileApi } from '@/lib/api';
+import { useTheme } from '@/theme/ThemeProvider';
 
 // Display name and bio (docs/SPEC_V2.md §5.1). Length is checked here; the profile function
 // checks length and profanity again.
 export default function EditProfileScreen() {
+  const { colors } = useTheme();
   const own = useProfile();
   if (own.isPending || !own.data) {
     return (
       <Screen>
-        <ActivityIndicator className="mt-16" />
+        <ActivityIndicator className="mt-16" color={colors.muted} />
       </Screen>
     );
   }
@@ -55,34 +60,33 @@ function EditForm({ initialName, initialBio }: { initialName: string; initialBio
 
   return (
     <Screen>
-      <Text className="text-3xl font-bold text-black">{tr.profile.editTitle}</Text>
+      <ScreenHeader title={tr.profile.editTitle} onBack={() => router.back()} />
 
-      <Text className="mt-8 text-sm font-semibold text-neutral-500">{tr.profile.nameLabel}</Text>
-      <TextInput
-        className="mt-2 rounded-xl border border-neutral-300 px-4 py-3 text-lg text-black"
-        value={name}
-        onChangeText={setName}
-        maxLength={DISPLAY_NAME_MAX}
-        autoCapitalize="words"
-        autoCorrect={false}
-      />
-      <Text className="mt-2 text-sm text-neutral-500">{tr.profile.nameHint}</Text>
-
-      <Text className="mt-6 text-sm font-semibold text-neutral-500">{tr.profile.bioLabel}</Text>
-      <TextInput
-        className="mt-2 min-h-24 rounded-xl border border-neutral-300 px-4 py-3 text-base text-black"
-        value={bio}
-        onChangeText={setBio}
-        maxLength={BIO_MAX}
-        multiline
-        textAlignVertical="top"
-      />
-      <Text className="mt-2 text-right text-sm text-neutral-500">
-        {tr.profile.bioHint([...bio].length, BIO_MAX)}
-      </Text>
+      <View className="mt-4 gap-6">
+        <Input
+          label={tr.profile.nameLabel}
+          hint={tr.profile.nameHint}
+          value={name}
+          onChangeText={setName}
+          maxLength={DISPLAY_NAME_MAX}
+          autoCapitalize="words"
+          autoCorrect={false}
+        />
+        <Input
+          label={tr.profile.bioLabel}
+          counter={tr.profile.bioHint([...bio].length, BIO_MAX)}
+          value={bio}
+          onChangeText={setBio}
+          maxLength={BIO_MAX}
+          multiline
+          tall
+        />
+      </View>
 
       {save.isError ? (
-        <Text className="mt-4 text-sm text-red-600">{errorMessage(save.error)}</Text>
+        <Text variant="fine" tone="danger" className="mt-4">
+          {errorMessage(save.error)}
+        </Text>
       ) : null}
       <View className="mt-auto gap-3 pt-8">
         <Button
@@ -91,7 +95,7 @@ function EditForm({ initialName, initialBio }: { initialName: string; initialBio
           disabled={!nameValid || (!nameChanged && !bioChanged)}
           loading={save.isPending}
         />
-        <Button variant="secondary" label={tr.common.cancel} onPress={() => router.back()} />
+        <Button variant="ghost" label={tr.common.cancel} onPress={() => router.back()} />
       </View>
     </Screen>
   );
