@@ -50,9 +50,17 @@ appId: app.masa.mobile
     visible: Yasaklı kelimeler
     timeout: 20000
 - takeScreenshot: 18-card-open
+# The buttons are under the card; with a two-line room title they are below the fold.
+- scrollUntilVisible:
+    element:
+      text: Pas · 3
+    centerElement: true
+    timeout: 10000
 - tapOn: Pas · 3
-- extendedWaitUntil:
-    visible: Pas · 2
+- scrollUntilVisible:
+    element:
+      text: Pas · 2
+    centerElement: true
     timeout: 10000
 # The judging table (the bot) says Doğru.
 - runScript:
@@ -69,8 +77,10 @@ appId: app.masa.mobile
 - extendedWaitUntil:
     visible: Tur 2/6
     timeout: 20000
-- extendedWaitUntil:
-    visible: Tabu −1
+- scrollUntilVisible:
+    element:
+      text: Tabu −1
+    centerElement: true
     timeout: 20000
 - takeScreenshot: 20-judge
 - tapOn: Doğru \+1

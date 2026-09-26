@@ -96,7 +96,7 @@ jobs:
           nohup node --experimental-strip-types scripts/e2e/bot-table.ts serve > "$OUT/bot.log" 2>&1 &
       - name: Maestro
         run: |
-          curl -Ls "https://get.maestro.mobile.dev" | bash
+          curl -Ls "https://get.maestro.mobile.dev" | MAESTRO_VERSION=2.10.0 bash
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
           mkdir -p "$OUT"
           "$HOME/.maestro/bin/maestro" --version | tee "$OUT/maestro-version.txt"
