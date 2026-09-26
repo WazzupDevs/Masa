@@ -5,18 +5,18 @@ appId: app.masa.mobile
     element:
       text: E2E Kafe
     timeout: 30000
-- takeScreenshot: ${OUT_DIR}/05-explore-list
+- takeScreenshot: 05-explore-list
 - tapOn: E2E Kafe
 - extendedWaitUntil:
     visible: Buraya giriş yap
     timeout: 10000
-- takeScreenshot: ${OUT_DIR}/06-venue-detail
+- takeScreenshot: 06-venue-detail
 - tapOn: Buraya giriş yap
 - extendedWaitUntil:
     visible: Konumumu kullan
     timeout: 10000
 - tapOn: Konumumun bu amaçla kullanılmasına açık rıza veriyorum.
-- takeScreenshot: ${OUT_DIR}/07-location-consent
+- takeScreenshot: 07-location-consent
 - setLocation:
     latitude: ${OUTSIDE_LAT}
     longitude: ${OUTSIDE_LNG}
@@ -24,7 +24,7 @@ appId: app.masa.mobile
 - extendedWaitUntil:
     visible: Bu mekana çok uzaktasın. Mekandayken tekrar dene.
     timeout: 30000
-- takeScreenshot: ${OUT_DIR}/08-too-far
+- takeScreenshot: 08-too-far
 - setLocation:
     latitude: ${INSIDE_LAT}
     longitude: ${INSIDE_LNG}
@@ -34,16 +34,16 @@ appId: app.masa.mobile
     timeout: 30000
 # No display name yet: joining with a profile is off.
 - assertVisible: Profille katılmak için önce Profil sekmesinden bir ad seç.
-- takeScreenshot: ${OUT_DIR}/09-headcount
+- takeScreenshot: 09-headcount
 - tapOn:
     id: headcount-2
 - tapOn: Masayı aç
 - extendedWaitUntil:
     visible: Masan hazır
     timeout: 15000
-- takeScreenshot: ${OUT_DIR}/10-table-ready
+- takeScreenshot: 10-table-ready
 - tapOn: Devam
 - extendedWaitUntil:
     visible: Oda kur
     timeout: 15000
-- takeScreenshot: ${OUT_DIR}/11-venue
+- takeScreenshot: 11-venue

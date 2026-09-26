@@ -14,13 +14,13 @@ appId: app.masa.mobile
 - extendedWaitUntil:
     visible: Tanışalım mı\?
     timeout: 15000
-- takeScreenshot: ${OUT_DIR}/21-reveal-question
+- takeScreenshot: 21-reveal-question
 - tapOn:
     id: reveal-yes
 - extendedWaitUntil:
     visible: Cevabın alındı. Sonuç birazdan.
     timeout: 10000
-- takeScreenshot: ${OUT_DIR}/22-reveal-answered
+- takeScreenshot: 22-reveal-answered
 - runScript:
     file: ../scripts/bot.js
     env:
@@ -29,12 +29,12 @@ appId: app.masa.mobile
 - extendedWaitUntil:
     visible: Ekranını kaldır, birbirinizi bulun.
     timeout: 15000
-- takeScreenshot: ${OUT_DIR}/23-reveal-mutual
+- takeScreenshot: 23-reveal-mutual
 - tapOn: Arkadaş ekle
 - extendedWaitUntil:
     visible: Eklendi. İkiniz de basarsanız arkadaş olursunuz.
     timeout: 10000
-- takeScreenshot: ${OUT_DIR}/24-add-friend-done
+- takeScreenshot: 24-add-friend-done
 - runScript:
     file: ../scripts/bot.js
     env:
@@ -45,12 +45,12 @@ appId: app.masa.mobile
 - extendedWaitUntil:
     visible: Bot Masa
     timeout: 20000
-- takeScreenshot: ${OUT_DIR}/25-friends
+- takeScreenshot: 25-friends
 - tapOn: Bot Masa
 - extendedWaitUntil:
     visible: Henüz mesaj yok. İlk mesajı sen yaz.
     timeout: 15000
-- takeScreenshot: ${OUT_DIR}/26-dm-empty
+- takeScreenshot: 26-dm-empty
 - tapOn:
     id: dm-input
 - inputText: Merhaba bot
@@ -72,5 +72,5 @@ appId: app.masa.mobile
 - extendedWaitUntil:
     visible: Selam cihaz
     timeout: 20000
-- takeScreenshot: ${OUT_DIR}/27-dm
+- takeScreenshot: 27-dm
 - hideKeyboard

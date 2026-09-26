@@ -7,20 +7,20 @@ appId: app.masa.mobile
 - extendedWaitUntil:
     visible: .*masasıyla Tabu.*
     timeout: 15000
-- takeScreenshot: ${OUT_DIR}/30-history
+- takeScreenshot: 30-history
 - tapOn:
     id: history-more
     index: 0
 - extendedWaitUntil:
     visible: Bu masa
     timeout: 10000
-- takeScreenshot: ${OUT_DIR}/31-history-menu
+- takeScreenshot: 31-history-menu
 - tapOn:
     id: menu-block
 - extendedWaitUntil:
     visible: Bu masayı engellemek istiyor musun\?
     timeout: 10000
-- takeScreenshot: ${OUT_DIR}/32-block-confirm
+- takeScreenshot: 32-block-confirm
 - tapOn:
     id: confirm-action
 - extendedWaitUntil:
@@ -30,4 +30,4 @@ appId: app.masa.mobile
 - extendedWaitUntil:
     visible: Henüz arkadaşın yok.*
     timeout: 15000
-- takeScreenshot: ${OUT_DIR}/33-friends-after-block
+- takeScreenshot: 33-friends-after-block

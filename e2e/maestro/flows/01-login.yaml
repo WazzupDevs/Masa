@@ -8,7 +8,7 @@ appId: app.masa.mobile
 - extendedWaitUntil:
     visible: Telefon numaran
     timeout: 60000
-- takeScreenshot: ${OUT_DIR}/01-phone
+- takeScreenshot: 01-phone
 - tapOn:
     id: phone-input
 - inputText: '5550000001'
@@ -17,7 +17,7 @@ appId: app.masa.mobile
 - extendedWaitUntil:
     visible: Doğrulama kodu
     timeout: 20000
-- takeScreenshot: ${OUT_DIR}/02-otp
+- takeScreenshot: 02-otp
 - tapOn:
     id: otp-input
 # Six digits verify on their own.
@@ -25,7 +25,7 @@ appId: app.masa.mobile
 - extendedWaitUntil:
     visible: Başlamadan önce
     timeout: 20000
-- takeScreenshot: ${OUT_DIR}/03-consents
+- takeScreenshot: 03-consents
 - tapOn: 18 yaşından büyüğüm.
 - tapOn: Kullanım Koşulları’nı okudum ve kabul ediyorum.
 - tapOn: KVKK Aydınlatma Metni’ni okudum.
@@ -33,4 +33,4 @@ appId: app.masa.mobile
 - extendedWaitUntil:
     visible: Liste
     timeout: 20000
-- takeScreenshot: ${OUT_DIR}/04-explore
+- takeScreenshot: 04-explore

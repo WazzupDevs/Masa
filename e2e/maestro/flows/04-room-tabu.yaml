@@ -19,12 +19,12 @@ appId: app.masa.mobile
     visible: Odayı kur
     timeout: 10000
 - tapOn: Mekana açık
-- takeScreenshot: ${OUT_DIR}/13-new-room
+- takeScreenshot: 13-new-room
 - tapOn: Odayı kur
 - extendedWaitUntil:
     visible: Tabu odası
     timeout: 15000
-- takeScreenshot: ${OUT_DIR}/14-room-waiting
+- takeScreenshot: 14-room-waiting
 - runScript:
     file: ../scripts/bot.js
     env:
@@ -32,24 +32,24 @@ appId: app.masa.mobile
 - extendedWaitUntil:
     visible: Katılma isteği
     timeout: 20000
-- takeScreenshot: ${OUT_DIR}/15-join-request
+- takeScreenshot: 15-join-request
 - tapOn:
     id: join-accept
 - extendedWaitUntil:
     visible: Oyunu başlat
     timeout: 15000
-- takeScreenshot: ${OUT_DIR}/16-room-two-tables
+- takeScreenshot: 16-room-two-tables
 - tapOn: Oyunu başlat
 # Turn 1: the owner table (this phone) describes; its card starts covered.
 - extendedWaitUntil:
     visible: Kartı görmek için dokun
     timeout: 20000
-- takeScreenshot: ${OUT_DIR}/17-card-covered
+- takeScreenshot: 17-card-covered
 - tapOn: Kartı görmek için dokun
 - extendedWaitUntil:
     visible: Yasaklı kelimeler
     timeout: 20000
-- takeScreenshot: ${OUT_DIR}/18-card-open
+- takeScreenshot: 18-card-open
 - tapOn: Pas · 3
 - extendedWaitUntil:
     visible: Pas · 2
@@ -60,7 +60,7 @@ appId: app.masa.mobile
     env:
       ACTION: mark
       BODY: '{"result":"correct"}'
-- takeScreenshot: ${OUT_DIR}/19-after-marks
+- takeScreenshot: 19-after-marks
 # Turn 2 without waiting 60 s: the bot table's turn, this phone judges.
 - runScript:
     file: ../scripts/bot.js
@@ -72,5 +72,5 @@ appId: app.masa.mobile
 - extendedWaitUntil:
     visible: Tabu −1
     timeout: 20000
-- takeScreenshot: ${OUT_DIR}/20-judge
+- takeScreenshot: 20-judge
 - tapOn: Doğru \+1

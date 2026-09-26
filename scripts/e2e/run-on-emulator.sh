@@ -21,7 +21,7 @@ adb emu screenrecord start --time-limit 1800 "$OUT/video.webm" || true
 
 status=0
 maestro test e2e/maestro/p0.yaml \
-  -e OUT_DIR="$OUT/screenshots" \
+  --test-output-dir "$OUT/screenshots" \
   -e INSIDE_LAT="$INSIDE_LAT" -e INSIDE_LNG="$INSIDE_LNG" \
   -e OUTSIDE_LAT="$OUTSIDE_LAT" -e OUTSIDE_LNG="$OUTSIDE_LNG" \
   --format junit --output "$OUT/report.xml" \

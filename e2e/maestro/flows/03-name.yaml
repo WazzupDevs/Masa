@@ -15,4 +15,4 @@ appId: app.masa.mobile
 - extendedWaitUntil:
     visible: Profili düzenle
     timeout: 10000
-- takeScreenshot: ${OUT_DIR}/12-profile
+- takeScreenshot: 12-profile

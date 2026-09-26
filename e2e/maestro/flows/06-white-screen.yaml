@@ -39,7 +39,7 @@ appId: app.masa.mobile
     visible: Tanışalım mı\?
     timeout: 20000
 - assertNotVisible: Bir şeyler ters gitti
-- takeScreenshot: ${OUT_DIR}/28-ended-by-bot
+- takeScreenshot: 28-ended-by-bot
 - tapOn:
     id: reveal-no
 - extendedWaitUntil:
@@ -51,7 +51,7 @@ appId: app.masa.mobile
       ACTION: reveal
       BODY: '{"yes":false}'
 - assertNotVisible: Bir şeyler ters gitti
-- takeScreenshot: ${OUT_DIR}/29-good-game
+- takeScreenshot: 29-good-game
 - tapOn: Mekana dön
 - extendedWaitUntil:
     visible: Oda kur
