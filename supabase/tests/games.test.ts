@@ -181,6 +181,8 @@ describe('tabu, two tables face to face (docs/SPEC_V2.md §8.2)', () => {
     const [a, b] = await Promise.all([turnCards(owner, roomId), turnCards(guest, roomId)]);
     expect(a.status).toBe(200);
     expect(b.body).toEqual(a.body);
+    // Sent twice, the same answer: the app may resend it after a 5xx (pure/apiRetry.ts).
+    expect(await turnCards(owner, roomId)).toEqual(a);
     expect(a.body.turnNo).toBe(1);
     expect(a.body.cards).toHaveLength(40);
     expect(new Set(a.body.cards.map((c) => c.word)).size).toBe(40);

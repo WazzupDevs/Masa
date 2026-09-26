@@ -277,6 +277,8 @@ describe('profile/get', () => {
     });
     expect((await get(b, idA)).body).not.toHaveProperty('photoHidden');
     expect((await get(a, idB)).status).toBe(200);
+    // Sent twice, the same answer: the app may resend it after a 5xx (pure/apiRetry.ts).
+    expect(await get(b, idA)).toEqual(await get(b, idA));
     expect(await get(c, idA)).toEqual(unknown);
 
     // The owner blocks the guest: nothing either way.
