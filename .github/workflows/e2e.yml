@@ -1,6 +1,6 @@
 # End-to-end: the FIELD_TEST.md P0 path on an Android emulator against the local stack, with a bot
-# as the second table (scripts/e2e/bot-table.ts). The APK is built with Gradle in the `apk` job
-# while each `e2e` job starts Supabase and boots the emulator; the emulator script waits for it.
+# as the second table (scripts/e2e/bot-table.ts). Each job builds the APK with Gradle in the
+# background while it starts Supabase and boots the emulator; the emulator script waits for it.
 name: e2e
 
 on:
@@ -27,7 +27,6 @@ concurrency:
 
 permissions:
   contents: read
-  actions: read
 
 env:
   # The emulator reaches the runner's local stack at 10.0.2.2. The publishable key is the fixed
@@ -36,9 +35,17 @@ env:
   E2E_PUBLISHABLE_KEY: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
 
 jobs:
-  apk:
+  e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        scheme: [light, dark]
+    env:
+      SCHEME: ${{ matrix.scheme }}
+      OUT: ${{ github.workspace }}/e2e-out/${{ matrix.scheme }}
+      APK: ${{ github.workspace }}/apps/mobile/android/app/build/outputs/apk/release/app-release.apk
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -52,51 +59,26 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
-      - name: Prebuild
-        working-directory: apps/mobile
-        run: npx expo prebuild --platform android --no-install --clean
-      - name: Local-stack settings (cleartext HTTP, no OTA)
-        run: bash scripts/e2e/patch-android.sh
-      - name: Release APK, x86_64 only
-        working-directory: apps/mobile/android
-        env:
-          EXPO_PUBLIC_SUPABASE_URL: ${{ env.E2E_SUPABASE_URL }}
-          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ env.E2E_PUBLISHABLE_KEY }}
-          SENTRY_DISABLE_AUTO_UPLOAD: 'true'
-          NODE_ENV: production
-        run: ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 --no-daemon
-      - uses: actions/upload-artifact@v4
-        with:
-          name: e2e-apk
-          path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
-          retention-days: 7
-
-  e2e:
-    runs-on: ubuntu-latest
-    timeout-minutes: 35
-    strategy:
-      fail-fast: false
-      matrix:
-        scheme: [light, dark]
-    env:
-      SCHEME: ${{ matrix.scheme }}
-      OUT: ${{ github.workspace }}/e2e-out/${{ matrix.scheme }}
-      APK: ${{ github.workspace }}/apk/app-release.apk
-      GH_TOKEN: ${{ github.token }}
-      RUN_ID: ${{ github.run_id }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+      - name: Prebuild, local-stack settings (cleartext HTTP, no OTA)
+        run: |
+          (cd apps/mobile && npx expo prebuild --platform android --no-install --clean)
+          bash scripts/e2e/patch-android.sh
+      - name: Release APK in the background, x86_64 only
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ env.E2E_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ env.E2E_PUBLISHABLE_KEY }}
+          SENTRY_DISABLE_AUTO_UPLOAD: 'true'
+          NODE_ENV: production
+        run: |
+          mkdir -p "$OUT"
+          nohup bash -c 'cd apps/mobile/android &&
+            ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 --no-daemon > "$OUT/gradle.log" 2>&1;
+            echo $? > "$OUT/gradle.exit"' > /dev/null 2>&1 &
       - name: Local Supabase
         run: |
           cp supabase/.env.example supabase/.env
@@ -106,7 +88,6 @@ jobs:
           test "$key" = "$E2E_PUBLISHABLE_KEY" || { echo "local publishable key changed: $key"; exit 1; }
       - name: Edge Functions, E2E venue, bot table
         run: |
-          mkdir -p "$OUT"
           nohup pnpm supabase functions serve > "$OUT/functions.log" 2>&1 &
           timeout 180 bash -c 'until curl -sf -X POST http://127.0.0.1:54321/functions/v1/ping -H "apikey: $E2E_PUBLISHABLE_KEY" -H "content-type: application/json" -d "{}" > /dev/null; do sleep 2; done'
           node --experimental-strip-types scripts/e2e/bot-table.ts setup > "$OUT/setup.json"
@@ -136,7 +117,8 @@ jobs:
           path: e2e-out/${{ matrix.scheme }}
           retention-days: 14
 
-  # On request only: the PNGs on a branch, for readers without access to artifact storage.
+  # On request only: screenshots and logs (no video) on a branch, for readers without access to
+  # artifact storage.
   publish-screenshots:
     if: ${{ always() && ((github.event_name == 'workflow_dispatch' && inputs.publish_screenshots) || github.event_name == 'push') }}
     needs: e2e
@@ -155,13 +137,14 @@ jobs:
           for dir in out/*; do
             scheme=${dir#out/e2e-}
             mkdir -p "site/$scheme"
-            find "$dir" -name '*.png' -exec cp {} "site/$scheme/" \;
-            cp "$dir/report.xml" "site/$scheme/" 2>/dev/null || true
+            (cd "$dir" && find . -type f ! -name '*.webm' ! -name 'logcat.txt' ! -name 'gradle.log' -exec cp --parents {} "../../site/$scheme/" \;)
+            tail -n 3000 "$dir/logcat.txt" > "site/$scheme/logcat-tail.txt" 2>/dev/null || true
+            tail -n 200 "$dir/gradle.log" > "site/$scheme/gradle-tail.txt" 2>/dev/null || true
           done
           cd site
           git init -q -b e2e-screenshots
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -q -m "E2E screenshots, run ${{ github.run_id }} (${{ github.sha }})"
+          git commit -q --allow-empty -m "E2E screenshots, run ${{ github.run_id }} (${{ github.sha }})"
           git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" e2e-screenshots

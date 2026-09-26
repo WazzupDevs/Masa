@@ -1,21 +1,16 @@
 #!/usr/bin/env bash
 # Runs inside reactivecircus/android-emulator-runner once the emulator has booted.
-# Env: SCHEME (light|dark), OUT (output directory), APK (path), GH_TOKEN, GITHUB_REPOSITORY,
-# RUN_ID, INSIDE_LAT/INSIDE_LNG, OUTSIDE_LAT/OUTSIDE_LNG.
+# Env: SCHEME (light|dark), OUT (output directory), APK (path), INSIDE_LAT/INSIDE_LNG,
+# OUTSIDE_LAT/OUTSIDE_LNG.
 set -euo pipefail
-mkdir -p "$OUT/screenshots" "$OUT/maestro" "$(dirname "$APK")"
+mkdir -p "$OUT/screenshots" "$OUT/maestro"
 
-# The apk job builds the APK while this job starts the stack and boots the emulator.
-for _ in $(seq 1 90); do
-  id=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/artifacts" \
-    --jq '.artifacts[] | select(.name == "e2e-apk") | .id' || true)
-  if [ -n "$id" ]; then
-    gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$id/zip" > /tmp/e2e-apk.zip
-    unzip -o -q /tmp/e2e-apk.zip -d "$(dirname "$APK")"
-    break
-  fi
-  sleep 10
-done
+# The APK builds in the background since the start of the job; wait for Gradle to finish.
+timeout 1500 bash -c 'until [ -f "$OUT/gradle.exit" ]; do sleep 5; done'
+if [ "$(cat "$OUT/gradle.exit")" != 0 ]; then
+  tail -n 80 "$OUT/gradle.log"
+  exit 1
+fi
 test -f "$APK"
 
 adb install -r -g "$APK"

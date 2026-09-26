@@ -21,35 +21,48 @@ Beyaz ekran, check-in, sesli Tabu ve gecikme ölçümü, tanışma sızıntısı
 11. **V8.** Beyaz ekran senaryosu, V8a ve V8b (~8 dk).
 12. **F7.** Geçmişten engelleme ve engeli kaldırma (~5 dk).
 
+## Otomatik testler (e2e)
+
+P0'ın telefonsuz yapılabilen kısmı her PR'da CI'da koşar: `e2e/maestro/p0.yaml`, Android emülatöründe, yerel stack'e karşı. İkinci masayı bot oynar (`scripts/e2e/bot-table.ts`). Açık ve koyu görünüm için ayrı ayrı her ekranın görüntüsü alınır. Sıra tablosundaki **Otomatik** kolonu ve adımlardaki "Otomatik:" notu neyin kapsandığını söyler.
+
+Otomatiklenmeyen ve sahada elle kalanlar:
+
+- **Gerçek GPS:** emülatör konumu kesin; kapalı mekandaki sapma ve doğruluk yalnızca sahada görülür (V3, V4).
+- **Sesli oyun hissi:** masaların bir araya gelmesi, kartın saklanması, sesli anlatma (T1–T5).
+- **Kilitli telefonda push:** FCM, bildirim metni, bildirime dokunma (F4, F6).
+- **Gecikme hissi:** T4'teki ölçüm ve tur akışının doğallığı.
+
+Otomatik bir adım yeşilse sahada yine yapılır, ama önce elle kalan kısmına bakılır.
+
 ## Sıra
 
-| #   | Öncelik | Adım                                     | Telefonlar           | Not                                    |
-| --- | ------- | ---------------------------------------- | -------------------- | -------------------------------------- |
-| 1   | P0      | Test öncesi                              | A, B                 | Evde, bir kez                          |
-| 2   | P0      | G1. Giriş                                | A, B                 | Görünen ad girme (V4 ve V5 bunu ister) |
-| 3   | P1      | V1. Açılış ve sekmeler                   | A, B                 |                                        |
-| 4   | P1      | V2. Keşfet                               | A                    |                                        |
-| 5   | P1      | V3. Yarıçap dışından check-in            | A                    | Mekandan en az 400 m uzakta            |
-| 6   | P0      | V4. Kişi sayısı ve katılım biçimi        | A                    | Mekanda                                |
-| 7   | P0      | V5. Profil kurulumu                      | A, B                 | P0'da yalnızca 1. adım (ad)            |
-| 8   | P1      | V6. Konum etiketli fotoğraf              | B                    |                                        |
-| 9   | P0      | V7. Lobide "profilli", katılma isteği    | A, B                 | Tabu odası; T bu odada sürer           |
-| 10  | P0      | T1–T5. Sesli Tabu                        | A, B, üçüncü telefon | ~15 dk; oda 3 dakikayı geçer           |
-| 11  | P0      | T6. Oda sonu, karşılıklı Evet            | A, B                 |                                        |
-| 12  | P0      | F1. "Arkadaş ekle"                       | A, B                 | T6'nın sonuç ekranında                 |
-| 13  | P1      | F2. Arkadaşın profili                    | A, B                 |                                        |
-| 14  | P0      | F3. Mesajlaşma                           | A, B                 |                                        |
-| 15  | P0      | F4. Mesaj bildirimi                      | A, B                 | FCM'li build gerekir                   |
-| 16  | P1      | S1–S2. Sohbet odası, oda şikayeti        | A, B                 |                                        |
-| 17  | P0      | S3. Tanışma sızıntısı (Hayır / cevapsız) | A, B                 | S1 yapıldıysa onun odasıyla başlar     |
-| 18  | P0      | V8. Beyaz ekran senaryosu                | A, B                 |                                        |
-| 19  | P1      | V9–V10. Odada profil, oda sonrası        | A, B                 |                                        |
-| 20  | P1      | S4. Katılma isteğinde red ve zaman aşımı | A, B                 |                                        |
-| 21  | P1      | F5. Arkadaşlıktan çıkarma                | A, B                 |                                        |
-| 22  | P1      | F6. Arkadaşlık isteği ve red             | A, B                 |                                        |
-| 23  | P0      | F7. Geçmişten engelleme                  | A, B                 |                                        |
-| 24  | P1      | S5. Odada engelleme                      | A, B                 |                                        |
-| 25  | P1      | V11. Kapanış                             | A, B                 |                                        |
+| #   | Öncelik | Adım                                     | Otomatik | Telefonlar           | Not                                    |
+| --- | ------- | ---------------------------------------- | -------- | -------------------- | -------------------------------------- |
+| 1   | P0      | Test öncesi                              | —        | A, B                 | Evde, bir kez                          |
+| 2   | P0      | G1. Giriş                                | Evet     | A, B                 | Görünen ad girme (V4 ve V5 bunu ister) |
+| 3   | P1      | V1. Açılış ve sekmeler                   | Hayır    | A, B                 |                                        |
+| 4   | P1      | V2. Keşfet                               | Hayır    | A                    |                                        |
+| 5   | P1      | V3. Yarıçap dışından check-in            | Kısmen   | A                    | Mekandan en az 400 m uzakta            |
+| 6   | P0      | V4. Kişi sayısı ve katılım biçimi        | Evet     | A                    | Mekanda                                |
+| 7   | P0      | V5. Profil kurulumu                      | Kısmen   | A, B                 | P0'da yalnızca 1. adım (ad)            |
+| 8   | P1      | V6. Konum etiketli fotoğraf              | Hayır    | B                    |                                        |
+| 9   | P0      | V7. Lobide "profilli", katılma isteği    | Kısmen   | A, B                 | Tabu odası; T bu odada sürer           |
+| 10  | P0      | T1–T5. Sesli Tabu                        | Kısmen   | A, B, üçüncü telefon | ~15 dk; oda 3 dakikayı geçer           |
+| 11  | P0      | T6. Oda sonu, karşılıklı Evet            | Evet     | A, B                 |                                        |
+| 12  | P0      | F1. "Arkadaş ekle"                       | Kısmen   | A, B                 | T6'nın sonuç ekranında                 |
+| 13  | P1      | F2. Arkadaşın profili                    | Hayır    | A, B                 |                                        |
+| 14  | P0      | F3. Mesajlaşma                           | Kısmen   | A, B                 |                                        |
+| 15  | P0      | F4. Mesaj bildirimi                      | Hayır    | A, B                 | FCM'li build gerekir                   |
+| 16  | P1      | S1–S2. Sohbet odası, oda şikayeti        | Hayır    | A, B                 |                                        |
+| 17  | P0      | S3. Tanışma sızıntısı (Hayır / cevapsız) | Hayır    | A, B                 | S1 yapıldıysa onun odasıyla başlar     |
+| 18  | P0      | V8. Beyaz ekran senaryosu                | Evet     | A, B                 |                                        |
+| 19  | P1      | V9–V10. Odada profil, oda sonrası        | Hayır    | A, B                 |                                        |
+| 20  | P1      | S4. Katılma isteğinde red ve zaman aşımı | Hayır    | A, B                 |                                        |
+| 21  | P1      | F5. Arkadaşlıktan çıkarma                | Hayır    | A, B                 |                                        |
+| 22  | P1      | F6. Arkadaşlık isteği ve red             | Hayır    | A, B                 |                                        |
+| 23  | P0      | F7. Geçmişten engelleme                  | Kısmen   | A, B                 |                                        |
+| 24  | P1      | S5. Odada engelleme                      | Hayır    | A, B                 |                                        |
+| 25  | P1      | V11. Kapanış                             | Hayır    | A, B                 |                                        |
 
 ## Uygulama önde kalmalı
 
@@ -96,6 +109,8 @@ Her adımın sonunda ✅ / ❌ işaretle.
 
 ## G1. Giriş (A ve B) [P0]
 
+> Otomatik: tamamı (`01-login.yaml`).
+
 1. Uygulamayı aç, numarayı `5xx xxx xx xx` biçiminde gir, **Kod gönder**.
 2. Test kodunu gir, **Doğrula**.
 3. "Başlamadan önce" ekranında üç kutuyu işaretle, **Onayla ve devam et**.
@@ -138,6 +153,8 @@ Her adımın sonunda ✅ / ❌ işaretle.
 
 ## V3. Yarıçap dışından check-in (A, mekandan en az 400 m uzakta) [P1]
 
+> Otomatik: 310 m'den ret, emülatör konumuyla (`02-checkin.yaml`). Elle: gerçek GPS ile 400 m.
+
 1. Keşfet'te test mekanına dokun → mekan detayı → **Buraya giriş yap**.
 2. Rıza kutusunu işaretle → **Konumumu kullan** → izin ver.
 
@@ -145,6 +162,8 @@ Her adımın sonunda ✅ / ❌ işaretle.
 **Hata olursa:** uzaktayken kişi sayısı ekranına geçildiyse, telefonun gösterdiği konum doğruluğunu (varsa) ve mekana uzaklığı yaz. Bu ❌'dır.
 
 ## V4. Kişi sayısı ve katılım biçimi; adsız hesapta "Profille" kapalı (A, mekanda) [P0]
+
+> Otomatik: tamamı, emülatör konumuyla (`02-checkin.yaml`). Elle: gerçek GPS.
 
 1. Mekanda: Keşfet'te test mekanına dokun → mekan detayı → **Buraya giriş yap** → rıza kutusu → **Konumumu kullan** → izin ver. **"Masada kaç kişisiniz?"** ekranı açılır.
 2. Seçenekler: **1 / 2 / 3 / 4+** (5 ve 6 yok).
@@ -160,6 +179,8 @@ Her adımın sonunda ✅ / ❌ işaretle.
 **Hata olursa:** "Profille" seçilebildiyse ve masa açıldıysa ❌; ekrandaki mesajı yaz.
 
 ## V5. Profil kurulumu (A ve B) [P0]
+
+> Otomatik: 1. adım (`03-name.yaml`). Elle: 2–5.
 
 P0'da yalnızca 1. adım (görünen ad); 2–5. adımlar P1.
 
@@ -189,6 +210,8 @@ Amaç: telefonda konum servisi ve kamerada konum etiketi açıkken çekilen foto
 
 ## V7. Lobide "profilli" etiketi, katılma isteği (A ve B) [P0]
 
+> Otomatik: oda kurma, botun isteği, kabul (`04-room-tabu.yaml`). Elle: "profilli" etiketi (bot anonim katılır).
+
 1. A: Mekan ekranından **Mekandan ayrıl**, sonra yeniden check-in; bu kez **2** ve **Profille** seç, **Masayı aç**.
 2. A: **Oda kur** → **Tabu** → **Mekana açık** → **Odayı kur**.
 3. B: Keşfet → test mekanı → check-in → **3** ve **Profille** → **Masayı aç**. Mekan ekranındaki "Açık odalar"a bak.
@@ -201,6 +224,8 @@ Amaç: telefonda konum servisi ve kamerada konum etiketi açıkken çekilen foto
 - A'nın istek penceresinde B'nin takma adı, "(3 kişi)" ve **"profilli"** etiketi; ad ya da fotoğraf yok.
 
 ## T1. Oyunu başlat [P0]
+
+> Otomatik: başlatma, kapalı kart, Pas, tur geçişi ve hakemlik; tur, bot tarafından bitirilir (`04-room-tabu.yaml`). Elle: sesli oyun, aynı anda basma (T3.4), T4 gecikmesi, 6 tur ve oyun sonu.
 
 V7'deki odada devam. V7'de şunlar da görülmüş olmalı:
 
@@ -260,11 +285,15 @@ Basan telefon: anında / gecikmeli
 
 ## T6. Oda sonu ve karşılıklı Evet [P0]
 
+> Otomatik: karşılıklı Evet ve işaret ekranı (`05-reveal-friend-dm.yaml`).
+
 A **Odayı bitir**: "Tanışalım mı?" ekranında skor satırı yok (sesli oyunda ortak skor yok); akış önceki adımlardaki gibi.
 
 İki taraf da **Evet** desin. **Bak:** ikinci Evet'ten hemen sonra iki ekranda **aynı renk ve aynı emoji**, "Ekranını kaldır, birbirinizi bulun." Bu ekranda kal: F1 burada yapılır. Bu pencerenin 30 saniyesi dolmadan kurulan yeni açık oda lobide görünmez; beklenen davranış.
 
 ## F1. "Arkadaş ekle": iki masa da basarsa arkadaş olunur (T6'nın sonuç ekranında) [P0]
+
+> Otomatik: iki masa da basınca arkadaşlık (`05-reveal-friend-dm.yaml`). Elle: bir taraf basınca diğer telefonda hiçbir şeyin değişmemesi (botun ekranı yok).
 
 Oda en az 3 dakika iki masalı kaldığı için (T1–T5) sonuç ekranında **Arkadaş ekle** düğmesi var.
 
@@ -290,6 +319,8 @@ Oda en az 3 dakika iki masalı kaldığı için (T1–T5) sonuç ekranında **Ar
 - Mekan, konum ya da aktif masa bilgisi **hiçbir yerde yok**. Arkadaş ya da takipçi sayısı yok.
 
 ## F3. Mesajlaşma (A ve B) [P0]
+
+> Otomatik: mesaj gönderme ve alma (`05-reveal-friend-dm.yaml`). Elle: "Yeni mesaj", küfür reddi, konuşma şikayeti.
 
 1. A ve B: Arkadaşlar'da karşı tarafın satırına dokun, konuşma ekranı açılır. A: "Merhaba" yaz → **Gönder**. B konuşma ekranındaysa mesaj 1–2 sn içinde düşer.
 2. B konuşmadan çıkıp Arkadaşlar listesine dönsün. A bir mesaj daha göndersin: B'nin listesinde A'nın satırında **Yeni mesaj**; konuşmayı açınca kaybolur.
@@ -348,6 +379,8 @@ Pencere 30 saniyedir. Karşılıklı Evet T6'da görüldü; burada kalan iki dur
 **Hata olursa:** sayaç 0 olduğu hâlde sonuç gelmediyse kaç saniye beklendiğini yaz (en geç 1 dk içinde sunucu kapatır). İki ekranda farklı renk ya da emoji görüldüyse ekran görüntüsü al.
 
 ## V8. Beyaz ekran senaryosu: iki masalı Tabu, önce A bitirir, sonra B [P0]
+
+> Otomatik: diğer masa (bot) bitirir, bu telefon izlenir; tanışma ekranı gelir, hata ekranı yok (`06-white-screen.yaml`). Elle: iki telefonla V8a ve V8b.
 
 Bu senaryo iki kez oynanır. Her turda **odayı bitirmeyen telefon** izlenir: ekranın beyaza dönmemesi, takılmaması ve doğru ekrana geçmesi gerekir.
 
@@ -438,6 +471,8 @@ Reddedilen masa o odayı lobide bir daha görmez; bu yüzden iki deneme için A 
 **Hata olursa:** A'da "reddedildi" anlamına gelen herhangi bir değişiklik gördüysen ekran görüntüsü al; bu ❌'dır.
 
 ## F7. Geçmişten engelleme ve engeli kaldırma (B → A) [P0]
+
+> Otomatik: geçmişten engelleme ve arkadaşlığın düşmesi (`07-history-block.yaml`). Elle: lobide görünmezlik, engeli kaldırma.
 
 1. B: Geçmiş ve istekler → A'nın masasının satırı → **Diğer** → **Engelle**. Pencerede "Birbirinizi lobide, isteklerde ve arkadaş listesinde bir daha görmezsiniz. Karşı tarafa bildirilmez." yazar. **Şikayet de et**'i işaretle → **Engelle**.
 2. A mekanda açık bir oda kursun; B lobisine baksın. Sonra B açık oda kursun; A lobisine baksın.

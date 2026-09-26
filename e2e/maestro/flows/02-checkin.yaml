@@ -2,7 +2,8 @@
 appId: app.masa.mobile
 ---
 - scrollUntilVisible:
-    element: E2E Kafe
+    element:
+      text: E2E Kafe
     timeout: 30000
 - takeScreenshot: ${OUT_DIR}/05-explore-list
 - tapOn: E2E Kafe
