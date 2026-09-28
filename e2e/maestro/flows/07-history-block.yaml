@@ -1,0 +1,33 @@
+# F7: block the bot table from the play history; the friendship ends with it.
+appId: app.masa.mobile
+---
+- tapOn:
+    id: tab-friends
+- tapOn: Geçmiş ve istekler
+- extendedWaitUntil:
+    visible: .*masasıyla Tabu.*
+    timeout: 15000
+- takeScreenshot: 30-history
+- tapOn:
+    id: history-more
+    index: 0
+- extendedWaitUntil:
+    visible: Bu masa
+    timeout: 10000
+- takeScreenshot: 31-history-menu
+- tapOn:
+    id: menu-block
+- extendedWaitUntil:
+    visible: Bu masayı engellemek istiyor musun\?
+    timeout: 10000
+- takeScreenshot: 32-block-confirm
+- tapOn:
+    id: confirm-action
+- extendedWaitUntil:
+    notVisible: Bu masayı engellemek istiyor musun\?
+    timeout: 10000
+- tapOn: Geri
+- extendedWaitUntil:
+    visible: Henüz arkadaşın yok.*
+    timeout: 15000
+- takeScreenshot: 33-friends-after-block
