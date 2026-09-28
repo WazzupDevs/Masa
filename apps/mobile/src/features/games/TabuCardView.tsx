@@ -4,9 +4,11 @@ import { Card } from '@/components/Card';
 import { Text } from '@/components/Text';
 import { tr } from '@/i18n/tr';
 
-export function TabuCardView({ word, forbidden }: { word: string; forbidden: readonly string[] }) {
+type Props = { word: string; forbidden: readonly string[]; testID?: string };
+
+export function TabuCardView({ word, forbidden, testID }: Props) {
   return (
-    <Card>
+    <Card testID={testID}>
       <View className="items-center py-1">
         <Text variant="word" align="center">
           {word.toLocaleUpperCase('tr-TR')}

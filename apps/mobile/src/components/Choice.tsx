@@ -11,16 +11,18 @@ type Props = {
   selected: boolean;
   onPress: () => void;
   disabled?: boolean;
+  testID?: string;
 };
 
 const DOT = SPACING[5];
 
 // One option of a single choice: a card with a radio mark; selected draws the accent ring.
-export function Choice({ label, hint, selected, onPress, disabled }: Props) {
+export function Choice({ label, hint, selected, onPress, disabled, testID }: Props) {
   const { colors, shape } = useTheme();
   return (
     <Pressable
       accessibilityRole="radio"
+      testID={testID}
       accessibilityState={{ selected, disabled: !!disabled }}
       disabled={disabled}
       onPress={onPress}

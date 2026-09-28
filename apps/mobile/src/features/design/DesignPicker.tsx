@@ -28,6 +28,7 @@ export function DesignPicker() {
         {THEME_NAMES.map((name) => (
           <Choice
             key={name}
+            testID={`design-theme-${name}`}
             label={tr.design.themes[name]}
             hint={tr.design.themeHints[name]}
             selected={preference.theme === name}
@@ -42,7 +43,11 @@ export function DesignPicker() {
         accessibilityLabel={tr.design.schemeLabel}
         value={scheme}
         onChange={(value) => setDesignPreference({ scheme: value })}
-        options={SCHEME_PREFERENCES.map((value) => ({ value, label: tr.design.schemes[value] }))}
+        options={SCHEME_PREFERENCES.map((value) => ({
+          value,
+          label: tr.design.schemes[value],
+          testID: `design-scheme-${value}`,
+        }))}
       />
     </View>
   );

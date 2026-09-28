@@ -241,7 +241,7 @@ function Turn({
           </Text>
         </Pressable>
       ) : card ? (
-        <TabuCardView word={card.word} forbidden={card.forbidden} />
+        <TabuCardView testID="tabu-card" word={card.word} forbidden={card.forbidden} />
       ) : (
         <Text variant="fine" align="center" tone={cards.isError ? 'danger' : 'muted'}>
           {cards.isError ? errorMessage(cards.error) : tr.games.cardsLoading}
@@ -257,6 +257,7 @@ function Turn({
           <View className="flex-1">
             <Button
               variant="success"
+              testID="tabu-correct"
               size="lg"
               icon="checkmark"
               label={tr.games.correct}
@@ -269,6 +270,7 @@ function Turn({
             {role === 'judge' ? (
               <Button
                 variant="danger"
+                testID="tabu-taboo"
                 size="lg"
                 icon="close"
                 label={tr.games.taboo}
@@ -279,6 +281,7 @@ function Turn({
             ) : (
               <Button
                 variant="secondary"
+                testID="tabu-pass"
                 size="lg"
                 icon="play-skip-forward-outline"
                 label={tr.games.pass}

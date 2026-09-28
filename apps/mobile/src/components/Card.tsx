@@ -13,12 +13,20 @@ type Props = {
   onPress?: () => void;
   accessibilityLabel?: string;
   className?: string; // layout only (margins, gap, alignment)
+  testID?: string;
 };
 
 // A card in the direction's language: Gece Kafe floats on a soft shadow, Oyun Gecesi has an
 // outline and a hard shadow, Sakin Liman a hairline. On trust screens (`Quiet`) every direction
 // uses the hairline.
-export function Card({ children, tone = 'card', onPress, accessibilityLabel, className }: Props) {
+export function Card({
+  children,
+  tone = 'card',
+  onPress,
+  accessibilityLabel,
+  className,
+  testID,
+}: Props) {
   const { colors, shape } = useTheme();
   const quiet = useQuiet();
 
@@ -44,6 +52,7 @@ export function Card({ children, tone = 'card', onPress, accessibilityLabel, cla
       <View className={className}>
         <Pressable
           accessibilityRole="button"
+          testID={testID}
           accessibilityLabel={accessibilityLabel}
           onPress={onPress}
           style={({ pressed }) => [style, pressed ? { opacity: 0.85 } : null]}
@@ -54,7 +63,7 @@ export function Card({ children, tone = 'card', onPress, accessibilityLabel, cla
     );
   }
   return (
-    <View className={className} style={style}>
+    <View className={className} style={style} testID={testID}>
       {children}
     </View>
   );

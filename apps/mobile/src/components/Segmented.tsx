@@ -7,7 +7,7 @@ import { ICON, SPACING, TOUCH } from '@/theme/tokens';
 import type { IconName } from './Button';
 import { Text } from './Text';
 
-type Option<T extends string> = { value: T; label: string; icon?: IconName };
+type Option<T extends string> = { value: T; label: string; icon?: IconName; testID?: string };
 
 type Props<T extends string> = {
   options: readonly Option<T>[];
@@ -45,6 +45,7 @@ export function Segmented<T extends string>({
           <Pressable
             key={o.value}
             accessibilityRole="tab"
+            testID={o.testID}
             accessibilityState={{ selected: on }}
             onPress={() => onChange(o.value)}
             style={{

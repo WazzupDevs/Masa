@@ -43,9 +43,11 @@ export type AppTheme = {
   profiledTagDashed: boolean;
 };
 
-// The test picker (Ayarlar → Tasarım (test)) exists only in preview builds and development;
-// production always runs DEFAULT_THEME with its default scheme.
-export const designPickerEnabled = Updates.channel === 'preview' || __DEV__;
+// The test picker (Ayarlar → Tasarım (test)) exists only in preview builds, development and the
+// E2E APK (built with EXPO_PUBLIC_APP_ENV=e2e, no update channel); production always runs
+// DEFAULT_THEME with its default scheme.
+export const designPickerEnabled =
+  Updates.channel === 'preview' || __DEV__ || process.env.EXPO_PUBLIC_APP_ENV === 'e2e';
 
 const STORAGE_KEY = 'masa.design.v1';
 
