@@ -39,7 +39,7 @@ Konumunuz hiçbir zaman saklanmadığı için silinecek bir konum verisi yoktur.
 
 - **Şikayet kayıtları:** güvenlik ve moderasyon için oluşturulduktan sonra 30 gün saklanır, sonra silinir.
 - **Banlanan hesaplar:** kuralları ihlal ettiği için kapatılan bir hesabın telefon numarasının geri döndürülemez özeti, aynı numarayla yeniden kayıt olunmasını engellemek için süresiz saklanır. Numaranın kendisi saklanmaz.
-- **Hata raporları:** hesaba bağlı teknik hata kayıtları [Sentry saklama süresi] sonunda silinir.
-- **Yedekler:** veritabanı yedeklerinde kalan kopyalar [yedek saklama süresi] içinde kendiliğinden silinir.
+- **Hata raporları:** hesaba bağlı teknik hata kayıtları 30 gün sonunda silinir (Sentry Developer planı).
+- **Yedekler:** veritabanı yedeklerinde kalan kopyalar 7 gün içinde kendiliğinden silinir (Supabase Pro planı günlük yedekleri).
 
 Ayrıntılar: [Gizlilik Politikası](gizlilik-politikasi.html) ve [KVKK Aydınlatma Metni](kvkk-aydinlatma-metni.html).

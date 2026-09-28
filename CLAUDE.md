@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 ## Proje
-Mekan içi sosyal oyun uygulaması (çalışma adı: Masa). Aynı mekandaki masalar konsept üzerine odalar kurar, oyun oynar ve sohbet eder. İki taraf da isterse oda sonunda fiziksel olarak tanışırlar.
+Mekan içi sosyal oyun uygulaması: **Kabuk** (kod içi çalışma adı Masa; repo, slug, şema ve paket kimliği `app.masa.mobile` değişmedi). Aynı mekandaki masalar konsept üzerine odalar kurar, oyun oynar ve sohbet eder. İki taraf da isterse oda sonunda fiziksel olarak tanışırlar.
 
 Tüm ürün kararları, kapsam ve kilometre taşları `MVP_SPEC.md` içinde; v2 kapsamı ve teknik tasarımı `docs/SPEC_V2.md` içinde (onaylı, §12 sırasıyla uygulanır). Spec'te olmayan bir özelliği ekleme. Belirsizlikte varsayım yapma, sor.
 
@@ -95,13 +95,14 @@ Pilot ve Play kullanıcıları için ayrı proje. Kurulum dev projesiyle aynı s
 | SMS | Twilio Verify (test numaraları SMS'siz) | **Twilio canlı:** ayrı bir Verify servisi, Geo permissions yalnızca Türkiye, Fraud Guard açık, saatlik SMS sınırı 100, aynı numaraya 60 sn |
 | Vault anahtarı (`phone_hash_key`) | Dev anahtarı | **Yeni ve farklı** anahtar (`openssl rand -hex 32`), parola yöneticisinde; asla değişmez |
 | `MIN_APP_BUILD` | Ayarsız (kapı açık) | İlk production AAB yüklendikten sonra o build'in versionCode'u; eski ya da preview build'ler (aynı sayaç, küçük numara) kapıda kalır. Yeni sürümle birlikte artırılır |
+| Plan | Free (yedek yok, duraklatılabilir) | **Pro** (günlük yedek 7 gün, duraklatma yok) |
 | Realtime → Allow public access | Kapalı | **Kapalı** (aynı) |
 | Seed | Test mekanı olabilir | `db push --include-seed`'den önce `content/venues-test.json` boş ya da her mekanı `isActive: false` olmalı; yoksa test mekanı üretimde görünür |
 | Mobil ortam | EAS `preview` → dev URL ve anahtar | EAS `production` → üretim URL'i ve publishable key; `EXPO_PUBLIC_POSTHOG_KEY` (üretim PostHog projesi), `EXPO_PUBLIC_SENTRY_DSN`, `EXPO_PUBLIC_PRIVACY_URL`, `EXPO_PUBLIC_CONTACT_EMAIL` |
 | Fonksiyon sırları | İsteğe bağlı | `POSTHOG_PERSONAL_API_KEY` ve `POSTHOG_PROJECT_ID` (üretim PostHog projesi; hesap silmede kişi silme) |
 
 Sıra:
-1. Yeni proje (Frankfurt `eu-central-1`). Ücretsiz planda proje bir hafta hareketsiz kalınca duraklatılır ve yedek alınmaz; üretim için planı panelde kontrol et.
+1. Yeni proje (Frankfurt `eu-central-1`) ve **Pro plana al** (panel → Organization → Billing). Gerekçe: Free planda otomatik yedek yok ve düşük aktivitede proje haftalık duraklatılır (https://supabase.com/docs/guides/platform/free-project-pausing); Pro'da günlük yedekler 7 gün saklanır (https://supabase.com/docs/guides/platform/backups) ve hesap silme sayfası bu süreyi söyler. Dev projesi Free kalır.
 2. `pnpm supabase link --project-ref <üretim ref>`. Dev ve üretim arasında geçerken her komuttan önce `pnpm supabase migration list`'in hangi projeye bağlı olduğunu kontrol et; bitince dev'e geri bağla.
 3. Vault anahtarı (yukarıdaki tabloya göre yeni), sonra `db push --include-seed` (seed notu tabloda) ve 12 fonksiyonun deploy'u ("main'den dev projesine yayın" adım 5).
 4. Panel → Authentication: Email kapalı, Phone açık, Twilio Verify (üretim servisi), test numarası yok, Rate Limits, Hooks → Before User Created → `private.before_user_created`.

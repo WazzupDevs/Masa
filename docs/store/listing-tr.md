@@ -1,6 +1,10 @@
 # Mağaza metinleri (TASLAK)
 
-Uygulama adı açık karar (MVP_SPEC §14); aşağıda çalışma adı "Masa" kullanıldı.
+Uygulama adı: **Kabuk** (`APP_NAME`, `supabase/functions/_shared/pure/brand.ts`).
+
+## Başlık (Play, en fazla 30 karakter)
+
+Kabuk: Masadan Masaya Oyun
 
 ## Kısa açıklama (Play, en fazla 80 karakter)
 
@@ -12,7 +16,7 @@ Mekanda masalarla oyna
 
 ## Uzun açıklama
 
-Kafede, nargile kafede ya da barda misin? Masa ile aynı mekandaki diğer masalarla oyun oynayabilir ve sohbet edebilirsin.
+Kafede, nargile kafede ya da barda misin? Kabuk ile aynı mekandaki diğer masalarla oyun oynayabilir ve sohbet edebilirsin.
 
 - **Mekana giriş yap:** Konumun yalnızca o an, bir kez kullanılır ve saklanmaz. Masan "Mor Baykuş" gibi bir takma ad alır.
 - **Oda kur:** Tabu ya da Sohbet kartları. İster yalnızca kendi masanla oyna, ister odanı mekana aç.

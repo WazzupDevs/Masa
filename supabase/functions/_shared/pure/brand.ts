@@ -1,4 +1,5 @@
 // The app's name, in one place: the store and launcher name (apps/mobile/app.config.ts), the brand
 // text in tr.ts, push notification titles and the public legal pages (scripts/build-site.ts) all
-// read it. The package id (app.masa.mobile) is separate and never changes.
-export const APP_NAME = 'Masa';
+// read it. Code names (the repo, `masa` slug and scheme) and the package id (app.masa.mobile) are
+// separate: changing the package id is a separate decision (docs/store/PACKAGE_ID_MIGRATION.md).
+export const APP_NAME = 'Kabuk';
