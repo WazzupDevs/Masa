@@ -35,6 +35,17 @@ Node 22, pnpm 10, Docker (yerel Supabase için). Supabase CLI ve Deno root devDe
   BOT_PHONE=+905550000002 BOT_OTP=<kod> BOT_VENUE="<mekan adı>" BOT_ROLE=guest \
     node --experimental-strip-types scripts/e2e/bot-table.ts opponent
   ```
+  Windows'ta PowerShell (Node 22.6 ya da üstü, önce `pnpm install`):
+  ```
+  $env:SUPABASE_URL="https://<ref>.supabase.co"
+  $env:SUPABASE_PUBLISHABLE_KEY="<publishable key>"
+  $env:BOT_PHONE="+905550000002"
+  $env:BOT_OTP="<kod>"
+  $env:BOT_VENUE="<mekan adı>"
+  $env:BOT_ROLE="guest"
+  node --experimental-strip-types scripts/e2e/bot-table.ts opponent
+  ```
+  `$env:` değişkenleri o PowerShell penceresi kapanana kadar kalır; test bitince pencereyi kapat ya da `Remove-Item Env:BOT_OTP, Env:SUPABASE_PUBLISHABLE_KEY` ile sil.
   `BOT_ROLE=guest` (varsayılan): sen oda kurarsın, bot istek gönderir. `BOT_ROLE=host`: bot açık bir Tabu odası kurar, senin isteğini kabul eder ve oyunu başlatır. Odada her karta birkaç saniye sonra Doğru basar, süresi dolan turu ve tanışma penceresini kapatır, "Tanışalım mı?"ya Evet der, "Arkadaş ekle"ye basar ve her yeni DM'e `Aldım: …` diye cevap verir. Ne yaptığını terminale yazar; Ctrl+C ile durur. Mekan adı Keşfet'teki adla birebir aynı (ya da mekan id'si); bot mekanın kendi noktasından check-in yapar. İsteğe bağlı: `BOT_NAME` (varsayılan `Bot Masa`). Kod ve anahtar yalnızca kabukta verilir, hiçbir dosyaya yazılmaz.
 - Zorunlu güncelleme kapısı testi (kapı kapalıyken): `echo MIN_APP_BUILD=5 > /tmp/gate.env && pnpm supabase functions serve --env-file /tmp/gate.env`, sonra `GATE_MIN_APP_BUILD=5 pnpm vitest run -c vitest.integration.config.ts supabase/tests/updateGate.test.ts`. Normal `test:integration` kapı açıkken çalışır.
 
