@@ -6,7 +6,7 @@ Son güncelleme: [tarih]
 
 ## Biz kimiz
 
-Masa ("Uygulama"), [veri sorumlusunun unvanı, adresi, MERSİS/vergi no] tarafından sunulur. İletişim: [e-posta].
+{{APP_NAME}} ("Uygulama"), [veri sorumlusunun unvanı, adresi, MERSİS/vergi no] tarafından sunulur. İletişim: [e-posta].
 
 ## Hangi verileri işliyoruz
 

@@ -125,7 +125,9 @@
           "dependencies": [
             "npm:@supabase/supabase-js@^2.117.1",
             "npm:@types/node@^22.18.0",
+            "npm:marked@^18.0.14",
             "npm:postgres@^3.4.9",
+            "npm:sharp@0.35.4",
             "npm:typescript@~6.0.3"
           ]
         }

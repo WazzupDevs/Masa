@@ -27,29 +27,95 @@ Masa'yı Google Play'de **kapalı test** kanalına çıkarmak için Play Console
 
 ## 3. Uygulama içeriği (Console → Politika → Uygulama içeriği)
 
-- [ ] **Gizlilik politikası URL'i.** `docs/legal/gizlilik-politikasi.md` hukuki kontrolden sonra herkese açık bir URL'de yayımlanır. Aynı URL `EXPO_PUBLIC_PRIVACY_URL` olur.
-- [ ] **Uygulama erişimi.** Giriş gerekiyor → "Tüm işlevler özel erişim gerektiriyor". İnceleme için verilecekler:
-  - Test telefon numarası ve sabit doğrulama kodu. Barındırılan projede Authentication → Phone → Test Phone Numbers'a eklenir (CLAUDE.md → "SMS'siz giriş").
-  - Talimat: onayları geç, "Mekana giriş yap".
-  - **Açık konu:** Uygulama mekanda 300 m içinde olmayı gerektiriyor. İnceleyen kişi Beylikdüzü'nde olmayacak. Kapalı test incelemesi bu yüzden takılabilir. Nasıl çözüleceği (ör. inceleme hesabına özel bir test mekanı, bir tanıtım videosu) proje sahibinin kararı; kod değişikliği gerektirebilir.
-- [ ] **Reklamlar:** Uygulama reklam içermiyor.
-- [ ] **İçerik derecelendirmesi (IARC anketi):**
-  - Kategori: Sosyal ya da iletişim.
-  - Kullanıcılar birbiriyle etkileşiyor ve içerik paylaşıyor: **evet** (sohbet, DM, profil).
-  - Kullanıcının konumu diğer kullanıcılarla paylaşılıyor mu: **hayır**. Konum saklanmaz ve kimseye gösterilmez.
-  - Dijital satın alma: yok. Kumar, şiddet, cinsel içerik: yok.
-- [ ] **Hedef kitle:** 18 ve üzeri. Uygulama 18+ beyanı istiyor. Çocuklara yönelik değil.
-- [ ] **Veri güvenliği formu:** `docs/store/listing-tr.md` → "Veri güvenliği" tablosuna göre doldurulur (v2 taslağı). Ayrıca:
-  - Veriler aktarımda şifreleniyor: evet.
-  - Kullanıcı silme isteğinde bulunabilir: evet. Uygulama içinde "Hesabımı sil" var.
-  - **Web'de silme talebi URL'i zorunlu:** Uygulamayı kurmadan da hesap silme talebi yapılabilen bir sayfa gerekir. Açık iş (Issue #2).
-- [ ] **Hesap silme:** Uygulama içi silme ve yukarıdaki web URL'i.
-- [ ] Haber uygulaması: hayır. Sağlık, finans, devlet: hayır.
+Herkese açık sayfalar GitHub Pages'te (CLAUDE.md → "Yasal sayfalar"): `https://wazzupdevs.github.io/Masa/`. Sayfalar taslaktır ve üstlerinde "Taslak, hukuki kontrol bekliyor" notu vardır; hukuki kontrol bitmeden Console'a girilmez.
+
+### 3.1 Gizlilik politikası
+
+- [ ] URL: `https://wazzupdevs.github.io/Masa/gizlilik-politikasi.html`. Aynı URL EAS `production` ortamında `EXPO_PUBLIC_PRIVACY_URL` olur (uygulama içi bağlantı).
+
+### 3.2 Hesap silme (Play şartı)
+
+Kullanıcı hesabı olan her uygulama için iki şey gerekir: uygulama içinden silme ve **uygulamayı kurmadan kullanılabilen bir web bağlantısı**. Web sayfası uygulamanın adını anmalı, silme adımlarını anlatmalı, hangi verinin silinip hangisinin ne kadar saklandığını söylemelidir.
+
+- [ ] Uygulama içi yol: Profil → Ayarlar (dişli) → Hesabımı sil → Sil. Hemen siler (`account/delete`: fotoğraflar, hesap ve bağlı bütün satırlar, PostHog kişi kaydı).
+- [ ] Web bağlantısı: `https://wazzupdevs.github.io/Masa/hesap-silme.html`. Uygulama içi adımlar, e-postayla talep ([e-posta], en geç 30 gün), silinen veriler, saklananlar (şikayet kaydı 30 gün, banlanan numaranın özeti, hata kayıtları, yedekler).
+- [ ] Console → Veri güvenliği → "Hesap silme" alanına bu URL girilir.
+- **Açık iş:** e-postayla gelen talebi işlemek için ban'sız bir yönetici komutu yok (`admin:ban` banlar). Şimdilik talep, kullanıcı panelde (Authentication → Users) numarayla bulunup silinerek karşılanır; bu yol profil fotoğrafını ve PostHog kaydını silmez. `pnpm admin:delete <userId>` önerisi PR'da.
+
+### 3.3 Uygulama erişimi (inceleme ekibi için giriş)
+
+- [ ] "Tüm işlevler ya da bazıları özel erişim gerektiriyor" seçilir. Talimat alanına (Türkçe ve İngilizce):
+  1. Telefon numarası: [inceleme numarası], doğrulama kodu: [kod]. SMS gönderilmez; kod sabittir.
+  2. "Başlamadan önce" ekranında üç onayı işaretleyip "Onayla ve devam et".
+  3. Keşfet → [inceleme mekanı] → "Buraya giriş yap" → konum izni → kişi sayısı → "Masayı aç".
+  4. Oda kurmak için "Oda kur"; ikinci masa için [karar: ikinci test hesabı ya da karşı masa botu].
+- **Karar gerekli (1): inceleme numarası.** Üretim projesinde kalıcı test numarası yoktur. İnceleme için panelde yalnızca inceleme süresince geçerli, tahmin edilemez kodlu tek bir numara (Test OTPs Valid Until ile) eklenmesi öneriliyor; inceleme bitince silinir.
+- **Karar gerekli (2): konum.** Check-in, mekanın 300 m içinde olmayı ister; inceleyen kişi İstanbul'da değildir. Seçenekler: inceleme hesabına özel bir mekan (koordinatı inceleme ekibinin konumu bilinmediği için işe yaramaz), check-in'i gösteren bir video bağlantısı, ya da incelemeye özel bir istisna (kod değişikliği ister, kapsam dışı).
+
+### 3.4 Reklamlar
+
+- [ ] Uygulama reklam içermiyor: **Hayır**.
+
+### 3.5 İçerik derecelendirmesi (IARC anketi)
+
+- [ ] E-posta: [iletişim e-postası]. Kategori: **Sosyal ağ, forum ya da kullanıcı içeriği paylaşımı** (Social).
+- [ ] Yanıtlar:
+
+| Soru                                                                 | Yanıt    | Not                                                                         |
+| -------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------- |
+| Şiddet, kan, korku                                                   | Hayır    |                                                                             |
+| Cinsel içerik, çıplaklık                                             | Hayır    | Kullanıcı içeriği filtrelenir ve şikayet edilebilir                         |
+| Küfür, kaba dil (uygulamanın kendi içeriği)                          | Hayır    | Kartlar ve metinler temiz; kullanıcı mesajları küfür filtresinden geçer     |
+| Uyuşturucu, alkol, tütün                                             | Hayır    | Doğrula: mekan listesinde nargile kafeleri adıyla yer alır, ürün tanıtılmaz |
+| Kumar, şans oyunu, gerçek para                                       | Hayır    |                                                                             |
+| Kullanıcılar birbiriyle iletişim kurabilir ya da içerik paylaşabilir | **Evet** | Oda sohbeti, DM, profil (ad, fotoğraf, biyografi)                           |
+| Kullanıcının konumu diğer kullanıcılarla paylaşılır                  | Hayır    | Konum saklanmaz, kimseye gösterilmez                                        |
+| Dijital ürün satın alma                                              | Hayır    |                                                                             |
+| Kişisel bilgilerin üçüncü kişilerle paylaşımı                        | Hayır    | Hizmet sağlayıcılar paylaşım sayılmaz                                       |
+
+- Beklenen sonuç: kullanıcı etkileşimi etiketiyle düşük yaş derecesi. Uygulamanın kendi 18+ şartı ayrıca hedef kitleyle ve uygulama içi beyanla uygulanır.
+
+### 3.6 Hedef kitle ve içerik
+
+- [ ] Hedef yaş grupları: yalnızca **18 ve üzeri**. Uygulama ilk açılışta 18 yaş beyanı ister.
+- [ ] Uygulama çocukların ilgisini çekebilir mi: **Hayır**. Aileler programı: yok.
+
+### 3.7 Veri güvenliği formu (v2 veri türleri)
+
+Tanım: cihazdan çıkan her veri "toplanan" sayılır; hizmet sağlayıcıya (Supabase, Twilio, Expo/FCM, PostHog, Sentry) aktarım "paylaşım" sayılmaz. Tablonun kaynağı `docs/store/listing-tr.md` → "Veri güvenliği".
+
+- [ ] Genel sorular:
+  - Uygulama kullanıcı verisi topluyor ya da paylaşıyor mu: **Evet**.
+  - Veriler aktarımda şifreleniyor mu: **Evet** (HTTPS/TLS).
+  - Kullanıcı verilerinin silinmesini isteyebilir mi: **Evet** (uygulama içi ve §3.2'deki web bağlantısı).
+- [ ] Veri türleri (hepsinde "Paylaşılıyor: Hayır"):
+
+| Play kategorisi → tür                                             | Neyimiz                                               | Zorunlu mu            | Anlık işlenip atılıyor mu | Amaç                                                         |
+| ----------------------------------------------------------------- | ----------------------------------------------------- | --------------------- | ------------------------- | ------------------------------------------------------------ |
+| Konum → Kesin konum                                               | Check-in anındaki koordinat                           | Evet (check-in)       | **Evet**, saklanmaz       | Uygulama işlevi                                              |
+| Kişisel bilgiler → Telefon numarası                               | Giriş numarası                                        | Evet                  | Hayır                     | Hesap yönetimi, uygulama işlevi, dolandırıcılık önleme (ban) |
+| Kişisel bilgiler → Ad                                             | Görünen ad                                            | Hayır (isteğe bağlı)  | Hayır                     | Uygulama işlevi                                              |
+| Kişisel bilgiler → Kullanıcı kimlikleri                           | Hesap kimliği (analitik ve hata kayıtları)            | Evet                  | Hayır                     | Uygulama işlevi, analitik                                    |
+| Fotoğraflar ve videolar → Fotoğraflar                             | Profil fotoğrafı (metadata silinir)                   | Hayır                 | Hayır                     | Uygulama işlevi                                              |
+| Mesajlar → Diğer uygulama içi mesajlar                            | Oda sohbeti, arkadaşlar arası DM                      | Hayır                 | Hayır                     | Uygulama işlevi, güvenlik (şikayet kopyası)                  |
+| Uygulama etkinliği → Uygulama etkileşimleri                       | Analitik olayları (PostHog)                           | Evet                  | Hayır                     | Analitik                                                     |
+| Uygulama etkinliği → Diğer kullanıcı içeriği                      | Biyografi                                             | Hayır                 | Hayır                     | Uygulama işlevi                                              |
+| Uygulama etkinliği → Diğer işlemler                               | Oyun geçmişi, arkadaşlık, tanışma cevabı              | Evet                  | Hayır                     | Uygulama işlevi                                              |
+| Uygulama bilgileri ve performansı → Kilitlenme günlükleri, Teşhis | Sentry hata raporları (telefon, konum, metin silinir) | Evet                  | Hayır                     | Analitik (hata giderme)                                      |
+| Cihaz ya da diğer kimlikler                                       | Push token                                            | Hayır (bildirim izni) | Hayır                     | Uygulama işlevi                                              |
+
+- **Düzeltme:** önceki taslakta konum "toplanmıyor" yazıyordu. Play tanımında cihazdan sunucuya giden koordinat toplanmış sayılır; doğru yanıt "Toplanıyor, anlık işleniyor (ephemeral), saklanmıyor"dur. `listing-tr.md` de düzeltildi.
+- Takip (tracking) ve reklam: yok.
+
+### 3.8 Diğer beyanlar
+
+- [ ] Haber uygulaması, COVID-19, devlet, finans, sağlık: **Hayır**.
 
 ## 4. Mağaza girişi (Console → Büyüme → Mağaza varlığı)
 
 - [ ] Kısa ve uzun açıklama: `docs/store/listing-tr.md`. v2 özellikleri (Keşfet, profil, arkadaşlar, sesli Tabu) eklenince güncellenir.
-- [ ] Uygulama simgesi 512×512, öne çıkan grafik 1024×500, en az 2 telefon ekran görüntüsü.
+- [ ] Uygulama simgesi 512×512, öne çıkan grafik 1024×500.
+- [ ] Telefon ekran görüntüleri: `pnpm store:screenshots <E2E ekran görüntüsü klasörü>` → `dist/store-screenshots/phone-01.png` … (1080×1920, 9:16; seçim ve başlıklar `docs/store/screenshots.json`). Play en az 2, öne çıkarılmak için en az 4 ister; 6 üretilir. Tasarım yönü ve uygulama adı seçilince yeniden üretilir. E2E emülatörü 320×640 çektiği için görüntüler büyütülmüş ve yumuşak; mağaza için yüksek çözünürlüklü bir emülatörle çekilmeli.
 - [ ] Kategori: Sosyal. İletişim e-postası.
 
 ## 5. Kapalı test kanalı (Console → Test → Kapalı test)
@@ -77,10 +143,12 @@ Masa'yı Google Play'de **kapalı test** kanalına çıkarmak için Play Console
 
 ## 7. Durum
 
-| Adım                                       | Durum                                 |
-| ------------------------------------------ | ------------------------------------- |
-| AAB profili                                | Hazır (`eas.json`)                    |
-| Gizlilik politikası URL'i, web silme URL'i | Açık (Issue #2)                       |
-| İnceleme erişimi (mekan şartı)             | Karar gerekli (§3)                    |
-| Veri güvenliği, IARC, hedef kitle          | Taslak hazır; Console'da doldurulacak |
-| Test kullanıcıları (12+)                   | Proje sahibi                          |
+| Adım                                     | Durum                                                                      |
+| ---------------------------------------- | -------------------------------------------------------------------------- |
+| AAB profili                              | Hazır (`eas.json`)                                                         |
+| Gizlilik politikası ve web silme sayfası | Taslak sayfalar hazır (GitHub Pages); hukuki kontrol ve [e-posta] bekliyor |
+| E-postayla silme talebini işleme         | Açık (§3.2, `admin:delete` önerisi)                                        |
+| İnceleme erişimi                         | Karar gerekli: inceleme numarası ve konum (§3.3)                           |
+| Veri güvenliği, IARC, hedef kitle        | Yanıtlar hazır (§3.5–3.7); Console'da doldurulacak                         |
+| Telefon ekran görüntüleri                | Script hazır; tasarım ve ad sonrası yüksek çözünürlükle yeniden            |
+| Test kullanıcıları (12+)                 | Proje sahibi                                                               |

@@ -1,0 +1,12 @@
+{
+  "background": "#111111",
+  "captionColor": "#ffffff",
+  "shots": [
+    { "source": "05-explore-list.png", "caption": "Yakındaki mekanları keşfet" },
+    { "source": "11-venue.png", "caption": "Masanı aç, takma adınla katıl" },
+    { "source": "15-join-request.png", "caption": "Başka bir masa odana katılmak istesin" },
+    { "source": "18-card-open.png", "caption": "Masalar yüz yüze Tabu oynasın" },
+    { "source": "23-reveal-mutual.png", "caption": "İkiniz de isterseniz tanışın" },
+    { "source": "27-dm.png", "caption": "Yeni arkadaşlarınla yazış" }
+  ]
+}
