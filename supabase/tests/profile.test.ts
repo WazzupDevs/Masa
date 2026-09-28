@@ -7,6 +7,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { ProfileUploadUrl, ProfileView } from '../functions/_shared/pure/api/profile.ts';
 import { PHOTO_BUCKET } from '../functions/_shared/pure/profile.ts';
 import { removeProfilePhoto } from '../../scripts/admin/photos.ts';
+import { deleteAccount } from '../../scripts/admin/account.ts';
 import { banUser } from '../../scripts/admin/ban.ts';
 import { deleteFixtureVenues, insertFixtureVenues } from './fixtures/venues.ts';
 import { checkInAt, errorBody, onboarded, PHONES } from './helpers.ts';
@@ -486,14 +487,21 @@ describe('profile photos', () => {
     expect(await removeProfilePhoto(admin, await publicIdOf(a))).toBe(false);
   });
 
-  it('goes with the account (deletion and ban)', async () => {
-    const [a, b] = await Promise.all([named(PHONES[0], 'Ayşe'), named(PHONES[1], 'Burak')]);
+  it('goes with the account (deletion, admin:delete and ban)', async () => {
+    const [a, b, c] = await Promise.all([
+      named(PHONES[0], 'Ayşe'),
+      named(PHONES[1], 'Burak'),
+      named(PHONES[2], 'Cem'),
+    ]);
     const pathA = await setPhoto(a);
     const pathB = await setPhoto(b);
+    const pathC = await setPhoto(c);
     expect((await invoke(a, 'account', { action: 'delete' })).status).toBe(200);
     expect(await objectExists(pathA)).toBe(false);
     await banUser(admin, await userIdOf(b));
     expect(await objectExists(pathB)).toBe(false);
+    await deleteAccount(admin, await userIdOf(c));
+    expect(await objectExists(pathC)).toBe(false);
   });
 });
 
