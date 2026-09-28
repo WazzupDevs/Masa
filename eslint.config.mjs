@@ -78,4 +78,21 @@ export default defineConfig([
     files: ['supabase/functions/_shared/pure/**/*.test.ts'],
     rules: { 'no-restricted-imports': 'off' },
   },
+
+  // Maestro runScript files: Maestro's JavaScript globals, and each runScript env key as a global.
+  {
+    files: ['e2e/maestro/scripts/*.js'],
+    languageOptions: {
+      sourceType: 'script',
+      globals: {
+        http: 'readonly',
+        json: 'readonly',
+        output: 'writable',
+        ACTION: 'readonly',
+        BODY: 'readonly',
+        BOT_PORT: 'readonly',
+        EXPECT_DM: 'readonly',
+      },
+    },
+  },
 ]);

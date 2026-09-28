@@ -39,6 +39,7 @@ export default function PhoneScreen() {
       <View className="mt-8 h-14 flex-row items-center rounded-xl border border-neutral-300 px-4">
         <Text className="mr-2 text-lg text-neutral-500">{tr.auth.phonePrefix}</Text>
         <TextInput
+          testID="phone-input"
           className="flex-1 text-lg text-black"
           keyboardType="phone-pad"
           autoComplete="tel"

@@ -59,6 +59,7 @@ function EditForm({ initialName, initialBio }: { initialName: string; initialBio
 
       <Text className="mt-8 text-sm font-semibold text-neutral-500">{tr.profile.nameLabel}</Text>
       <TextInput
+        testID="name-input"
         className="mt-2 rounded-xl border border-neutral-300 px-4 py-3 text-lg text-black"
         value={name}
         onChangeText={setName}
