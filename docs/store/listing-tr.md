@@ -36,8 +36,8 @@ Birincil: Sosyal ağ (iOS) / Sosyal (Android). İkincil: Oyunlar → Kelime.
 
 ## İnceleme notları (App Review / Play)
 
-- Test numarası: `+90 555 000 00 01`, doğrulama kodu `123456` (yalnızca inceleme için tanımlı test numarası; barındırılan projede panelden eklenir).
-- Uygulamanın tamamı bir mekanda olmayı gerektirir; inceleme için [inceleme mekanı koordinatı ya da test mekanı] eklenmelidir.
+- Giriş: üretim projesindeki kalıcı inceleme hesabı. Numara ve kod yalnızca Play Console → Uygulama erişimi'nde (App Store için App Review Information'da) durur; repoya yazılmaz. Talimat metni: `docs/store/PLAY_CHECKLIST.md` §3.3.
+- Mekan içi akış bir mekanın 300 m içinde çalışır; inceleme için check-in'den sonraki akışı gösteren video verilir (senaryo PLAY_CHECKLIST §3.3). Ret gelirse incelemeye özel istisna ayrı PR'da.
 - Kullanıcı içeriği: sohbet ve ipuçları küfür filtresinden geçer; oda menüsünde "Şikayet et" ve "Engelle" var; Ayarlar'da Engellenenler, iletişim ve "Hesabımı sil".
 
 ## Veri güvenliği (Play) / Uygulama gizliliği (Apple) özeti

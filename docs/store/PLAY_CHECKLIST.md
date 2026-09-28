@@ -40,17 +40,58 @@ Kullanıcı hesabı olan her uygulama için iki şey gerekir: uygulama içinden 
 - [ ] Uygulama içi yol: Profil → Ayarlar (dişli) → Hesabımı sil → Sil. Hemen siler (`account/delete`: fotoğraflar, hesap ve bağlı bütün satırlar, PostHog kişi kaydı).
 - [ ] Web bağlantısı: `https://wazzupdevs.github.io/Masa/hesap-silme.html`. Uygulama içi adımlar, e-postayla talep ([e-posta], en geç 30 gün), silinen veriler, saklananlar (şikayet kaydı 30 gün, banlanan numaranın özeti, hata kayıtları, yedekler).
 - [ ] Console → Veri güvenliği → "Hesap silme" alanına bu URL girilir.
-- **Açık iş:** e-postayla gelen talebi işlemek için ban'sız bir yönetici komutu yok (`admin:ban` banlar). Şimdilik talep, kullanıcı panelde (Authentication → Users) numarayla bulunup silinerek karşılanır; bu yol profil fotoğrafını ve PostHog kaydını silmez. `pnpm admin:delete <userId>` önerisi PR'da.
+- E-postayla gelen talep: `pnpm admin:delete <userId>` (ayrı PR). Uygulama içi silmeyle aynı sonuç: fotoğraflar, hesap ve bağlı bütün satırlar, PostHog kişi kaydı; ban yapmaz. Kullanıcı kimliği panelde Authentication → Users'ta numarayla bulunur.
 
 ### 3.3 Uygulama erişimi (inceleme ekibi için giriş)
 
-- [ ] "Tüm işlevler ya da bazıları özel erişim gerektiriyor" seçilir. Talimat alanına (Türkçe ve İngilizce):
-  1. Telefon numarası: [inceleme numarası], doğrulama kodu: [kod]. SMS gönderilmez; kod sabittir.
-  2. "Başlamadan önce" ekranında üç onayı işaretleyip "Onayla ve devam et".
-  3. Keşfet → [inceleme mekanı] → "Buraya giriş yap" → konum izni → kişi sayısı → "Masayı aç".
-  4. Oda kurmak için "Oda kur"; ikinci masa için [karar: ikinci test hesabı ya da karşı masa botu].
-- **Karar gerekli (1): inceleme numarası.** Üretim projesinde kalıcı test numarası yoktur. İnceleme için panelde yalnızca inceleme süresince geçerli, tahmin edilemez kodlu tek bir numara (Test OTPs Valid Until ile) eklenmesi öneriliyor; inceleme bitince silinir.
-- **Karar gerekli (2): konum.** Check-in, mekanın 300 m içinde olmayı ister; inceleyen kişi İstanbul'da değildir. Seçenekler: inceleme hesabına özel bir mekan (koordinatı inceleme ekibinin konumu bilinmediği için işe yaramaz), check-in'i gösteren bir video bağlantısı, ya da incelemeye özel bir istisna (kod değişikliği ister, kapsam dışı).
+**İnceleme hesabı:** üretim projesinde tek, kalıcı bir test numarası ve tahmin edilemez 6 haneli kod. Kod yalnızca Play Console → Uygulama erişimi alanına yazılır; repoda, CLAUDE.md'de ya da bir sohbette durmaz. Değiştirme adımları CLAUDE.md → "Üretim Supabase projesi" → "İnceleme hesabı".
+
+**Konum:** check-in mekanın 300 m içinde olmayı ister; inceleme ekibi İstanbul'da değildir. Şimdilik giriş bilgisi, açıklama ve check-in'den sonraki akışı gösteren bir video verilir. Ret gelirse incelemeye özel istisna ayrı bir PR'da ele alınır.
+
+- [ ] "Tüm işlevler ya da bazıları özel erişim gerektiriyor" seçilir, bir talimat eklenir:
+  - Ad: `İnceleme hesabı / Review account`
+  - Kullanıcı adı: inceleme numarası (`+90 …`), parola: 6 haneli kod
+  - Diğer bilgiler (aşağıdaki metin; [video bağlantısı] doldurulur):
+
+```
+EN
+Sign in: enter the phone number above on the first screen (without +90 if it is
+pre-filled) and tap "Kod gönder". No SMS is sent to this number; type the 6-digit
+code above on the next screen. Then tick the three boxes (18+, Terms, KVKK notice)
+and tap "Onayla ve devam et".
+
+Location: the core feature works only inside a partner venue in Istanbul
+(Beylikdüzü). Checking in to a venue needs the phone to be within 300 m of it;
+the location is used once at check-in and is never stored. Outside a venue you
+can still use: Keşfet (venue list and map), a venue's page, Profil (name, photo,
+bio), Ayarlar (legal texts, blocked tables, account deletion: Profil → gear icon
+→ "Hesabımı sil") and Arkadaşlar.
+
+The in-venue flow (check-in, creating a room, another table joining, a voice
+Tabu turn, ending the room, "Tanışalım mı?", adding a friend, a direct message,
+blocking and reporting) is shown in this video: [video link]
+
+TR
+Giriş: ilk ekranda yukarıdaki numarayı girip "Kod gönder"e dokunun. Bu numaraya
+SMS gitmez; sonraki ekranda yukarıdaki 6 haneli kodu yazın. Üç onayı işaretleyip
+"Onayla ve devam et"e dokunun. Mekan içi akış yalnızca İstanbul'daki bir mekanın
+300 m içinde çalışır; konum yalnızca check-in anında bir kez kullanılır ve
+saklanmaz. Mekan dışında Keşfet, mekan sayfası, Profil, Ayarlar (hesap silme
+dahil) ve Arkadaşlar kullanılabilir. Mekan içi akış videoda: [video bağlantısı]
+```
+
+- [ ] **Video çekim senaryosu** (3–4 dk, telefon ekran kaydı; Android'de Hızlı ayarlar → Ekran kaydı, sesli):
+  1. Pilot mekanlardan birinde, mekanın içinde. İkinci masa için ikinci bir telefon ve gerçek bir numarayla açılmış ikinci bir hesap gerekir (karşı masa botu üretim projesini reddeder).
+  2. Uygulamayı aç, inceleme hesabıyla giriş yap. Kod ekranında kodu yazarken kaydı durdur ya da sonra kodu buzla; kod videoda görünmemeli.
+  3. Onaylar → Keşfet (liste ve harita) → mekanın sayfası → "Buraya giriş yap" → konum rızası ve izin → kişi sayısı → "Masayı aç" → masa takma adı.
+  4. "Oda kur" → Tabu → "Mekana açık". İkinci telefondan katılma isteği gelir → "Kabul".
+  5. "Oyunu başlat" → kartı aç → bir Doğru, bir Pas; ikinci telefon hakem olarak Tabu basar. Tur geçişini göster.
+  6. "Odayı bitir" → "Tanışalım mı?" → iki telefonda "Evet" → aynı renk ve işaret ekranı (iki telefon yan yana, kısa bir dış çekim).
+  7. "Arkadaş ekle" (iki taraf) → Arkadaşlar → DM gönder ve al.
+  8. Arkadaşlar → Geçmiş ve istekler → Diğer → "Şikayet et" ve "Engelle" pencerelerini göster (vazgeç).
+  9. Profil → dişli → Ayarlar → "Hesabımı sil" onay penceresini göster (vazgeç).
+  10. Yükle: YouTube'da **liste dışı** ya da Google Drive'da "bağlantıya sahip herkes". Bağlantıyı talimattaki [video bağlantısı] yerine yaz.
+- Uygulama arayüzü değişince (tasarım, ad) video yeniden çekilir.
 
 ### 3.4 Reklamlar
 
@@ -61,18 +102,33 @@ Kullanıcı hesabı olan her uygulama için iki şey gerekir: uygulama içinden 
 - [ ] E-posta: [iletişim e-postası]. Kategori: **Sosyal ağ, forum ya da kullanıcı içeriği paylaşımı** (Social).
 - [ ] Yanıtlar:
 
-| Soru                                                                 | Yanıt    | Not                                                                         |
-| -------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------- |
-| Şiddet, kan, korku                                                   | Hayır    |                                                                             |
-| Cinsel içerik, çıplaklık                                             | Hayır    | Kullanıcı içeriği filtrelenir ve şikayet edilebilir                         |
-| Küfür, kaba dil (uygulamanın kendi içeriği)                          | Hayır    | Kartlar ve metinler temiz; kullanıcı mesajları küfür filtresinden geçer     |
-| Uyuşturucu, alkol, tütün                                             | Hayır    | Doğrula: mekan listesinde nargile kafeleri adıyla yer alır, ürün tanıtılmaz |
-| Kumar, şans oyunu, gerçek para                                       | Hayır    |                                                                             |
-| Kullanıcılar birbiriyle iletişim kurabilir ya da içerik paylaşabilir | **Evet** | Oda sohbeti, DM, profil (ad, fotoğraf, biyografi)                           |
-| Kullanıcının konumu diğer kullanıcılarla paylaşılır                  | Hayır    | Konum saklanmaz, kimseye gösterilmez                                        |
-| Dijital ürün satın alma                                              | Hayır    |                                                                             |
-| Kişisel bilgilerin üçüncü kişilerle paylaşımı                        | Hayır    | Hizmet sağlayıcılar paylaşım sayılmaz                                       |
+Yanıtlar `content/` taramasına göre (kartlar, mekan adları, takma adlar, sohbet kartları; küfür listesi hariç). Arama: alkol, bira, şarap, rakı, içki, bar, kokteyl…; tütün, sigara, nargile, puro, duman…; kumar, bahis, piyango, rulet, poker, okey, zar, jeton…
 
+| İçerik          | Bulunan                                                                                                                                 |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Alkol           | Tabu kartı "Üzüm": yasaklı kelime "şarap" (1 kart, yalnızca kelime)                                                                     |
+| Tütün           | Tabu kartı "Nargile": yasaklı kelimeler "tütün", "köz", "hortum", "kafe", "duman" (1 kart, yalnızca kelime)                             |
+| Kumar           | Yasaklı kelime "piyango" ("Yılbaşı", "Şans" kartları); "zar" ("Şans"); "Okey" kartı ve "Kahvehane" kartında "okey" (taş oyunu, parasız) |
+| Mekan adları    | 43 mekanın hepsi `amenity=cafe`; adlarda alkol, tütün ya da kumar geçmiyor. Nargile kafesi listede yok                                  |
+| Takma adlar     | Eşleşme yok                                                                                                                             |
+| Sohbet kartları | Eşleşme yok                                                                                                                             |
+
+| Soru                                                                 | Yanıt    | Not                                                                       |
+| -------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------- |
+| Şiddet, kan, korku                                                   | Hayır    |                                                                           |
+| Cinsel içerik, çıplaklık                                             | Hayır    | Kullanıcı içeriği filtrelenir ve şikayet edilebilir                       |
+| Küfür, kaba dil (uygulamanın kendi içeriği)                          | Hayır    | Kartlar ve metinler temiz; kullanıcı mesajları küfür filtresinden geçer   |
+| Alkol referansı                                                      | **Evet** | Yalnızca metin: "şarap" kelimesi. Tüketim gösterilmez, özendirilmez       |
+| Tütün referansı                                                      | **Evet** | Yalnızca metin: "Nargile" kartı. Tüketim gösterilmez, özendirilmez        |
+| Uyuşturucu                                                           | Hayır    |                                                                           |
+| Kumar referansı                                                      | **Evet** | Yalnızca metin: "piyango", "zar", "okey". Anket "referans" soruyorsa Evet |
+| Simüle kumar ya da gerçek parayla kumar                              | Hayır    | Oyunlarda para, bahis, ödül yok                                           |
+| Kullanıcılar birbiriyle iletişim kurabilir ya da içerik paylaşabilir | **Evet** | Oda sohbeti, DM, profil (ad, fotoğraf, biyografi)                         |
+| Kullanıcının konumu diğer kullanıcılarla paylaşılır                  | Hayır    | Konum saklanmaz, kimseye gösterilmez                                      |
+| Dijital ürün satın alma                                              | Hayır    |                                                                           |
+| Kişisel bilgilerin üçüncü kişilerle paylaşımı                        | Hayır    | Hizmet sağlayıcılar paylaşım sayılmaz                                     |
+
+- İçerik değişince (`content/`) tarama yeniden yapılır ve tablo güncellenir.
 - Beklenen sonuç: kullanıcı etkileşimi etiketiyle düşük yaş derecesi. Uygulamanın kendi 18+ şartı ayrıca hedef kitleyle ve uygulama içi beyanla uygulanır.
 
 ### 3.6 Hedef kitle ve içerik
@@ -147,8 +203,8 @@ Tanım: cihazdan çıkan her veri "toplanan" sayılır; hizmet sağlayıcıya (S
 | ---------------------------------------- | -------------------------------------------------------------------------- |
 | AAB profili                              | Hazır (`eas.json`)                                                         |
 | Gizlilik politikası ve web silme sayfası | Taslak sayfalar hazır (GitHub Pages); hukuki kontrol ve [e-posta] bekliyor |
-| E-postayla silme talebini işleme         | Açık (§3.2, `admin:delete` önerisi)                                        |
-| İnceleme erişimi                         | Karar gerekli: inceleme numarası ve konum (§3.3)                           |
+| E-postayla silme talebini işleme         | `admin:delete` (ayrı PR)                                                   |
+| İnceleme erişimi                         | Kalıcı inceleme hesabı ve video (§3.3); video çekilecek                    |
 | Veri güvenliği, IARC, hedef kitle        | Yanıtlar hazır (§3.5–3.7); Console'da doldurulacak                         |
 | Telefon ekran görüntüleri                | Script hazır; tasarım ve ad sonrası yüksek çözünürlükle yeniden            |
 | Test kullanıcıları (12+)                 | Proje sahibi                                                               |

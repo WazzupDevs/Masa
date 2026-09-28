@@ -71,7 +71,7 @@ Pilot ve Play kullanıcıları için ayrı proje. Kurulum dev projesiyle aynı s
 
 | Konu | Dev projesi | Üretim projesi |
 | --- | --- | --- |
-| Test numaraları | `905550000001=123456` ve saha testi numaraları | **Yok.** Yalnızca Play incelemesi sürerken, bitiş tarihli ve tahmin edilemez kodlu tek numara (karar: `docs/store/PLAY_CHECKLIST.md` §3.3); inceleme bitince silinir |
+| Test numaraları | `905550000001=123456` ve saha testi numaraları | **Yalnızca tek, kalıcı inceleme hesabı:** bir numara, tahmin edilemez 6 haneli kod. Kod yalnızca Play Console → Uygulama erişimi'nde durur (aşağıda "İnceleme hesabı") |
 | E2E botu (#19) | `scripts/e2e/bot-table.ts` bu projeyi kabul eder | **Reddedilir:** bot yalnızca yerel stack'i ve dev projesinin adresini kabul eder; üretim adresi listeye eklenmez |
 | SMS | Twilio Verify (test numaraları SMS'siz) | **Twilio canlı:** ayrı bir Verify servisi, Geo permissions yalnızca Türkiye, Fraud Guard açık, saatlik SMS sınırı 100, aynı numaraya 60 sn |
 | Vault anahtarı (`phone_hash_key`) | Dev anahtarı | **Yeni ve farklı** anahtar (`openssl rand -hex 32`), parola yöneticisinde; asla değişmez |
@@ -90,6 +90,13 @@ Sıra:
 6. `pnpm supabase secrets set POSTHOG_PERSONAL_API_KEY=… POSTHOG_PROJECT_ID=…`. `MIN_APP_BUILD` ilk production AAB'den sonra.
 7. EAS `production` ortam değişkenleri (tabloda), sonra `eas build --profile production`.
 - Asla: `supabase config push`, `supabase/local/secrets.sql`, secret key'i bir dosyaya yazmak, dev Vault anahtarını üretimde kullanmak.
+
+**İnceleme hesabı (Play).** Üretimde tek test numarası; kodu yalnızca Play Console bilir. Kod hiçbir dosyaya, commit'e, sohbete yazılmaz. İlk kurulum ve kod değişikliği aynı adımlar:
+1. Yeni kod üret (Windows'ta da çalışır): `node -e "console.log(require('node:crypto').randomInt(100000, 1000000))"`. `123456` gibi tahmin edilebilir kod kullanma.
+2. Supabase paneli (üretim) → Authentication → Sign In / Providers → Phone → **Test Phone Numbers and OTPs**: `90<numara>=<kod>` (tek çift). **Test OTPs Valid Until**: ileri bir tarih; dolmadan önce uzat, dolarsa inceleme girişi çalışmaz.
+3. Hemen ardından Play Console → Politika → Uygulama içeriği → **Uygulama erişimi** → talimattaki parolayı yeni kodla güncelle ve kaydet. İki yer arasında kalan sürede inceleme başlarsa giriş başarısız olur; ikisini arka arkaya yap.
+4. Kodu değiştirmek için: sızdığından şüphelenince, ekipten biri ayrılınca ya da Valid Until uzatılırken. Hesabı sıfırlamak gerekirse önce `pnpm admin:delete <userId>` (inceleme hesabının kullanıcı kimliği panelde numarayla bulunur).
+- İnceleme numarası gerçek bir hat olmak zorunda değil; SMS gönderilmez. Ban ve 18+/onay akışından muaf değildir.
 
 ### main'den dev projesine yayın
 Tek seferlik kurulum (yukarıda) yapılmış bir projeye main'in güncel hâlini gönderir. Repo kökünde, sırayla. `supabase login` gerekirse tarayıcıdan giriş ister; uzak veritabanına bağlanan komutlar (2–4, 6) veritabanı parolasını sorabilir (panel → Settings → Database).
