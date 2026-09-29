@@ -6,6 +6,19 @@ appId: app.kabuk.mobile
       text: E2E Kafe
     timeout: 30000
 - takeScreenshot: 05-explore-list
+# The map: GL layers under the header (the header and the switch stay on top), opening on the
+# venues. Pins are GL, not views, so the screenshot is the check.
+- tapOn: Harita
+- waitForAnimationToEnd:
+    timeout: 8000
+- assertVisible: Keşfet
+- assertVisible: Liste
+- takeScreenshot: 05b-explore-map
+- tapOn: Liste
+- scrollUntilVisible:
+    element:
+      text: E2E Kafe
+    timeout: 30000
 - tapOn: E2E Kafe
 - extendedWaitUntil:
     visible: Buraya giriş yap
