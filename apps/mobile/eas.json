@@ -14,7 +14,8 @@
         "APP_ENV": "development",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true",
         "EXPO_PUBLIC_APP_ENV": "development"
-      }
+      },
+      "node": "22.20.0"
     },
     "preview": {
       "autoIncrement": true,
@@ -29,7 +30,8 @@
         "SENTRY_DISABLE_AUTO_UPLOAD": "true",
         "EXPO_PUBLIC_APP_ENV": "preview"
       },
-      "channel": "preview"
+      "channel": "preview",
+      "node": "22.20.0"
     },
     "production": {
       "autoIncrement": true,
@@ -41,7 +43,8 @@
         "SENTRY_DISABLE_AUTO_UPLOAD": "true",
         "EXPO_PUBLIC_APP_ENV": "production"
       },
-      "channel": "production"
+      "channel": "production",
+      "node": "22.20.0"
     }
   },
   "submit": {
