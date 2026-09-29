@@ -24,6 +24,9 @@ supabase/.branches
 supabase/.temp
 supabase/functions/.env
 
+# Legal site build (pnpm site:build)
+/site/
+
 # Misc
 .DS_Store
 *.log

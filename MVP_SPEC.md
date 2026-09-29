@@ -1,6 +1,6 @@
 # MVP Spec — Mekan İçi Sosyal Oyun Uygulaması
 
-Çalışma adı: Masa (değişebilir)
+Uygulama adı: Kabuk (kod içi çalışma adı ve paket kimliği Masa / `app.masa.mobile`)
 
 > **v2:** Navigasyon, Keşfet, profil, arkadaşlar ve DM, sesli Tabu için onaylı teknik tasarım `docs/SPEC_V2.md`'dedir. Bu belgede v2 ile değişen kararlar "**v2:**" notuyla işaretlidir; v2 adımları uygulandıkça metin güncellenir.
 
@@ -328,7 +328,6 @@ Kabul: §12'deki tüm event'ler PostHog'a düşüyor. Uygulama iki mağazanın t
 Tahmini süre: tek geliştirici ve Claude Code ile yaklaşık 8 hafta. Ardından kapalı test ve pilot.
 
 ## 14. Açık kararlar
-- Uygulama adı
 - Pilot mekan listesi: bölge İstanbul Beylikdüzü; liste `pnpm fetch:venues` ile pilottan önce üretilip elle kontrol edilecek.
 - Kullanım Koşulları ve KVKK aydınlatma metinleri: M1'de yer tutucu (`draft-0`); gerçek metinler ve hukuki kontrol pilot öncesinde (M7).
 - Yurt dışı veri aktarımı: Supabase'in Türkiye bölgesi yok. Pilot öncesi KVKK kapsamında hukuki görüş alınacak.

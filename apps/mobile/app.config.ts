@@ -13,6 +13,8 @@ import { resolve } from 'node:path';
 
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
+import { APP_NAME } from '../../supabase/functions/_shared/pure/brand.ts';
+
 const EAS_PROJECT_ID = '9692ae9b-7826-4f6b-a41e-a0506d5992c2';
 
 export default ({ config }: ConfigContext): ExpoConfig => {
@@ -21,7 +23,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
 
   return {
     ...config,
-    name: config.name ?? 'Masa',
+    name: APP_NAME,
     slug: config.slug ?? 'masa',
     android: {
       ...config.android,

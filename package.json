@@ -13,6 +13,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "seed": "pnpm --filter scripts build-seed",
+    "site:build": "pnpm --filter scripts build-site",
+    "store:screenshots": "pnpm --filter scripts store-screenshots",
     "gen:types": "supabase gen types typescript --local > supabase/functions/_shared/pure/database.ts && prettier --write supabase/functions/_shared/pure/database.ts",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "typecheck:functions": "deno check --node-modules-dir=none supabase/functions/*/index.ts",

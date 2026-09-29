@@ -1,3 +1,4 @@
+import { APP_NAME } from './brand.ts';
 import { headcountLabel } from './checkin.ts';
 import type { Concept } from './rooms.ts';
 
@@ -21,11 +22,11 @@ export function joinAcceptedPush(): PushMessage {
 
 // v2 (docs/SPEC_V2.md §6.4): no sender, no preview. The friend request text follows the DM one.
 export function dmPush(): PushMessage {
-  return { title: 'Masa', body: 'Yeni bir mesajın var' };
+  return { title: APP_NAME, body: 'Yeni bir mesajın var' };
 }
 
 export function friendRequestPush(): PushMessage {
-  return { title: 'Masa', body: 'Yeni bir arkadaşlık isteğin var' };
+  return { title: APP_NAME, body: 'Yeni bir arkadaşlık isteğin var' };
 }
 
 export function isExpoPushToken(token: string): boolean {
