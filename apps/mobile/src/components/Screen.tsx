@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { KeyboardAvoidingView, ScrollView } from 'react-native';
 import { type Edge, SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/theme/ThemeProvider';
@@ -18,7 +18,8 @@ export function Screen({ children, edges }: Props) {
     <SafeAreaView edges={edges} style={{ flex: 1, backgroundColor: colors.canvas }}>
       <KeyboardAvoidingView
         className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        // Android is edge-to-edge: the window no longer resizes for the keyboard, so pad here too.
+        behavior="padding"
       >
         <ScrollView
           contentContainerStyle={{

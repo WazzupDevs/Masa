@@ -194,7 +194,7 @@ export default function RequestsScreen() {
                     }
                   />
                 </View>
-                <View className="flex-1">
+                <View>
                   <Button
                     testID="history-more"
                     variant="secondary"

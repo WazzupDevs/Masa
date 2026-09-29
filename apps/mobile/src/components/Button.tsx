@@ -85,6 +85,7 @@ export function Button({
     justifyContent: 'center',
     gap: SPACING[2],
     paddingHorizontal: SPACING[5],
+    paddingVertical: SPACING[2],
     minHeight: size === 'lg' ? TOUCH.large : TOUCH.button,
     borderRadius: shape.radius.md,
     backgroundColor: bg,
@@ -109,11 +110,13 @@ export function Button({
           ) : (
             <>
               {icon ? <Ionicons name={icon} size={ICON.md} color={fg} /> : null}
-              <View className="flex-row items-baseline gap-1">
+              <View className="shrink flex-row items-baseline gap-1">
                 <Text
                   variant={size === 'lg' ? 'buttonLarge' : 'button'}
                   color={fg}
-                  numberOfLines={1}
+                  align="center"
+                  numberOfLines={2}
+                  className="shrink"
                 >
                   {label}
                 </Text>
