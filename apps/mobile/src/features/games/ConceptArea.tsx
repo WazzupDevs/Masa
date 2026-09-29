@@ -20,7 +20,7 @@ type Props = {
 export function ConceptArea({ roomId, concept, gameState, hasGuest, isOwner, aliases }: Props) {
   const state = parseGameState(gameState);
   return (
-    <View className="mt-6 rounded-2xl bg-neutral-100 p-4">
+    <View className="mt-4">
       {concept === 'sohbet' ? (
         <SohbetCard
           roomId={roomId}

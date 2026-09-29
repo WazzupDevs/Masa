@@ -393,7 +393,7 @@ async function opponent() {
               cardIndex: state.cardIndex,
               result: 'correct',
             });
-            say(`Doğru, turn ${state.turnNo} card ${state.cardIndex + 1}`);
+            say(`Doğru, turn ${state.turnNo} card ${(state.cardIndex ?? 0) + 1}`);
           });
         }
         return;

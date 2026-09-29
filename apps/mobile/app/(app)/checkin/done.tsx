@@ -1,9 +1,12 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { Text } from '@/components/Text';
 import { tr } from '@/i18n/tr';
 
 export default function DoneScreen() {
@@ -17,9 +20,13 @@ export default function DoneScreen() {
 
   return (
     <Screen>
-      <Text className="text-3xl font-bold text-black">{tr.checkin.doneTitle}</Text>
-      <Text className="mt-4 text-base text-neutral-600">{tr.checkin.doneBody}</Text>
-      <Text className="mt-6 text-center text-4xl font-bold text-black">{alias}</Text>
+      <ScreenHeader title={tr.checkin.doneTitle} subtitle={tr.checkin.doneBody} />
+      <Card className="mt-4">
+        <Text variant="label">{tr.venue.yourTable}</Text>
+        <Text variant="alias" className="mt-0.5">
+          {alias}
+        </Text>
+      </Card>
       <View className="mt-auto pt-8">
         <Button label={tr.checkin.continue} onPress={() => void finish()} />
       </View>

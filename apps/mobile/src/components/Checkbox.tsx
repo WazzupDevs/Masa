@@ -1,21 +1,41 @@
-import { Pressable, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Pressable, View } from 'react-native';
+
+import { useTheme } from '@/theme/ThemeProvider';
+import { ICON, SPACING, TOUCH } from '@/theme/tokens';
+
+import { Text } from './Text';
 
 type Props = { label: string; checked: boolean; onToggle: () => void };
 
 export function Checkbox({ label, checked, onToggle }: Props) {
+  const { colors, shape } = useTheme();
   return (
     <Pressable
       accessibilityRole="checkbox"
       accessibilityState={{ checked }}
       onPress={onToggle}
-      className="flex-row items-center gap-3 py-2"
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: SPACING[3],
+        minHeight: TOUCH.button,
+      }}
     >
       <View
-        className={`h-6 w-6 items-center justify-center rounded-md border-2 ${checked ? 'border-black bg-black' : 'border-neutral-400'}`}
+        className="items-center justify-center"
+        style={{
+          width: SPACING[6],
+          height: SPACING[6],
+          borderRadius: shape.radius.sm / 2,
+          borderWidth: Math.max(shape.stroke.control, 2),
+          borderColor: checked ? colors.accent : colors.muted,
+          backgroundColor: checked ? colors.accent : 'transparent',
+        }}
       >
-        {checked ? <View className="h-2.5 w-2.5 rounded-sm bg-white" /> : null}
+        {checked ? <Ionicons name="checkmark" size={ICON.sm} color={colors.onAccent} /> : null}
       </View>
-      <Text className="flex-1 text-base text-black">{label}</Text>
+      <Text className="flex-1">{label}</Text>
     </Pressable>
   );
 }
