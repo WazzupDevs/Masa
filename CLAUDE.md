@@ -199,6 +199,8 @@ Pilot listesinde olmayan bir yerde test için elle girilen mekan. Dosya boşsa (
 - Yeni bağımlılık eklemeden önce gerekçesini belirt.
 
 ## Çalışma şekli
+- **main'e yalnızca `ci` kontrolü yeşil bir PR girer.** Doğrudan push yok. `.github/workflows/ci.yml` her PR'da ve main'e push'ta çalışır: `checks` işi (typecheck, lint, format:check, birim testleri, varsa `site:build`) ve `integration` işi (yerel Supabase, `db:reset`, `functions serve`, `test:integration`; pg_cron koşu boyunca duraklatılır). Tek zorunlu kontrol `ci` işidir; ikisi de geçerse geçer. E2E (`e2e.yml`) zorunlu değildir, etiketle çalışır.
+- **Branch protection (tek seferlik, repo sahibi):** GitHub → repo Settings → Rules → Rulesets → New branch ruleset: ad "main", Enforcement: Active, Target branches: Include default branch. Kurallar: Restrict deletions, Block force pushes, Require a pull request before merging, **Require status checks to pass** → Add checks → `ci` (kaynak GitHub Actions; liste, workflow en az bir kez çalıştıktan sonra dolar). İsteğe bağlı: "Require branches to be up to date before merging". Bypass listesine kimse eklenmez.
 - Kilometre taşlarıyla ilerle (`MVP_SPEC.md` §13). Bir taşın kabul kriterleri karşılanmadan sonrakine geçme.
 - Her taşın sonunda: typecheck, lint ve testler temiz olmalı. Kısa bir özet yaz. Spec'ten sapma olduysa spec'i güncelle ve bunu açıkça belirt.
 - `trText.ts` için önce testler, sonra implementasyon.
