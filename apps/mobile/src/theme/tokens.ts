@@ -71,8 +71,6 @@ export function colorClass(key: PaletteKey): string {
 // weights are bundled (src/theme/fonts.ts maps each to its file).
 export type FontName =
   | 'Fraunces_600SemiBold'
-  | 'Fraunces_600SemiBold_Italic'
-  | 'Fraunces_500Medium_Italic'
   | 'Figtree_400Regular'
   | 'Figtree_600SemiBold'
   | 'Figtree_700Bold'

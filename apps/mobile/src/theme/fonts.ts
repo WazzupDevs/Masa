@@ -4,17 +4,13 @@ import { Figtree_400Regular } from '@expo-google-fonts/figtree/400Regular';
 import { Figtree_600SemiBold } from '@expo-google-fonts/figtree/600SemiBold';
 import { Figtree_700Bold } from '@expo-google-fonts/figtree/700Bold';
 import { Figtree_800ExtraBold } from '@expo-google-fonts/figtree/800ExtraBold';
-import { Fraunces_500Medium_Italic } from '@expo-google-fonts/fraunces/500Medium_Italic';
 import { Fraunces_600SemiBold } from '@expo-google-fonts/fraunces/600SemiBold';
-import { Fraunces_600SemiBold_Italic } from '@expo-google-fonts/fraunces/600SemiBold_Italic';
 import type { FontSource } from 'expo-font';
 
 import type { FontName, FontSet } from './tokens';
 
 const FONT_ASSETS: Record<FontName, FontSource> = {
   Fraunces_600SemiBold,
-  Fraunces_600SemiBold_Italic,
-  Fraunces_500Medium_Italic,
   Figtree_400Regular,
   Figtree_600SemiBold,
   Figtree_700Bold,
