@@ -1,8 +1,8 @@
-import { baseTypography, type ThemeDefinition } from '../tokens';
+import { baseTypography, type ThemeDefinition } from './tokens';
 
-// Sakin Liman: hairlines, space, one quiet accent.
-export const calm: ThemeDefinition = {
-  name: 'calm',
+// The app's one theme: hairlines, space, one quiet accent. The brand theme from the design canvas
+// replaces these values in the same shape.
+export const THEME: ThemeDefinition = {
   defaultScheme: 'system',
   palettes: {
     light: {

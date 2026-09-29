@@ -11,14 +11,13 @@ import { create } from 'zustand';
 import { rgbChannels } from './contrast';
 import { fontsOf } from './fonts';
 import {
-  DEFAULT_THEME,
   parseThemePreference,
   resolveScheme,
   resolveShadows,
   type SchemePreference,
-  THEMES,
   type ThemePreference,
 } from './registry';
+import { THEME } from './theme';
 import {
   colorClass,
   type ColorScheme,
@@ -27,13 +26,11 @@ import {
   type Palette,
   type Shape,
   type ShadowSet,
-  type ThemeName,
   type TypeVariant,
   type Typography,
 } from './tokens';
 
 export type AppTheme = {
-  name: ThemeName;
   scheme: ColorScheme;
   colors: Palette;
   fonts: FontSet;
@@ -44,8 +41,8 @@ export type AppTheme = {
 };
 
 // The test picker (Ayarlar → Tasarım (test)) exists only in preview builds, development and the
-// E2E APK (built with EXPO_PUBLIC_APP_ENV=e2e, no update channel); production always runs
-// DEFAULT_THEME with its default scheme.
+// E2E APK (built with EXPO_PUBLIC_APP_ENV=e2e, no update channel); it picks light, dark or the
+// system's. Production always uses the theme's default scheme.
 export const designPickerEnabled =
   Updates.channel === 'preview' || __DEV__ || process.env.EXPO_PUBLIC_APP_ENV === 'e2e';
 
@@ -54,7 +51,6 @@ const STORAGE_KEY = 'masa.design.v1';
 type DesignState = ThemePreference & { loaded: boolean };
 
 const useDesignStore = create<DesignState>(() => ({
-  theme: DEFAULT_THEME,
   scheme: null,
   loaded: !designPickerEnabled,
 }));
@@ -66,24 +62,20 @@ function loadPreference() {
     .catch(() => useDesignStore.setState({ loaded: true }));
 }
 
-export function setDesignPreference(change: { theme?: ThemeName; scheme?: SchemePreference }) {
+export function setSchemePreference(scheme: SchemePreference) {
   if (!designPickerEnabled) return;
-  const { theme, scheme } = { ...useDesignStore.getState(), ...change };
-  useDesignStore.setState({ theme, scheme });
-  void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ theme, scheme })).catch(() => undefined);
+  useDesignStore.setState({ scheme });
+  void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ scheme })).catch(() => undefined);
 }
 
-export function useDesignPreference(): ThemePreference {
-  const theme = useDesignStore((s) => s.theme);
-  const scheme = useDesignStore((s) => s.scheme);
-  return { theme, scheme };
+export function useSchemePreference(): SchemePreference | null {
+  return useDesignStore((s) => s.scheme);
 }
 
-function buildTheme(name: ThemeName, scheme: ColorScheme): AppTheme {
-  const def = THEMES[name];
+function buildTheme(scheme: ColorScheme): AppTheme {
+  const def = THEME;
   const colors = def.palettes[scheme];
   return {
-    name,
     scheme,
     colors,
     fonts: def.fonts,
@@ -94,7 +86,7 @@ function buildTheme(name: ThemeName, scheme: ColorScheme): AppTheme {
   };
 }
 
-const ThemeContext = createContext<AppTheme>(buildTheme(DEFAULT_THEME, 'light'));
+const ThemeContext = createContext<AppTheme>(buildTheme('light'));
 
 export function useTheme(): AppTheme {
   return useContext(ThemeContext);
@@ -160,23 +152,18 @@ function colorVars(colors: Palette) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const preference = useDesignPreference();
+  const preference = useSchemePreference();
   const loaded = useDesignStore((s) => s.loaded);
   const system = useColorScheme();
 
   useEffect(loadPreference, []);
 
-  const name = designPickerEnabled ? preference.theme : DEFAULT_THEME;
-  const scheme = resolveScheme(
-    THEMES[name],
-    designPickerEnabled ? preference.scheme : null,
-    system,
-  );
-  const target = useMemo(() => buildTheme(name, scheme), [name, scheme]);
+  const scheme = resolveScheme(THEME, designPickerEnabled ? preference : null, system);
+  const target = useMemo(() => buildTheme(scheme), [scheme]);
   const targetReady = useFontsReady(target.fonts);
 
-  // A switched theme shows once its fonts are in; until then the previous one stays, so the
-  // navigation state survives the switch.
+  // The theme shows once its fonts are in; a light/dark switch keeps them, so the navigation state
+  // survives it.
   const [shown, setShown] = useState<AppTheme | null>(null);
   if (targetReady && shown !== target) setShown(target);
   const theme = targetReady ? target : shown;

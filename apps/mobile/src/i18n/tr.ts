@@ -422,16 +422,6 @@ export const tr = {
   design: {
     title: 'Tasarım (test)',
     hint: 'Yalnızca test sürümünde görünür. Seçimin bu cihazda saklanır.',
-    themes: {
-      night: 'Gece Kafe',
-      play: 'Oyun Gecesi',
-      calm: 'Sakin Liman',
-    },
-    themeHints: {
-      night: 'Loş bir kafede, sıcak ve koyu.',
-      play: 'Kalın çizgiler, canlı renkler.',
-      calm: 'Sade, açık, bol boşluk.',
-    },
     schemeLabel: 'Görünüm',
     schemes: { light: 'Açık', dark: 'Koyu', system: 'Sistem' },
   },
