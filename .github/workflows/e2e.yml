@@ -1,6 +1,6 @@
 # End-to-end: the FIELD_TEST.md P0 path on an Android emulator against the local stack, with a bot
-# as the second table (scripts/e2e/bot-table.ts). One job builds the APK; one job per theme and
-# light/dark installs it, picks the design in Ayarlar → Tasarım (test) and runs the flows.
+# as the second table (scripts/e2e/bot-table.ts). One job builds the APK; one job per light/dark
+# installs it, picks the design in Ayarlar → Tasarım (test) and runs the flows.
 name: e2e
 
 on:
@@ -27,9 +27,8 @@ env:
   E2E_PUBLISHABLE_KEY: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
 
 jobs:
-  # Which themes run: all three × light/dark on a manual run and on the design PR (#13, branch
-  # design/system); the default theme (src/theme/registry.ts DEFAULT_THEME) otherwise, nightly
-  # included.
+  # The default theme (src/theme/registry.ts DEFAULT_THEME) × light/dark. The brand theme will
+  # replace the placeholder directions; there is no cross-theme run.
   plan:
     if: >-
       github.event_name != 'pull_request' ||
@@ -42,13 +41,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: plan
-        env:
-          ALL: ${{ github.event_name == 'workflow_dispatch' || github.head_ref == 'design/system' }}
         run: |
           default=$(sed -n "s/^export const DEFAULT_THEME: ThemeName = '\([a-z]*\)';$/\1/p" apps/mobile/src/theme/registry.ts)
           test -n "$default"
-          if [ "$ALL" = true ]; then themes='["night","play","calm"]'; else themes="[\"$default\"]"; fi
-          echo "matrix={\"theme\":$themes,\"scheme\":[\"light\",\"dark\"]}" >> "$GITHUB_OUTPUT"
+          echo "matrix={\"theme\":[\"$default\"],\"scheme\":[\"light\",\"dark\"]}" >> "$GITHUB_OUTPUT"
 
   # One release APK for every theme: the theme is picked at runtime in Ayarlar → Tasarım (test).
   build:
@@ -170,14 +166,6 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      # Only the page builder (scripts/e2e/compare-page.ts).
-      - uses: actions/checkout@v4
-        with:
-          path: repo
-          sparse-checkout: scripts/e2e
       - uses: actions/download-artifact@v4
         with:
           pattern: e2e-*-*
@@ -191,7 +179,6 @@ jobs:
             (cd "$dir" && find . -type f ! -name '*.webm' ! -name 'logcat.txt' -exec cp --parents {} "../../site/$run/" \;)
             tail -n 3000 "$dir/logcat.txt" > "site/$run/logcat-tail.txt" 2>/dev/null || true
           done
-          node --experimental-strip-types repo/scripts/e2e/compare-page.ts site
           cd site
           git init -q -b e2e-screenshots
           git config user.name "github-actions[bot]"
