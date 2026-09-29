@@ -235,7 +235,7 @@ Pilot listesinde olmayan bir yerde test için elle girilen mekan. Dosya boşsa (
 
 ## Kod kuralları
 - Kod, tablo ve değişken adları İngilizce. Kullanıcıya görünen metinler Türkçe ve `apps/mobile/src/i18n/tr.ts` içinde. Bileşenlerde sabit metin yok.
-- Uygulama adı tek yerde: `supabase/functions/_shared/pure/brand.ts` → `APP_NAME`. Mağaza ve başlatıcı adı (`app.config.ts`), `tr.ts`'teki marka metni, push başlıkları ve yasal sayfalar (`{{APP_NAME}}`) oradan okur. Paket kimliği (`app.masa.mobile`) ayrıdır ve değişmez.
+- Uygulama adı tek yerde: `supabase/functions/_shared/pure/brand.ts` → `APP_NAME`. Mağaza ve başlatıcı adı `app.json` → `name`'dedir (`app.config.ts` hiçbir `.ts` dosyası import etmez: Node 22.18'den eskisi onu yükleyemez; `scripts/app-name.test.ts` ikisinin eşit olduğunu denetler), `tr.ts`'teki marka metni, push başlıkları ve yasal sayfalar (`{{APP_NAME}}`) oradan okur. Paket kimliği (`app.masa.mobile`) ayrıdır ve değişmez.
 - `any` yok. Veritabanı tipleri `pnpm gen:types` (`supabase gen types`) ile tek dosyaya üretilir: `supabase/functions/_shared/pure/database.ts`. Mobil uygulama bunu alias ile okur, kopya tutulmaz.
 - Paylaşılan kod `supabase/functions/_shared/pure/` altındadır. Mobil `@shared/*` alias'ı yalnızca bu klasörü gösterir. `pure/` içine Deno API'si (`Deno.*`), `npm:`/`jsr:`/URL import'u ya da herhangi bir dış bağımlılık giremez; göreli import'lar `.ts` uzantısıyla yazılır.
 - İş mantığı `pure/` modüllerindedir ve vitest ile test edilir. Edge Function handler'ları incedir: girdi doğrulama, yetki, veritabanı çağrısı, yanıt.
