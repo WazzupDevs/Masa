@@ -23,7 +23,7 @@ Kabuk'u Google Play'de **kapalı test** kanalına çıkarmak için Play Console'
   - Varsayılan dil: Türkçe.
   - Tür: Uygulama. Ücretsiz.
 - [ ] Beyanlar: geliştirici program politikaları ve ABD ihracat yasaları.
-- [ ] Paket adı ilk AAB yüklemesiyle sabitlenir: `app.masa.mobile`. Sonradan değiştirilemez.
+- [ ] Paket adı ilk AAB yüklemesiyle sabitlenir: `app.kabuk.mobile`. Sonradan değiştirilemez.
 
 ## 3. Uygulama içeriği (Console → Politika → Uygulama içeriği)
 

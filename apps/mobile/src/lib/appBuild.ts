@@ -14,6 +14,6 @@ export const appBuildHeaders: Record<string, string> = appBuild
 export function updateUrl(): string {
   const override = process.env.EXPO_PUBLIC_UPDATE_URL;
   if (override) return override;
-  const id = Application.applicationId ?? 'app.masa.mobile';
+  const id = Application.applicationId ?? 'app.kabuk.mobile';
   return `https://play.google.com/store/apps/details?id=${encodeURIComponent(id)}`;
 }

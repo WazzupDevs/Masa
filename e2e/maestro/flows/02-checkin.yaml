@@ -1,5 +1,5 @@
 # V4 (and V3's refusal): pick the venue by hand, check in from 310 m (refused), then inside.
-appId: app.masa.mobile
+appId: app.kabuk.mobile
 ---
 - scrollUntilVisible:
     element:

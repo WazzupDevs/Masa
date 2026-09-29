@@ -1,6 +1,6 @@
 # MVP Spec — Mekan İçi Sosyal Oyun Uygulaması
 
-Uygulama adı: Kabuk (kod içi çalışma adı ve paket kimliği Masa / `app.masa.mobile`)
+Uygulama adı: Kabuk (kod içi çalışma adı Masa; paket kimliği `app.kabuk.mobile`)
 
 > **v2:** Navigasyon, Keşfet, profil, arkadaşlar ve DM, sesli Tabu için onaylı teknik tasarım `docs/SPEC_V2.md`'dedir. Bu belgede v2 ile değişen kararlar "**v2:**" notuyla işaretlidir; v2 adımları uygulandıkça metin güncellenir.
 

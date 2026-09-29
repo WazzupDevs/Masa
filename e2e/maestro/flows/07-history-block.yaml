@@ -1,5 +1,5 @@
 # F7: block the bot table from the play history; the friendship ends with it.
-appId: app.masa.mobile
+appId: app.kabuk.mobile
 ---
 - tapOn:
     id: tab-friends

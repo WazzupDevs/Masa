@@ -1,5 +1,5 @@
 # V5, first step: a display name (friend requests need one).
-appId: app.masa.mobile
+appId: app.kabuk.mobile
 ---
 - tapOn:
     id: tab-profile
