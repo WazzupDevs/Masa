@@ -1,5 +1,5 @@
 # Pick light or dark in Ayarlar → Tasarım (test) before the P0 path. Env: SCHEME (light|dark).
-appId: app.masa.mobile
+appId: app.kabuk.mobile
 ---
 - tapOn:
     id: tab-profile

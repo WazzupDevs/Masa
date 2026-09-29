@@ -1,5 +1,5 @@
 # G1: test number, OTP, consents.
-appId: app.masa.mobile
+appId: app.kabuk.mobile
 ---
 - launchApp:
     clearState: true

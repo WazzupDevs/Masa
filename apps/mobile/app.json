@@ -8,14 +8,14 @@
     "userInterfaceStyle": "automatic",
     "platforms": ["android", "ios"],
     "ios": {
-      "bundleIdentifier": "app.masa.mobile",
+      "bundleIdentifier": "app.kabuk.mobile",
       "supportsTablet": false,
       "config": {
         "usesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "app.masa.mobile",
+      "package": "app.kabuk.mobile",
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon/adaptive-foreground.png",
         "backgroundImage": "./assets/icon/adaptive-background.png",
