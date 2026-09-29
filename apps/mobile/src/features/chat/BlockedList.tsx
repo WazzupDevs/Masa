@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { ListRow } from '@/components/ListRow';
+import { Text } from '@/components/Text';
 import { tr } from '@/i18n/tr';
 import { safetyApi } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
@@ -29,29 +31,29 @@ export function BlockedList() {
   });
 
   return (
-    <View className="gap-2">
-      <Text className="text-sm font-semibold text-neutral-500">{tr.safety.blockedTitle}</Text>
+    <View>
+      <Text variant="heading" accessibilityRole="header">
+        {tr.safety.blockedTitle}
+      </Text>
       {blocks.data?.length === 0 ? (
-        <Text className="text-base text-neutral-500">{tr.safety.blockedEmpty}</Text>
+        <Text variant="fine" className="mt-2">
+          {tr.safety.blockedEmpty}
+        </Text>
       ) : null}
       {blocks.data?.map((b) => (
-        <View
+        <ListRow
           key={b.id}
-          className="flex-row items-center justify-between rounded-xl border border-neutral-200 p-3"
-        >
-          <View className="flex-1 pr-3">
-            <Text className="text-base text-black">{b.blocked_alias}</Text>
-            <Text className="text-xs text-neutral-500">
-              {tr.safety.blockedSince(new Date(b.created_at).toLocaleDateString('tr-TR'))}
-            </Text>
-          </View>
-          <Button
-            variant="secondary"
-            label={tr.safety.unblock}
-            onPress={() => unblock.mutate(b.id)}
-            disabled={unblock.isPending}
-          />
-        </View>
+          title={b.blocked_alias}
+          meta={tr.safety.blockedSince(new Date(b.created_at).toLocaleDateString('tr-TR'))}
+          trailing={
+            <Button
+              variant="secondary"
+              label={tr.safety.unblock}
+              onPress={() => unblock.mutate(b.id)}
+              disabled={unblock.isPending}
+            />
+          }
+        />
       ))}
     </View>
   );

@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { Text } from '@/components/Text';
 import { friendKeys } from '@/features/friends/queries';
 import { useRetryAfterName } from '@/features/friends/useRetryAfterName';
 import { errorMessage } from '@/i18n/errors';
@@ -14,7 +15,16 @@ import { supabase } from '@/lib/supabase';
 // "Arkadaş ekle" on the mutual signal (docs/SPEC_V2.md §6.5). It works on the table's own history
 // row of this room, which opens at once on a mutual "Evet". The answer is always the same; the
 // other table never learns about a single press.
-export function AddFriendButton({ roomId }: { roomId: string }) {
+// Drawn on the signal's server colour: `foreground` is the readable colour on `background`.
+export function AddFriendButton({
+  roomId,
+  background,
+  foreground,
+}: {
+  roomId: string;
+  background: string;
+  foreground: string;
+}) {
   const queryClient = useQueryClient();
   const row = useQuery({
     queryKey: [...friendKeys.history, 'room', roomId],
@@ -47,18 +57,26 @@ export function AddFriendButton({ roomId }: { roomId: string }) {
   return (
     <View className="w-full gap-2">
       {done ? (
-        <Text className="text-center text-base font-semibold text-white">
+        <Text
+          variant="bodyStrong"
+          color={foreground}
+          align="center"
+          accessibilityLiveRegion="polite"
+        >
           {tr.reveal.addFriendDone}
         </Text>
       ) : (
         <Button
+          tint={{ background: foreground, foreground: background }}
           label={tr.reveal.addFriend}
           loading={add.isPending}
           onPress={() => add.mutate(history.id)}
         />
       )}
       {add.isError ? (
-        <Text className="text-center text-sm text-white">{errorMessage(add.error)}</Text>
+        <Text variant="fine" color={foreground} align="center">
+          {errorMessage(add.error)}
+        </Text>
       ) : null}
     </View>
   );

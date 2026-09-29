@@ -1,0 +1,81 @@
+# Basic checks on every PR and on main. Branch protection requires the single job named "ci",
+# which passes only when both "checks" and "integration" pass (CLAUDE.md → "CI ve main").
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # typecheck (mobile, scripts, pure/, Edge Functions with deno check, root), lint, format, unit
+  # tests, and the legal site build when the repo has it.
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # deno check downloads the Edge Functions' npm: imports; keyed on the lock file.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/deno
+          key: deno-${{ runner.os }}-${{ hashFiles('deno.lock', 'supabase/functions/_shared/deps.ts') }}
+          restore-keys: deno-${{ runner.os }}-
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm test
+      - run: pnpm run --if-present site:build
+
+  # Integration tests against the local stack, the same commands as on a developer machine
+  # (CLAUDE.md → pnpm test:integration). globalSetup pauses pg_cron for the run.
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Local Supabase
+        run: |
+          cp supabase/.env.example supabase/.env
+          pnpm supabase start -x studio,mailpit,logflare,vector,supavisor,postgres-meta
+          pnpm db:reset
+      - name: Edge Functions
+        run: |
+          nohup pnpm supabase functions serve > functions.log 2>&1 &
+          key=$(pnpm -s supabase status -o env | sed -n 's/^PUBLISHABLE_KEY="\(.*\)"$/\1/p')
+          timeout 180 bash -c "until curl -sf -X POST http://127.0.0.1:54321/functions/v1/ping -H 'apikey: $key' -H 'content-type: application/json' -d '{}' > /dev/null; do sleep 2; done"
+      - run: pnpm test:integration
+      - if: failure()
+        run: tail -n 200 functions.log
+
+  # The one required status check.
+  ci:
+    if: always()
+    needs: [checks, integration]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: checks and integration passed
+        run: |
+          echo "checks: ${{ needs.checks.result }}, integration: ${{ needs.integration.result }}"
+          test "${{ needs.checks.result }}" = success
+          test "${{ needs.integration.result }}" = success

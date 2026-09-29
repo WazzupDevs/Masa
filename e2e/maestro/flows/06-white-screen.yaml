@@ -13,7 +13,7 @@ appId: app.masa.mobile
 - tapOn: Mekana açık
 - tapOn: Odayı kur
 - extendedWaitUntil:
-    visible: Tabu odası
+    visible: Tabu odası.*
     timeout: 15000
 - runScript:
     file: ../scripts/bot.js

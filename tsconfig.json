@@ -8,6 +8,7 @@
     "vitest.config.ts",
     "vitest.integration.config.ts",
     "supabase/functions/_shared/pure/**/*.test.ts",
+    "apps/mobile/src/theme/**/*.test.ts",
     "supabase/tests/**/*.ts"
   ]
 }
