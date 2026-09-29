@@ -28,7 +28,10 @@ describe('push texts', () => {
   });
 
   it('say nothing about who wrote or asked, and nothing of the message', () => {
-    expect(dmPush()).toEqual({ title: 'Masa', body: 'Yeni bir mesajın var' });
-    expect(friendRequestPush()).toEqual({ title: 'Masa', body: 'Yeni bir arkadaşlık isteğin var' });
+    expect(dmPush()).toEqual({ title: 'Kabuk', body: 'Yeni bir mesajın var' });
+    expect(friendRequestPush()).toEqual({
+      title: 'Kabuk',
+      body: 'Yeni bir arkadaşlık isteğin var',
+    });
   });
 });

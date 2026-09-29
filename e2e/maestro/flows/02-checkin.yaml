@@ -1,0 +1,49 @@
+# V4 (and V3's refusal): pick the venue by hand, check in from 310 m (refused), then inside.
+appId: app.masa.mobile
+---
+- scrollUntilVisible:
+    element:
+      text: E2E Kafe
+    timeout: 30000
+- takeScreenshot: 05-explore-list
+- tapOn: E2E Kafe
+- extendedWaitUntil:
+    visible: Buraya giriş yap
+    timeout: 10000
+- takeScreenshot: 06-venue-detail
+- tapOn: Buraya giriş yap
+- extendedWaitUntil:
+    visible: Konumumu kullan
+    timeout: 10000
+- tapOn: Konumumun bu amaçla kullanılmasına açık rıza veriyorum.
+- takeScreenshot: 07-location-consent
+- setLocation:
+    latitude: ${OUTSIDE_LAT}
+    longitude: ${OUTSIDE_LNG}
+- tapOn: Konumumu kullan
+- extendedWaitUntil:
+    visible: Bu mekana çok uzaktasın. Mekandayken tekrar dene.
+    timeout: 30000
+- takeScreenshot: 08-too-far
+- setLocation:
+    latitude: ${INSIDE_LAT}
+    longitude: ${INSIDE_LNG}
+- tapOn: Konumumu kullan
+- extendedWaitUntil:
+    visible: Masada kaç kişisiniz\?
+    timeout: 30000
+# No display name yet: joining with a profile is off.
+- assertVisible: Profille katılmak için önce Profil sekmesinden bir ad seç.
+- takeScreenshot: 09-headcount
+- tapOn:
+    id: headcount-2
+- tapOn: Masayı aç
+- extendedWaitUntil:
+    visible: Masan hazır
+    timeout: 15000
+- takeScreenshot: 10-table-ready
+- tapOn: Devam
+- extendedWaitUntil:
+    visible: Oda kur
+    timeout: 15000
+- takeScreenshot: 11-venue

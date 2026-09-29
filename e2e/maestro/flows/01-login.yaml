@@ -1,0 +1,36 @@
+# G1: test number, OTP, consents.
+appId: app.masa.mobile
+---
+- launchApp:
+    clearState: true
+    permissions:
+      all: allow
+- extendedWaitUntil:
+    visible: Telefon numaran
+    timeout: 60000
+- takeScreenshot: 01-phone
+- tapOn:
+    id: phone-input
+- inputText: '5550000001'
+- hideKeyboard
+- tapOn: Kod gönder
+- extendedWaitUntil:
+    visible: Doğrulama kodu
+    timeout: 20000
+- takeScreenshot: 02-otp
+- tapOn:
+    id: otp-input
+# Six digits verify on their own.
+- inputText: '123456'
+- extendedWaitUntil:
+    visible: Başlamadan önce
+    timeout: 20000
+- takeScreenshot: 03-consents
+- tapOn: 18 yaşından büyüğüm.
+- tapOn: Kullanım Koşulları’nı okudum ve kabul ediyorum.
+- tapOn: KVKK Aydınlatma Metni’ni okudum.
+- tapOn: Onayla ve devam et
+- extendedWaitUntil:
+    visible: Liste
+    timeout: 20000
+- takeScreenshot: 04-explore

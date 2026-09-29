@@ -1,10 +1,15 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router } from 'expo-router';
 import { useEffect } from 'react';
-import { ActivityIndicator, Alert, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { ActivityIndicator, Alert, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { Tag } from '@/components/Tag';
+import { Text } from '@/components/Text';
 import { useActiveTable } from '@/features/checkin/useActiveTable';
 import { Lobby } from '@/features/rooms/Lobby';
 import { useCurrentRoom } from '@/features/rooms/queries';
@@ -15,6 +20,8 @@ import { sessionDurationMinutes } from '@shared/analytics.ts';
 import { trackOnce } from '@/lib/analytics';
 import { callLeave } from '@/lib/api';
 import { useNow } from '@/lib/useNow';
+import { useTheme } from '@/theme/ThemeProvider';
+import { ICON } from '@/theme/tokens';
 
 function endSession(tableId: string, startedAt: string) {
   trackOnce(`session_ended:${tableId}`, 'session_ended', {
@@ -25,6 +32,7 @@ function endSession(tableId: string, startedAt: string) {
 // The active table's venue: lobby, rooms, leaving (docs/SPEC_V2.md §2). Without an active table
 // it sends the user to Keşfet; an open room of the table opens directly.
 export default function VenueScreen() {
+  const { colors } = useTheme();
   const queryClient = useQueryClient();
   const table = useActiveTable();
   const currentRoom = useCurrentRoom(table.data?.id);
@@ -51,8 +59,8 @@ export default function VenueScreen() {
 
   if (table.isPending) {
     return (
-      <Screen>
-        <ActivityIndicator className="mt-16" />
+      <Screen edges={['top']}>
+        <ActivityIndicator className="mt-16" color={colors.muted} />
       </Screen>
     );
   }
@@ -75,18 +83,30 @@ export default function VenueScreen() {
   }
 
   return (
-    <Screen>
-      <Text className="text-3xl font-bold text-black">{table.data.venue?.name}</Text>
-      <Text className="mt-2 text-sm text-neutral-500">{tr.venue.yourTable}</Text>
-      <Text className="text-2xl font-semibold text-black">{table.data.alias}</Text>
-      <Text className="mt-1 text-base text-neutral-600">
-        {tr.venue.people(table.data.headcount)} ·{' '}
-        {tr.venue.remaining(Math.floor(minutesLeft / 60), minutesLeft % 60)}
-      </Text>
-
-      <View className="mt-6">
-        <Button label={tr.rooms.create} onPress={() => router.push('/room/new')} />
-      </View>
+    <Screen edges={['top']}>
+      <ScreenHeader
+        eyebrow={tr.venue.here}
+        eyebrowIcon="location-outline"
+        title={table.data.venue?.name ?? ''}
+      />
+      <Card className="mt-3">
+        <Text variant="label">{tr.venue.yourTable}</Text>
+        <Text variant="alias" className="mb-2 mt-0.5">
+          {table.data.alias}
+        </Text>
+        <View className="flex-row flex-wrap items-center justify-between gap-2">
+          <Tag label={tr.venue.people(table.data.headcount)} />
+          <View className="flex-row items-center gap-1">
+            <Ionicons name="time-outline" size={ICON.sm} color={colors.muted} />
+            <Text variant="fine">
+              {tr.venue.remaining(Math.floor(minutesLeft / 60), minutesLeft % 60)}
+            </Text>
+          </View>
+        </View>
+        <View className="mt-3">
+          <Button label={tr.rooms.create} onPress={() => router.push('/room/new')} />
+        </View>
+      </Card>
 
       <Lobby
         venueId={table.data.venue_id}
@@ -96,7 +116,9 @@ export default function VenueScreen() {
 
       <View className="mt-auto gap-3 pt-8">
         {leave.isError ? (
-          <Text className="text-sm text-red-600">{errorMessage(leave.error)}</Text>
+          <Text variant="fine" tone="danger">
+            {errorMessage(leave.error)}
+          </Text>
         ) : null}
         <Button
           variant="secondary"

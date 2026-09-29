@@ -2,10 +2,13 @@ import type { Concept } from '@shared/rooms.ts';
 import { isVoiceTabu, parseGameState } from '@shared/tabu.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { Text } from '@/components/Text';
 import { ChatPanel } from '@/features/chat/ChatPanel';
 import { RoomSafety } from '@/features/chat/RoomSafety';
 import { useOtherTableOnline } from '@/features/chat/usePresence';
@@ -20,8 +23,10 @@ import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { trackOnce } from '@/lib/analytics';
 import { roomsApi } from '@/lib/api';
+import { useTheme } from '@/theme/ThemeProvider';
 
 export default function RoomScreen() {
+  const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const queryClient = useQueryClient();
   const table = useActiveTable();
@@ -38,7 +43,7 @@ export default function RoomScreen() {
   if (room.isPending || table.isPending) {
     return (
       <Screen>
-        <ActivityIndicator className="mt-16" />
+        <ActivityIndicator className="mt-16" color={colors.muted} />
       </Screen>
     );
   }
@@ -80,7 +85,10 @@ export default function RoomScreen() {
   if (r.status === 'ending' && r.reveal_ends_at) {
     return (
       <Screen>
-        <Text className="text-sm text-neutral-500">{tr.rooms.roomTitle(tr.concepts[concept])}</Text>
+        <ScreenHeader
+          eyebrow={tr.rooms.roomEyebrow(concept)}
+          title={r.guest_alias ? tr.rooms.withGuest(r.owner_alias, r.guest_alias) : r.owner_alias}
+        />
         <RevealPrompt
           roomId={r.id}
           isOwner={isOwner}
@@ -93,10 +101,10 @@ export default function RoomScreen() {
 
   return (
     <Screen>
-      <Text className="text-sm text-neutral-500">{tr.rooms.roomTitle(tr.concepts[concept])}</Text>
-      <Text className="mt-1 text-2xl font-bold text-black">
-        {r.guest_alias ? tr.rooms.withGuest(r.owner_alias, r.guest_alias) : r.owner_alias}
-      </Text>
+      <ScreenHeader
+        eyebrow={tr.rooms.roomEyebrow(concept)}
+        title={r.guest_alias ? tr.rooms.withGuest(r.owner_alias, r.guest_alias) : r.owner_alias}
+      />
 
       <ConceptArea
         roomId={r.id}
@@ -107,9 +115,9 @@ export default function RoomScreen() {
         aliases={{ owner: r.owner_alias, guest: r.guest_alias ?? '' }}
       />
       {r.status === 'waiting' && r.visibility === 'open' ? (
-        <Text className="mt-3 text-center text-sm text-neutral-500">
-          {tr.rooms.waitingForGuest}
-        </Text>
+        <Card tone="note" className="mt-3">
+          <Text variant="fine">{tr.rooms.waitingForGuest}</Text>
+        </Card>
       ) : null}
 
       {hasOtherTable ? <OtherTableStatus roomId={r.id} isOwner={isOwner} /> : null}
@@ -122,7 +130,9 @@ export default function RoomScreen() {
       <View className="mt-auto gap-3 pt-8">
         <RoomSafety roomId={r.id} hasOtherTable={hasOtherTable} />
         {exit.isError ? (
-          <Text className="text-sm text-red-600">{errorMessage(exit.error)}</Text>
+          <Text variant="fine" tone="danger">
+            {errorMessage(exit.error)}
+          </Text>
         ) : null}
         <Button
           variant="secondary"
@@ -148,7 +158,11 @@ export default function RoomScreen() {
 function OtherTableStatus({ roomId, isOwner }: { roomId: string; isOwner: boolean }) {
   const online = useOtherTableOnline(roomId, isOwner ? 'owner' : 'guest', true);
   return online ? null : (
-    <Text className="mt-3 text-sm text-amber-700">{tr.safety.otherOffline}</Text>
+    <Card tone="note" className="mt-3">
+      <Text variant="fine" tone="text" accessibilityLiveRegion="polite">
+        {tr.safety.otherOffline}
+      </Text>
+    </Card>
   );
 }
 
