@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build-seed": "node --experimental-strip-types build-seed.ts",
+    "build-icons": "node --experimental-strip-types build-icons.ts",
     "build-site": "node --experimental-strip-types build-site.ts",
     "store-screenshots": "node --experimental-strip-types store-screenshots.ts",
     "typecheck": "tsc --noEmit",

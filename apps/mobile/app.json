@@ -2,7 +2,7 @@
   "expo": {
     "slug": "masa",
     "scheme": "masa",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "platforms": ["android", "ios"],
@@ -14,10 +14,31 @@
       }
     },
     "android": {
-      "package": "app.masa.mobile"
+      "package": "app.masa.mobile",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon/adaptive-foreground.png",
+        "backgroundImage": "./assets/icon/adaptive-background.png",
+        "monochromeImage": "./assets/icon/adaptive-monochrome.png"
+      }
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/icon/splash.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#2e2d31"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon/notification.png",
+          "color": "#5a0f2e"
+        }
+      ],
       "expo-dev-client",
       [
         "expo-location",
@@ -28,7 +49,6 @@
           "isAndroidForegroundServiceEnabled": false
         }
       ],
-      "expo-notifications",
       "expo-updates",
       "@sentry/react-native",
       "@maplibre/maplibre-react-native",
@@ -43,6 +63,7 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "icon": "./assets/icon/icon.png"
   }
 }
