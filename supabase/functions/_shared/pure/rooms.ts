@@ -41,3 +41,30 @@ export const BROADCAST = {
   // dm:{thread_id}
   dmMessage: 'dm_message',
 } as const;
+
+// The room screen's status check (apps/mobile/src/features/rooms/queries.ts): Realtime delivers a
+// room change only to a channel subscribed at that moment and never replays it, so the screen also
+// re-reads these columns every ROOM_CHECK_SECONDS, when the app comes to the foreground and when its
+// channel (re)subscribes. Only when they differ from the cached row is the full row read again, so a
+// check never overwrites a newer row that arrived over the channel (a Tabu press).
+export const ROOM_CHECK_SECONDS = 4;
+export const ROOM_CHECK_COLUMNS = 'status, owner_session_id, guest_session_id';
+
+export type RoomCheck = {
+  status: string;
+  owner_session_id: string;
+  guest_session_id: string | null;
+};
+
+// `checked` null: the room can no longer be read (the table is not a member any more).
+export function roomCheckDiffers(
+  cached: RoomCheck | null | undefined,
+  checked: RoomCheck | null,
+): boolean {
+  if (cached == null || checked == null) return (cached == null) !== (checked == null);
+  return (
+    cached.status !== checked.status ||
+    cached.owner_session_id !== checked.owner_session_id ||
+    cached.guest_session_id !== checked.guest_session_id
+  );
+}
