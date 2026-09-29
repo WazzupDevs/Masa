@@ -19,8 +19,8 @@ export type TagVariant =
 
 type Props = { label: string; variant?: TagVariant; icon?: IconName };
 
-// A pill label. Oyun Gecesi outlines it and tilts the event sticker; Gece Kafe dashes the
-// "profilli" outline. On trust screens it sits still.
+// A pill label. The theme may outline it (`stroke.tag`), tilt the event sticker (`eventTagTilt`)
+// and dash the "profilli" outline (`profiledTagDashed`). On trust screens it sits still.
 export function Tag({ label, variant = 'neutral', icon }: Props) {
   const theme = useTheme();
   const quiet = useQuiet();

@@ -33,8 +33,8 @@ export function ClockPill({ seconds }: { seconds: number }) {
   );
 }
 
-// A team's score. The describing team is ringed in the accent, or filled like a sticker in
-// Oyun Gecesi.
+// A team's score. The describing team is ringed in the accent, or filled like a sticker when the
+// theme's `selectedTeam` is `fill`.
 export function TeamScore({
   name,
   note,

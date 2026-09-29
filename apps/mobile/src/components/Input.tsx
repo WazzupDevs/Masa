@@ -21,8 +21,8 @@ type Props = Omit<TextInputProps, 'style' | 'placeholderTextColor'> & {
   tall?: boolean;
 };
 
-// A text field. Its outline is the direction's border where that reads 3:1 against the surface
-// (Oyun Gecesi), the secondary text colour otherwise; focus draws it in the accent.
+// A text field. Its outline is the theme's border where that reads 3:1 against the surface, the
+// secondary text colour otherwise; focus draws it in the accent.
 export const Input = forwardRef<TextInput, Props>(function Input(
   { label, hint, error, prefix, counter, code, tall, multiline, ...rest },
   ref,

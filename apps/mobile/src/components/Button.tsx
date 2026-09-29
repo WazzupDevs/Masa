@@ -53,8 +53,8 @@ export function Button({
     ghost: { bg: 'transparent', fg: colors.muted },
   };
   let { bg, fg } = fills[variant];
-  // Outlined directions (Oyun Gecesi) draw every button with the outline; the others only the
-  // secondary one. Trust screens keep a hairline on the secondary button only.
+  // A theme with heavy control strokes draws every button with the outline; otherwise only the
+  // secondary one has it. Trust screens keep a hairline on the secondary button only.
   const outlined = shape.stroke.control > 1;
   let borderWidth = 0;
   let borderColor = 'transparent';

@@ -171,7 +171,7 @@ Tanım: cihazdan çıkan her veri "toplanan" sayılır; hizmet sağlayıcıya (S
 
 - [ ] Kısa ve uzun açıklama: `docs/store/listing-tr.md`. v2 özellikleri (Keşfet, profil, arkadaşlar, sesli Tabu) eklenince güncellenir.
 - [ ] Uygulama simgesi 512×512, öne çıkan grafik 1024×500.
-- [ ] Telefon ekran görüntüleri: `pnpm store:screenshots <E2E ekran görüntüsü klasörü>` → `dist/store-screenshots/phone-01.png` … (1080×1920, 9:16; seçim ve başlıklar `docs/store/screenshots.json`). Play en az 2, öne çıkarılmak için en az 4 ister; 6 üretilir. Tasarım yönü ve uygulama adı seçilince yeniden üretilir. E2E emülatörü 320×640 çektiği için görüntüler büyütülmüş ve yumuşak; mağaza için yüksek çözünürlüklü bir emülatörle çekilmeli.
+- [ ] Telefon ekran görüntüleri: `pnpm store:screenshots <E2E ekran görüntüsü klasörü>` → `dist/store-screenshots/phone-01.png` … (1080×1920, 9:16; seçim ve başlıklar `docs/store/screenshots.json`). Play en az 2, öne çıkarılmak için en az 4 ister; 6 üretilir. Marka teması ya da uygulama adı değişince yeniden üretilir. E2E emülatörü 320×640 çektiği için görüntüler büyütülmüş ve yumuşak; mağaza için yüksek çözünürlüklü bir emülatörle çekilmeli.
 - [ ] Kategori: Sosyal. İletişim e-postası.
 
 ## 5. Kapalı test kanalı (Console → Test → Kapalı test)
