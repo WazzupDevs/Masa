@@ -386,3 +386,13 @@ Proje sahibi resmi dokümandan doğruladı. Hesap silme sayfası ve gizlilik pol
 | Supabase (üretim) | **Pro**   | Günlük yedekler 7 gün saklanır                                                                      | https://supabase.com/docs/guides/platform/backups                         |
 | Supabase (dev)    | Free      | Otomatik yedek yok; düşük aktivitede proje haftalık duraklatılır. Dev için kabul, üretim için değil | https://supabase.com/docs/guides/platform/free-project-pausing            |
 | Sentry            | Developer | Hata verisi 30 gün                                                                                  | https://docs.sentry.io/security-legal-pii/security/data-retention-periods |
+
+## Uygulama ikonu
+
+| Soru         | Seçim                                                                                                                                                               | Gerekçe                                                                              |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Kaynak       | Proje sahibinin salyangoz referansı, `scripts/icon/snail.ts`'te kodla çizildi (tek renk çizgi, yuvarlak uç ve birleşim); `pnpm icons` bütün boyutları üretir        | Renk ve kalınlık tek yerden değişir, çıktılar yeniden üretilebilir                   |
+| Sadeleştirme | Çizgi 108 dp tuvalde 4 birim (48 dp başlatıcıda ≈2,7 px); kabukta 1,55 tur (referansta ~2,5); anten uçlarındaki halkalar kaldırıldı, antenler yuvarlak uçla bitiyor | 48 px önizlemede iç turlar ve anten uçlarındaki halka/nokta çizgiyle birleşiyordu    |
+| Güvenli alan | Adaptive ön katmandaki çizim 66 dp güvenli dairenin içinde (test: `scripts/icon/snail.test.ts`). iOS 1024 ve Play 512'de 40 birimlik yarıçap (daha büyük)           | Başlatıcı maskesi daire olabilir; iOS ve Play'in yuvarlak kare maskesi daha az keser |
+| Renkler      | `apps/mobile/assets/icon/tokens.json`: arka plan antrasit `#2e2d31` → bordo `#5a0f2e`, çizgi beyaz. Açılış ekranı arka planı ve bildirim vurgusu da buradan         | Tasarım yönü seçilince yalnızca bu dosya değişir                                     |
+| Yayın        | Native alan (ikon, açılış, bildirim ikonu): `version` 0.2.0 → 0.3.0, yeni build                                                                                     | CLAUDE.md "Neyi ne zaman yayınlamalı"                                                |
