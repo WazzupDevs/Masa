@@ -10,6 +10,8 @@ test -f "$APK"
 
 adb install -r -g "$APK"
 if [ "$SCHEME" = dark ]; then adb shell cmd uimode night yes; else adb shell cmd uimode night no; fi
+# A slow emulator can raise "Pixel Launcher isn't responding" over the app; hide system ANR dialogs.
+adb shell settings put global hide_error_dialogs 1 || true
 adb logcat -c
 adb logcat '*:W' > "$OUT/logcat.txt" 2>&1 &
 adb emu screenrecord start --time-limit 1800 "$OUT/video.webm" || true

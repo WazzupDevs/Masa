@@ -55,9 +55,10 @@ export function Card({
           testID={testID}
           accessibilityLabel={accessibilityLabel}
           onPress={onPress}
-          style={({ pressed }) => [style, pressed ? { opacity: 0.85 } : null]}
         >
-          {children}
+          {({ pressed }) => (
+            <View style={[style, pressed ? { opacity: 0.85 } : null]}>{children}</View>
+          )}
         </Pressable>
       </View>
     );

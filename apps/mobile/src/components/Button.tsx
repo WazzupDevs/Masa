@@ -101,24 +101,31 @@ export function Button({
       accessibilityState={{ disabled: !!inactive, busy: !!loading }}
       disabled={inactive}
       onPress={onPress}
-      style={({ pressed }) => [style, { opacity: inactive ? 0.4 : pressed ? 0.85 : 1 }]}
     >
-      {loading ? (
-        <ActivityIndicator color={fg} />
-      ) : (
-        <>
-          {icon ? <Ionicons name={icon} size={ICON.md} color={fg} /> : null}
-          <View className="flex-row items-baseline gap-1">
-            <Text variant={size === 'lg' ? 'buttonLarge' : 'button'} color={fg} numberOfLines={1}>
-              {label}
-            </Text>
-            {detail ? (
-              <Text variant="buttonDetail" color={fg}>
-                {detail}
-              </Text>
-            ) : null}
-          </View>
-        </>
+      {({ pressed }) => (
+        <View style={[style, { opacity: inactive ? 0.4 : pressed ? 0.85 : 1 }]}>
+          {loading ? (
+            <ActivityIndicator color={fg} />
+          ) : (
+            <>
+              {icon ? <Ionicons name={icon} size={ICON.md} color={fg} /> : null}
+              <View className="flex-row items-baseline gap-1">
+                <Text
+                  variant={size === 'lg' ? 'buttonLarge' : 'button'}
+                  color={fg}
+                  numberOfLines={1}
+                >
+                  {label}
+                </Text>
+                {detail ? (
+                  <Text variant="buttonDetail" color={fg}>
+                    {detail}
+                  </Text>
+                ) : null}
+              </View>
+            </>
+          )}
+        </View>
       )}
     </Pressable>
   );

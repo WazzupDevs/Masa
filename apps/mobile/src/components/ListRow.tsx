@@ -52,12 +52,8 @@ export function ListRow({
   };
   if (!onPress) return <View style={style}>{content}</View>;
   return (
-    <Pressable
-      accessibilityRole={accessibilityRole}
-      onPress={onPress}
-      style={({ pressed }) => [style, pressed ? { opacity: 0.7 } : null]}
-    >
-      {content}
+    <Pressable accessibilityRole={accessibilityRole} onPress={onPress}>
+      {({ pressed }) => <View style={[style, pressed ? { opacity: 0.7 } : null]}>{content}</View>}
     </Pressable>
   );
 }
