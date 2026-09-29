@@ -1,48 +1,59 @@
 import { router } from 'expo-router';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
+import { Card } from '@/components/Card';
+import { EmptyState } from '@/components/EmptyState';
+import { ListRow } from '@/components/ListRow';
+import { ProfilePhoto } from '@/components/ProfilePhoto';
 import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { Tag } from '@/components/Tag';
+import { Text } from '@/components/Text';
 import { useFriends, useIncomingFriendRequests } from '@/features/friends/queries';
-import { ProfilePhoto } from '@/features/profile/ProfileCard';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
+import { useTheme } from '@/theme/ThemeProvider';
 
 // Arkadaşlar (docs/SPEC_V2.md §6.4): the friend list with DM threads, and the way to requests and
 // the play history. No venue, position or active table of a friend anywhere.
 export default function FriendsScreen() {
+  const { colors } = useTheme();
   const friends = useFriends();
   const incoming = useIncomingFriendRequests();
   const requestCount = incoming.data?.length ?? 0;
 
   return (
-    <Screen>
-      <Text className="text-3xl font-bold text-black">{tr.tabs.friends}</Text>
+    <Screen edges={['top']}>
+      <ScreenHeader title={tr.tabs.friends} />
 
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => router.push('/friends/requests')}
-        className="mt-6 min-h-12 flex-row items-center justify-between rounded-xl border border-neutral-200 px-4 py-3"
-      >
-        <Text className="text-base font-semibold text-black">{tr.friends.requestsAndHistory}</Text>
-        {requestCount > 0 ? (
-          <Text className="rounded-full bg-black px-3 py-1 text-sm font-semibold text-white">
-            {tr.friends.newRequests(requestCount)}
+      <Card className="mt-3" onPress={() => router.push('/friends/requests')}>
+        <View className="flex-row items-center justify-between gap-3">
+          <Text variant="bodyStrong" className="flex-1">
+            {tr.friends.requestsAndHistory}
           </Text>
-        ) : null}
-      </Pressable>
+          {requestCount > 0 ? (
+            <Tag variant="accent" label={tr.friends.newRequests(requestCount)} />
+          ) : null}
+        </View>
+      </Card>
 
       {friends.isPending ? (
-        <ActivityIndicator className="mt-12" />
+        <ActivityIndicator className="mt-12" color={colors.muted} />
       ) : friends.isError ? (
-        <Text className="mt-8 text-base text-red-600">{errorMessage(friends.error)}</Text>
+        <Text tone="danger" className="mt-8">
+          {errorMessage(friends.error)}
+        </Text>
       ) : friends.data.length === 0 ? (
-        <Text className="mt-8 text-base text-neutral-600">{tr.friends.empty}</Text>
+        <EmptyState icon="people-outline" body={tr.friends.empty} />
       ) : (
-        <View className="mt-6 gap-2">
+        <View className="mt-4">
           {friends.data.map((f) => (
-            <Pressable
+            <ListRow
               key={f.publicId}
-              accessibilityRole="button"
+              title={f.displayName ?? tr.profile.noName}
+              meta={tr.friends.since(f.since)}
+              leading={<ProfilePhoto url={f.photoUrl} name={f.displayName} size="small" />}
+              trailing={f.unread ? <Tag variant="accent" label={tr.friends.unread} /> : undefined}
               onPress={() =>
                 f.threadId &&
                 router.push({
@@ -54,19 +65,7 @@ export default function FriendsScreen() {
                   },
                 })
               }
-              className="min-h-16 flex-row items-center gap-3 rounded-xl border border-neutral-200 p-3"
-            >
-              <ProfilePhoto url={f.photoUrl} size="small" />
-              <View className="flex-1">
-                <Text className="text-base font-semibold text-black">{f.displayName}</Text>
-                <Text className="text-sm text-neutral-500">{tr.friends.since(f.since)}</Text>
-              </View>
-              {f.unread ? (
-                <Text className="rounded-full bg-black px-2 py-0.5 text-xs font-semibold text-white">
-                  {tr.friends.unread}
-                </Text>
-              ) : null}
-            </Pressable>
+            />
           ))}
         </View>
       )}

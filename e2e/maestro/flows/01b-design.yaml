@@ -1,0 +1,21 @@
+# Design system test (#13): pick the theme and light/dark in Ayarlar → Tasarım (test) before the
+# P0 path. Env: THEME (night|play|calm), SCHEME (light|dark).
+appId: app.masa.mobile
+---
+- tapOn:
+    id: tab-profile
+- tapOn: Ayarlar
+- extendedWaitUntil:
+    visible: Tasarım \(test\)
+    timeout: 10000
+- tapOn:
+    id: design-theme-${THEME}
+- tapOn:
+    id: design-scheme-${SCHEME}
+- takeScreenshot: 04b-design
+- tapOn: Geri
+- tapOn:
+    id: tab-explore
+- extendedWaitUntil:
+    visible: Liste
+    timeout: 10000

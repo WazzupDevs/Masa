@@ -1,9 +1,11 @@
 import type { SohbetState } from '@shared/sohbet.ts';
 import { useMutation } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
+import { Text } from '@/components/Text';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { trackOnce } from '@/lib/analytics';
@@ -38,15 +40,19 @@ export function SohbetCard({
   return (
     <View className="items-center gap-4">
       {state ? (
-        <>
-          <Text className="text-sm font-semibold text-neutral-500">
-            {tr.games.themes[state.theme]}
-          </Text>
-          <Text className="text-center text-2xl font-semibold text-black">{state.prompt}</Text>
-        </>
+        <Card className="self-stretch">
+          <View className="items-center gap-3 py-2">
+            <Text variant="eyebrow">{tr.games.themes[state.theme]}</Text>
+            <Text variant="title" align="center">
+              {state.prompt}
+            </Text>
+          </View>
+        </Card>
       ) : null}
       {next.isError ? (
-        <Text className="text-sm text-red-600">{errorMessage(next.error)}</Text>
+        <Text variant="fine" tone="danger">
+          {errorMessage(next.error)}
+        </Text>
       ) : null}
       <View className="w-full">
         <Button
