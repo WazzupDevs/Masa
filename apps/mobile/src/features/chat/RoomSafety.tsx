@@ -1,9 +1,10 @@
 import type { ReportReason } from '@shared/chat.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Alert, Text, View } from 'react-native';
+import { Alert, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { Text } from '@/components/Text';
 import { roomKeys } from '@/features/rooms/queries';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
@@ -46,7 +47,9 @@ export function RoomSafety({ roomId, hasOtherTable }: Props) {
   return (
     <View className="gap-3">
       {block.isError ? (
-        <Text className="text-sm text-red-600">{errorMessage(block.error)}</Text>
+        <Text variant="fine" tone="danger">
+          {errorMessage(block.error)}
+        </Text>
       ) : null}
       <Button variant="secondary" label={tr.safety.report} onPress={() => setReporting(true)} />
       {hasOtherTable ? (

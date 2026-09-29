@@ -22,7 +22,7 @@ appId: app.masa.mobile
 - takeScreenshot: 13-new-room
 - tapOn: Odayı kur
 - extendedWaitUntil:
-    visible: Tabu odası
+    visible: Tabu odası.*
     timeout: 15000
 - takeScreenshot: 14-room-waiting
 - runScript:
@@ -47,19 +47,22 @@ appId: app.masa.mobile
 - takeScreenshot: 17-card-covered
 - tapOn: Kartı görmek için dokun
 - extendedWaitUntil:
-    visible: Yasaklı kelimeler
+    visible:
+      id: tabu-card
     timeout: 20000
 - takeScreenshot: 18-card-open
 # The buttons are under the card; with a two-line room title they are below the fold.
 - scrollUntilVisible:
     element:
-      text: Pas · 3
+      id: tabu-pass
     centerElement: true
     timeout: 10000
-- tapOn: Pas · 3
+- assertVisible: 3 hak
+- tapOn:
+    id: tabu-pass
 - scrollUntilVisible:
     element:
-      text: Pas · 2
+      text: 2 hak
     centerElement: true
     timeout: 10000
 # The judging table (the bot) says Doğru.
@@ -77,13 +80,14 @@ appId: app.masa.mobile
 # The screen is scrolled down to the buttons; the turn counter is at the top.
 - scrollUntilVisible:
     element:
-      text: Tur 2/6
+      text: .*Tur 2/6
     direction: UP
     timeout: 20000
 - scrollUntilVisible:
     element:
-      text: Tabu −1
+      id: tabu-taboo
     centerElement: true
     timeout: 20000
 - takeScreenshot: 20-judge
-- tapOn: Doğru \+1
+- tapOn:
+    id: tabu-correct
