@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { AA_LARGE, AA_TEXT, contrastRatio, readableOn } from './contrast';
 import { REVEAL_FOREGROUNDS } from './reveal';
-import { THEME_NAMES, THEMES } from './registry';
+import { THEME } from './theme';
 import type { Palette, PaletteKey } from './tokens';
 
 type Pair = [foreground: PaletteKey, background: PaletteKey, minimum: number];
@@ -38,25 +38,21 @@ function ratio(p: Palette, fg: PaletteKey, bg: PaletteKey): number {
 }
 
 describe('theme contrast (WCAG AA)', () => {
-  for (const name of THEME_NAMES) {
-    for (const scheme of ['light', 'dark'] as const) {
-      const palette = THEMES[name].palettes[scheme];
-      describe(`${name} · ${scheme}`, () => {
-        it.each(PAIRS)('%s on %s ≥ %s', (fg, bg, min) => {
-          expect(ratio(palette, fg, bg)).toBeGreaterThanOrEqual(min);
-        });
+  for (const scheme of ['light', 'dark'] as const) {
+    const palette = THEME.palettes[scheme];
+    describe(scheme, () => {
+      it.each(PAIRS)('%s on %s ≥ %s', (fg, bg, min) => {
+        expect(ratio(palette, fg, bg)).toBeGreaterThanOrEqual(min);
       });
-    }
+    });
   }
 });
 
 describe('palette values', () => {
   it('are #rrggbb', () => {
-    for (const name of THEME_NAMES) {
-      for (const scheme of ['light', 'dark'] as const) {
-        for (const value of Object.values(THEMES[name].palettes[scheme])) {
-          expect(value).toMatch(/^#[0-9A-F]{6}$/);
-        }
+    for (const scheme of ['light', 'dark'] as const) {
+      for (const value of Object.values(THEME.palettes[scheme])) {
+        expect(value).toMatch(/^#[0-9A-F]{6}$/);
       }
     }
   });

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Runs inside reactivecircus/android-emulator-runner once the emulator has booted.
-# Env: THEME (night|play|calm), SCHEME (light|dark), OUT (output directory), APK (path),
+# Env: SCHEME (light|dark), OUT (output directory), APK (path),
 # INSIDE_LAT/INSIDE_LNG, OUTSIDE_LAT/OUTSIDE_LNG.
 set -euo pipefail
 mkdir -p "$OUT/screenshots" "$OUT/maestro"
@@ -21,7 +21,7 @@ maestro test e2e/maestro/p0.yaml \
   --test-output-dir "$OUT/screenshots" \
   -e INSIDE_LAT="$INSIDE_LAT" -e INSIDE_LNG="$INSIDE_LNG" \
   -e OUTSIDE_LAT="$OUTSIDE_LAT" -e OUTSIDE_LNG="$OUTSIDE_LNG" \
-  -e THEME="$THEME" -e SCHEME="$SCHEME" \
+  -e SCHEME="$SCHEME" \
   --format junit --output "$OUT/report.xml" \
   --debug-output "$OUT/maestro" || status=$?
 

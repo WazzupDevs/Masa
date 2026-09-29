@@ -27,28 +27,12 @@ env:
   E2E_PUBLISHABLE_KEY: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
 
 jobs:
-  # The default theme (src/theme/registry.ts DEFAULT_THEME) × light/dark. The brand theme will
-  # replace the placeholder directions; there is no cross-theme run.
-  plan:
+  # One release APK for both runs: light or dark is picked at runtime in Ayarlar → Tasarım (test).
+  build:
     if: >-
       github.event_name != 'pull_request' ||
       (contains(github.event.pull_request.labels.*.name, 'e2e') &&
        (github.event.action != 'labeled' || github.event.label.name == 'e2e'))
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    outputs:
-      matrix: ${{ steps.plan.outputs.matrix }}
-    steps:
-      - uses: actions/checkout@v4
-      - id: plan
-        run: |
-          default=$(sed -n "s/^export const DEFAULT_THEME: ThemeName = '\([a-z]*\)';$/\1/p" apps/mobile/src/theme/registry.ts)
-          test -n "$default"
-          echo "matrix={\"theme\":[\"$default\"],\"scheme\":[\"light\",\"dark\"]}" >> "$GITHUB_OUTPUT"
-
-  # One release APK for every theme: the theme is picked at runtime in Ayarlar → Tasarım (test).
-  build:
-    needs: plan
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -88,16 +72,16 @@ jobs:
           retention-days: 3
 
   e2e:
-    needs: [plan, build]
+    needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+      matrix:
+        scheme: [light, dark]
     env:
-      THEME: ${{ matrix.theme }}
       SCHEME: ${{ matrix.scheme }}
-      OUT: ${{ github.workspace }}/e2e-out/${{ matrix.theme }}-${{ matrix.scheme }}
+      OUT: ${{ github.workspace }}/e2e-out/${{ matrix.scheme }}
       APK: ${{ github.workspace }}/apk/app-release.apk
     steps:
       - uses: actions/checkout@v4
@@ -151,8 +135,8 @@ jobs:
       - if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-${{ matrix.theme }}-${{ matrix.scheme }}
-          path: e2e-out/${{ matrix.theme }}-${{ matrix.scheme }}
+          name: e2e-run-${{ matrix.scheme }}
+          path: e2e-out/${{ matrix.scheme }}
           retention-days: 14
 
   # Screenshots and logs (no video) on the e2e-screenshots branch, for readers without access to
@@ -168,13 +152,13 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          pattern: e2e-*-*
+          pattern: e2e-run-*
           path: out
       - name: Push to e2e-screenshots
         run: |
           mkdir site
           for dir in out/*; do
-            run=${dir#out/e2e-}
+            run=${dir#out/e2e-run-}
             mkdir -p "site/$run"
             (cd "$dir" && find . -type f ! -name '*.webm' ! -name 'logcat.txt' -exec cp --parents {} "../../site/$run/" \;)
             tail -n 3000 "$dir/logcat.txt" > "site/$run/logcat-tail.txt" 2>/dev/null || true

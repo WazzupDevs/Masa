@@ -16,9 +16,8 @@ type Props = {
   testID?: string;
 };
 
-// A card in the direction's language: Gece Kafe floats on a soft shadow, Oyun Gecesi has an
-// outline and a hard shadow, Sakin Liman a hairline. On trust screens (`Quiet`) every direction
-// uses the hairline.
+// A card drawn from the theme's tokens: its outline (`stroke.card`) and shadow (`shadow.card`).
+// On trust screens (`Quiet`) a hairline in the divider colour and no shadow.
 export function Card({
   children,
   tone = 'card',

@@ -1,4 +1,4 @@
-// Design tokens shared by the three test directions (design/explore → directions.html). Pure data:
+// Design tokens of the app's theme (src/theme/theme.ts). Pure data:
 // no React Native import, so the contrast tests run in vitest. Screens never read these values
 // directly; they use the kit components and the semantic NativeWind classes (tailwind.config.js).
 
@@ -14,7 +14,7 @@ export type Palette = {
   muted: string; // secondary text
   accent: string;
   onAccent: string;
-  border: string; // the direction's outline colour (cards, controls)
+  border: string; // the outline colour (cards, controls)
   divider: string; // hairlines: list rows, trust screens
   danger: string;
   onDanger: string;
@@ -71,16 +71,6 @@ export function colorClass(key: PaletteKey): string {
 // weights are bundled (src/theme/fonts.ts maps each to its file).
 export type FontName =
   | 'Fraunces_600SemiBold'
-  | 'Fraunces_600SemiBold_Italic'
-  | 'Fraunces_500Medium_Italic'
-  | 'Inter_400Regular'
-  | 'Inter_600SemiBold'
-  | 'Inter_700Bold'
-  | 'BricolageGrotesque_800ExtraBold'
-  | 'Nunito_400Regular'
-  | 'Nunito_600SemiBold'
-  | 'Nunito_700Bold'
-  | 'Nunito_800ExtraBold'
   | 'Figtree_400Regular'
   | 'Figtree_600SemiBold'
   | 'Figtree_700Bold'
@@ -88,8 +78,8 @@ export type FontName =
 
 export type FontSet = {
   display: FontName; // headings, aliases, scores, the Tabu word
-  displayItalic: FontName | null; // Gece Kafe: the Tabu word
-  italic: FontName | null; // Gece Kafe: subtitles and eyebrows
+  displayItalic: FontName | null; // an italic Tabu word, if the theme has one
+  italic: FontName | null; // italic subtitles and eyebrows, if the theme has one
   regular: FontName;
   semibold: FontName;
   bold: FontName;
@@ -113,7 +103,7 @@ export type Shape = {
   // hairline (list rows, trust screens) and the raised Mekan tab's ring.
   stroke: { card: number; control: number; tag: number; hairline: number; venueRing: number };
   shadow: ShadowSet;
-  // The describing team in Tabu: an accent ring, or Oyun Gecesi's filled sticker.
+  // The describing team in Tabu: an accent ring or a filled sticker.
   selectedTeam: 'ring' | 'fill';
   screenPadding: number;
 };
@@ -151,23 +141,20 @@ export type TypeVariant =
 
 export type Typography = Record<TypeVariant, TypeStyle>;
 
-export type ThemeName = 'night' | 'play' | 'calm';
-
 export type ThemeDefinition = {
-  name: ThemeName;
-  // Scheme used when the viewer picks "Sistem" in the test picker, and in production.
+  // Scheme used when the viewer has not picked one in the test picker, and in production.
   defaultScheme: ColorScheme | 'system';
   palettes: Record<ColorScheme, Palette>;
   fonts: FontSet;
   shape: Shape;
   typography: Typography;
-  // Tags that lean (Oyun Gecesi's event sticker). Never on trust screens.
+  // Tags that lean (an event sticker). Never on trust screens.
   eventTagTilt: number;
-  // Gece Kafe draws the "profilli" tag with a dashed outline.
+  // Draws the "profilli" tag with a dashed outline.
   profiledTagDashed: boolean;
 };
 
-// Spacing scale shared by every direction (4 · 8 · 12 · 16 · 24 · 32, plus the in-between steps
+// Spacing scale (4 · 8 · 12 · 16 · 24 · 32, plus the in-between steps
 // the mockups use). tailwind.config.js exposes the same keys.
 export const SPACING = {
   0: 0,
@@ -196,7 +183,7 @@ export const ICON = { xs: 12, sm: 16, md: 20, lg: 24, xl: 28 } as const;
 // Minimum touch target (WCAG 2.5.8 is 24; the mockups and Android guidance use 44–48).
 export const TOUCH = { min: 44, button: 48, tab: 56, large: 64 } as const;
 
-// Shared by all directions: sizes from directions.html. A direction overrides what differs.
+// Type sizes from directions.html; the theme overrides what differs.
 export function baseTypography(overrides: Partial<Typography> = {}): Typography {
   return {
     display: { font: 'display', size: 30, lineHeight: 34, letterSpacing: -0.3 },

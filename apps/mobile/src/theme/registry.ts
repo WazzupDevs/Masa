@@ -1,21 +1,13 @@
-import { calm } from './themes/calm';
-import { night } from './themes/night';
-import { play } from './themes/play';
-import type { ColorScheme, Palette, ShadowSet, ThemeDefinition, ThemeName } from './tokens';
-
-export const THEMES: Record<ThemeName, ThemeDefinition> = { night, play, calm };
-export const THEME_NAMES = ['night', 'play', 'calm'] as const satisfies readonly ThemeName[];
-
-// The direction the app ships with. Production always uses it; the preview channel can switch
-// (Ayarlar → Tasarım (test)). Change this one line once a direction is chosen.
-export const DEFAULT_THEME: ThemeName = 'calm';
+import type { ColorScheme, Palette, ShadowSet, ThemeDefinition } from './tokens';
 
 export type SchemePreference = ColorScheme | 'system';
 export const SCHEME_PREFERENCES = ['light', 'dark', 'system'] as const;
 
-export type ThemePreference = { theme: ThemeName; scheme: SchemePreference | null };
+// The test picker (Ayarlar → Tasarım (test)) chooses only light, dark or the system's; production
+// always uses the theme's default.
+export type ThemePreference = { scheme: SchemePreference | null };
 
-// `scheme: null` means the theme's own default (Gece Kafe: dark, the others: the system's).
+// `scheme: null` means the theme's own default.
 export function resolveScheme(
   theme: ThemeDefinition,
   preference: SchemePreference | null,
@@ -26,26 +18,20 @@ export function resolveScheme(
   return system === 'dark' ? 'dark' : 'light';
 }
 
-function isThemeName(v: unknown): v is ThemeName {
-  return typeof v === 'string' && (THEME_NAMES as readonly string[]).includes(v);
-}
-
 function isSchemePreference(v: unknown): v is SchemePreference {
   return typeof v === 'string' && (SCHEME_PREFERENCES as readonly string[]).includes(v);
 }
 
 // The stored test choice; anything unreadable falls back to the defaults.
 export function parseThemePreference(raw: string | null): ThemePreference {
-  const fallback: ThemePreference = { theme: DEFAULT_THEME, scheme: null };
+  const fallback: ThemePreference = { scheme: null };
   if (!raw) return fallback;
   try {
     const value: unknown = JSON.parse(raw);
     if (typeof value !== 'object' || value === null) return fallback;
     const v = value as Record<string, unknown>;
-    return {
-      theme: isThemeName(v.theme) ? v.theme : DEFAULT_THEME,
-      scheme: isSchemePreference(v.scheme) ? v.scheme : null,
-    };
+    // Earlier builds also stored a `theme`; it is ignored.
+    return { scheme: isSchemePreference(v.scheme) ? v.scheme : null };
   } catch {
     return fallback;
   }
