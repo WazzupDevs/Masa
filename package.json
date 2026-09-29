@@ -21,6 +21,7 @@
     "typecheck:functions": "deno check --node-modules-dir=none supabase/functions/*/index.ts",
     "lint:functions": "deno lint supabase/functions",
     "admin:ban": "pnpm --filter scripts admin:ban",
+    "admin:delete": "pnpm --filter scripts admin:delete",
     "admin:event": "pnpm --filter scripts admin:event",
     "admin:remove-photo": "pnpm --filter scripts admin:remove-photo",
     "db:reset": "supabase db reset && pnpm --filter scripts apply-local-secrets",

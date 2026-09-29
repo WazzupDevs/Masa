@@ -4,6 +4,7 @@ import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import type { AccountRequest } from '../functions/_shared/pure/api/account.ts';
 import { CURRENT_KVKK_VERSION, CURRENT_TERMS_VERSION } from '../functions/_shared/pure/consent.ts';
 import type { Database } from '../functions/_shared/pure/database.ts';
+import { deleteAccount } from '../../scripts/admin/account.ts';
 import { banUser } from '../../scripts/admin/ban.ts';
 import { admin, anonKey, apiUrl, deleteUserByPhone, invoke, signIn, sql } from './local.ts';
 
@@ -25,6 +26,25 @@ async function userId(client: Client): Promise<string> {
   const { data } = await client.auth.getUser();
   if (!data.user) throw new Error('not signed in');
   return data.user.id;
+}
+
+// Every public column with a foreign key to auth.users must be empty for this user.
+async function expectNothingLeftFor(id: string): Promise<void> {
+  const refs = await sql<{ table_name: string; column_name: string }[]>`
+    select cl.relname as table_name, att.attname as column_name
+    from pg_constraint con
+    join pg_class cl on cl.oid = con.conrelid
+    join pg_namespace ns on ns.oid = cl.relnamespace
+    join pg_attribute att on att.attrelid = con.conrelid and att.attnum = any (con.conkey)
+    where con.contype = 'f' and ns.nspname = 'public' and con.confrelid = 'auth.users'::regclass
+  `;
+  expect(refs.length).toBeGreaterThan(0);
+  for (const ref of refs) {
+    const rows = await sql`
+      select 1 from ${sql('public.' + ref.table_name)} where ${sql(ref.column_name)} = ${id}
+    `;
+    expect(rows, `${ref.table_name}.${ref.column_name}`).toHaveLength(0);
+  }
 }
 
 afterEach(async () => {
@@ -157,22 +177,7 @@ describe('account/delete', () => {
 
     expect(await sql`select 1 from auth.users where id = ${id}`).toHaveLength(0);
 
-    // Every public column with a foreign key to auth.users must be empty for this user.
-    const refs = await sql<{ table_name: string; column_name: string }[]>`
-      select cl.relname as table_name, att.attname as column_name
-      from pg_constraint con
-      join pg_class cl on cl.oid = con.conrelid
-      join pg_namespace ns on ns.oid = cl.relnamespace
-      join pg_attribute att on att.attrelid = con.conrelid and att.attnum = any (con.conkey)
-      where con.contype = 'f' and ns.nspname = 'public' and con.confrelid = 'auth.users'::regclass
-    `;
-    expect(refs.length).toBeGreaterThan(0);
-    for (const ref of refs) {
-      const rows = await sql`
-        select 1 from ${sql('public.' + ref.table_name)} where ${sql(ref.column_name)} = ${id}
-      `;
-      expect(rows, `${ref.table_name}.${ref.column_name}`).toHaveLength(0);
-    }
+    await expectNothingLeftFor(id);
   });
 
   it('keeps every public foreign key cascading or nulling on delete', async () => {
@@ -184,5 +189,31 @@ describe('account/delete', () => {
       where con.contype = 'f' and ns.nspname = 'public' and con.confdeltype not in ('c', 'n')
     `;
     expect(blocking.map((r) => r.conname)).toEqual([]);
+  });
+});
+
+describe('admin:delete', () => {
+  it('deletes like account/delete: the user, every row, and the access token', async () => {
+    const client = await signIn(PHONE_A);
+    await call(client, onboarding);
+    const id = await userId(client);
+
+    await deleteAccount(admin, id);
+
+    expect(await sql`select 1 from auth.users where id = ${id}`).toHaveLength(0);
+    await expectNothingLeftFor(id);
+    expect(await call(client, onboarding)).toEqual({
+      status: 401,
+      body: { error: { code: 'unauthorized', message: expect.any(String) } },
+    });
+  });
+
+  it('does not ban: the number can sign up again', async () => {
+    const id = await userId(await signIn(PHONE_A));
+    await deleteAccount(admin, id);
+
+    expect(await sql`select 1 from public.banned_phones`).toHaveLength(0);
+    const again = await signIn(PHONE_A);
+    expect(await userId(again)).not.toBe(id);
   });
 });

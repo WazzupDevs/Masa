@@ -40,7 +40,7 @@ Kullanıcı hesabı olan her uygulama için iki şey gerekir: uygulama içinden 
 - [ ] Uygulama içi yol: Profil → Ayarlar (dişli) → Hesabımı sil → Sil. Hemen siler (`account/delete`: fotoğraflar, hesap ve bağlı bütün satırlar, PostHog kişi kaydı).
 - [ ] Web bağlantısı: `https://wazzupdevs.github.io/Masa/hesap-silme.html`. Uygulama içi adımlar, e-postayla talep ([e-posta], en geç 30 gün), silinen veriler, saklananlar (şikayet kaydı 30 gün, banlanan numaranın özeti, hata kayıtları, yedekler).
 - [ ] Console → Veri güvenliği → "Hesap silme" alanına bu URL girilir.
-- E-postayla gelen talep: `pnpm admin:delete <userId>` (ayrı PR). Uygulama içi silmeyle aynı sonuç: fotoğraflar, hesap ve bağlı bütün satırlar, PostHog kişi kaydı; ban yapmaz. Kullanıcı kimliği panelde Authentication → Users'ta numarayla bulunur.
+- E-postayla gelen talep: `pnpm admin:delete <userId>`. Uygulama içi silmeyle aynı sonuç: fotoğraflar, hesap ve bağlı bütün satırlar, PostHog kişi kaydı; ban yapmaz. Kullanıcı kimliği panelde Authentication → Users'ta numarayla bulunur.
 
 ### 3.3 Uygulama erişimi (inceleme ekibi için giriş)
 
@@ -203,7 +203,7 @@ Tanım: cihazdan çıkan her veri "toplanan" sayılır; hizmet sağlayıcıya (S
 | ---------------------------------------- | -------------------------------------------------------------------------- |
 | AAB profili                              | Hazır (`eas.json`)                                                         |
 | Gizlilik politikası ve web silme sayfası | Taslak sayfalar hazır (GitHub Pages); hukuki kontrol ve [e-posta] bekliyor |
-| E-postayla silme talebini işleme         | `admin:delete` (ayrı PR)                                                   |
+| E-postayla silme talebini işleme         | `admin:delete`                                                             |
 | İnceleme erişimi                         | Kalıcı inceleme hesabı ve video (§3.3); video çekilecek                    |
 | Veri güvenliği, IARC, hedef kitle        | Yanıtlar hazır (§3.5–3.7); Console'da doldurulacak                         |
 | Telefon ekran görüntüleri                | Script hazır; tasarım ve ad sonrası yüksek çözünürlükle yeniden            |
