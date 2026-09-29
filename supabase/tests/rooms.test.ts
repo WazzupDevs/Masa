@@ -11,7 +11,8 @@ import {
   waitForBroadcast,
   waitUntilBlocked,
 } from './helpers.ts';
-import { type Client, dbUrl, deleteUserByPhone, invoke, sql, userIdOf } from './local.ts';
+import { deleteAccount } from '../../scripts/admin/account.ts';
+import { admin, type Client, dbUrl, deleteUserByPhone, invoke, sql, userIdOf } from './local.ts';
 
 let venue: Record<string, string> = {};
 const V = 'at-anchor';
@@ -381,6 +382,12 @@ describe('leaving', () => {
     expect(await roomRow(roomId)).toMatchObject({ status: 'waiting', guest_session_id: null });
     await invoke(owner, 'checkin', { action: 'leave' });
     expect((await roomRow(roomId))?.status).toBe('closed');
+  });
+
+  it('releases the room of a guest deleted by admin:delete, as when the table leaves', async () => {
+    const { roomId, guest } = await roomWithGuest();
+    await deleteAccount(admin, await userIdOf(guest));
+    expect(await roomRow(roomId)).toMatchObject({ status: 'waiting', guest_session_id: null });
   });
 
   it('closes the room of a deleted account', async () => {

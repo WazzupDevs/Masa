@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 ## Proje
-Mekan içi sosyal oyun uygulaması (çalışma adı: Masa). Aynı mekandaki masalar konsept üzerine odalar kurar, oyun oynar ve sohbet eder. İki taraf da isterse oda sonunda fiziksel olarak tanışırlar.
+Mekan içi sosyal oyun uygulaması: **Kabuk** (kod içi çalışma adı Masa; repo, slug, şema ve paket kimliği `app.masa.mobile` değişmedi). Aynı mekandaki masalar konsept üzerine odalar kurar, oyun oynar ve sohbet eder. İki taraf da isterse oda sonunda fiziksel olarak tanışırlar.
 
 Tüm ürün kararları, kapsam ve kilometre taşları `MVP_SPEC.md` içinde; v2 kapsamı ve teknik tasarımı `docs/SPEC_V2.md` içinde (onaylı, §12 sırasıyla uygulanır). Spec'te olmayan bir özelliği ekleme. Belirsizlikte varsayım yapma, sor.
 
@@ -24,8 +24,12 @@ Node 22, pnpm 10, Docker (yerel Supabase için). Supabase CLI ve Deno root devDe
 - `pnpm seed` — `content/*.json` → `supabase/seed.sql` (çıktı commit'lenir). `content/venues-test.json` boşsa atlanır (bkz. "Saha testi mekanı")
 - `pnpm fetch:venues` — OpenStreetMap Overpass API'den Beylikdüzü kafeleri ve nargile kafeleri → `content/venues-pilot.json`. Sonucu elle kontrol et (`isActive: false` ile kapat; tekrar çekişte korunur), sonra `pnpm seed`. `overpass-api.de` erişimi gerekir.
 - `pnpm gen:types` — çalışan yerel DB'den `supabase/functions/_shared/pure/database.ts` üretir; her migration'dan sonra çalıştır
+- `pnpm site:build` — `docs/legal/*.md` → `site/` (git'e girmez): gizlilik politikası, KVKK aydınlatma metni, kullanım koşulları, hesap silme sayfası. Uygulama adı `{{APP_NAME}}` yer tutucusundan gelir. Yayın: aşağıda "Yasal sayfalar".
+- `pnpm store:screenshots <E2E ekran görüntüsü klasörü> [çıktı]` — Play telefon görselleri (1080×1920, 9:16) → `dist/store-screenshots/`. Hangi ekranlar ve başlıklar: `docs/store/screenshots.json`. Tasarım yönü ya da ad değişince yeniden çalıştırılır.
+- `pnpm icons` — uygulama ikonu: `scripts/icon/snail.ts` (salyangoz çizimi) ve `apps/mobile/assets/icon/tokens.json` (renkler) → `apps/mobile/assets/icon/*.png` (Android adaptive ön/arka/monochrome katman, iOS 1024, Play 512, açılış ekranı, bildirim ikonu; PNG'ler commit'lenir) ve önizleme `dist/icon-preview/index.html` (48/72/96/192 px, açık/koyu duvar kağıdı, daire/squircle/yuvarlak kare, Android 13 temalı). Renk ya da çizim değişince çalıştır; ikon native alandır: `app.json` → `version` artır ve yeni build.
 - Yerel test numaraları (`config.toml` → `[auth.sms.test_otp]`): `+905550000001` … `+905550000003`, kod `123456`
 - `pnpm admin:ban <userId>` — ban = telefon hash'ini `banned_phones`'a yazar, sonra hesabı siler (tüm veri cascade ile gider). Yalnızca geliştirici makinesinde, `SUPABASE_URL` ve `SUPABASE_SECRET_KEY` ortam değişkenleriyle çalışır. Secret key hiçbir dosyaya yazılmaz, uygulamaya girmez.
+- `pnpm admin:delete <userId>` — e-postayla gelen hesap silme talebi: uygulamadaki "Hesabımı sil" ile aynı adımlar (masayı bitirir, profil fotoğraflarını siler, hesabı siler; bütün veri cascade ile gider; PostHog değişkenleri varsa kişi kaydı da). Ban yapmaz, numara yeniden kayıt olabilir. Kullanıcı kimliği panelde Authentication → Users'ta numarayla bulunur. `admin:ban` gibi yalnızca geliştirici makinesinde, `SUPABASE_URL` ve `SUPABASE_SECRET_KEY` ortam değişkenleriyle.
 - `pnpm admin:event add <venueId|sourceRef> "<başlık>" <başlangıç> [<bitiş>]` / `list` / `remove <id>` — Keşfet'teki planlı etkinlikler (`venue_events`). Saat `2026-09-29 20:00` (İstanbul) ya da ofsetli ISO; bitiş verilmezse 3 saat. `admin:ban` gibi yalnızca geliştirici makinesinde, `SUPABASE_URL` ve `SUPABASE_SECRET_KEY` ortam değişkenleriyle.
 - `pnpm admin:remove-photo <publicId>` — şikayet incelemesinden sonra profil fotoğrafını siler ve `photo_path`'i boşaltır (şikayet kopyası 30 gün kalır). `admin:ban` gibi yalnızca geliştirici makinesinde, `SUPABASE_URL` ve `SUPABASE_SECRET_KEY` ortam değişkenleriyle. Ban ve hesap silme profil fotoğraflarını da siler.
 - Uçtan uca (E2E): `e2e/maestro/p0.yaml`, FIELD_TEST'in P0 sırası. CI (`.github/workflows/e2e.yml`) her push'ta değil: PR'da `e2e` etiketi varken (eklendiğinde ve etiket dururken her push'ta), elle (Actions → e2e → Run workflow) ve her gece main'de. Gradle ile x86_64 release APK'sı (yerel stack'e `http://10.0.2.2:54321`, OTA kapalı; Gradle önbelleğini gece koşusu yazar, diğerleri okur), emülatör, yerel Supabase ve functions serve. Uygulamanın tek teması açık ve koyu görünümde koşar. Ekran görüntüsü, video ve loglar artifact; ekran görüntüleri ve loglar ayrıca `e2e-screenshots` dalında (her koşu tek commit'lik orphan dalı force-push eder). İkinci masayı `scripts/e2e/bot-table.ts` oynar: `node --experimental-strip-types scripts/e2e/bot-table.ts setup` E2E mekanını kurar ve koordinatları yazar, `… serve` Maestro için 8787'de dinler. Bot yalnızca yerel stack'te ve dev projesinde çalışır, başka URL'i reddeder; dev projesinde yalnızca herkese açık Edge Function API'sini, publishable key'i ve test numarasını kullanır, veritabanı parolası ya da secret key istemez. Veritabanına doğrudan yazan eylemler (`setup`, `expire-turn`, `backdate-encounter`) yalnızca yerelde çalışır, dev URL'inde reddedilir. Yerelde koşmak için KVM'li bir emülatör ve Maestro CLI gerekir; komutlar workflow'daki adımların aynısı. Metin değişince akıştaki eşleşme de aynı PR'da güncellenir; aynı metin ekranda birden fazla görünüyorsa akış `testID` kullanır. Uygulamaya yalnızca `testID` eklenir.
@@ -74,6 +78,47 @@ Node 22, pnpm 10, Docker (yerel Supabase için). Supabase CLI ve Deno root devDe
    - **Realtime → Settings → Allow public access: kapalı.** Tüm kanallar özeldir; kimin abone olup yayın yapacağına `realtime.messages` politikaları karar verir.
 8. **Mobil:** `cp apps/mobile/.env.example apps/mobile/.env`; URL `https://<ref>.supabase.co`, anahtar Settings → API Keys'teki publishable key.
 9. Sonraki değişikliklerde: "main'den dev projesine yayın" (aşağıda).
+
+### Yasal sayfalar (GitHub Pages)
+Gizlilik politikası, KVKK metni, kullanım koşulları ve hesap silme talebi herkese açık statik sayfalardır; Play gizlilik politikası ve hesap silme için web bağlantısı ister. Kaynak `docs/legal/*.md`, yayın `.github/workflows/pages.yml` (main'e `docs/legal/**` değişikliği gelince ya da elle). Sayfalar taslaktır; her sayfada "Taslak, hukuki kontrol bekliyor" notu durur, hukuki kontrol bitince kaldırılır.
+1. Tek seferlik: GitHub → repo **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+2. main'e merge ya da Actions → **pages** → Run workflow. Adresler: `https://wazzupdevs.github.io/Masa/` (dizin), `…/gizlilik-politikasi.html`, `…/kvkk-aydinlatma-metni.html`, `…/kullanim-kosullari.html`, `…/hesap-silme.html`.
+3. EAS `preview` ve `production` ortamlarında `EXPO_PUBLIC_PRIVACY_URL` = gizlilik sayfası adresi, sonra `eas update`.
+4. Yerelde bakmak için `pnpm site:build` ve `site/index.html`'i tarayıcıda aç.
+- Repo gizliye çevrilirse GitHub Pages ücretli plan ister (Pro/Team). O zaman Cloudflare Pages: panelde repoyu bağla, build komutu `pnpm site:build`, çıktı klasörü `site` (bkz. `docs/DECISIONS.md` → "Yasal sayfalar").
+
+### Üretim Supabase projesi (tek seferlik)
+Pilot ve Play kullanıcıları için ayrı proje. Kurulum dev projesiyle aynı sıradadır (yukarıdaki "Barındırılan dev projesi kurulumu"); farklar:
+
+| Konu | Dev projesi | Üretim projesi |
+| --- | --- | --- |
+| Test numaraları | `905550000001=123456` ve saha testi numaraları | **Yalnızca tek, kalıcı inceleme hesabı:** bir numara, tahmin edilemez 6 haneli kod. Kod yalnızca Play Console → Uygulama erişimi'nde durur (aşağıda "İnceleme hesabı") |
+| E2E botu (#19) | `scripts/e2e/bot-table.ts` bu projeyi kabul eder | **Reddedilir:** bot yalnızca yerel stack'i ve dev projesinin adresini kabul eder; üretim adresi listeye eklenmez |
+| SMS | Twilio Verify (test numaraları SMS'siz) | **Twilio canlı:** ayrı bir Verify servisi, Geo permissions yalnızca Türkiye, Fraud Guard açık, saatlik SMS sınırı 100, aynı numaraya 60 sn |
+| Vault anahtarı (`phone_hash_key`) | Dev anahtarı | **Yeni ve farklı** anahtar (`openssl rand -hex 32`), parola yöneticisinde; asla değişmez |
+| `MIN_APP_BUILD` | Ayarsız (kapı açık) | İlk production AAB yüklendikten sonra o build'in versionCode'u; eski ya da preview build'ler (aynı sayaç, küçük numara) kapıda kalır. Yeni sürümle birlikte artırılır |
+| Plan | Free (yedek yok, duraklatılabilir) | **Pro** (günlük yedek 7 gün, duraklatma yok) |
+| Realtime → Allow public access | Kapalı | **Kapalı** (aynı) |
+| Seed | Test mekanı olabilir | `db push --include-seed`'den önce `content/venues-test.json` boş ya da her mekanı `isActive: false` olmalı; yoksa test mekanı üretimde görünür |
+| Mobil ortam | EAS `preview` → dev URL ve anahtar | EAS `production` → üretim URL'i ve publishable key; `EXPO_PUBLIC_POSTHOG_KEY` (üretim PostHog projesi), `EXPO_PUBLIC_SENTRY_DSN`, `EXPO_PUBLIC_PRIVACY_URL`, `EXPO_PUBLIC_CONTACT_EMAIL` |
+| Fonksiyon sırları | İsteğe bağlı | `POSTHOG_PERSONAL_API_KEY` ve `POSTHOG_PROJECT_ID` (üretim PostHog projesi; hesap silmede kişi silme) |
+
+Sıra:
+1. Yeni proje (Frankfurt `eu-central-1`) ve **Pro plana al** (panel → Organization → Billing). Gerekçe: Free planda otomatik yedek yok ve düşük aktivitede proje haftalık duraklatılır (https://supabase.com/docs/guides/platform/free-project-pausing); Pro'da günlük yedekler 7 gün saklanır (https://supabase.com/docs/guides/platform/backups) ve hesap silme sayfası bu süreyi söyler. Dev projesi Free kalır.
+2. `pnpm supabase link --project-ref <üretim ref>`. Dev ve üretim arasında geçerken her komuttan önce `pnpm supabase migration list`'in hangi projeye bağlı olduğunu kontrol et; bitince dev'e geri bağla.
+3. Vault anahtarı (yukarıdaki tabloya göre yeni), sonra `db push --include-seed` (seed notu tabloda) ve 12 fonksiyonun deploy'u ("main'den dev projesine yayın" adım 5).
+4. Panel → Authentication: Email kapalı, Phone açık, Twilio Verify (üretim servisi), test numarası yok, Rate Limits, Hooks → Before User Created → `private.before_user_created`.
+5. Panel → Realtime → Settings → Allow public access **kapalı**.
+6. `pnpm supabase secrets set POSTHOG_PERSONAL_API_KEY=… POSTHOG_PROJECT_ID=…`. `MIN_APP_BUILD` ilk production AAB'den sonra.
+7. EAS `production` ortam değişkenleri (tabloda), sonra `eas build --profile production`.
+- Asla: `supabase config push`, `supabase/local/secrets.sql`, secret key'i bir dosyaya yazmak, dev Vault anahtarını üretimde kullanmak.
+
+**İnceleme hesabı (Play).** Üretimde tek test numarası; kodu yalnızca Play Console bilir. Kod hiçbir dosyaya, commit'e, sohbete yazılmaz. İlk kurulum ve kod değişikliği aynı adımlar:
+1. Yeni kod üret (Windows'ta da çalışır): `node -e "console.log(require('node:crypto').randomInt(100000, 1000000))"`. `123456` gibi tahmin edilebilir kod kullanma.
+2. Supabase paneli (üretim) → Authentication → Sign In / Providers → Phone → **Test Phone Numbers and OTPs**: `90<numara>=<kod>` (tek çift). **Test OTPs Valid Until**: ileri bir tarih; dolmadan önce uzat, dolarsa inceleme girişi çalışmaz.
+3. Hemen ardından Play Console → Politika → Uygulama içeriği → **Uygulama erişimi** → talimattaki parolayı yeni kodla güncelle ve kaydet. İki yer arasında kalan sürede inceleme başlarsa giriş başarısız olur; ikisini arka arkaya yap.
+4. Kodu değiştirmek için: sızdığından şüphelenince, ekipten biri ayrılınca ya da Valid Until uzatılırken. Hesabı sıfırlamak gerekirse önce `pnpm admin:delete <userId>` (inceleme hesabının kullanıcı kimliği panelde numarayla bulunur).
+- İnceleme numarası gerçek bir hat olmak zorunda değil; SMS gönderilmez. Ban ve 18+/onay akışından muaf değildir.
 
 ### main'den dev projesine yayın
 Tek seferlik kurulum (yukarıda) yapılmış bir projeye main'in güncel hâlini gönderir. Repo kökünde, sırayla. `supabase login` gerekirse tarayıcıdan giriş ister; uzak veritabanına bağlanan komutlar (2–4, 6) veritabanı parolasını sorabilir (panel → Settings → Database).
@@ -190,6 +235,7 @@ Pilot listesinde olmayan bir yerde test için elle girilen mekan. Dosya boşsa (
 
 ## Kod kuralları
 - Kod, tablo ve değişken adları İngilizce. Kullanıcıya görünen metinler Türkçe ve `apps/mobile/src/i18n/tr.ts` içinde. Bileşenlerde sabit metin yok.
+- Uygulama adı tek yerde: `supabase/functions/_shared/pure/brand.ts` → `APP_NAME`. Mağaza ve başlatıcı adı (`app.config.ts`), `tr.ts`'teki marka metni, push başlıkları ve yasal sayfalar (`{{APP_NAME}}`) oradan okur. Paket kimliği (`app.masa.mobile`) ayrıdır ve değişmez.
 - `any` yok. Veritabanı tipleri `pnpm gen:types` (`supabase gen types`) ile tek dosyaya üretilir: `supabase/functions/_shared/pure/database.ts`. Mobil uygulama bunu alias ile okur, kopya tutulmaz.
 - Paylaşılan kod `supabase/functions/_shared/pure/` altındadır. Mobil `@shared/*` alias'ı yalnızca bu klasörü gösterir. `pure/` içine Deno API'si (`Deno.*`), `npm:`/`jsr:`/URL import'u ya da herhangi bir dış bağımlılık giremez; göreli import'lar `.ts` uzantısıyla yazılır.
 - İş mantığı `pure/` modüllerindedir ve vitest ile test edilir. Edge Function handler'ları incedir: girdi doğrulama, yetki, veritabanı çağrısı, yanıt.

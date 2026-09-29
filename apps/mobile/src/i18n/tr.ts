@@ -1,3 +1,4 @@
+import { APP_NAME } from '@shared/brand.ts';
 import { headcountLabel } from '@shared/checkin.ts';
 import type { EventTime } from '@shared/explore.ts';
 
@@ -44,7 +45,7 @@ const WEEKDAYS = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cum
 
 export const tr = {
   app: {
-    name: 'Masa',
+    name: APP_NAME,
   },
   update: {
     title: 'Güncelleme gerekli',
@@ -99,8 +100,7 @@ export const tr = {
     kvkkTitle: 'KVKK Aydınlatma Metni',
     // Placeholder texts (version draft-0). The real texts arrive with legal review before the pilot.
     draftNotice: 'Bu metin taslaktır ve pilot öncesinde güncellenecektir.',
-    termsBody:
-      'Masa, aynı mekandaki masaların birlikte oyun oynayıp sohbet etmesi için bir uygulamadır. Diğer kullanıcılara saygılı davranmayı, taciz, hakaret ve uygunsuz içerik paylaşmamayı kabul edersin.',
+    termsBody: `${APP_NAME}, aynı mekandaki masaların birlikte oyun oynayıp sohbet etmesi için bir uygulamadır. Diğer kullanıcılara saygılı davranmayı, taciz, hakaret ve uygunsuz içerik paylaşmamayı kabul edersin.`,
     kvkkBody:
       'Hesabını oluşturmak için telefon numaran işlenir. Numaran diğer kullanıcılarla paylaşılmaz. Hesabını istediğin zaman uygulama içinden silebilirsin.',
   },

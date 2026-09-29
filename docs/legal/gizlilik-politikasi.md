@@ -6,7 +6,7 @@ Son güncelleme: [tarih]
 
 ## Biz kimiz
 
-Masa ("Uygulama"), [veri sorumlusunun unvanı, adresi, MERSİS/vergi no] tarafından sunulur. İletişim: [e-posta].
+{{APP_NAME}} ("Uygulama"), [veri sorumlusunun unvanı, adresi, MERSİS/vergi no] tarafından sunulur. İletişim: [e-posta].
 
 ## Hangi verileri işliyoruz
 
@@ -24,7 +24,7 @@ Masa ("Uygulama"), [veri sorumlusunun unvanı, adresi, MERSİS/vergi no] tarafı
 | Oyun geçmişi (v2): tarih, oyun, karşı masanın takma adı ve kişi sayısı                                                     | Karşılaşılan masaya arkadaşlık isteği gönderebilmek             | Hesap silinene kadar                         |
 | Arkadaşlık istekleri, "Arkadaş ekle" kayıtları ve arkadaşlıklar (v2)                                                       | Arkadaşlık                                                      | Hesap silinene kadar                         |
 | Arkadaşlar arası mesajlar (v2)                                                                                             | Mesajlaşma                                                      | Arkadaşlık bitene ya da hesap silinene kadar |
-| Hata raporları (teknik kayıt ve kullanıcı kimliği; telefon, konum ve yazılan metin silinir)                                | Hataların giderilmesi                                           | [süre: Sentry saklama ayarı]                 |
+| Hata raporları (teknik kayıt ve kullanıcı kimliği; telefon, konum ve yazılan metin silinir)                                | Hataların giderilmesi                                           | 30 gün                                       |
 | Tanışma cevabı ("Tanışalım mı?")                                                                                           | İki tarafın isteğini eşleştirmek                                | Oda ve hesapla birlikte                      |
 | Bildirim anahtarı (push token)                                                                                             | Katılma isteği ve kabul bildirimleri                            | Çıkış yapılana ya da hesap silinene kadar    |
 | Kullanım istatistikleri (yalnızca kullanıcı kimliği ve olay adı; ör. "oda kuruldu")                                        | Ürünün geliştirilmesi                                           | [süre]                                       |
