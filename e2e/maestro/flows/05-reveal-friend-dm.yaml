@@ -1,5 +1,5 @@
 # T6, F1, F3: end the room, mutual Evet, "Arkadaş ekle" from both tables, DM both ways.
-appId: app.masa.mobile
+appId: app.kabuk.mobile
 ---
 # The encounter must be at least 3 minutes old for the play history (and "Arkadaş ekle").
 - runScript:

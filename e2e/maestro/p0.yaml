@@ -2,7 +2,7 @@
 # OUTSIDE_LAT/OUTSIDE_LNG (the E2E venue and a point 310 m away; printed by `bot-table.ts setup`),
 # SCHEME (light or dark, picked in Ayarlar → Tasarım (test)).
 # The bot table (scripts/e2e/bot-table.ts serve) plays the second table.
-appId: app.masa.mobile
+appId: app.kabuk.mobile
 name: P0 kritik yol
 ---
 - runFlow: flows/01-login.yaml

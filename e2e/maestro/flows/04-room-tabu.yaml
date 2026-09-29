@@ -1,5 +1,5 @@
 # V7 and T1–T3: open Tabu room, the bot table asks to join, accept, one voice Tabu turn.
-appId: app.masa.mobile
+appId: app.kabuk.mobile
 ---
 - runScript:
     file: ../scripts/bot.js

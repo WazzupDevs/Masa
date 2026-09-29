@@ -1,5 +1,5 @@
 # V8: the bot table ends the room; this phone must move to "Tanışalım mı?" without a blank screen.
-appId: app.masa.mobile
+appId: app.kabuk.mobile
 ---
 - tapOn:
     id: tab-venue
