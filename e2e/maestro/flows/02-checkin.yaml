@@ -7,10 +7,13 @@ appId: app.kabuk.mobile
     timeout: 30000
 - takeScreenshot: 05-explore-list
 # The map: GL layers under the header (the header and the switch stay on top), opening on the
-# venues. Pins are GL, not views, so the screenshot is the check.
+# venues. Pins are GL, not views, so the screenshot is the check; it waits until the map has drawn
+# its style, glyphs and venue layers (`explore-map-ready`).
 - tapOn: Harita
-- waitForAnimationToEnd:
-    timeout: 8000
+- extendedWaitUntil:
+    visible:
+      id: explore-map-ready
+    timeout: 30000
 - assertVisible: Keşfet
 - assertVisible: Liste
 - takeScreenshot: 05b-explore-map

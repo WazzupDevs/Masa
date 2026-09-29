@@ -9,7 +9,9 @@ import { Text } from './Text';
 // The mockup's tab bar: 76 high, and the raised Mekan disc (60) lifted 26 above it.
 export const TAB_BAR_HEIGHT = 76;
 const VENUE_DISC = 60;
-const VENUE_LIFT = 26;
+// How far the raised disc reaches into the screen above the bar.
+export const TAB_BAR_LIFT = 26;
+const VENUE_LIFT = TAB_BAR_LIFT;
 const BADGE = 18;
 
 type Props = BottomTabBarProps & {
