@@ -24,6 +24,7 @@
     "admin:delete": "pnpm --filter scripts admin:delete",
     "admin:event": "pnpm --filter scripts admin:event",
     "admin:remove-photo": "pnpm --filter scripts admin:remove-photo",
+    "admin:set-birth-date": "pnpm --filter scripts admin:set-birth-date",
     "db:reset": "supabase db reset && pnpm --filter scripts apply-local-secrets",
     "fetch:venues": "pnpm --filter scripts fetch:venues"
   },

@@ -11,7 +11,14 @@ import type { ProfileUploadUrl } from '../functions/_shared/pure/api/profile.ts'
 import { PHOTO_BUCKET } from '../functions/_shared/pure/profile.ts';
 import { BROADCAST, dmChannel, inboxChannel } from '../functions/_shared/pure/rooms.ts';
 import { deleteFixtureVenues, insertFixtureVenues } from './fixtures/venues.ts';
-import { checkInAt, errorBody, onboarded, PHONES, waitUntilBlocked } from './helpers.ts';
+import {
+  checkInAt,
+  clearDisplayName,
+  errorBody,
+  onboarded,
+  PHONES,
+  waitUntilBlocked,
+} from './helpers.ts';
 import {
   admin,
   anonKey,
@@ -152,6 +159,9 @@ async function metOnce(
   const [a, b] = await Promise.all([named(PHONES[0], nameA), named(PHONES[1], nameB)]);
   const roomId = await encounter(a, b, { modes: opts.modes });
   await endByGuestLeaving(b);
+  // No name: an account from before v3 (sign-up now requires one, and so does check-in).
+  if (nameA === null) await clearDisplayName(a);
+  if (nameB === null) await clearDisplayName(b);
   return { a, b, roomId, historyA: await latestHistoryId(a), historyB: await latestHistoryId(b) };
 }
 

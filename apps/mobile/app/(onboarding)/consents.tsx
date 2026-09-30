@@ -1,6 +1,11 @@
-import { CURRENT_KVKK_VERSION, CURRENT_TERMS_VERSION } from '@shared/consent.ts';
+import {
+  CURRENT_KVKK_VERSION,
+  CURRENT_TERMS_VERSION,
+  needsConsent,
+  needsProfile,
+} from '@shared/consent.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'expo-router';
+import { Link, Redirect, router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
@@ -13,28 +18,28 @@ import { useProfile } from '@/features/account/useProfile';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { callAccount } from '@/lib/api';
-import { track } from '@/lib/analytics';
 
+// Terms and KVKK notice. A new account goes on to the profile step (about-you), where both are
+// sent together with the name and birth date; an existing profile only re-consents here.
 export default function ConsentsScreen() {
   const queryClient = useQueryClient();
   const profile = useProfile();
-  const [age, setAge] = useState(false);
   const [terms, setTerms] = useState(false);
   const [kvkk, setKvkk] = useState(false);
+  const hasProfile = !!profile.data && !needsProfile(profile.data);
 
-  const accept = useMutation({
+  const reconsent = useMutation({
     mutationFn: () =>
       callAccount({
         action: 'complete-onboarding',
-        ageConfirmed: true,
         termsVersion: CURRENT_TERMS_VERSION,
         kvkkVersion: CURRENT_KVKK_VERSION,
       }),
-    onSuccess: () => {
-      if (!profile.data) track('onboarding_completed', {});
-      return queryClient.invalidateQueries({ queryKey: ['profile'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['profile'] }),
   });
+
+  // Consents are current and only the profile is missing (an account from before v3).
+  if (profile.data && !needsConsent(profile.data)) return <Redirect href="/about-you" />;
 
   return (
     <Screen>
@@ -43,23 +48,22 @@ export default function ConsentsScreen() {
         subtitle={profile.data ? tr.consents.outdated : undefined}
       />
       <View className="mt-6 gap-1">
-        <Checkbox label={tr.consents.age} checked={age} onToggle={() => setAge((v) => !v)} />
         <Checkbox label={tr.consents.terms} checked={terms} onToggle={() => setTerms((v) => !v)} />
         <ReadLink href="/terms" />
         <Checkbox label={tr.consents.kvkk} checked={kvkk} onToggle={() => setKvkk((v) => !v)} />
         <ReadLink href="/kvkk" />
       </View>
-      {accept.isError ? (
+      {reconsent.isError ? (
         <Text variant="fine" tone="danger" className="mt-4">
-          {errorMessage(accept.error)}
+          {errorMessage(reconsent.error)}
         </Text>
       ) : null}
       <View className="mt-auto pt-8">
         <Button
           label={tr.consents.accept}
-          onPress={() => accept.mutate()}
-          disabled={!(age && terms && kvkk)}
-          loading={accept.isPending}
+          onPress={() => (hasProfile ? reconsent.mutate() : router.push('/about-you'))}
+          disabled={!(terms && kvkk)}
+          loading={reconsent.isPending}
         />
       </View>
     </Screen>

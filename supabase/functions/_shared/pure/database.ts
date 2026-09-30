@@ -547,9 +547,11 @@ export type Database = {
         Row: {
           age_confirmed_at: string;
           bio: string | null;
+          birth_date: string | null;
           created_at: string;
           default_participation: string;
           display_name: string | null;
+          has_birth_date: boolean | null;
           id: string;
           kvkk_accepted_at: string;
           kvkk_version: string;
@@ -567,9 +569,11 @@ export type Database = {
         Insert: {
           age_confirmed_at: string;
           bio?: string | null;
+          birth_date?: string | null;
           created_at?: string;
           default_participation?: string;
           display_name?: string | null;
+          has_birth_date?: boolean | null;
           id: string;
           kvkk_accepted_at: string;
           kvkk_version: string;
@@ -587,9 +591,11 @@ export type Database = {
         Update: {
           age_confirmed_at?: string;
           bio?: string | null;
+          birth_date?: string | null;
           created_at?: string;
           default_participation?: string;
           display_name?: string | null;
+          has_birth_date?: boolean | null;
           id?: string;
           kvkk_accepted_at?: string;
           kvkk_version?: string;

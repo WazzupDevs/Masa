@@ -6,14 +6,18 @@ import { Tag } from '@/components/Tag';
 import { Text } from '@/components/Text';
 import { tr } from '@/i18n/tr';
 
-// Photo, name, bio and badges; the same card for the own profile and for others (§5.2).
+// Photo, name with the age (never the birth date, rule 11), bio and badges; the same card for the own profile and for others (§5.2).
 export function ProfileCard({ profile }: { profile: ProfileView }) {
   return (
     <View>
       <View className="items-center gap-1.5">
         <ProfilePhoto url={profile.photoUrl} name={profile.displayName} />
         <Text variant="alias" align="center" className="mt-1">
-          {profile.displayName ?? tr.profile.noName}
+          {profile.displayName
+            ? profile.age !== null
+              ? tr.profile.nameWithAge(profile.displayName, profile.age)
+              : profile.displayName
+            : tr.profile.noName}
         </Text>
         {profile.bio ? <Text align="center">{profile.bio}</Text> : null}
       </View>

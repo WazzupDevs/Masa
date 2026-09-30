@@ -1,4 +1,5 @@
-# G1: test number, OTP, consents.
+# G1: test number, OTP, consents, sign-up = profile (docs/SPEC_V3.md §3). First an under-18 birth
+# date: the account is deleted and the phone screen says why; then the real sign-up.
 appId: app.kabuk.mobile
 ---
 - launchApp:
@@ -9,27 +10,59 @@ appId: app.kabuk.mobile
     visible: Telefon numaran
     timeout: 60000
 - takeScreenshot: 01-phone
-- tapOn:
-    id: phone-input
-- inputText: '5550000001'
-- hideKeyboard
-- tapOn: Kod gönder
-- extendedWaitUntil:
-    visible: Doğrulama kodu
-    timeout: 20000
-- takeScreenshot: 02-otp
-- tapOn:
-    id: otp-input
-# Six digits verify on their own.
-- inputText: '123456'
+- runFlow:
+    file: login-code.yaml
 - extendedWaitUntil:
     visible: Başlamadan önce
     timeout: 20000
 - takeScreenshot: 03-consents
-- tapOn: 18 yaşından büyüğüm.
 - tapOn: Kullanım Koşulları’nı okudum ve kabul ediyorum.
 - tapOn: KVKK Aydınlatma Metni’ni okudum.
 - tapOn: Onayla ve devam et
+- extendedWaitUntil:
+    visible: Seni tanıyalım
+    timeout: 10000
+# 1 January, 17 years ago: 17 on any day of the year.
+- evalScript: ${output.underAgeYear = String(new Date().getFullYear() - 17)}
+- runFlow:
+    file: about-you.yaml
+    env:
+      NAME: Genç Masa
+      DAY: '01'
+      MONTH: '01'
+      YEAR: ${output.underAgeYear}
+- extendedWaitUntil:
+    visible:
+      id: under-age
+    timeout: 20000
+- assertVisible: Kabuk 18 yaş ve üzeri içindir
+- takeScreenshot: 03a-under-age
+# The account was deleted; the same number signs up again.
+- runFlow:
+    file: login-code.yaml
+- extendedWaitUntil:
+    visible: Başlamadan önce
+    timeout: 20000
+- tapOn: Kullanım Koşulları’nı okudum ve kabul ediyorum.
+- tapOn: KVKK Aydınlatma Metni’ni okudum.
+- tapOn: Onayla ve devam et
+- extendedWaitUntil:
+    visible: Seni tanıyalım
+    timeout: 10000
+- takeScreenshot: 03b-about-you
+- runFlow:
+    file: about-you.yaml
+    env:
+      NAME: Cihaz Masa
+      DAY: '15'
+      MONTH: '01'
+      YEAR: '2000'
+- extendedWaitUntil:
+    visible: Profilini tamamla
+    timeout: 20000
+- takeScreenshot: 03c-extras
+- tapOn:
+    id: signup-skip
 - extendedWaitUntil:
     visible: Liste
     timeout: 20000

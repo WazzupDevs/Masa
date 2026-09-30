@@ -1,17 +1,19 @@
-# Saha testi: main (v2 adım 1–5), iki telefonla uçtan uca
+# Saha testi: Kabuk (v2 adım 1–5 ve v3 adım 1), iki telefonla uçtan uca
 
 Tek bir sıra. **A** ve **B** iki telefon, iki hesap, aynı mekan; **A** oda sahibi (sen), **B** misafir masa (arkadaşın). Sesli Tabu'daki gecikme ölçümü (T4) için **üçüncü bir telefon** ya da kamera gerekir. Tamamı yaklaşık 3 saat; T4'ten sonra ve S3'ten sonra mola verilebilir. Her adım **P0** ya da **P1** olarak işaretli: süre yetmezse önce aşağıdaki P0 sırası yapılır, P1'ler kalan sürede tam sıradaki yerlerinde.
 
-Adım adları: **G** giriş, **V** v2 adım 1–3 (iskelet, Keşfet, profil), **T** sesli Tabu (adım 5), **F** arkadaşlar, mesajlar ve bildirimler (adım 4), **S** v1'den kalan ve hâlâ geçerli akışlar. Hata satırında bu adları kullan.
+Kabuk v1 (`docs/SPEC_V3.md`) adımları uygulandıkça bu belge aynı PR'da güncellenir; şu an v3 adım 1 (kayıt = profil, 18 yaş sınırı) işlendi.
+
+Adım adları: **G** giriş ve kayıt (v3 adım 1), **V** v2 adım 1–3 (iskelet, Keşfet, profil), **T** sesli Tabu (adım 5), **F** arkadaşlar, mesajlar ve bildirimler (adım 4), **S** v1'den kalan ve hâlâ geçerli akışlar. Hata satırında bu adları kullan.
 
 ## P0 sırası (kritik yol, yaklaşık 1 saat)
 
 Beyaz ekran, check-in, sesli Tabu ve gecikme ölçümü, tanışma sızıntısı, arkadaşlık, mesaj ve bildirim, geçmişten engelleme. Her adım, atlanan P1'lere ihtiyaç duymadan yapılabilir.
 
 1. **Test öncesi**: listenin tamamı (evde).
-2. **G1.** Giriş, A ve B (~5 dk).
+2. **G1.** Giriş ve kayıt (ad, doğum tarihi), A ve B (~5 dk).
 3. **V4.** Check-in, kişi sayısı ve katılım biçimi, A (~5 dk).
-4. **V5.** Yalnızca 1. adım: iki telefonda görünen ad (~3 dk). Arkadaşlık isteği ad ister.
+4. **V5.** Yalnızca 1. adım: iki telefonda Profil'de ad ve yaş (~2 dk).
 5. **V7.** Lobide "profilli" etiketi, katılma isteği; Tabu odası (~5 dk).
 6. **T1–T5.** Sesli Tabu, T4'teki gecikme ölçümü dahil (~15 dk).
 7. **T6 → F1.** Karşılıklı Evet, sonuç ekranında "Arkadaş ekle" (~3 dk).
@@ -36,33 +38,34 @@ Otomatik bir adım yeşilse sahada yine yapılır, ama önce elle kalan kısmın
 
 ## Sıra
 
-| #   | Öncelik | Adım                                     | Otomatik | Telefonlar           | Not                                    |
-| --- | ------- | ---------------------------------------- | -------- | -------------------- | -------------------------------------- |
-| 1   | P0      | Test öncesi                              | —        | A, B                 | Evde, bir kez                          |
-| 2   | P0      | G1. Giriş                                | Evet     | A, B                 | Görünen ad girme (V4 ve V5 bunu ister) |
-| 3   | P1      | V1. Açılış ve sekmeler                   | Hayır    | A, B                 |                                        |
-| 4   | P1      | V2. Keşfet                               | Hayır    | A                    |                                        |
-| 5   | P1      | V3. Yarıçap dışından check-in            | Kısmen   | A                    | Mekandan en az 400 m uzakta            |
-| 6   | P0      | V4. Kişi sayısı ve katılım biçimi        | Evet     | A                    | Mekanda                                |
-| 7   | P0      | V5. Profil kurulumu                      | Kısmen   | A, B                 | P0'da yalnızca 1. adım (ad)            |
-| 8   | P1      | V6. Konum etiketli fotoğraf              | Hayır    | B                    |                                        |
-| 9   | P0      | V7. Lobide "profilli", katılma isteği    | Kısmen   | A, B                 | Tabu odası; T bu odada sürer           |
-| 10  | P0      | T1–T5. Sesli Tabu                        | Kısmen   | A, B, üçüncü telefon | ~15 dk; oda 3 dakikayı geçer           |
-| 11  | P0      | T6. Oda sonu, karşılıklı Evet            | Evet     | A, B                 |                                        |
-| 12  | P0      | F1. "Arkadaş ekle"                       | Kısmen   | A, B                 | T6'nın sonuç ekranında                 |
-| 13  | P1      | F2. Arkadaşın profili                    | Hayır    | A, B                 |                                        |
-| 14  | P0      | F3. Mesajlaşma                           | Kısmen   | A, B                 |                                        |
-| 15  | P0      | F4. Mesaj bildirimi                      | Hayır    | A, B                 | FCM'li build gerekir                   |
-| 16  | P1      | S1–S2. Sohbet odası, oda şikayeti        | Hayır    | A, B                 |                                        |
-| 17  | P0      | S3. Tanışma sızıntısı (Hayır / cevapsız) | Hayır    | A, B                 | S1 yapıldıysa onun odasıyla başlar     |
-| 18  | P0      | V8. Beyaz ekran senaryosu                | Evet     | A, B                 |                                        |
-| 19  | P1      | V9–V10. Odada profil, oda sonrası        | Hayır    | A, B                 |                                        |
-| 20  | P1      | S4. Katılma isteğinde red ve zaman aşımı | Hayır    | A, B                 |                                        |
-| 21  | P1      | F5. Arkadaşlıktan çıkarma                | Hayır    | A, B                 |                                        |
-| 22  | P1      | F6. Arkadaşlık isteği ve red             | Hayır    | A, B                 |                                        |
-| 23  | P0      | F7. Geçmişten engelleme                  | Kısmen   | A, B                 |                                        |
-| 24  | P1      | S5. Odada engelleme                      | Hayır    | A, B                 |                                        |
-| 25  | P1      | V11. Kapanış                             | Hayır    | A, B                 |                                        |
+| #   | Öncelik | Adım                                     | Otomatik | Telefonlar           | Not                                |
+| --- | ------- | ---------------------------------------- | -------- | -------------------- | ---------------------------------- |
+| 1   | P0      | Test öncesi                              | —        | A, B                 | Evde, bir kez                      |
+| 2   | P0      | G1. Giriş ve kayıt                       | Evet     | A, B                 | Ad ve doğum tarihi kayıtta         |
+| 2b  | P1      | G2. 18 yaş altı kayıt                    | Evet     | A                    | Kullanılmamış bir test numarası    |
+| 3   | P1      | V1. Açılış ve sekmeler                   | Hayır    | A, B                 |                                    |
+| 4   | P1      | V2. Keşfet                               | Hayır    | A                    |                                    |
+| 5   | P1      | V3. Yarıçap dışından check-in            | Kısmen   | A                    | Mekandan en az 400 m uzakta        |
+| 6   | P0      | V4. Kişi sayısı ve katılım biçimi        | Evet     | A                    | Mekanda                            |
+| 7   | P0      | V5. Profil kurulumu                      | Kısmen   | A, B                 | P0'da yalnızca 1. adım (ad ve yaş) |
+| 8   | P1      | V6. Konum etiketli fotoğraf              | Hayır    | B                    |                                    |
+| 9   | P0      | V7. Lobide "profilli", katılma isteği    | Kısmen   | A, B                 | Tabu odası; T bu odada sürer       |
+| 10  | P0      | T1–T5. Sesli Tabu                        | Kısmen   | A, B, üçüncü telefon | ~15 dk; oda 3 dakikayı geçer       |
+| 11  | P0      | T6. Oda sonu, karşılıklı Evet            | Evet     | A, B                 |                                    |
+| 12  | P0      | F1. "Arkadaş ekle"                       | Kısmen   | A, B                 | T6'nın sonuç ekranında             |
+| 13  | P1      | F2. Arkadaşın profili                    | Hayır    | A, B                 |                                    |
+| 14  | P0      | F3. Mesajlaşma                           | Kısmen   | A, B                 |                                    |
+| 15  | P0      | F4. Mesaj bildirimi                      | Hayır    | A, B                 | FCM'li build gerekir               |
+| 16  | P1      | S1–S2. Sohbet odası, oda şikayeti        | Hayır    | A, B                 |                                    |
+| 17  | P0      | S3. Tanışma sızıntısı (Hayır / cevapsız) | Hayır    | A, B                 | S1 yapıldıysa onun odasıyla başlar |
+| 18  | P0      | V8. Beyaz ekran senaryosu                | Evet     | A, B                 |                                    |
+| 19  | P1      | V9–V10. Odada profil, oda sonrası        | Hayır    | A, B                 |                                    |
+| 20  | P1      | S4. Katılma isteğinde red ve zaman aşımı | Hayır    | A, B                 |                                    |
+| 21  | P1      | F5. Arkadaşlıktan çıkarma                | Hayır    | A, B                 |                                    |
+| 22  | P1      | F6. Arkadaşlık isteği ve red             | Hayır    | A, B                 |                                    |
+| 23  | P0      | F7. Geçmişten engelleme                  | Kısmen   | A, B                 |                                    |
+| 24  | P1      | S5. Odada engelleme                      | Hayır    | A, B                 |                                    |
+| 25  | P1      | V11. Kapanış                             | Hayır    | A, B                 |                                    |
 
 ## Uygulama önde kalmalı
 
@@ -107,16 +110,37 @@ Her adımın sonunda ✅ / ❌ işaretle.
 
 ---
 
-## G1. Giriş (A ve B) [P0]
+## G1. Giriş ve kayıt (A ve B) [P0]
 
-> Otomatik: tamamı (`01-login.yaml`).
+> Otomatik: tamamı, 18 yaş altı denemesi dahil (`01-login.yaml`).
 
 1. Uygulamayı aç, numarayı `5xx xxx xx xx` biçiminde gir, **Kod gönder**.
 2. Test kodunu gir, **Doğrula**.
-3. "Başlamadan önce" ekranında üç kutuyu işaretle, **Onayla ve devam et**.
+3. "Başlamadan önce" ekranında iki kutuyu (Kullanım Koşulları, KVKK) işaretle, **Onayla ve devam et**. 18 yaş kutusu artık yok.
+4. **"Seni tanıyalım"**: görünen ad (A: "Deniz", B: "Ece") ve doğum tarihi (gün, ay, yıl; 18 yaş ve üzeri) → **Devam**.
+5. **"Profilini tamamla"**: fotoğraf ve tanıtım isteğe bağlı → **Şimdilik geç** (ya da ekleyip **Bitir**).
 
-**Bak:** SMS gelmemeli; kod ekranı hemen açılmalı. Yanlış kod "Kod hatalı ya da süresi dolmuş." demeli. Sonunda uygulama Keşfet sekmesinde açılmalı.
-**Hata olursa:** hangi numara, hangi ekranda kaldı, hata metni. "Bu numarayla devam edilemiyor." görünürse numara ban listesinde olabilir; panelde test numarası tanımını kontrol et.
+**Bak:**
+
+- SMS gelmemeli; kod ekranı hemen açılmalı. Yanlış kod "Kod hatalı ya da süresi dolmuş." demeli.
+- "Seni tanıyalım" ekranında "Kabuk 18 yaş ve üzeri içindir." yazar; ad ve tam bir tarih girilmeden **Devam** soluk kalır. Olmayan bir tarih (ör. 31.04) "Geçerli bir tarih gir." der.
+- Sonunda uygulama Keşfet sekmesinde açılmalı.
+  **Hata olursa:** hangi numara, hangi ekranda kaldı, hata metni. "Bu numarayla devam edilemiyor." görünürse numara ban listesinde olabilir; panelde test numarası tanımını kontrol et.
+
+## G2. 18 yaş altı kayıt (yeni bir test numarasıyla) [P1]
+
+> Otomatik: tamamı (`01-login.yaml`, ilk deneme).
+
+1. Panelde tanımlı ama hiç kullanılmamış bir test numarasıyla giriş yap, iki kutuyu işaretle.
+2. "Seni tanıyalım": bir ad ve **17 yaşında** biri için doğum tarihi (ör. bu yıldan 17 çıkar, 01.01) → **Devam**.
+
+**Bak:**
+
+- Telefon numarası ekranına dönülür; üstte **"Kabuk 18 yaş ve üzeri içindir"** ve "Hesabın açılmadı ve bilgilerin saklanmadı." yazar.
+- Panelde (Authentication → Users) bu numarayla kullanıcı **yok**; `profiles` tablosunda satır yok.
+- Aynı numarayla hemen yeniden kayıt olunabilir (kabul edilmiş risk, `docs/SPEC_V3.md` §17-S2).
+
+**Hata olursa:** kullanıcı panelde kaldıysa ❌; numarayı ve saati yaz.
 
 ## V1. Açılış ve sekmeler (A ve B) [P1]
 
@@ -161,30 +185,29 @@ Her adımın sonunda ✅ / ❌ işaretle.
 **Bak:** konum alındıktan sonra kırmızı yazı: **"Bu mekana çok uzaktasın. Mekandayken tekrar dene."**; kişi sayısı ekranına geçilmez. Masa açılmaz (Mekan sekmesi hâlâ Keşfet'e götürür).
 **Hata olursa:** uzaktayken kişi sayısı ekranına geçildiyse, telefonun gösterdiği konum doğruluğunu (varsa) ve mekana uzaklığı yaz. Bu ❌'dır.
 
-## V4. Kişi sayısı ve katılım biçimi; adsız hesapta "Profille" kapalı (A, mekanda) [P0]
+## V4. Kişi sayısı ve katılım biçimi (A, mekanda) [P0]
 
 > Otomatik: tamamı, emülatör konumuyla (`02-checkin.yaml`). Elle: gerçek GPS.
 
 1. Mekanda: Keşfet'te test mekanına dokun → mekan detayı → **Buraya giriş yap** → rıza kutusu → **Konumumu kullan** → izin ver. **"Masada kaç kişisiniz?"** ekranı açılır.
 2. Seçenekler: **1 / 2 / 3 / 4+** (5 ve 6 yok).
-3. Altta "Nasıl katılıyorsunuz?": **Anonim** seçili. **Profille** soluk ve dokunulamaz; altında **"Profille katılmak için önce Profil sekmesinden bir ad seç."** yazar.
+3. Altta "Nasıl katılıyorsunuz?": **Anonim** seçili. Ad kayıtta alındığı için **Profille** de seçilebilir. (Katılım biçimi v3 adım 3'te odaya taşınacak.)
 4. **2**'yi seç, Anonim kalsın, **Masayı aç**. "Masan hazır" ekranında takma adı not et.
 5. Mekan sekmesine dokun.
 
 **Bak:**
 
-- "Profille"ye dokunmak hiçbir şey yapmaz.
 - Masa açıldıktan sonra **Mekan sekmesi Mekan ekranını açar** (artık Keşfet'e götürmez); ekranda "2 kişi" yazar.
 
-**Hata olursa:** "Profille" seçilebildiyse ve masa açıldıysa ❌; ekrandaki mesajı yaz.
+**Hata olursa:** masa açılmadıysa ekrandaki mesajı yaz.
 
 ## V5. Profil kurulumu (A ve B) [P0]
 
 > Otomatik: 1. adım (`03-name.yaml`). Elle: 2–5.
 
-P0'da yalnızca 1. adım (görünen ad); 2–5. adımlar P1.
+P0'da yalnızca 1. adım; 2–5. adımlar P1.
 
-1. Profil → **Ad ekle** → görünen ad yaz (ör. A: "Deniz", B: "Ece") → **Kaydet**.
+1. Profil: kayıtta girilen ad yaşla birlikte görünür, ör. **"Deniz, 24"**. Doğum tarihi Profil'de **görünmez**; yalnızca Ayarlar → Hesap'ta sana görünür.
 2. A: **Profili düzenle** → Tanıtım'a bir cümle yaz → **Kaydet**. Sayaç `n/160` doğru sayıyor.
 3. Küfürlü bir ad dene (ör. içinde "amk" geçen): **"Ad 2–24 karakter olmalı ve uygun olmayan ifade içermemeli."**; kaydedilmez.
 4. Tek harfli ad dene: **Kaydet** soluk kalır.
@@ -341,7 +364,7 @@ Gerekli: APK `google-services.json` ile alınmış olmalı (CLAUDE.md → "Push"
 
 **Bak:**
 
-- 2. adımda B'de bildirim: başlık **"Masa"**, metin **"Yeni bir mesajın var"**. Gönderenin adı ve mesajın içeriği **yok**.
+- 2. adımda B'de bildirim: başlık **"Kabuk"**, metin **"Yeni bir mesajın var"**. Gönderenin adı ve mesajın içeriği **yok**.
 - Bildirime dokununca uygulama açılır.
 - 4. adımda bildirim **gelmez**; mesaj uygulama açılınca konuşmada görünür.
 
@@ -464,7 +487,7 @@ Reddedilen masa o odayı lobide bir daha görmez; bu yüzden iki deneme için A 
 
 **Bak:**
 
-- 1'de (FCM'li build) B'de bildirim: **"Masa"**, **"Yeni bir arkadaşlık isteğin var"**; ad ya da içerik yok. Arkadaşlar sekmesinde "1 yeni arkadaşlık isteği".
+- 1'de (FCM'li build) B'de bildirim: **"Kabuk"**, **"Yeni bir arkadaşlık isteğin var"**; ad ya da içerik yok. Arkadaşlar sekmesinde "1 yeni arkadaşlık isteği".
 - 2'de istek oyun bağlamıyla görünür: "… Tabu oynadığınız … masası arkadaşın olmak istiyor". A'nın görünen adı ya da fotoğrafı **yok**.
 - 3'ten sonra A'da satır "… masasına istek gönderildi" olarak **kalır**; red A'ya hiçbir yerde görünmez ve bildirim gitmez.
 

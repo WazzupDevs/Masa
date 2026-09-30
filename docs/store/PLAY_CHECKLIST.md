@@ -57,8 +57,9 @@ Kullanıcı hesabı olan her uygulama için iki şey gerekir: uygulama içinden 
 EN
 Sign in: enter the phone number above on the first screen (without +90 if it is
 pre-filled) and tap "Kod gönder". No SMS is sent to this number; type the 6-digit
-code above on the next screen. Then tick the three boxes (18+, Terms, KVKK notice)
-and tap "Onayla ve devam et".
+code above on the next screen. Then tick the two boxes (Terms, KVKK notice) and
+tap "Onayla ve devam et". On "Seni tanıyalım", enter any name and a birth date of
+18 or older (for example 01 01 1995), tap "Devam", then "Şimdilik geç".
 
 Location: the core feature works only inside a partner venue in Istanbul
 (Beylikdüzü). Checking in to a venue needs the phone to be within 300 m of it;
@@ -129,11 +130,11 @@ Yanıtlar `content/` taramasına göre (kartlar, mekan adları, takma adlar, soh
 | Kişisel bilgilerin üçüncü kişilerle paylaşımı                        | Hayır    | Hizmet sağlayıcılar paylaşım sayılmaz                                     |
 
 - İçerik değişince (`content/`) tarama yeniden yapılır ve tablo güncellenir.
-- Beklenen sonuç: kullanıcı etkileşimi etiketiyle düşük yaş derecesi. Uygulamanın kendi 18+ şartı ayrıca hedef kitleyle ve uygulama içi beyanla uygulanır.
+- Beklenen sonuç: kullanıcı etkileşimi etiketiyle düşük yaş derecesi. Uygulamanın kendi 18+ şartı ayrıca hedef kitleyle ve kayıttaki doğum tarihiyle uygulanır.
 
 ### 3.6 Hedef kitle ve içerik
 
-- [ ] Hedef yaş grupları: yalnızca **18 ve üzeri**. Uygulama ilk açılışta 18 yaş beyanı ister.
+- [ ] Hedef yaş grupları: yalnızca **18 ve üzeri**. v3 (Kabuk v1): uygulama içi yaş kapısı beyan kutusu değil, kayıtta zorunlu doğum tarihidir; 18 yaş altına hesap açılmaz ve hiçbir veri tutulmaz (`docs/SPEC_V3.md` §3).
 - [ ] Uygulama çocukların ilgisini çekebilir mi: **Hayır**. Aileler programı: yok.
 
 ### 3.7 Veri güvenliği formu (v2 veri türleri)

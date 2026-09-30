@@ -7,7 +7,8 @@ import type { Concept, Visibility } from './rooms.ts';
 import type { SohbetTheme } from './sohbet.ts';
 
 export type AnalyticsEventProps = {
-  onboarding_completed: Record<string, never>;
+  // Sent after the optional photo/bio step; nothing is sent for a sign-up under 18 (rule 11).
+  onboarding_completed: { with_photo: boolean; with_bio: boolean };
   // 1–4; 4 means "4+".
   check_in: { headcount: number };
   room_created: { concept: Concept; visibility: Visibility };
@@ -39,7 +40,7 @@ export type AnalyticsEventProps = {
 export type AnalyticsEvent = keyof AnalyticsEventProps;
 
 const ALLOWED: { [E in AnalyticsEvent]: readonly (keyof AnalyticsEventProps[E])[] } = {
-  onboarding_completed: [],
+  onboarding_completed: ['with_photo', 'with_bio'],
   check_in: ['headcount'],
   room_created: ['concept', 'visibility'],
   join_requested: [],

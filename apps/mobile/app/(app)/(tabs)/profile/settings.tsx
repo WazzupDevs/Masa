@@ -12,6 +12,8 @@ import { BlockedList } from '@/features/chat/BlockedList';
 import { DesignPicker } from '@/features/design/DesignPicker';
 import { designPickerEnabled } from '@/theme/ThemeProvider';
 import { ProfileSettings } from '@/features/profile/ProfileSettings';
+import { useProfileView } from '@/features/profile/queries';
+import { useProfile } from '@/features/account/useProfile';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { unregisterPush } from '@/features/push/push';
@@ -35,6 +37,10 @@ async function signOutLocally() {
 }
 
 export default function SettingsScreen() {
+  // The own birth date comes only from profile/get (the column is closed to the client).
+  const own = useProfile();
+  const view = useProfileView(own.data?.public_id);
+  const birthDate = view.data?.birthDate ?? null;
   const signOut = useMutation({
     mutationFn: async () => {
       await unregisterPush();
@@ -66,6 +72,16 @@ export default function SettingsScreen() {
       {designPickerEnabled ? (
         <View className="mb-4 mt-4">
           <DesignPicker />
+        </View>
+      ) : null}
+      {birthDate ? (
+        <View className="mt-4 gap-1">
+          <Text variant="heading" accessibilityRole="header">
+            {tr.settings.accountSection}
+          </Text>
+          <Text variant="label">{tr.settings.birthDate}</Text>
+          <Text variant="bodyStrong">{tr.settings.birthDateValue(birthDate)}</Text>
+          <Text variant="fine">{tr.settings.birthDateHint}</Text>
         </View>
       ) : null}
       <View className="mt-4">
