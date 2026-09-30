@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { Checkbox } from '@/components/Checkbox';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
@@ -47,12 +48,12 @@ export default function ConsentsScreen() {
         title={tr.consents.title}
         subtitle={profile.data ? tr.consents.outdated : undefined}
       />
-      <View className="mt-6 gap-1">
+      <Card className="mt-6 gap-1">
         <Checkbox label={tr.consents.terms} checked={terms} onToggle={() => setTerms((v) => !v)} />
         <ReadLink href="/terms" />
         <Checkbox label={tr.consents.kvkk} checked={kvkk} onToggle={() => setKvkk((v) => !v)} />
         <ReadLink href="/kvkk" />
-      </View>
+      </Card>
       {reconsent.isError ? (
         <Text variant="fine" tone="danger" className="mt-4">
           {errorMessage(reconsent.error)}

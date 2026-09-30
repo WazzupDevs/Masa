@@ -55,5 +55,6 @@ export function resolveShadows(
     raised: resolveShadow(set.raised, palette),
     pin: resolveShadow(set.pin, palette),
     tabBar: resolveShadow(set.tabBar, palette),
+    focus: resolveShadow(set.focus, palette),
   };
 }

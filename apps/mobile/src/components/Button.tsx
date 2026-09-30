@@ -8,7 +8,8 @@ import { ICON, SPACING, TOUCH } from '@/theme/tokens';
 import { useQuiet } from './Quiet';
 import { Text } from './Text';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'success' | 'ghost';
+// `dangerText`: a text-only button in the danger colour (Hesabımı sil).
+export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'success' | 'ghost' | 'dangerText';
 export type IconName = ComponentProps<typeof Ionicons>['name'];
 
 type Props = {
@@ -51,7 +52,9 @@ export function Button({
     danger: { bg: colors.danger, fg: colors.onDanger },
     success: { bg: colors.success, fg: colors.onSuccess },
     ghost: { bg: 'transparent', fg: colors.muted },
+    dangerText: { bg: 'transparent', fg: colors.danger },
   };
+  const textOnly = variant === 'ghost' || variant === 'dangerText';
   let { bg, fg } = fills[variant];
   // A theme with heavy control strokes draws every button with the outline; otherwise only the
   // secondary one has it. Trust screens keep a hairline on the secondary button only.
@@ -61,12 +64,12 @@ export function Button({
   if (variant === 'secondary') {
     borderWidth = quiet ? shape.stroke.hairline : shape.stroke.control;
     borderColor = quiet ? colors.divider : colors.border;
-  } else if (variant !== 'ghost' && outlined && !quiet) {
+  } else if (!textOnly && outlined && !quiet) {
     borderWidth = shape.stroke.control;
     borderColor = colors.border;
   }
   let shadow =
-    quiet || variant === 'ghost'
+    quiet || textOnly
       ? undefined
       : variant === 'primary'
         ? shape.shadow.primaryButton
@@ -98,9 +101,9 @@ export function Button({
   // muted text, no shadow.
   const pressOffset = shadow ? shape.stroke.control + 1 : 0;
   if (inactive && !tint) {
-    bg = variant === 'ghost' ? 'transparent' : colors.surface2;
+    bg = textOnly ? 'transparent' : colors.surface2;
     fg = colors.muted;
-    borderColor = variant === 'ghost' ? 'transparent' : colors.muted;
+    borderColor = textOnly ? 'transparent' : colors.muted;
   }
 
   return (
@@ -138,7 +141,11 @@ export function Button({
                   variant={size === 'lg' ? 'buttonLarge' : 'button'}
                   color={fg}
                   align="center"
-                  numberOfLines={2}
+                  // With a detail ("Doğru +1") the label stays on one line and shrinks to fit a half
+                  // width button instead of breaking inside the word.
+                  numberOfLines={detail ? 1 : 2}
+                  adjustsFontSizeToFit={!!detail}
+                  minimumFontScale={0.7}
                   className="shrink"
                 >
                   {label}

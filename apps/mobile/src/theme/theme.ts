@@ -81,6 +81,7 @@ export const THEME: ThemeDefinition = {
       pin: '0px 4px 10px rgba(0, 0, 0, 0.25)',
       // The floating tab bar: wide, soft, low opacity (no outline on its top edge).
       tabBar: '0px 14px 36px -8px rgba(0, 0, 0, 0.24)',
+      focus: '3px 3px 0px {accent}',
     },
     selectedTeam: 'fill',
     screenPadding: 20,

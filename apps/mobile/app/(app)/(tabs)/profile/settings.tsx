@@ -75,13 +75,15 @@ export default function SettingsScreen() {
         </View>
       ) : null}
       {birthDate ? (
-        <View className="mt-4 gap-1">
-          <Text variant="heading" accessibilityRole="header">
+        <View className="mt-4">
+          <Text variant="overline" tone="muted" accessibilityRole="header">
             {tr.settings.accountSection}
           </Text>
-          <Text variant="label">{tr.settings.birthDate}</Text>
-          <Text variant="bodyStrong">{tr.settings.birthDateValue(birthDate)}</Text>
-          <Text variant="fine">{tr.settings.birthDateHint}</Text>
+          <ListRow
+            title={tr.settings.birthDate}
+            meta={tr.settings.birthDateValue(birthDate)}
+            below={<Text variant="fine">{tr.settings.birthDateHint}</Text>}
+          />
         </View>
       ) : null}
       <View className="mt-4">
@@ -91,7 +93,7 @@ export default function SettingsScreen() {
         <BlockedList />
       </View>
       <View className="mt-8">
-        <Text variant="heading" accessibilityRole="header">
+        <Text variant="overline" tone="muted" accessibilityRole="header">
           {tr.settings.legalSection}
         </Text>
         <Row
@@ -113,31 +115,36 @@ export default function SettingsScreen() {
           />
         ) : null}
       </View>
-      <View className="mt-8 gap-1">
-        <Text variant="heading" accessibilityRole="header">
-          {tr.settings.about}
-        </Text>
-        <Text variant="fine">{tr.settings.version(Constants.expoConfig?.version ?? '')}</Text>
-        <Text variant="fine">{tr.settings.osm}</Text>
-      </View>
       <View className="mt-auto gap-3 pt-8">
         {deleteAccount.isError ? (
           <Text variant="fine" tone="danger">
             {errorMessage(deleteAccount.error)}
           </Text>
         ) : null}
-        <Button
-          variant="secondary"
-          label={tr.settings.signOut}
-          onPress={() => signOut.mutate()}
-          loading={signOut.isPending}
-        />
-        <Button
-          variant="danger"
-          label={tr.settings.deleteAccount}
-          onPress={confirmDelete}
-          loading={deleteAccount.isPending}
-        />
+        <View className="flex-row gap-2.5">
+          <View className="flex-1">
+            <Button
+              variant="secondary"
+              label={tr.settings.signOut}
+              onPress={() => signOut.mutate()}
+              loading={signOut.isPending}
+            />
+          </View>
+          <View className="flex-1">
+            <Button
+              variant="dangerText"
+              label={tr.settings.deleteAccount}
+              onPress={confirmDelete}
+              loading={deleteAccount.isPending}
+            />
+          </View>
+        </View>
+        <Text variant="fine" align="center">
+          {tr.settings.version(Constants.expoConfig?.version ?? '')}
+        </Text>
+        <Text variant="fine" align="center">
+          {tr.settings.osm}
+        </Text>
       </View>
     </Screen>
   );

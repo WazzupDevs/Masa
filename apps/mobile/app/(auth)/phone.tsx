@@ -5,15 +5,16 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { Button } from '@/components/Button';
-import { Card } from '@/components/Card';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { BrandLine, Snail } from '@/components/Snail';
 import { Text } from '@/components/Text';
 import { authErrorMessage } from '@/features/auth/authErrors';
 import { useOnboardingStore } from '@/features/onboarding/store';
 import { tr } from '@/i18n/tr';
 import { supabase } from '@/lib/supabase';
+import { SPACING } from '@/theme/tokens';
 
 export default function PhoneScreen() {
   const [input, setInput] = useState('');
@@ -40,15 +41,34 @@ export default function PhoneScreen() {
     router.push({ pathname: '/otp', params: { phone } });
   }
 
+  // Sign-up ended under 18 (canvas: 18 yaş sınırı): the account was deleted, nothing was kept.
+  if (underAge) {
+    return (
+      <Screen>
+        <View testID="under-age" collapsable={false} className="flex-1 justify-center gap-4">
+          <Snail height={SPACING[16] + SPACING[5]} />
+          <Text variant="display" accessibilityRole="header">
+            {tr.underAge.title}
+          </Text>
+          <Text tone="muted">{tr.underAge.body}</Text>
+        </View>
+        <View className="pt-8">
+          <Button
+            variant="secondary"
+            label={tr.common.close}
+            onPress={() => useOnboardingStore.setState({ underAge: false })}
+          />
+        </View>
+      </Screen>
+    );
+  }
+
   return (
     <Screen>
+      <View className="mb-3 mt-2">
+        <BrandLine />
+      </View>
       <ScreenHeader title={tr.auth.phoneTitle} subtitle={tr.auth.phoneHint} />
-      {underAge ? (
-        <Card tone="note" className="mt-4" testID="under-age">
-          <Text variant="bodyStrong">{tr.underAge.title}</Text>
-          <Text variant="fine">{tr.underAge.body}</Text>
-        </Card>
-      ) : null}
       <View className="mt-6">
         <Input
           testID="phone-input"

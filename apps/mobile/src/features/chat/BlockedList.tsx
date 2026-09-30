@@ -32,7 +32,7 @@ export function BlockedList() {
 
   return (
     <View>
-      <Text variant="heading" accessibilityRole="header">
+      <Text variant="overline" tone="muted" accessibilityRole="header">
         {tr.safety.blockedTitle}
       </Text>
       {blocks.data?.length === 0 ? (
