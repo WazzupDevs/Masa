@@ -56,7 +56,8 @@ h2 { margin: 0 0 12px; font-size: 15px; }
 .themed-fg { background: #1f3a78; -webkit-mask-size: 100% 100%; mask-size: 100% 100%; }
 .misc { display: flex; gap: 24px; align-items: flex-end; flex-wrap: wrap; }
 .misc figure { margin: 0; text-align: center; }
-.splash { width: 180px; height: 320px; border-radius: 16px; display: grid; place-items: center; background: ${tokens.backgroundTop}; }
+.splash { width: 180px; height: 320px; border-radius: 16px; display: grid; place-items: center; background: ${tokens.cream}; }
+.splash.dark { background: ${tokens.night}; }
 .splash img { width: 110px; }
 .status { background: #111; padding: 8px 12px; border-radius: 8px; display: flex; gap: 8px; align-items: center; }
 </style></head><body><main>
@@ -68,6 +69,7 @@ ${wallpaper(dir, 'dark', true)}
 <figure><img src="${dir}/icon.png" width="120" style="border-radius:22%"><figcaption>iOS 1024 (köşesiz; maske iOS'tan)</figcaption></figure>
 <figure><img src="${dir}/play-512.png" width="120" style="border-radius:20%"><figcaption>Play 512</figcaption></figure>
 <figure><div class="splash"><img src="${dir}/splash.png"></div><figcaption>Açılış ekranı</figcaption></figure>
+<figure><div class="splash dark"><img src="${dir}/splash-dark.png"></div><figcaption>Açılış ekranı · koyu</figcaption></figure>
 <figure><div class="status"><img src="${dir}/notification.png" width="24"><img src="${dir}/notification.png" width="48"></div><figcaption>Bildirim (24 ve 48 px)</figcaption></figure>
 </div></section>
 </main></body></html>

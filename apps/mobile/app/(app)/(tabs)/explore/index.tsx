@@ -10,7 +10,7 @@ import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
 import { ListRow } from '@/components/ListRow';
 import { ScreenHeader } from '@/components/ScreenHeader';
-import { TAB_BAR_HEIGHT } from '@/components/TabBar';
+import { useTabBarSpace } from '@/components/TabBar';
 import { Segmented } from '@/components/Segmented';
 import { Text } from '@/components/Text';
 import { useCheckinDraft } from '@/features/checkin/draft';
@@ -22,6 +22,7 @@ import { tr } from '@/i18n/tr';
 import { track } from '@/lib/analytics';
 import { useNow } from '@/lib/useNow';
 import { useTheme } from '@/theme/ThemeProvider';
+import { SPACING } from '@/theme/tokens';
 
 type View_ = 'list' | 'map';
 
@@ -38,6 +39,8 @@ export default function ExploreScreen() {
   const [view, setView] = useState<View_>('list');
   // The map lies under the header; its opening camera keeps the venues below it.
   const [headerHeight, setHeaderHeight] = useState(0);
+  // The floating tab bar covers the bottom of the map and the list.
+  const barSpace = useTabBarSpace();
 
   const layout = venues.isSuccess ? exploreLayout(venues.data.length) : 'list';
 
@@ -60,7 +63,7 @@ export default function ExploreScreen() {
       <View style={{ flex: 1 }}>
         {venues.isSuccess && layout === 'list' && view === 'map' && headerHeight > 0 ? (
           <View style={StyleSheet.absoluteFill}>
-            <ExploreMap venues={sorted} headerHeight={headerHeight} tabBarHeight={TAB_BAR_HEIGHT} />
+            <ExploreMap venues={sorted} headerHeight={headerHeight} tabBarHeight={barSpace} />
           </View>
         ) : null}
         <View
@@ -103,10 +106,10 @@ export default function ExploreScreen() {
         ) : null}
 
         {venues.isSuccess && layout === 'list' && view === 'list' ? (
-          <VenueList venues={sorted} />
+          <VenueList venues={sorted} bottomSpace={barSpace} />
         ) : null}
         {venues.isSuccess && layout === 'single' && sorted[0] ? (
-          <SingleVenue venue={sorted[0]} />
+          <SingleVenue venue={sorted[0]} bottomSpace={barSpace} />
         ) : null}
       </View>
     </SafeAreaView>
@@ -114,7 +117,13 @@ export default function ExploreScreen() {
 }
 
 // The mockup's sheet: a surface with rounded top corners, the count, and venue rows.
-function VenueList({ venues }: { venues: readonly ExploreVenue[] }) {
+function VenueList({
+  venues,
+  bottomSpace,
+}: {
+  venues: readonly ExploreVenue[];
+  bottomSpace: number;
+}) {
   const { colors, shape } = useTheme();
   return (
     <View
@@ -128,7 +137,10 @@ function VenueList({ venues }: { venues: readonly ExploreVenue[] }) {
         borderColor: colors.border,
       }}
     >
-      <ScrollView contentContainerClassName="px-4 pb-8 pt-3">
+      <ScrollView
+        contentContainerClassName="px-4 pt-3"
+        contentContainerStyle={{ paddingBottom: bottomSpace }}
+      >
         <View className="flex-row items-center justify-between px-1 pb-1">
           <Text variant="label">{tr.explore.count(venues.length)}</Text>
           <Text variant="fine">{tr.explore.locationHidden}</Text>
@@ -160,13 +172,17 @@ function VenueList({ venues }: { venues: readonly ExploreVenue[] }) {
 
 // The pilot's Keşfet: the one venue, its bucket, all its events within the week and check-in, then
 // "Yeni mekanlar yakında". A second active venue brings the list and the map back (content only).
-function SingleVenue({ venue }: { venue: ExploreVenue }) {
+function SingleVenue({ venue, bottomSpace }: { venue: ExploreVenue; bottomSpace: number }) {
   const { shape } = useTheme();
   const setVenue = useCheckinDraft((s) => s.setVenue);
   return (
     <ScrollView
-      contentContainerStyle={{ paddingHorizontal: shape.screenPadding }}
-      contentContainerClassName="gap-4 pb-8 pt-2"
+      // The floating tab bar covers the bottom: the card and the note end above it.
+      contentContainerStyle={{
+        paddingHorizontal: shape.screenPadding,
+        paddingBottom: SPACING[8] + bottomSpace,
+      }}
+      contentContainerClassName="gap-4 pt-2"
     >
       <Card>
         <Text variant="heading" accessibilityRole="header">

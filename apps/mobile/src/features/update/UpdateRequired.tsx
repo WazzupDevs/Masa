@@ -12,7 +12,7 @@ export function UpdateRequired() {
   return (
     <Screen>
       <View className="flex-1 justify-center gap-3">
-        <EmptyState icon="cloud-download-outline" title={tr.update.title} body={tr.update.body} />
+        <EmptyState snail title={tr.update.title} body={tr.update.body} />
         <Button label={tr.update.action} onPress={() => void Linking.openURL(updateUrl())} />
         {appBuild ? (
           <Text variant="fine" align="center">

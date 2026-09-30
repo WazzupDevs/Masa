@@ -440,7 +440,7 @@ export const tr = {
     signal: 'Ekranını kaldır, birbirinizi bulun.',
     signalTop: 'Tanışalım mı? · İki masa da "Evet" dedi',
     signalSame: 'Diğer masada da aynı renk ve aynı işaret var.',
-    goodGame: 'Güzel oyundu 👋',
+    goodGame: 'Güzel oyundu',
     backToVenue: 'Mekana dön',
     score: (n: number) => `Ortak skor: ${n}`,
     addFriend: 'Arkadaş ekle',

@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { ChatBubble } from '@/components/ChatBubble';
 import { IconButton } from '@/components/IconButton';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
@@ -20,8 +21,7 @@ import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { track } from '@/lib/analytics';
 import { dmApi, friendsApi, safetyApi } from '@/lib/api';
-import { useTheme } from '@/theme/ThemeProvider';
-import { SPACING, TOUCH } from '@/theme/tokens';
+import { TOUCH } from '@/theme/tokens';
 
 type Params = { threadId: string; publicId: string; name: string };
 
@@ -29,7 +29,6 @@ type Params = { threadId: string; publicId: string; name: string };
 // reread through dm_messages_page (`from_me`, never the sender's account id). Read state stays
 // with the reader.
 export default function DmScreen() {
-  const { colors, shape } = useTheme();
   const { threadId, publicId, name } = useLocalSearchParams<Params>();
   const queryClient = useQueryClient();
   const messages = useDmMessages(threadId);
@@ -106,24 +105,12 @@ export default function DmScreen() {
         <Text variant="display">{name}</Text>
       </Pressable>
 
-      <View className="mt-4 flex-1 gap-2">
+      <View className="mt-4 flex-1 gap-3">
         {list.length === 0 && !messages.isPending ? (
           <Text tone="muted">{tr.friends.noMessagesYet}</Text>
         ) : null}
         {[...list].reverse().map((m) => (
-          <View
-            key={m.id}
-            style={{
-              maxWidth: '80%',
-              alignSelf: m.from_me ? 'flex-end' : 'flex-start',
-              borderRadius: shape.radius.md,
-              paddingHorizontal: SPACING[4],
-              paddingVertical: SPACING[2],
-              backgroundColor: m.from_me ? colors.accent : colors.surface2,
-            }}
-          >
-            <Text tone={m.from_me ? 'onAccent' : 'text'}>{m.body}</Text>
-          </View>
+          <ChatBubble key={m.id} text={m.body} mine={m.from_me} />
         ))}
       </View>
 

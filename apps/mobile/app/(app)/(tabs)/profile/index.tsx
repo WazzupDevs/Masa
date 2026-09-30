@@ -3,7 +3,7 @@ import type { Participation } from '@shared/profile.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Linking, View } from 'react-native';
+import { Linking, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Sheet } from '@/components/Sheet';
+import { SnailLoader } from '@/components/Snail';
 import { Text } from '@/components/Text';
 import { useProfile } from '@/features/account/useProfile';
 import { choosePhoto, PhotoError, type PhotoSource } from '@/features/profile/photo';
@@ -72,7 +73,9 @@ export default function ProfileScreen() {
       />
 
       {view.isPending ? (
-        <ActivityIndicator className="mt-16" color={colors.muted} />
+        <View className="mt-16">
+          <SnailLoader />
+        </View>
       ) : view.isError || !view.data ? (
         <EmptyState
           icon="cloud-offline-outline"

@@ -20,7 +20,6 @@ import { View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
-import { TAB_BAR_LIFT } from '@/components/TabBar';
 import { Text } from '@/components/Text';
 import { tr } from '@/i18n/tr';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -236,19 +235,16 @@ export function ExploreMap({
           />
         </GeoJSONSource>
       </Map>
-      {card ? <VenueCard venue={card} /> : null}
+      {card ? <VenueCard venue={card} bottom={tabBarHeight} /> : null}
     </View>
   );
 }
 
-// The selected venue, above the tab bar's raised disc. Existing components for now; the design
+// The selected venue, above the floating tab bar. Existing components for now; the design
 // session replaces the look.
-function VenueCard({ venue }: { venue: ExploreVenue }) {
+function VenueCard({ venue, bottom }: { venue: ExploreVenue; bottom: number }) {
   return (
-    <View
-      className="absolute inset-x-0"
-      style={{ bottom: SPACING[4] + TAB_BAR_LIFT, paddingHorizontal: SPACING[4] }}
-    >
+    <View className="absolute inset-x-0" style={{ bottom, paddingHorizontal: SPACING[4] }}>
       <Card testID="explore-map-card">
         <Text variant="title">{venue.name}</Text>
         <View className="mt-2 flex-row flex-wrap gap-1.5">

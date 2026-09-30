@@ -139,9 +139,11 @@ jobs:
           path: e2e-out/${{ matrix.scheme }}
           retention-days: 14
 
-  # Screenshots and logs (no video) on the e2e-screenshots branch, for readers without access to
+  # Screenshots and logs (no video) on an e2e-screenshots branch, for readers without access to
   # artifact storage: an orphan branch with a single commit, force-pushed by every run, so binaries
-  # never pile up in history.
+  # never pile up in history. A PR run writes its own branch (e2e-screenshots-pr-<number>), so runs of
+  # two PRs do not overwrite each other; main, nightly and manual runs write e2e-screenshots. (Git
+  # cannot hold both e2e-screenshots and e2e-screenshots/pr-<number>, hence the dash.)
   publish-screenshots:
     if: ${{ always() && needs.e2e.result != 'skipped' }}
     needs: e2e
@@ -155,6 +157,8 @@ jobs:
           pattern: e2e-run-*
           path: out
       - name: Push to e2e-screenshots
+        env:
+          BRANCH: ${{ github.event_name == 'pull_request' && format('e2e-screenshots-pr-{0}', github.event.pull_request.number) || 'e2e-screenshots' }}
         run: |
           mkdir site
           for dir in out/*; do
@@ -164,9 +168,9 @@ jobs:
             tail -n 3000 "$dir/logcat.txt" > "site/$run/logcat-tail.txt" 2>/dev/null || true
           done
           cd site
-          git init -q -b e2e-screenshots
+          git init -q -b "$BRANCH"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -q --allow-empty -m "E2E screenshots, run ${{ github.run_id }} (${{ github.sha }})"
-          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" e2e-screenshots
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" "$BRANCH"
