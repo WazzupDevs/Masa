@@ -4,10 +4,64 @@ export const JOIN_REQUEST_TTL_SECONDS = 60;
 export const MAX_JOIN_REQUESTS_PER_HOUR = 10;
 export const ROOM_IDLE_MINUTES = 10;
 
+// The games (v1: Sesli Tabu and Sohbet kartları). rooms.concept is the running game; null is chat
+// (docs/SPEC_V3.md §5.1).
 export const CONCEPTS = ['tabu', 'sohbet'] as const;
 export const VISIBILITIES = ['private', 'open'] as const;
 export type Concept = (typeof CONCEPTS)[number];
 export type Visibility = (typeof VISIBILITIES)[number];
+
+// The optional intent label of a room ("Oyun" / "Sohbet"), chosen when it is created (§5.2).
+export const INTENTS = ['game', 'chat'] as const;
+export type Intent = (typeof INTENTS)[number];
+export type RoomIntentLabel = Intent | 'none';
+
+export function isIntent(value: unknown): value is Intent {
+  return (INTENTS as readonly unknown[]).includes(value);
+}
+
+// A game proposal waits this long for the other table (§5.3); the SQL functions get it from here.
+export const GAME_PROPOSAL_TTL_SECONDS = 30;
+// "Masa adını değiştir" per check-in (§5.6).
+export const ALIAS_REROLLS_PER_CHECKIN = 3;
+
+export type GameProposal = {
+  proposer_session_id: string;
+  concept: Concept;
+  expires_at: string;
+};
+
+// The proposal area of the room screen: nothing, this table's proposal waiting, or the other
+// table's proposal to answer. A proposal past expires_at is gone on both screens at once.
+export type ProposalView =
+  | { kind: 'none' }
+  | { kind: 'mine'; concept: Concept; secondsLeft: number }
+  | { kind: 'theirs'; concept: Concept; secondsLeft: number };
+
+export function proposalView(
+  proposal: GameProposal | null | undefined,
+  mySessionId: string,
+  now: number,
+): ProposalView {
+  if (!proposal) return { kind: 'none' };
+  const left = Math.ceil((Date.parse(proposal.expires_at) - now) / 1000);
+  if (!(left > 0)) return { kind: 'none' };
+  return {
+    kind: proposal.proposer_session_id === mySessionId ? 'mine' : 'theirs',
+    concept: proposal.concept,
+    secondsLeft: left,
+  };
+}
+
+// "Öneri kabul edilmedi": this table's proposal went away without a game starting. A decline and a
+// timeout look the same (S7); a decline shows at once.
+export function proposalNotAccepted(
+  before: ProposalView,
+  after: ProposalView,
+  gameRunning: boolean,
+): boolean {
+  return before.kind === 'mine' && after.kind === 'none' && !gameRunning;
+}
 
 // Status of a join request as its requester may see it (public.my_join_requests).
 export type RequesterStatus = 'pending' | 'accepted' | 'unavailable';

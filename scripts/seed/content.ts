@@ -48,7 +48,7 @@ export function parseAliasWords(json: unknown): AliasWords {
   if (!isRecord(json)) throw new Error('aliases-tr.json must be an object');
   return {
     adjectives: stringList(json.adjectives, 'adjectives'),
-    animals: stringList(json.animals, 'animals'),
+    nouns: stringList(json.nouns, 'nouns'),
   };
 }
 

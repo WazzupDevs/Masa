@@ -3,7 +3,7 @@
 import type { GameMode } from './concepts.ts';
 import type { FriendRequestSource, FriendshipSource } from './friends.ts';
 import type { Participation } from './profile.ts';
-import type { Concept, Visibility } from './rooms.ts';
+import type { Concept, RoomIntentLabel } from './rooms.ts';
 import type { SohbetTheme } from './sohbet.ts';
 
 export type AnalyticsEventProps = {
@@ -11,7 +11,12 @@ export type AnalyticsEventProps = {
   onboarding_completed: { with_photo: boolean; with_bio: boolean };
   // 1–4; 4 means "4+".
   check_in: { headcount: number };
-  room_created: { concept: Concept; visibility: Visibility };
+  // v3 (docs/SPEC_V3.md §15): the intent ('none' without one) and the owner's choice for the room.
+  room_created: { intent: RoomIntentLabel; profiled: boolean };
+  // A proposal and its acceptance; the game only, never the other table.
+  game_proposed: { concept: Concept };
+  game_accepted: { concept: Concept };
+  alias_rerolled: Record<string, never>;
   join_requested: Record<string, never>;
   join_accepted: Record<string, never>;
   join_unavailable: Record<string, never>;
@@ -44,7 +49,10 @@ export type AnalyticsEvent = keyof AnalyticsEventProps;
 const ALLOWED: { [E in AnalyticsEvent]: readonly (keyof AnalyticsEventProps[E])[] } = {
   onboarding_completed: ['with_photo', 'with_bio'],
   check_in: ['headcount'],
-  room_created: ['concept', 'visibility'],
+  room_created: ['intent', 'profiled'],
+  game_proposed: ['concept'],
+  game_accepted: ['concept'],
+  alias_rerolled: [],
   join_requested: [],
   join_accepted: [],
   join_unavailable: [],
@@ -75,11 +83,13 @@ export const ANALYTICS_EVENTS = Object.keys(ALLOWED) as AnalyticsEvent[];
 export function analyticsProperties<E extends AnalyticsEvent>(
   event: E,
   props: AnalyticsEventProps[E],
-): Record<string, string | number> {
-  const out: Record<string, string | number> = {};
+): Record<string, string | number | boolean> {
+  const out: Record<string, string | number | boolean> = {};
   for (const key of ALLOWED[event] as readonly string[]) {
     const value = (props as Record<string, unknown>)[key];
-    if (typeof value === 'string' || typeof value === 'number') out[key] = value;
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      out[key] = value;
+    }
   }
   return out;
 }

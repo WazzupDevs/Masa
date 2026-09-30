@@ -180,13 +180,7 @@ describe('checkin/check-in', () => {
 
   it('validates headcount and coordinates', async () => {
     const client = await onboarded(PHONE_A);
-    for (const bad of [
-      { headcount: 0 },
-      { headcount: 5 },
-      { lat: 91 },
-      { accuracyM: -1 },
-      { participation: 'public' as never },
-    ]) {
+    for (const bad of [{ headcount: 0 }, { headcount: 5 }, { lat: 91 }, { accuracyM: -1 }]) {
       expect((await checkIn(client, bad)).status, JSON.stringify(bad)).toBe(400);
     }
   });
@@ -336,5 +330,66 @@ describe('privacy', () => {
     expect(start.error?.code).toBe('42501');
     const end = await client.rpc('end_table_session', { target_user_id: id });
     expect(end.error?.code).toBe('42501');
+  });
+});
+
+// docs/SPEC_V3.md §5.6: "Masa adını değiştir".
+describe('checkin/reroll-alias', () => {
+  const reroll = (client: Client) => invoke(client, 'checkin', { action: 'reroll-alias' });
+
+  async function aliasOf(client: Client) {
+    const [row] = await sql`
+      select alias from public.table_sessions
+      where user_id = ${await userIdOf(client)} and status = 'active'
+    `;
+    return row?.alias as string;
+  }
+
+  it('draws a new alias three times per check-in, then refuses', async () => {
+    const client = await onboarded(PHONE_A);
+    await checkIn(client);
+    const seen = [await aliasOf(client)];
+    for (const left of [2, 1, 0]) {
+      const res = await reroll(client);
+      expect(res).toEqual({ status: 200, body: { alias: expect.any(String), rerollsLeft: left } });
+      const alias = (res.body as { alias: string }).alias;
+      expect(alias).toMatch(/^\S+ \S+$/);
+      expect(seen).not.toContain(alias);
+      expect(await aliasOf(client)).toBe(alias);
+      seen.push(alias);
+    }
+    expect(await reroll(client)).toEqual({ status: 429, body: errorBody('reroll_limit') });
+    // A new check-in starts again.
+    await checkIn(client);
+    expect((await reroll(client)).status).toBe(200);
+  });
+
+  it('never takes an alias another active table at the venue has', async () => {
+    const [a, b] = [await onboarded(PHONE_A), await onboarded(PHONE_B)];
+    await checkIn(a);
+    await checkIn(b);
+    // The database refuses a taken alias (the function then draws another one); nothing changes.
+    await expect(
+      sql`select public.reroll_table_alias(${await userIdOf(a)}, ${await aliasOf(b)}, 3)`,
+    ).rejects.toThrow(/table_sessions_unique_active_alias/);
+    const res = await reroll(a);
+    expect(res.status).toBe(200);
+    expect((res.body as { alias: string }).alias).not.toBe(await aliasOf(b));
+  });
+
+  it('refuses in a room or with a request out', async () => {
+    const [owner, guest] = [await onboarded(PHONE_A), await onboarded(PHONE_B)];
+    await checkIn(owner);
+    await checkIn(guest);
+    const created = await invoke(owner, 'rooms', { action: 'create', profiled: false });
+    const roomId = (created.body as { roomId: string }).roomId;
+    expect(await reroll(owner)).toEqual({ status: 409, body: errorBody('in_room') });
+    await invoke(guest, 'rooms', { action: 'request-join', roomId, profiled: false });
+    expect(await reroll(guest)).toEqual({ status: 409, body: errorBody('in_room') });
+  });
+
+  it('needs an active table', async () => {
+    const client = await onboarded(PHONE_A);
+    expect(await reroll(client)).toEqual({ status: 409, body: errorBody('no_active_table') });
   });
 });

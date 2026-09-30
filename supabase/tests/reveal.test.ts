@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { REVEAL_COLORS, REVEAL_EMOJIS } from '../functions/_shared/pure/reveal.ts';
+import { REVEAL, REVEAL_COLORS, REVEAL_EMOJIS } from '../functions/_shared/pure/reveal.ts';
 import { BROADCAST, venueChannel } from '../functions/_shared/pure/rooms.ts';
 import { deleteFixtureVenues, insertFixtureVenues } from './fixtures/venues.ts';
 import { checkInAt, errorBody, onboarded, PHONES } from './helpers.ts';
@@ -28,26 +28,28 @@ const decide = (client: Client, roomId: string, wantsMeet: boolean) =>
 const finalize = (client: Client, roomId: string) =>
   invoke(client, 'reveal', { action: 'finalize', roomId });
 
-// A two-table room whose owner pressed "Odayı bitir".
-async function endingRoom() {
+// A two-table room, running.
+async function activeRoom() {
   const [owner, guest, third] = (await Promise.all(PHONES.map((p) => onboarded(p)))) as [
     Client,
     Client,
     Client,
   ];
   for (const c of [owner, guest, third]) await checkInAt(c, venue, V);
-  const created = await invoke(owner, 'rooms', {
-    action: 'create',
-    concept: 'sohbet',
-    visibility: 'open',
-  });
+  const created = await invoke(owner, 'rooms', { action: 'create', profiled: false });
   const roomId = (created.body as { roomId: string }).roomId;
-  await invoke(guest, 'rooms', { action: 'request-join', roomId });
+  await invoke(guest, 'rooms', { action: 'request-join', roomId, profiled: false });
   const [request] =
     await sql`select id from public.join_requests where room_id = ${roomId} and status = 'pending'`;
   await invoke(owner, 'rooms', { action: 'respond', requestId: request?.id, accept: true });
-  expect((await invoke(owner, 'rooms', { action: 'end' })).status).toBe(200);
   return { owner, guest, third, roomId };
+}
+
+// A two-table room whose owner pressed "Odayı bitir".
+async function endingRoom() {
+  const room = await activeRoom();
+  expect((await invoke(room.owner, 'rooms', { action: 'end' })).status).toBe(200);
+  return room;
 }
 
 // What each table sees of the room's result.
@@ -153,7 +155,7 @@ describe('reveal/decide', () => {
 describe('reveal timing', () => {
   // Everything the owner (who said yes) can observe while the guest says no, leaves, or does
   // nothing.
-  async function yesSideTrace(guestDoes: 'no' | 'leave' | 'nothing') {
+  async function yesSideTrace(guestDoes: 'no' | 'leave' | 'block' | 'nothing') {
     const { owner, guest, roomId } = await endingRoom();
     const ownRow = () => owner.from('rooms').select('*').eq('id', roomId).single();
     const ownDecisions = async () =>
@@ -165,8 +167,10 @@ describe('reveal timing', () => {
       guestDoes === 'no'
         ? await decide(guest, roomId, false)
         : guestDoes === 'leave'
-          ? await invoke(guest, 'rooms', { action: 'leave' })
-          : null;
+          ? await invoke(guest, 'checkin', { action: 'leave' })
+          : guestDoes === 'block'
+            ? await invoke(guest, 'safety', { action: 'block', roomId })
+            : null;
     const after = (await ownRow()).data;
     const early = await finalize(owner, roomId);
     const afterEarlyFinalize = (await ownRow()).data;
@@ -197,15 +201,18 @@ describe('reveal timing', () => {
     };
   }
 
-  it('shows the yes table the same rows and timing for "no", "left" and "no answer"', async () => {
+  it('shows the yes table the same rows and timing for "no", "left", "blocked" and "no answer"', async () => {
     const withNo = await yesSideTrace('no');
     const left = await yesSideTrace('leave');
+    const blocked = await yesSideTrace('block');
     const noAnswer = await yesSideTrace('nothing');
 
     expect(withNo.guestReply).toEqual({ status: 200, body: { ok: true } });
     expect(left.guestReply?.status).toBe(200);
+    expect(blocked.guestReply).toEqual({ status: 200, body: { ok: true } });
     expect(withNo.trace).toEqual(noAnswer.trace);
     expect(left.trace).toEqual(noAnswer.trace);
+    expect(blocked.trace).toEqual(noAnswer.trace);
     expect(withNo.trace).toMatchObject({
       rowUnchangedByOtherTable: true,
       rowUnchangedByEarlyFinalize: true,
@@ -222,11 +229,7 @@ describe('reveal timing', () => {
     await decide(owner, roomId, true);
     await decide(guest, roomId, false);
 
-    const created = await invoke(guest, 'rooms', {
-      action: 'create',
-      concept: 'sohbet',
-      visibility: 'open',
-    });
+    const created = await invoke(guest, 'rooms', { action: 'create', profiled: false });
     expect(created.status).toBe(200);
     expect(await seenBy(owner, roomId)).toMatchObject({ status: 'ending', reveal_result: null });
 
@@ -250,12 +253,7 @@ describe('lobby hold during the reveal window', { timeout: 60_000 }, () => {
   // does nothing. A third table's open room is there in both cases.
   async function yesSideLobby(guestDoes: 'no' | 'nothing') {
     const { owner, guest, third, roomId } = await endingRoom();
-    await invoke(third, 'rooms', { action: 'leave' });
-    const thirdRoom = await invoke(third, 'rooms', {
-      action: 'create',
-      concept: 'sohbet',
-      visibility: 'open',
-    });
+    const thirdRoom = await invoke(third, 'rooms', { action: 'create', profiled: false });
     const thirdRoomId = (thirdRoom.body as { roomId: string }).roomId;
     await decide(owner, roomId, true);
 
@@ -274,7 +272,11 @@ describe('lobby hold during the reveal window', { timeout: 60_000 }, () => {
     if (guestDoes === 'no') {
       await decide(guest, roomId, false);
       const create = (visibility: 'open' | 'private') =>
-        invoke(guest, 'rooms', { action: 'create', concept: 'tabu', visibility });
+        invoke(
+          guest,
+          'rooms',
+          visibility === 'open' ? { action: 'create', profiled: false } : { action: 'create-solo' },
+        );
       // Open, then closed again, then private: none of it may show at the venue.
       expect((await create('open')).status).toBe(200);
       expect((await invoke(guest, 'rooms', { action: 'end' })).status).toBe(200);
@@ -346,7 +348,6 @@ describe('reveal/finalize and cleanup', () => {
   it('keeps the room ending when a table leaves during the window', async () => {
     const { owner, guest, roomId } = await endingRoom();
     await decide(owner, roomId, true);
-    await invoke(guest, 'rooms', { action: 'leave' });
     await invoke(guest, 'checkin', { action: 'leave' });
     expect(await seenBy(owner, roomId)).toMatchObject({ status: 'ending', reveal_result: null });
     await expireWindow(roomId);
@@ -379,5 +380,99 @@ describe('reveal/finalize and cleanup', () => {
       target_room_id: roomId,
     });
     expect(error?.code).toBe('42501');
+  });
+});
+
+// docs/SPEC_V3.md §5.5 (S5): in a running two-table room, "Odayı bitir" + "Hayır", blocking and
+// leaving the venue all open the window with that table's answer "Hayır". The other table, which
+// then says "Evet", sees the same rows, broadcasts and timing in all three (rule 5).
+describe('ways out of a two-table room look alike', { timeout: 60_000 }, () => {
+  const VARYING = new Set([
+    'id',
+    'venue_id',
+    'owner_session_id',
+    'guest_session_id',
+    'owner_alias',
+    'guest_alias',
+    'created_at',
+    'waiting_since',
+    'guest_joined_at',
+    'last_activity_at',
+    'reveal_ends_at',
+  ]);
+
+  async function yesSide(guestDoes: 'end-no' | 'block' | 'leave') {
+    const { owner, guest, roomId } = await activeRoom();
+    const events: string[] = [];
+    const channel = owner.channel(venueChannel(venue[V] ?? ''), { config: { private: true } });
+    await new Promise<void>((resolve) => {
+      channel
+        .on('broadcast', { event: '*' }, (msg: { event: string }) => events.push(msg.event))
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') resolve();
+        });
+    });
+
+    // A broadcast still on its way from an earlier test at the same venue is not this path's.
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    events.length = 0;
+
+    const replies =
+      guestDoes === 'end-no'
+        ? [await invoke(guest, 'rooms', { action: 'end' }), await decide(guest, roomId, false)]
+        : guestDoes === 'block'
+          ? [await invoke(guest, 'safety', { action: 'block', roomId })]
+          : [await invoke(guest, 'checkin', { action: 'leave' })];
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    const { data: row } = await owner.from('rooms').select('*').eq('id', roomId).single();
+    const windowSeconds =
+      (Date.parse(String(row?.reveal_ends_at)) - Date.parse(String(row?.last_activity_at))) / 1000;
+    const shape = Object.fromEntries(
+      Object.entries(row ?? {}).filter(([key]) => !VARYING.has(key)),
+    );
+    const decisions = (await owner.from('reveal_decisions').select('wants_meet')).data;
+    // What the venue channel carried while the window was open (finalize announces the lobby
+    // change at its end in every case).
+    const eventsDuring = [...events];
+    const decided = await decide(owner, roomId, true);
+    const afterYes = await seenBy(owner, roomId);
+    await expireWindow(roomId);
+    await finalize(owner, roomId);
+    const final = await seenBy(owner, roomId);
+    await owner.removeChannel(channel);
+    for (const phone of PHONES) await deleteUserByPhone(phone);
+    return {
+      replies: replies.map((r) => r.status),
+      view: {
+        shape,
+        windowSeconds,
+        decisions,
+        decided,
+        afterYes: { status: afterYes?.status, result: afterYes?.reveal_result },
+        final: { status: final?.status, result: final?.reveal_result, token: final?.reveal_token },
+        events: eventsDuring,
+      },
+    };
+  }
+
+  it('shows the yes table the same for "Odayı bitir" + "Hayır", a block and leaving the venue', async () => {
+    const endNo = await yesSide('end-no');
+    const blocked = await yesSide('block');
+    const left = await yesSide('leave');
+    expect(endNo.replies).toEqual([200, 200]);
+    expect(blocked.replies).toEqual([200]);
+    expect(left.replies).toEqual([200]);
+    expect(blocked.view).toEqual(endNo.view);
+    expect(left.view).toEqual(endNo.view);
+    expect(endNo.view).toMatchObject({
+      windowSeconds: REVEAL.decisionSeconds,
+      decisions: [],
+      decided: { status: 200, body: { ok: true } },
+      afterYes: { status: 'ending', result: null },
+      final: { status: 'closed', result: 'none', token: null },
+      events: [],
+    });
+    expect(endNo.view.shape).toMatchObject({ status: 'ending', reveal_result: null });
   });
 });

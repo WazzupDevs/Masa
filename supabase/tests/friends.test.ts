@@ -9,7 +9,13 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { FriendsListResponse } from '../functions/_shared/pure/api/friends.ts';
 import type { ProfileUploadUrl } from '../functions/_shared/pure/api/profile.ts';
 import { PHOTO_BUCKET } from '../functions/_shared/pure/profile.ts';
-import { BROADCAST, dmChannel, inboxChannel } from '../functions/_shared/pure/rooms.ts';
+import { REVEAL } from '../functions/_shared/pure/reveal.ts';
+import {
+  BROADCAST,
+  dmChannel,
+  inboxChannel,
+  ROOM_IDLE_MINUTES,
+} from '../functions/_shared/pure/rooms.ts';
 import { deleteFixtureVenues, insertFixtureVenues } from './fixtures/venues.ts';
 import {
   checkInAt,
@@ -85,23 +91,32 @@ async function publicIdOf(client: Client): Promise<string> {
   return data?.public_id ?? '';
 }
 
-// Owner a, guest b in an open room; the encounter is made `minutes` old.
+// Owner a, guest b in an open room, each anonymous or with its profile for this room (docs/SPEC_V3.md
+// §5.4); b proposes the game and a accepts it (§5.3), or they only chat. The encounter is made
+// `minutes` old.
 async function encounter(
   a: Client,
   b: Client,
-  opts: { minutes?: number; modes?: [Mode, Mode]; concept?: 'tabu' | 'sohbet' } = {},
+  opts: { minutes?: number; modes?: [Mode, Mode]; concept?: 'tabu' | 'sohbet' | 'chat' } = {},
 ): Promise<string> {
   const [ownerMode, guestMode] = opts.modes ?? ['anonymous', 'anonymous'];
-  await checkInAt(a, venue, V, 2, ownerMode);
-  await checkInAt(b, venue, V, 3, guestMode);
+  await checkInAt(a, venue, V, 2);
+  await checkInAt(b, venue, V, 3);
   const created = await invoke(a, 'rooms', {
     action: 'create',
-    concept: opts.concept ?? 'sohbet',
-    visibility: 'open',
+    profiled: ownerMode === 'profile',
   });
   expect(created.status, JSON.stringify(created.body)).toBe(200);
   const roomId = (created.body as { roomId: string }).roomId;
-  expect((await invoke(b, 'rooms', { action: 'request-join', roomId })).status).toBe(200);
+  expect(
+    (
+      await invoke(b, 'rooms', {
+        action: 'request-join',
+        roomId,
+        profiled: guestMode === 'profile',
+      })
+    ).status,
+  ).toBe(200);
   const [request] =
     await sql`select id from public.join_requests where room_id = ${roomId} and status = 'pending'`;
   const accepted = await invoke(a, 'rooms', {
@@ -110,6 +125,15 @@ async function encounter(
     accept: true,
   });
   expect(accepted.status).toBe(200);
+  const concept = opts.concept ?? 'sohbet';
+  if (concept !== 'chat') {
+    expect((await invoke(b, 'rooms', { action: 'propose-game', roomId, concept })).status).toBe(
+      200,
+    );
+    expect((await invoke(a, 'rooms', { action: 'answer-game', roomId, accept: true })).status).toBe(
+      200,
+    );
+  }
   await sql`
     update public.rooms set guest_joined_at = now() - make_interval(mins => ${opts.minutes ?? 4})
     where id = ${roomId}
@@ -117,8 +141,24 @@ async function encounter(
   return roomId;
 }
 
-async function endByGuestLeaving(b: Client): Promise<void> {
-  expect((await invoke(b, 'rooms', { action: 'leave' })).status).toBe(200);
+// The window of an ending room closes now, with its history rows available.
+async function closeWindow(roomId: string): Promise<void> {
+  await sql`
+    update public.rooms set reveal_ends_at = now() - interval '1 second'
+    where id = ${roomId} and status = 'ending'
+  `;
+  await sql`
+    update public.play_history set available_at = now() - interval '1 second'
+    where room_id = ${roomId} and available_at > now()
+  `;
+  await sql`select private.close_expired_reveals()`;
+}
+
+// The guest's table leaves the venue: the window opens with its "Hayır" (docs/SPEC_V3.md §5.5) and is
+// closed here at once, so the history rows are available.
+async function endByGuestLeaving(b: Client, roomId: string): Promise<void> {
+  expect((await invoke(b, 'checkin', { action: 'leave' })).status).toBe(200);
+  await closeWindow(roomId);
 }
 
 async function endMutual(a: Client, b: Client, roomId: string): Promise<void> {
@@ -134,7 +174,7 @@ async function endMutual(a: Client, b: Client, roomId: string): Promise<void> {
 // Every column the app may read; the rest (other_user_id, other_profiled, encounter_id, user_id)
 // is refused.
 const HISTORY_COLUMNS =
-  'id, room_id, concept, mode, own_alias, other_alias, other_headcount, reveal_mutual, friend_action_at, played_at, available_at';
+  'id, room_id, concept, mode, intent, own_alias, other_alias, other_headcount, reveal_mutual, friend_action_at, played_at, available_at';
 
 async function history(client: Client) {
   const { data, error } = await client
@@ -158,7 +198,7 @@ async function metOnce(
   const [nameA, nameB] = opts.names ?? ['Ayşe', 'Burak'];
   const [a, b] = await Promise.all([named(PHONES[0], nameA), named(PHONES[1], nameB)]);
   const roomId = await encounter(a, b, { modes: opts.modes });
-  await endByGuestLeaving(b);
+  await endByGuestLeaving(b, roomId);
   // No name: an account from before v3 (sign-up now requires one, and so does check-in).
   if (nameA === null) await clearDisplayName(a);
   if (nameB === null) await clearDisplayName(b);
@@ -232,8 +272,8 @@ async function everythingReadable(client: Client, roomId: string): Promise<strin
 describe('play history', () => {
   it('writes nothing for an encounter shorter than 3 minutes', async () => {
     const [a, b] = await Promise.all([named(PHONES[0], 'Ayşe'), named(PHONES[1], 'Burak')]);
-    await encounter(a, b, { minutes: 2 });
-    await endByGuestLeaving(b);
+    const roomId = await encounter(a, b, { minutes: 2 });
+    await endByGuestLeaving(b, roomId);
     expect(await history(a)).toEqual([]);
     expect(await sql`select 1 from public.play_history`).toHaveLength(0);
   });
@@ -243,7 +283,7 @@ describe('play history', () => {
     const roomId = await encounter(a, b, { concept: 'tabu' });
     const [aliases] =
       await sql`select owner_alias, guest_alias from public.rooms where id = ${roomId}`;
-    await endByGuestLeaving(b);
+    await endByGuestLeaving(b, roomId);
 
     const [rowA] = await history(a);
     const [rowB] = await history(b);
@@ -264,6 +304,7 @@ describe('play history', () => {
         'concept',
         'friend_action_at',
         'id',
+        'intent',
         'mode',
         'other_alias',
         'other_headcount',
@@ -288,9 +329,9 @@ describe('play history', () => {
     const count = async () =>
       ((await sql`select count(*)::int as n from public.play_history`)[0]?.n as number) ?? 0;
 
-    // The owner leaves.
+    // The owner's table leaves the venue.
     await encounter(a, b);
-    await invoke(a, 'rooms', { action: 'leave' });
+    await invoke(a, 'checkin', { action: 'leave' });
     expect(await count()).toBe(2);
 
     // The guest blocks (and leaves).
@@ -307,7 +348,7 @@ describe('play history', () => {
     // The room closes for inactivity.
     roomId = await encounter(a, b);
     await sql`update public.rooms set last_activity_at = now() - interval '11 minutes' where id = ${roomId}`;
-    await sql`select private.close_idle_rooms()`;
+    await sql`select private.close_idle_rooms(${ROOM_IDLE_MINUTES}, ${REVEAL.decisionSeconds})`;
     expect(await count()).toBe(8);
 
     // "Odayı bitir": written at once, visible only when the window ends.
@@ -432,8 +473,7 @@ describe('friend requests', () => {
     await friends(a, { action: 'request', historyId: historyA });
 
     // Pending: a meets b again and asks from the new row.
-    await encounter(a, b);
-    await endByGuestLeaving(b);
+    await endByGuestLeaving(b, await encounter(a, b));
     const newer = await latestHistoryId(a);
     expect(newer).not.toBe(historyA);
     expect(await friends(a, { action: 'request', historyId: newer })).toEqual(OK);
@@ -442,8 +482,7 @@ describe('friend requests', () => {
     // Declined: the same after a third encounter.
     const [req] = await incoming(b);
     await friends(b, { action: 'respond', requestId: req?.request_id, accept: false });
-    await encounter(a, b);
-    await endByGuestLeaving(b);
+    await endByGuestLeaving(b, await encounter(a, b));
     expect(await friends(a, { action: 'request', historyId: await latestHistoryId(a) })).toEqual(
       OK,
     );
@@ -557,7 +596,7 @@ describe('no profile id before a friendship', () => {
     // While the room runs, the profiled table's id reaches the other member (and only that one).
     const { data: member } = await b.rpc('room_member_profile', { target_room_id: roomId });
     expect(member).toBe(idA);
-    await endByGuestLeaving(b);
+    await endByGuestLeaving(b, roomId);
 
     const answers = [
       await friends(a, { action: 'request', historyId: await latestHistoryId(a) }),
@@ -728,8 +767,7 @@ describe('removal works as a permanent decline for the removed side', () => {
       await sql`select from_user_id, to_user_id, status from public.friend_requests order by status`;
     expect(await friends(a, { action: 'request', historyId: historyA })).toEqual(OK);
     // A new encounter does not help either.
-    await encounter(a, b);
-    await endByGuestLeaving(b);
+    await endByGuestLeaving(b, await encounter(a, b));
     const newer = await latestHistoryId(a);
     expect(await friends(a, { action: 'request', historyId: newer })).toEqual(OK);
 
@@ -897,7 +935,7 @@ describe('history safety actions', () => {
     await uploadPhoto(a);
     const roomId = await encounter(a, b, { modes: ['profile', 'anonymous'] });
     await invoke(b, 'chat', { action: 'send', roomId, body: 'iyi oyunlar' });
-    await endByGuestLeaving(b);
+    await endByGuestLeaving(b, roomId);
     // The room is over: the profile is no longer visible to b.
     expect(
       (await invoke(b, 'profile', { action: 'get', publicId: await publicIdOf(a) })).status,
@@ -926,8 +964,7 @@ describe('history safety actions', () => {
   it('keeps only the game context for a table that joined anonymously', async () => {
     const [a, b] = await Promise.all([named(PHONES[0], 'Ayşe'), named(PHONES[1], 'Burak')]);
     await uploadPhoto(a);
-    await encounter(a, b, { modes: ['anonymous', 'anonymous'] });
-    await endByGuestLeaving(b);
+    await endByGuestLeaving(b, await encounter(a, b, { modes: ['anonymous', 'anonymous'] }));
     await safety(b, {
       action: 'report',
       target: 'history',

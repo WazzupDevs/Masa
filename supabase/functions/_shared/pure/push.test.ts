@@ -19,11 +19,10 @@ describe('isExpoPushToken', () => {
 
 describe('push texts', () => {
   it('names only the table alias, headcount and concept', () => {
-    expect(joinRequestPush('Mor Baykuş', 3, 'tabu').body).toBe(
-      'Mor Baykuş (3 kişi) Tabu odana katılmak istiyor.',
+    expect(joinRequestPush('Mor Baykuş', 3).body).toBe(
+      'Mor Baykuş (3 kişi) odana katılmak istiyor.',
     );
-    expect(joinRequestPush('Mavi Kedi', 2, 'sohbet').body).toContain('Sohbet odana');
-    expect(joinRequestPush('Mor Baykuş', 4, 'tabu').body).toContain('(4+ kişi)');
+    expect(joinRequestPush('Mor Baykuş', 4).body).toContain('(4+ kişi)');
     expect(joinAcceptedPush().body.length).toBeGreaterThan(0);
   });
 

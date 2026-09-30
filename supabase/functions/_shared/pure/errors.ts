@@ -13,6 +13,9 @@ export type ErrorCode =
   | 'spot_invalid'
   | 'different_spot'
   | 'in_room'
+  | 'reroll_limit'
+  | 'proposal_pending'
+  | 'no_proposal'
   | 'no_active_table'
   | 'already_in_room'
   | 'room_not_available'
@@ -83,6 +86,9 @@ export const DOMAIN_ERROR_CODES: readonly ErrorCode[] = [
   'spot_invalid',
   'different_spot',
   'in_room',
+  'reroll_limit',
+  'proposal_pending',
+  'no_proposal',
   'room_not_available',
   'request_pending',
   'rate_limited',

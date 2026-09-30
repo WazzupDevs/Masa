@@ -1,18 +1,16 @@
 import { APP_NAME } from './brand.ts';
 import { headcountLabel } from './checkin.ts';
-import type { Concept } from './rooms.ts';
 
 // Push notification texts are built on the server, so they live here rather than in the app's
-// tr.ts (which re-exports them). They carry only what another table may see: alias, headcount,
-// concept (MVP_SPEC rule 4).
-const CONCEPT_NAMES: Record<Concept, string> = { tabu: 'Tabu', sohbet: 'Sohbet' };
+// tr.ts (which re-exports them). They carry only what another table may see: alias and headcount
+// (rule 4). A room has no game when it is created (docs/SPEC_V3.md §5.1).
 
 export type PushMessage = { title: string; body: string };
 
-export function joinRequestPush(alias: string, headcount: number, concept: Concept): PushMessage {
+export function joinRequestPush(alias: string, headcount: number): PushMessage {
   return {
     title: 'Katılma isteği',
-    body: `${alias} (${headcountLabel(headcount)} kişi) ${CONCEPT_NAMES[concept]} odana katılmak istiyor.`,
+    body: `${alias} (${headcountLabel(headcount)} kişi) odana katılmak istiyor.`,
   };
 }
 

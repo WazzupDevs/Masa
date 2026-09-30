@@ -16,7 +16,6 @@ import {
   checkBio,
   checkDisplayName,
   isOwnPhotoPath,
-  PARTICIPATIONS,
   PHOTO_BUCKET,
   PHOTO_MAX_BYTES,
   PHOTO_URL_SECONDS,
@@ -28,7 +27,6 @@ const Body: z.ZodType<ProfileRequest> = z.discriminatedUnion('action', [
     action: z.literal('update'),
     displayName: z.string().max(200).optional(),
     bio: z.string().max(2000).optional(),
-    defaultParticipation: z.enum(PARTICIPATIONS).optional(),
     notifyDm: z.boolean().optional(),
     notifyFriendRequests: z.boolean().optional(),
   }),
@@ -111,7 +109,6 @@ Deno.serve(
         const changes: {
           display_name?: string;
           bio?: string | null;
-          default_participation?: 'anonymous' | 'profile';
           notify_dm?: boolean;
           notify_friend_requests?: boolean;
         } = {};
@@ -130,10 +127,6 @@ Deno.serve(
           if (!checked.ok) throw new AppError('bio_invalid', 'Invalid bio.');
           if (checked.value !== null) requireName(name);
           changes.bio = checked.value;
-        }
-        if (body.defaultParticipation !== undefined) {
-          if (body.defaultParticipation === 'profile') requireName(name);
-          changes.default_participation = body.defaultParticipation;
         }
         if (body.notifyDm !== undefined) changes.notify_dm = body.notifyDm;
         if (body.notifyFriendRequests !== undefined) {

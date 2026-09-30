@@ -17,10 +17,10 @@ const venue = {
 
 describe('aliasWordsSql', () => {
   it('replaces the word list', () => {
-    const sql = aliasWordsSql({ adjectives: ['Mor'], animals: ['Baykuş'] });
+    const sql = aliasWordsSql({ adjectives: ['Mor'], nouns: ['Baykuş'] });
     expect(sql).toContain('delete from public.alias_words;');
     expect(sql).toContain("('adjective', 'Mor')");
-    expect(sql).toContain("('animal', 'Baykuş')");
+    expect(sql).toContain("('noun', 'Baykuş')");
   });
 });
 
@@ -79,7 +79,7 @@ describe('parseTestVenues', () => {
 
 describe('content validation', () => {
   it('rejects malformed alias lists', () => {
-    expect(() => parseAliasWords({ adjectives: ['Mor'], animals: [''] })).toThrow();
+    expect(() => parseAliasWords({ adjectives: ['Mor'], nouns: [''] })).toThrow();
   });
 
   it('rejects invalid venues and duplicates', () => {

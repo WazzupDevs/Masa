@@ -16,6 +16,9 @@ describe('analytics events', () => {
         'onboarding_completed',
         'check_in',
         'room_created',
+        'game_proposed',
+        'game_accepted',
+        'alias_rerolled',
         'join_requested',
         'join_accepted',
         'join_unavailable',
@@ -45,11 +48,19 @@ describe('analytics events', () => {
   it('keep only the allowed properties of each event', () => {
     expect(
       analyticsProperties('room_created', {
-        concept: 'tabu',
-        visibility: 'open',
+        intent: 'chat',
+        profiled: false,
         phone: '+905551234567',
       } as never),
-    ).toEqual({ concept: 'tabu', visibility: 'open' });
+    ).toEqual({ intent: 'chat', profiled: false });
+    // Booleans are kept (onboarding_completed, room_created); objects never are.
+    expect(
+      analyticsProperties('onboarding_completed', {
+        with_photo: true,
+        with_bio: false,
+        birthDate: { year: 2000 },
+      } as never),
+    ).toEqual({ with_photo: true, with_bio: false });
     expect(analyticsProperties('check_in', { headcount: 4 })).toEqual({ headcount: 4 });
     expect(
       analyticsProperties('check_in', { headcount: 2, venueId: 'v', lat: 41 } as never),
