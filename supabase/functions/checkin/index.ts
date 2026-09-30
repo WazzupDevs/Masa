@@ -12,7 +12,11 @@ import type {
   LeaveResponse,
 } from '../_shared/pure/api/checkin.ts';
 import { isWithinCheckinRadius, MAX_HEADCOUNT, MIN_HEADCOUNT } from '../_shared/pure/checkin.ts';
-import { CURRENT_LOCATION_CONSENT_VERSION, needsConsent } from '../_shared/pure/consent.ts';
+import {
+  CURRENT_LOCATION_CONSENT_VERSION,
+  needsConsent,
+  needsProfile,
+} from '../_shared/pure/consent.ts';
 import { AppError } from '../_shared/pure/errors.ts';
 import { type Participation, PARTICIPATIONS } from '../_shared/pure/profile.ts';
 
@@ -61,13 +65,15 @@ async function requireOnboarded(
 ): Promise<Participation> {
   const { data, error } = await db
     .from('profiles')
-    .select('terms_version, kvkk_version, display_name, default_participation')
+    .select('terms_version, kvkk_version, display_name, has_birth_date, default_participation')
     .eq('id', userId)
     .maybeSingle();
   if (error) throw dbError('profiles', error);
   if (!data || needsConsent(data)) {
     throw new AppError('onboarding_required', 'Complete onboarding first.');
   }
+  // Sign-up = profile (docs/SPEC_V3.md §3): accounts from before v3 finish their profile first.
+  if (needsProfile(data)) throw new AppError('profile_required', 'Complete your profile first.');
   const participation =
     requested ?? (data.default_participation === 'profile' ? 'profile' : 'anonymous');
   if (participation === 'profile' && !data.display_name) {

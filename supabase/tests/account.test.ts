@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 
 import type { AccountRequest } from '../functions/_shared/pure/api/account.ts';
+import { istanbulToday } from '../functions/_shared/pure/age.ts';
 import { CURRENT_KVKK_VERSION, CURRENT_TERMS_VERSION } from '../functions/_shared/pure/consent.ts';
 import type { Database } from '../functions/_shared/pure/database.ts';
 import { deleteAccount } from '../../scripts/admin/account.ts';
@@ -15,10 +16,14 @@ type Client = SupabaseClient<Database>;
 
 const onboarding: AccountRequest = {
   action: 'complete-onboarding',
-  ageConfirmed: true,
   termsVersion: CURRENT_TERMS_VERSION,
   kvkkVersion: CURRENT_KVKK_VERSION,
+  displayName: 'Ayşe',
+  birthDate: '2000-01-15',
 };
+
+// 17 on any day of the year: 1 January, 17 years ago.
+const UNDER_AGE_BIRTH_DATE = `${istanbulToday(new Date()).year - 17}-01-01`;
 
 const call = (client: Client, body: Record<string, unknown>) => invoke(client, 'account', body);
 
@@ -58,14 +63,20 @@ afterAll(async () => {
 });
 
 describe('account/complete-onboarding', () => {
-  it('stores consents with timestamps and versions', async () => {
+  it('stores consents with timestamps and versions, the display name and the birth date', async () => {
     const client = await signIn(PHONE_A);
     expect(await call(client, onboarding)).toEqual({ status: 200, body: { ok: true } });
 
-    const [row] = await sql`select * from public.profiles where id = ${await userId(client)}`;
+    const [row] = await sql`
+      select *, to_char(birth_date, 'YYYY-MM-DD') as birth
+      from public.profiles where id = ${await userId(client)}
+    `;
     expect(row).toMatchObject({
       terms_version: CURRENT_TERMS_VERSION,
       kvkk_version: CURRENT_KVKK_VERSION,
+      display_name: 'Ayşe',
+      birth: '2000-01-15',
+      has_birth_date: true,
     });
     expect(row?.age_confirmed_at).toBeInstanceOf(Date);
     expect(row?.terms_accepted_at).toBeInstanceOf(Date);
@@ -83,7 +94,7 @@ describe('account/complete-onboarding', () => {
 
   it('rejects invalid bodies with the uniform error format', async () => {
     const client = await signIn(PHONE_A);
-    const res = await call(client, { action: 'complete-onboarding', ageConfirmed: false });
+    const res = await call(client, { action: 'complete-onboarding', termsVersion: 1 });
     expect(res).toEqual({
       status: 400,
       body: { error: { code: 'bad_request', message: expect.any(String) } },
@@ -100,6 +111,99 @@ describe('account/complete-onboarding', () => {
     expect(await res.json()).toEqual({
       error: { code: 'unauthorized', message: expect.any(String) },
     });
+  });
+});
+
+describe('account/complete-onboarding: sign-up = profile (docs/SPEC_V3.md §3)', () => {
+  it('needs a display name and a birth date for a new account, and writes nothing without', async () => {
+    const client = await signIn(PHONE_A);
+    const required = {
+      status: 409,
+      body: { error: { code: 'profile_required', message: expect.any(String) } },
+    };
+    expect(await call(client, { ...onboarding, birthDate: undefined })).toEqual(required);
+    expect(await call(client, { ...onboarding, displayName: undefined })).toEqual(required);
+    expect(
+      await sql`select 1 from public.profiles where id = ${await userId(client)}`,
+    ).toHaveLength(0);
+  });
+
+  it('rejects impossible and future birth dates and invalid names', async () => {
+    const client = await signIn(PHONE_A);
+    for (const birthDate of ['2001-02-29', '15.01.2000', '2999-01-01', '1900-01-01']) {
+      expect(await call(client, { ...onboarding, birthDate })).toEqual({
+        status: 422,
+        body: { error: { code: 'birth_date_invalid', message: expect.any(String) } },
+      });
+    }
+    expect(await call(client, { ...onboarding, displayName: 'a' })).toEqual({
+      status: 422,
+      body: { error: { code: 'display_name_invalid', message: expect.any(String) } },
+    });
+    expect(
+      await sql`select 1 from public.profiles where id = ${await userId(client)}`,
+    ).toHaveLength(0);
+  });
+
+  it('deletes the account under 18 and keeps nothing', async () => {
+    const client = await signIn(PHONE_A);
+    const id = await userId(client);
+    expect(await call(client, { ...onboarding, birthDate: UNDER_AGE_BIRTH_DATE })).toEqual({
+      status: 403,
+      body: { error: { code: 'under_age', message: expect.any(String) } },
+    });
+    expect(await sql`select 1 from auth.users where id = ${id}`).toHaveLength(0);
+    expect(await sql`select 1 from public.profiles where id = ${id}`).toHaveLength(0);
+    expect(await sql`select 1 from public.banned_phones`).toHaveLength(0);
+    await expectNothingLeftFor(id);
+    // The token issued before is refused; the same number may sign up again.
+    expect((await call(client, onboarding)).status).toBe(401);
+    const again = await signIn(PHONE_A);
+    expect(await call(again, onboarding)).toEqual({ status: 200, body: { ok: true } });
+  });
+
+  it('deletes an existing account whose owner enters an under-18 date', async () => {
+    const client = await signIn(PHONE_A);
+    const id = await userId(client);
+    // An account from before v3: consents, no name, no birth date.
+    await sql`
+      insert into public.profiles
+        (id, age_confirmed_at, terms_accepted_at, terms_version, kvkk_accepted_at, kvkk_version)
+      values (${id}, now(), now(), 'draft-0', now(), 'draft-0')
+    `;
+    expect((await call(client, { ...onboarding, birthDate: UNDER_AGE_BIRTH_DATE })).status).toBe(
+      403,
+    );
+    expect(await sql`select 1 from auth.users where id = ${id}`).toHaveLength(0);
+    await expectNothingLeftFor(id);
+  });
+
+  it('re-consents without the profile fields, and never changes the birth date', async () => {
+    const client = await signIn(PHONE_A);
+    await call(client, onboarding);
+    expect(
+      await call(client, { ...onboarding, displayName: undefined, birthDate: undefined }),
+    ).toEqual({ status: 200, body: { ok: true } });
+    expect(await call(client, { ...onboarding, birthDate: '1999-01-15' })).toEqual({
+      status: 422,
+      body: { error: { code: 'birth_date_invalid', message: expect.any(String) } },
+    });
+    const [row] = await sql`
+      select to_char(birth_date, 'YYYY-MM-DD') as birth from public.profiles
+      where id = ${await userId(client)}
+    `;
+    expect(row?.birth).toBe('2000-01-15');
+  });
+
+  it('never lets the client read the birth date, only whether it is set', async () => {
+    const client = await signIn(PHONE_A);
+    await call(client, onboarding);
+    const hidden = await client.from('profiles').select('birth_date');
+    expect(hidden.error?.code).toBe('42501');
+    const all = await client.from('profiles').select('*');
+    expect(all.error?.code).toBe('42501');
+    const flag = await client.from('profiles').select('has_birth_date').single();
+    expect(flag.data).toEqual({ has_birth_date: true });
   });
 });
 

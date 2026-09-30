@@ -10,7 +10,15 @@ import { removeProfilePhoto } from '../../scripts/admin/photos.ts';
 import { deleteAccount } from '../../scripts/admin/account.ts';
 import { banUser } from '../../scripts/admin/ban.ts';
 import { deleteFixtureVenues, insertFixtureVenues } from './fixtures/venues.ts';
-import { checkInAt, errorBody, onboarded, PHONES } from './helpers.ts';
+import {
+  checkInAt,
+  clearDisplayName,
+  errorBody,
+  onboarded,
+  PHONES,
+  TEST_AGE,
+  TEST_BIRTH_DATE,
+} from './helpers.ts';
 import {
   admin,
   anonKey,
@@ -149,7 +157,9 @@ const get = (client: Client, publicId: string) => profile(client, { action: 'get
 
 describe('profile/update', () => {
   it('needs a display name before any other profile field', async () => {
+    // An account from before v3: sign-up now requires the name (account.test.ts).
     const client = await onboarded(PHONES[0]);
+    await clearDisplayName(client);
     const required = { status: 409, body: errorBody('display_name_required') };
     expect(await profile(client, { action: 'update', bio: 'Merhaba' })).toEqual(required);
     expect(await profile(client, { action: 'update', defaultParticipation: 'profile' })).toEqual(
@@ -274,9 +284,19 @@ describe('profile/get', () => {
     // Room members see each other; the third table at the venue does not.
     expect(await get(b, idA)).toMatchObject({
       status: 200,
-      body: { publicId: idA, displayName: 'Ayşe', bio: null, photoUrl: null, badges: [] },
+      body: {
+        publicId: idA,
+        displayName: 'Ayşe',
+        bio: null,
+        photoUrl: null,
+        badges: [],
+        age: TEST_AGE,
+      },
     });
+    // The age, never the birth date; the hidden flag only for the owner.
     expect((await get(b, idA)).body).not.toHaveProperty('photoHidden');
+    expect((await get(b, idA)).body).not.toHaveProperty('birthDate');
+    expect(JSON.stringify((await get(b, idA)).body)).not.toContain(TEST_BIRTH_DATE);
     expect((await get(a, idB)).status).toBe(200);
     // Sent twice, the same answer: the app may resend it after a 5xx (pure/apiRetry.ts).
     expect(await get(b, idA)).toEqual(await get(b, idA));
@@ -312,7 +332,9 @@ describe('profile/get', () => {
         bio: null,
         photoUrl: null,
         badges: [],
+        age: TEST_AGE,
         photoHidden: false,
+        birthDate: TEST_BIRTH_DATE,
       },
     });
   });

@@ -1,18 +1,11 @@
-# V5, first step: a display name (friend requests need one).
+# V5, first step: the display name comes from sign-up; the profile shows it with the age, never the
+# birth date (docs/SPEC_V3.md §3.2).
 appId: app.kabuk.mobile
 ---
 - tapOn:
     id: tab-profile
 - extendedWaitUntil:
-    visible: Ad ekle
+    visible: 'Cihaz Masa, \d+'
     timeout: 10000
-- tapOn: Ad ekle
-- tapOn:
-    id: name-input
-- inputText: Cihaz Masa
-- hideKeyboard
-- tapOn: Kaydet
-- extendedWaitUntil:
-    visible: Profili düzenle
-    timeout: 10000
+- assertNotVisible: '.*2000.*'
 - takeScreenshot: 12-profile

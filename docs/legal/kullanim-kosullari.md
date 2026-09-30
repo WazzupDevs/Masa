@@ -2,7 +2,7 @@
 
 > **HUKUKİ KONTROL GEREKLİ.** Taslaktır; hukuki görüş alınmadan yayımlanmamalıdır.
 
-1. **Yaş:** Uygulamayı yalnızca 18 yaşını doldurmuş kişiler kullanabilir.
+1. **Yaş:** {{APP_NAME}} 18 yaş ve üzeri içindir. Kayıtta doğum tarihinizi doğru beyan edersiniz; 18 yaşın altındaki beyanda hesap açılmaz. Yaşını yanlış beyan ettiği anlaşılan hesaplar kapatılır. Doğum tarihiniz kimseye gösterilmez, profilinizde yalnızca yaşınız görünür.
 2. **Amaç:** {{APP_NAME}}, aynı mekandaki masaların birlikte oyun oynayıp sohbet etmesi içindir. Tanışma isteğe bağlıdır ve yalnızca iki taraf da isterse gerçekleşir.
 3. **Davranış:** Diğer kullanıcılara saygılı davranmayı; taciz, hakaret, nefret söylemi, cinsel içerik, spam ve yasa dışı içerik paylaşmamayı kabul edersiniz. Uygunsuz ifadeler filtrelenir.
 4. **Şikayet ve engelleme:** Rahatsız olduğunuz masayı oda menüsünden şikayet edebilir ve engelleyebilirsiniz.

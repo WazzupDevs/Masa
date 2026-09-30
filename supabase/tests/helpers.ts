@@ -1,6 +1,7 @@
 // Shared flows for integration tests: onboarding and check-in at fixture venues.
 import { expect } from 'vitest';
 
+import { ageOn, istanbulToday } from '../functions/_shared/pure/age.ts';
 import {
   CURRENT_KVKK_VERSION,
   CURRENT_LOCATION_CONSENT_VERSION,
@@ -11,16 +12,33 @@ import { type Client, invoke, signIn, sql } from './local.ts';
 
 export const PHONES = ['+905550000001', '+905550000002', '+905550000003'] as const;
 
-export async function onboarded(phone: string): Promise<Client> {
+// Sign-up = profile (docs/SPEC_V3.md §3): consents, a display name and an adult birth date.
+export const TEST_DISPLAY_NAME = 'Test Masa';
+export const TEST_BIRTH_DATE = '2000-01-15';
+export const TEST_AGE = ageOn({ year: 2000, month: 1, day: 15 }, istanbulToday(new Date()));
+
+export async function onboarded(
+  phone: string,
+  profile: { displayName?: string; birthDate?: string } = {},
+): Promise<Client> {
   const client = await signIn(phone);
   const res = await invoke(client, 'account', {
     action: 'complete-onboarding',
-    ageConfirmed: true,
     termsVersion: CURRENT_TERMS_VERSION,
     kvkkVersion: CURRENT_KVKK_VERSION,
+    displayName: profile.displayName ?? TEST_DISPLAY_NAME,
+    birthDate: profile.birthDate ?? TEST_BIRTH_DATE,
   });
-  expect(res.status).toBe(200);
+  expect(res.status, JSON.stringify(res.body)).toBe(200);
   return client;
+}
+
+// An account from before v3 had no display name; the v2 display_name_required paths still guard
+// against it. Only the database can make one now.
+export async function clearDisplayName(client: Client): Promise<void> {
+  const { data } = await client.auth.getUser();
+  if (!data.user) throw new Error('not signed in');
+  await sql`update public.profiles set display_name = null where id = ${data.user.id}`;
 }
 
 // Checks in standing right at the fixture venue.

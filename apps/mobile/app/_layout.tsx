@@ -1,6 +1,6 @@
 import '../global.css';
 
-import { needsConsent } from '@shared/consent.ts';
+import { needsOnboarding } from '@shared/consent.ts';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { useEffect } from 'react';
@@ -8,6 +8,7 @@ import { ActivityIndicator, View } from 'react-native';
 
 import { useProfile } from '@/features/account/useProfile';
 import { startSessionSync, useSessionStore } from '@/features/auth/session';
+import { useOnboardingStore } from '@/features/onboarding/store';
 import { configureNotifications } from '@/features/push/push';
 import { UpdateRequired } from '@/features/update/UpdateRequired';
 import { useUpdateGate, watchUpdateGate } from '@/features/update/updateGate';
@@ -25,6 +26,7 @@ function RootNavigator() {
   const initialized = useSessionStore((s) => s.initialized);
   const signedIn = useSessionStore((s) => s.session !== null);
   const profile = useProfile();
+  const extrasPending = useOnboardingStore((s) => s.extrasPending);
   const theme = useTheme();
 
   if (updateRequired) return <UpdateRequired />;
@@ -37,7 +39,9 @@ function RootNavigator() {
     );
   }
 
-  const onboarded = signedIn && profile.isSuccess && !needsConsent(profile.data);
+  // Consents, a display name and a birth date (docs/SPEC_V3.md §3), then the optional photo step.
+  const onboarded =
+    signedIn && profile.isSuccess && !needsOnboarding(profile.data) && !extrasPending;
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

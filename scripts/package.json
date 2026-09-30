@@ -13,6 +13,7 @@
     "admin:delete": "node --experimental-strip-types admin-delete.ts",
     "admin:event": "node --experimental-strip-types admin-event.ts",
     "admin:remove-photo": "node --experimental-strip-types admin-remove-photo.ts",
+    "admin:set-birth-date": "node --experimental-strip-types admin-set-birth-date.ts",
     "apply-local-secrets": "node --experimental-strip-types apply-local-secrets.ts",
     "fetch:venues": "node --experimental-strip-types fetch-venues.ts"
   },

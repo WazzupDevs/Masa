@@ -283,6 +283,16 @@ max_frequency = "60s"
 enabled = true
 uri = "pg-functions://postgres/private/before_user_created"
 
+# Send SMS Hook (docs/SPEC_V3.md §2). Off locally and in CI: test numbers need no SMS. Uncommented
+# (then `pnpm supabase stop` + `start`), it shows that test numbers never reach the hook: Auth only
+# allows http to localhost, which is not the functions server from inside its container, so every
+# real number fails with "Failed to reach hook" while test numbers still get their code
+# (supabase/tests/smsHookEnabled.test.ts). The signed hook itself is tested in smsHook.test.ts.
+# [auth.hook.send_sms]
+# enabled = true
+# uri = "http://127.0.0.1:54321/functions/v1/sms"
+# secrets = "v1,whsec_bG9jYWwtb25seS1rYWJ1ay1zbXMtaG9vay10ZXN0LXNlY3JldA=="
+
 # This hook runs before a token is issued and allows you to add additional claims based on the authentication method used.
 # [auth.hook.custom_access_token]
 # enabled = true
@@ -430,6 +440,11 @@ enabled = true
 
 # The function validates the caller's token itself with auth.getUser (works with asymmetric JWT keys).
 [functions.account]
+verify_jwt = false
+
+# Send SMS Hook target (docs/SPEC_V3.md §2): no user JWT, the Standard Webhooks signature is
+# checked by the function.
+[functions.sms]
 verify_jwt = false
 
 [functions.checkin]

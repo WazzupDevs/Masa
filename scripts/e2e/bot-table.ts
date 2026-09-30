@@ -143,13 +143,14 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
     if (sent.error) throw sent.error;
     const verified = await client.auth.verifyOtp({ phone: BOT_PHONE, token: BOT_OTP, type: 'sms' });
     if (verified.error) throw verified.error;
+    // Sign-up = profile (docs/SPEC_V3.md §3): an adult birth date and the bot's name.
     await call('account', {
       action: 'complete-onboarding',
-      ageConfirmed: true,
       termsVersion: CURRENT_TERMS_VERSION,
       kvkkVersion: CURRENT_KVKK_VERSION,
+      displayName: BOT_NAME,
+      birthDate: '1995-05-20',
     });
-    await call('profile', { action: 'update', displayName: BOT_NAME });
     return { ok: true };
   },
 

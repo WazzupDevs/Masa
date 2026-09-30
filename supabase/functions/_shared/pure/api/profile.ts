@@ -9,8 +9,11 @@ export type ProfileView = {
   // Signed URL valid for an hour; null without a photo or when it is hidden.
   photoUrl: string | null;
   badges: BadgeId[];
+  // Completed years (Istanbul day); the birth date itself goes to nobody else (rule 11).
+  age: number | null;
   // Only on the caller's own profile.
   photoHidden?: boolean;
+  birthDate?: string | null;
 };
 
 export type ProfileRequest =

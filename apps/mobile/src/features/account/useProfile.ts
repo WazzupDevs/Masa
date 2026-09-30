@@ -15,7 +15,7 @@ export function useProfile() {
       const { data, error } = await supabase
         .from('profiles')
         .select(
-          'terms_version, kvkk_version, location_consent_version, public_id, display_name, bio, default_participation, notify_dm, notify_friend_requests',
+          'terms_version, kvkk_version, location_consent_version, public_id, display_name, has_birth_date, bio, default_participation, notify_dm, notify_friend_requests',
         )
         .maybeSingle();
       if (error) throw error;
