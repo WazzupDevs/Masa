@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import type { Participation } from '@shared/profile.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -16,7 +15,6 @@ import { Text } from '@/components/Text';
 import { useProfile } from '@/features/account/useProfile';
 import { choosePhoto, PhotoError, type PhotoSource } from '@/features/profile/photo';
 import { ProfileCard } from '@/features/profile/ProfileCard';
-import { participationHint } from '@/features/profile/ProfileSettings';
 import { profileViewKeys, useProfileView } from '@/features/profile/queries';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
@@ -57,8 +55,6 @@ export default function ProfileScreen() {
   });
 
   const hasName = !!own.data?.display_name;
-  const participation: Participation =
-    own.data?.default_participation === 'profile' ? 'profile' : 'anonymous';
   const hasPhoto = !!view.data?.photoUrl || view.data?.photoHidden === true;
 
   return (
@@ -92,18 +88,6 @@ export default function ProfileScreen() {
                 <Text variant="fine" tone="text" className="flex-1">
                   {tr.profile.photoHidden}
                 </Text>
-              </View>
-            </Card>
-          ) : null}
-          {own.data ? (
-            <Card className="mt-4">
-              <View className="flex-row items-start gap-3">
-                <Ionicons name="shield-checkmark-outline" size={ICON.md} color={colors.text} />
-                <View className="flex-1 gap-0.5">
-                  <Text variant="label">{tr.settings.defaultParticipation}</Text>
-                  <Text variant="bodyStrong">{tr.participation[participation]}</Text>
-                  <Text variant="fine">{participationHint(participation, hasName)}</Text>
-                </View>
               </View>
             </Card>
           ) : null}

@@ -1,8 +1,6 @@
-import { PARTICIPATIONS, type Participation } from '@shared/profile.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Switch, View } from 'react-native';
 
-import { Choice } from '@/components/Choice';
 import { ListRow } from '@/components/ListRow';
 import { Text } from '@/components/Text';
 import { useProfile } from '@/features/account/useProfile';
@@ -12,17 +10,12 @@ import { profileApi } from '@/lib/api';
 import { useTheme } from '@/theme/ThemeProvider';
 
 type Changes = {
-  defaultParticipation?: Participation;
   notifyDm?: boolean;
   notifyFriendRequests?: boolean;
 };
 
-export function participationHint(mode: Participation, hasName: boolean): string {
-  if (mode === 'anonymous') return tr.participation.anonymousHint;
-  return hasName ? tr.participation.profileHint : tr.participation.profileNeedsName;
-}
-
-// Ayarlar → Gizlilik and Bildirimler (docs/SPEC_V2.md §5.5).
+// Ayarlar → Bildirimler (docs/SPEC_V2.md §5.5). Anonymous or with the profile is chosen for each
+// room from v3 on (docs/SPEC_V3.md §5.4), so there is no default to set here.
 export function ProfileSettings() {
   const queryClient = useQueryClient();
   const own = useProfile();
@@ -32,28 +25,9 @@ export function ProfileSettings() {
   });
   if (!own.data) return null;
   const profile = own.data;
-  const hasName = !!profile.display_name;
 
   return (
     <View className="gap-6">
-      <View accessibilityRole="radiogroup" className="gap-2">
-        <Text variant="overline" tone="muted" accessibilityRole="header">
-          {tr.settings.privacySection}
-        </Text>
-        <Text>{tr.settings.defaultParticipation}</Text>
-        {PARTICIPATIONS.map((mode) => (
-          <Choice
-            key={mode}
-            label={tr.participation[mode]}
-            hint={participationHint(mode, hasName)}
-            selected={profile.default_participation === mode}
-            disabled={update.isPending || (mode === 'profile' && !hasName)}
-            onPress={() => update.mutate({ defaultParticipation: mode })}
-          />
-        ))}
-        <Text variant="fine">{tr.settings.defaultParticipationHint}</Text>
-      </View>
-
       <View>
         <Text variant="overline" tone="muted" accessibilityRole="header">
           {tr.settings.notificationsSection}

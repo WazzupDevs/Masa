@@ -1,5 +1,4 @@
-import type { Concept } from '@shared/rooms.ts';
-import { isVoiceTabu, parseGameState } from '@shared/tabu.ts';
+import { CONCEPTS, type Concept } from '@shared/rooms.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
@@ -13,7 +12,7 @@ import { ChatPanel } from '@/features/chat/ChatPanel';
 import { RoomSafety } from '@/features/chat/RoomSafety';
 import { useOtherTableOnline } from '@/features/chat/usePresence';
 import { useActiveTable } from '@/features/checkin/useActiveTable';
-import { ConceptArea } from '@/features/games/ConceptArea';
+import { GameArea } from '@/features/games/GameArea';
 import { useRoomMemberProfile } from '@/features/profile/queries';
 import { RevealPrompt } from '@/features/reveal/RevealPrompt';
 import { RevealResult } from '@/features/reveal/RevealResult';
@@ -32,8 +31,9 @@ export default function RoomScreen() {
   const table = useActiveTable();
   const room = useRoom(id);
 
+  // "Odayı bitir" is the only way out (docs/SPEC_V3.md §5.5).
   const exit = useMutation({
-    mutationFn: (kind: 'leave' | 'end') => (kind === 'leave' ? roomsApi.leave() : roomsApi.end()),
+    mutationFn: roomsApi.end,
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: roomKeys.current });
       void queryClient.invalidateQueries({ queryKey: roomKeys.room(id) });
@@ -68,19 +68,14 @@ export default function RoomScreen() {
   }
 
   const isOwner = r.owner_session_id === sessionId;
-  const concept = r.concept as Concept;
+  // The running game; null is chat (docs/SPEC_V3.md §5.1).
+  const concept: Concept | null = (CONCEPTS as readonly unknown[]).includes(r.concept)
+    ? (r.concept as Concept)
+    : null;
   const hasOtherTable = r.guest_session_id !== null;
-  const tabuState = parseGameState(r.game_state);
 
   // Room-level events come from one table only, so each room counts once.
   if (!isOwner) trackOnce(`join_accepted:${r.id}`, 'join_accepted', {});
-  if (isOwner && isVoiceTabu(tabuState) && tabuState.phase === 'finished') {
-    trackOnce(`game_completed:${r.id}:${tabuState.gameNo}`, 'game_completed', {
-      concept: 'tabu',
-      mode: 'voice',
-      score: tabuState.scores.owner,
-    });
-  }
 
   if (r.status === 'ending' && r.reveal_ends_at) {
     return (
@@ -106,8 +101,9 @@ export default function RoomScreen() {
         title={r.guest_alias ? tr.rooms.withGuest(r.owner_alias, r.guest_alias) : r.owner_alias}
       />
 
-      <ConceptArea
+      <GameArea
         roomId={r.id}
+        sessionId={sessionId}
         concept={concept}
         gameState={r.game_state}
         hasGuest={hasOtherTable}
@@ -136,21 +132,15 @@ export default function RoomScreen() {
         ) : null}
         <Button
           variant="secondary"
+          testID="end-room"
           label={tr.rooms.end}
-          onPress={() => exit.mutate('end')}
+          onPress={() => exit.mutate()}
           disabled={exit.isPending}
         />
-        <Button
-          variant="secondary"
-          label={tr.rooms.leave}
-          onPress={() => exit.mutate('leave')}
-          disabled={exit.isPending}
-        />
+        {hasOtherTable ? <Text variant="fine">{tr.rooms.endHint}</Text> : null}
       </View>
 
-      {isOwner ? (
-        <IncomingRequest roomId={r.id} ownerSessionId={r.owner_session_id} concept={concept} />
-      ) : null}
+      {isOwner ? <IncomingRequest roomId={r.id} ownerSessionId={r.owner_session_id} /> : null}
     </Screen>
   );
 }

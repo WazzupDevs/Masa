@@ -14,12 +14,14 @@ import { useVenueSpots } from '@/features/checkin/spots';
 import { useActiveTable } from '@/features/checkin/useActiveTable';
 import { Lobby } from '@/features/rooms/Lobby';
 import { useCurrentRoom } from '@/features/rooms/queries';
+import { useCreateSolo } from '@/features/rooms/useCreateSolo';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { sessionDurationMinutes } from '@shared/analytics.ts';
+import { ALIAS_REROLLS_PER_CHECKIN } from '@shared/rooms.ts';
 
-import { trackOnce } from '@/lib/analytics';
-import { callLeave } from '@/lib/api';
+import { track, trackOnce } from '@/lib/analytics';
+import { callLeave, callRerollAlias } from '@/lib/api';
 import { useNow } from '@/lib/useNow';
 import { useTheme } from '@/theme/ThemeProvider';
 import { ICON } from '@/theme/tokens';
@@ -38,6 +40,14 @@ export default function VenueScreen() {
   const table = useActiveTable();
   const currentRoom = useCurrentRoom(table.data?.id);
   const spots = useVenueSpots(table.data?.venue_id);
+  const solo = useCreateSolo();
+  const reroll = useMutation({
+    mutationFn: callRerollAlias,
+    onSuccess: () => {
+      track('alias_rerolled', {});
+      return queryClient.invalidateQueries({ queryKey: ['activeTable'] });
+    },
+  });
   const venueHasSpots = (spots.data ?? []).length > 0;
   const now = useNow(30_000);
 
@@ -94,9 +104,27 @@ export default function VenueScreen() {
       />
       <Card className="mt-3">
         <Text variant="label">{tr.venue.yourTable}</Text>
-        <Text variant="alias" className="mb-2 mt-0.5">
+        <Text variant="alias" className="mt-0.5" testID="table-alias">
           {table.data.alias}
         </Text>
+        <View className="mb-2 flex-row items-center justify-between gap-2">
+          <Text variant="fine" className="flex-1">
+            {tr.venue.rerollsLeft(ALIAS_REROLLS_PER_CHECKIN - table.data.alias_rerolls)}
+          </Text>
+          <Button
+            variant="ghost"
+            testID="reroll-alias"
+            label={tr.venue.rerollAlias}
+            onPress={() => reroll.mutate()}
+            disabled={table.data.alias_rerolls >= ALIAS_REROLLS_PER_CHECKIN}
+            loading={reroll.isPending}
+          />
+        </View>
+        {reroll.isError ? (
+          <Text variant="fine" tone="danger" className="mb-2">
+            {errorMessage(reroll.error)}
+          </Text>
+        ) : null}
         <View className="flex-row flex-wrap items-center justify-between gap-2">
           <Tag label={tr.venue.people(table.data.headcount)} />
           <View className="flex-row items-center gap-1">
@@ -122,8 +150,20 @@ export default function VenueScreen() {
             />
           </View>
         ) : null}
-        <View className="mt-3">
+        <View className="mt-3 gap-2.5">
           <Button label={tr.rooms.create} onPress={() => router.push('/room/new')} />
+          <Button
+            variant="secondary"
+            testID="play-with-table"
+            label={tr.rooms.playWithTable}
+            onPress={() => solo.mutate()}
+            loading={solo.isPending}
+          />
+          {solo.isError ? (
+            <Text variant="fine" tone="danger">
+              {errorMessage(solo.error)}
+            </Text>
+          ) : null}
         </View>
       </Card>
 

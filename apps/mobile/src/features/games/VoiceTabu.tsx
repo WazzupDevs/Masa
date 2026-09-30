@@ -11,7 +11,7 @@ import {
   type VoiceTabuState,
   voiceWinner,
 } from '@shared/tabu.ts';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, View } from 'react-native';
@@ -35,56 +35,45 @@ type Props = {
   roomId: string;
   state: GameState | null;
   side: TableSide;
-  isOwner: boolean;
   aliases: Record<TableSide, string>;
 };
 
 // Two-table Tabu, face to face (docs/SPEC_V2.md §8.2). Team = table. Both phones hold the turn's
 // card list; a press moves this phone to the next card at once and is sent in order; the server
 // checks it and the room row brings the other phone along. The server's order wins.
-export function VoiceTabu({ roomId, state, side, isOwner, aliases }: Props) {
-  const start = useMutation({ mutationFn: () => gamesApi.tabuStart(roomId) });
+// A game starts only from an accepted proposal and, when it ends, the room returns to chat with the
+// result kept as lastGame (docs/SPEC_V3.md §5.3); this shows the running game only.
+export function VoiceTabu({ roomId, state, side, aliases }: Props) {
   const voice = isVoiceTabu(state) ? state : null;
-
-  if (!voice || voice.phase === 'finished') {
-    const winner = voice ? voiceWinner(voice.scores) : null;
+  if (!voice || voice.phase !== 'playing') {
     return (
-      <View className="items-center gap-4">
-        {voice ? (
-          <>
-            <Scores scores={voice.scores} aliases={aliases} side={side} />
-            <Text variant="title" align="center">
-              {winner === 'draw' || winner === null
-                ? tr.games.voiceDraw
-                : tr.games.voiceWinner(aliases[winner])}
-            </Text>
-          </>
-        ) : (
-          <Text tone="muted" align="center">
-            {tr.games.voiceIntro}
-          </Text>
-        )}
-        {start.isError ? (
-          <Text variant="fine" tone="danger">
-            {errorMessage(start.error)}
-          </Text>
-        ) : null}
-        {isOwner ? (
-          <View className="w-full">
-            <Button
-              label={voice ? tr.games.playAgain : tr.games.startServer}
-              onPress={() => start.mutate()}
-              loading={start.isPending}
-            />
-          </View>
-        ) : (
-          <Text variant="fine">{tr.games.waitingForOwner}</Text>
-        )}
-      </View>
+      <Text tone="muted" align="center">
+        {tr.games.voiceIntro}
+      </Text>
     );
   }
-
   return <Turn roomId={roomId} server={voice} side={side} aliases={aliases} />;
+}
+
+// The last game's result in the chat room: both scores and the winner.
+export function VoiceTabuResult({
+  scores,
+  side,
+  aliases,
+}: {
+  scores: Record<TableSide, number>;
+  side: TableSide;
+  aliases: Record<TableSide, string>;
+}) {
+  const winner = voiceWinner(scores);
+  return (
+    <View className="items-center gap-3">
+      <Scores scores={scores} aliases={aliases} side={side} />
+      <Text variant="heading" align="center">
+        {winner === 'draw' ? tr.games.voiceDraw : tr.games.voiceWinner(aliases[winner])}
+      </Text>
+    </View>
+  );
 }
 
 function Scores({
