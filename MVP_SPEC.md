@@ -4,6 +4,8 @@ Uygulama adı: Kabuk (kod içi çalışma adı Masa; paket kimliği `app.kabuk.m
 
 > **v2:** Navigasyon, Keşfet, profil, arkadaşlar ve DM, sesli Tabu için onaylı teknik tasarım `docs/SPEC_V2.md`'dedir. Bu belgede v2 ile değişen kararlar "**v2:**" notuyla işaretlidir; v2 adımları uygulandıkça metin güncellenir.
 
+> **v3 (Kabuk v1, Sakarya Üniversitesi pilotu; taslak, onay bekliyor):** Tasarım `docs/SPEC_V3.md`'dedir. Değişecek kararlar aşağıda "**v3:**" notuyla işaretlidir; onaydan ve ilgili adımdan sonra metin güncellenir.
+
 ## 1. Ürün tanımı
 Aynı mekandaki insanların, konsept üzerine kurulu odalarda birlikte oyun oynayıp sohbet edebildiği bir mobil uygulama. Tanışma ikinci planda ve isteğe bağlı: iki taraf da isterse oda sonunda fiziksel olarak buluşurlar. Kafe anlaşması gerekmez.
 
@@ -41,11 +43,15 @@ Aynı mekandaki insanların, konsept üzerine kurulu odalarda birlikte oyun oyna
 ## 4. Ana akışlar
 
 ### 4.1 Onboarding
+> **v3:** Kayıt = profil. "18 yaşından büyüğüm" kutusu yerine doğum tarihi; görünen ad ve doğum tarihi zorunlu, fotoğraf ve biyografi isteğe bağlı. 18 yaş altına hesap açılmaz, hiçbir veri tutulmaz. Profilde yaş görünür, doğum tarihi görünmez (`docs/SPEC_V3.md` §3).
+
 1. Telefon numarası girilir, SMS ile OTP gelir (Supabase Auth). Yalnızca Türkiye cep numaraları (+90 5xx) kabul edilir.
 2. "18 yaşından büyüğüm" onayı, Kullanım Koşulları ve KVKK aydınlatma metni onayı alınır. Onaylar zaman damgasıyla ve onaylanan metin sürümüyle (`terms_version`, `kvkk_version`) saklanır. Metin sürümü değişince yeniden onay istenebilir.
 3. Kullanıcı takma adı yoktur: diğer kullanıcılara hiçbir şey gösterilmediği ve hiçbir akışta kullanılmadığı için MVP'den çıkarıldı. Diğer masalar yalnızca masa takma adını görür (§4.2). **v2:** isteğe bağlı görünen ad (`display_name`) eklenir; kayıtta sorulmaz, profil kurulurken, arkadaşlık isteği gönderirken ve ilk arkadaşlık kabulünde zorunludur (`docs/SPEC_V2.md` §6.3).
 
 ### 4.2 Check-in ve masa
+> **v3:** Sınırı tanımlı mekanda (kampüs) check-in 300 m yerine sınırın içinde olmayı ister; masa kampüs içindeki noktasını seçer. Katılım biçimi check-in'den kalkar, oda başına seçilir. Masa adı yeniden çekilebilir (`docs/SPEC_V3.md` §4, §5.6).
+
 > **v2:** Mekan Keşfet'te (liste ya da harita) elle seçilir; konum yalnızca seçilen mekanda 300 m içinde olunduğunu doğrular. Yakındaki mekanlar listesi kalkar (`docs/SPEC_V2.md` §4).
 
 1. Konum için açık rıza alınır (açıklama ekranı, ilk check-in'de `profiles.location_consent_at` ve `location_consent_version` yazılır; sürüm `draft-0`). Konum izni istenir (sadece "uygulama kullanılırken"). Arka planda konum takibi yok.
@@ -57,6 +63,8 @@ Aynı mekandaki insanların, konsept üzerine kurulu odalarda birlikte oyun oyna
 6. Kullanıcının aynı anda tek aktif masası olur. Aktif masası varken yeniden check-in yaparsa eski masa biter (odaları kapanır) ve yenisi açılır.
 
 ### 4.3 Oda kurma ve lobi
+> **v3:** Oda kurulurken oyun seçilmez; oda sohbetle başlar, oyunu bir masa önerir, diğeri kabul eder. Lobide konsept yerine isteğe bağlı niyet etiketi ("Oyun" / "Sohbet") ve oda sahibinin noktası görünür; yüz yüze oyun ve tanışma yalnızca aynı noktadaki masalar arasında (`docs/SPEC_V3.md` §4.3, §5).
+
 1. Masa, konsept (Tabu / Sohbet) ve görünürlük (Sadece masam / Mekana açık) seçerek oda kurar.
 2. `open` oda lobide şu bilgilerle görünür: masa takma adı, kişi sayısı, konsept, bekleme süresi. Masa numarası, konum ya da profil bilgisi yok.
 3. Lobide açık oda yoksa lobi bölümü hiç gösterilmez. Onun yerine "Masanla oyna" çağrısı görünür.
@@ -72,6 +80,8 @@ Aynı mekandaki insanların, konsept üzerine kurulu odalarda birlikte oyun oyna
 6. `unavailable` ile sonuçlanan istekten sonra aynı masa aynı odaya tekrar istek gönderemez.
 
 ### 4.5 Oda içi
+> **v3:** Ayrı "Odadan çık" kalkar; tek çıkış "Odayı bitir". İki masalı odada engelleme ve mekandan ayrılma o masa için "Hayır" sayılır (`docs/SPEC_V3.md` §5.5).
+
 - Üstte konsept alanı (oyun ya da sohbet kartı), altta sohbet.
 - Menüde: Odadan çık, Şikayet et, Engelle.
 - Sahibi çıkarsa oda kapanır. Misafir çıkarsa oda `waiting` durumuna döner; oda açıksa lobiye geri düşer.
@@ -86,6 +96,8 @@ Aynı mekandaki insanların, konsept üzerine kurulu odalarda birlikte oyun oyna
 6. **v2:** Karşılıklı "Evet"ten sonra iki tarafa "Arkadaş ekle" çıkar; ikisi de basarsa istek-onay turu olmadan arkadaşlık kurulur, biri basmazsa sessiz kalır. Karşılıklı olmayan sonuçlarda oyun geçmişi ve arkadaşlık isteği ancak `reveal_ends_at`'ten sonra açılır (`docs/SPEC_V2.md` §6.5).
 
 ## 5. Konseptler
+> **v3:** Oyunlar (Sesli Tabu, Sohbet kartları) öneri ve kabulle başlar, bitince oda sohbete döner. Tabu'da mod sunucuda kişi sayısından belirlenir: tek kişilik masa varsa iş birliği modu (anlatan üç eylemi kendisi basar, tahmin edene kart gitmez), yoksa hakemli mod (`docs/SPEC_V3.md` §6). Mekanın sabit grup sohbeti ("mekan sohbet odası") eklenir (§7).
+
 
 ### 5.1 Tabu — tek masa (sesli)
 - Oda tek masalıyken oynanır. Tamamen istemci tarafında çalışır, sunucu yalnızca desteyi sağlar.
@@ -138,7 +150,7 @@ Zamanlama: `normalize` ve `profanity.ts` ilk kez sohbette kullanıldığı için
 - **Hesap silme:** Kullanıcının tüm verisi silinir. Ban sonrasında geriye kalan tek veri telefon hash'idir; güvenlik amacıyla tutulduğu aydınlatma metninde belirtilir (M7). `reports.reporter_id` ve `reports.reported_user_id` `ON DELETE SET NULL`'dır; şikayet kaydı ve mesaj kopyası 30 gün sonunda yine silinir.
 - **App Store / Play:** Kullanıcı içeriği barındıran uygulamalar için şikayet, engelleme, filtre ve iletişim bilgisi gerekir. Uygulama içi hesap silme zorunludur.
 - **KVKK:** Aydınlatma metni, konum için açık rıza ve gizlilik politikası URL'i (mağaza için de gerekli).
-- **SMS:** Sağlayıcı Twilio Verify (Supabase yerleşik entegrasyonu). SMS pumping dolandırıcılığına karşı Verify coğrafi izinleri yalnızca Türkiye'ye açıktır. Aynı numaraya tekrar gönderim en az 60 sn arayla, proje geneli saatte en fazla 100 SMS. Türkiye'ye teslimat ve maliyet M1'de test edilir; sorun çıkarsa Send SMS Hook ile yerli sağlayıcıya geçilebilir.
+- **SMS:** **v3:** SMS gönderimi Send SMS Hook ile sağlayıcıdan bağımsız olur (Free ve Pro planlarında var); yerli sağlayıcı (Netgsm) hesabı açılana kadar hook kapalı ve Twilio Verify devam eder (`docs/SPEC_V3.md` §2). Sağlayıcı Twilio Verify (Supabase yerleşik entegrasyonu). SMS pumping dolandırıcılığına karşı Verify coğrafi izinleri yalnızca Türkiye'ye açıktır. Aynı numaraya tekrar gönderim en az 60 sn arayla, proje geneli saatte en fazla 100 SMS. Türkiye'ye teslimat ve maliyet M1'de test edilir; sorun çıkarsa Send SMS Hook ile yerli sağlayıcıya geçilebilir.
 
 ## 9. Mimari
 
@@ -264,6 +276,8 @@ banned_phones     phone_hash (HMAC, sunucu gizli anahtarı) PK, created_at
 9. **Profil ve ayarlar:** Engellenenler, gizlilik politikası, iletişim, çıkış, hesabı sil.
 
 ## 11. İçerik
+> **v3:** Pilot yalnızca Sakarya Üniversitesi Esentepe Kampüsü: `content/venues-campus.json` (sınır poligonu ve noktalar); Beylikdüzü ve test mekanları içerikte kapalı. Yeni mekan ya da nokta yalnızca içerik işidir. Masa adı listeleri yenilenir (`docs/SPEC_V3.md` §4.1, §5.6).
+
 - `tabu-cards.json`: en az 500 kart, format `{ cards: [{ word, forbidden: [5] }] }`. Yasaklar tek kelime olmalı ve hedefle aynı kökten gelmemeli (içerik testi: normalize edilmiş ortak önek 4 harfe ya da kısa kelimenin uzunluğuna ulaşmamalı). Argo ya da cinsel içerik yok.
 - `sohbet-cards.json`: en az 150 kart, 4 temaya dağılmış (`isinma`, `film-dizi-muzik`, `hic-yaptin-mi`, `derin`; her birinde en az 30).
 - Kartlar `(deck, source_key)` ile upsert edilir; JSON'dan çıkarılan kart silinmez, pasifleşir.
