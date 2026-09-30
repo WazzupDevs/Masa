@@ -14,8 +14,8 @@ Beyaz ekran, check-in, sesli Tabu ve gecikme ölçümü, tanışma sızıntısı
 2. **G1.** Giriş ve kayıt (ad, doğum tarihi), A ve B (~5 dk).
 3. **V4.** Check-in, kişi sayısı ve katılım biçimi, A (~5 dk).
 4. **V5.** Yalnızca 1. adım: iki telefonda Profil'de ad ve yaş (~2 dk).
-5. **V7.** Lobide "profilli" etiketi, katılma isteği; Tabu odası (~5 dk).
-6. **T1–T5.** Sesli Tabu, T4'teki gecikme ölçümü dahil (~15 dk).
+5. **V7.** Oda kur (niyet, katılım), lobide "profilli" etiketi, katılma isteği (~5 dk).
+6. **T1–T5.** Oyun önerisi ve Sesli Tabu, T4'teki gecikme ölçümü dahil (~15 dk).
 7. **T6 → F1.** Karşılıklı Evet, sonuç ekranında "Arkadaş ekle" (~3 dk).
 8. **F3.** Mesajlaşma (~5 dk).
 9. **F4.** Mesaj bildirimi; FCM'li build yoksa atlanır ve not edilir (~5 dk).
@@ -46,10 +46,10 @@ Otomatik bir adım yeşilse sahada yine yapılır, ama önce elle kalan kısmın
 | 3   | P1      | V1. Açılış ve sekmeler                   | Hayır    | A, B                 |                                    |
 | 4   | P1      | V2. Keşfet                               | Hayır    | A                    |                                    |
 | 5   | P1      | V3. Yarıçap dışından check-in            | Kısmen   | A                    | Mekandan en az 400 m uzakta        |
-| 6   | P0      | V4. Kişi sayısı ve katılım biçimi        | Evet     | A                    | Mekanda                            |
+| 6   | P0      | V4. Kişi sayısı ve masa adı              | Evet     | A                    | Mekanda                            |
 | 7   | P0      | V5. Profil kurulumu                      | Kısmen   | A, B                 | P0'da yalnızca 1. adım (ad ve yaş) |
 | 8   | P1      | V6. Konum etiketli fotoğraf              | Hayır    | B                    |                                    |
-| 9   | P0      | V7. Lobide "profilli", katılma isteği    | Kısmen   | A, B                 | Tabu odası; T bu odada sürer       |
+| 9   | P0      | V7. Oda kur, "profilli", katılma isteği  | Kısmen   | A, B                 | T bu odada sürer                   |
 | 10  | P0      | T1–T5. Sesli Tabu                        | Kısmen   | A, B, üçüncü telefon | ~15 dk; oda 3 dakikayı geçer       |
 | 11  | P0      | T6. Oda sonu, karşılıklı Evet            | Evet     | A, B                 |                                    |
 | 12  | P0      | F1. "Arkadaş ekle"                       | Kısmen   | A, B                 | T6'nın sonuç ekranında             |
@@ -65,6 +65,7 @@ Otomatik bir adım yeşilse sahada yine yapılır, ama önce elle kalan kısmın
 | 22  | P1      | F6. Arkadaşlık isteği ve red             | Hayır    | A, B                 |                                    |
 | 23  | P0      | F7. Geçmişten engelleme                  | Kısmen   | A, B                 |                                    |
 | 24  | P1      | S5. Odada engelleme                      | Hayır    | A, B                 |                                    |
+| 24b | P1      | S6. Masanla oyna                         | Evet     | A, B                 |                                    |
 | 25  | P1      | V11. Kapanış                             | Hayır    | A, B                 |                                    |
 
 ## Uygulama önde kalmalı
@@ -185,15 +186,16 @@ Her adımın sonunda ✅ / ❌ işaretle.
 **Bak:** konum alındıktan sonra kırmızı yazı: **"Bu mekana çok uzaktasın. Mekandayken tekrar dene."**; kişi sayısı ekranına geçilmez. Masa açılmaz (Mekan sekmesi hâlâ Keşfet'e götürür).
 **Hata olursa:** uzaktayken kişi sayısı ekranına geçildiyse, telefonun gösterdiği konum doğruluğunu (varsa) ve mekana uzaklığı yaz. Bu ❌'dır.
 
-## V4. Kişi sayısı ve katılım biçimi (A, mekanda) [P0]
+## V4. Kişi sayısı ve masa adı (A, mekanda) [P0]
 
 > Otomatik: tamamı, emülatör konumuyla (`02-checkin.yaml`; E2E mekanının noktaları olduğu için önce "Neredesin?"). Elle: gerçek GPS.
 
 1. Mekanda: Keşfet'te test mekanının kartında **Buraya giriş yap** → rıza kutusu → **Konumumu kullan** → izin ver. **"Masada kaç kişisiniz?"** ekranı açılır. (Noktası olan mekanda, ör. kampüs açılınca, önce **"Neredesin?"** listesi gelir: bir nokta seç → **Devam**.)
 2. Seçenekler: **1 / 2 / 3 / 4+** (5 ve 6 yok).
-3. Altta "Nasıl katılıyorsunuz?": **Anonim** seçili. Ad kayıtta alındığı için **Profille** de seçilebilir. (Katılım biçimi v3 adım 3'te odaya taşınacak.)
-4. **2**'yi seç, Anonim kalsın, **Masayı aç**. "Masan hazır" ekranında takma adı not et.
+3. Katılım biçimi burada sorulmaz; oda kurarken ve katılma isteğinde seçilir (V7).
+4. **2**'yi seç, **Masayı aç**. "Masan hazır" ekranında takma adı not et: sıfat + isim (isim hayvan, yiyecek, bitki, nesne ya da doğa olabilir).
 5. Mekan sekmesine dokun.
+6. Mekan ekranında **Adı değiştir**: yeni ad, altında "2 hakkın kaldı". İki kez daha bas: "Bu masada adı değiştirme hakkın bitti", düğme soluk.
 
 **Bak:**
 
@@ -211,7 +213,7 @@ P0'da yalnızca 1. adım; 2–5. adımlar P1.
 2. A: **Profili düzenle** → Tanıtım'a bir cümle yaz → **Kaydet**. Sayaç `n/160` doğru sayıyor.
 3. Küfürlü bir ad dene (ör. içinde "amk" geçen): **"Ad 2–24 karakter olmalı ve uygun olmayan ifade içermemeli."**; kaydedilmez.
 4. Tek harfli ad dene: **Kaydet** soluk kalır.
-5. Profil → dişli → Ayarlar → **Gizlilik**: "Masaya varsayılan katılım" artık iki seçenek de dokunulabilir. Anonim kalsın. **Bildirimler**'de iki anahtar açık.
+5. Profil → dişli → Ayarlar: "Masaya varsayılan katılım" seçimi **yok** (katılım oda başına seçilir). **Bildirimler**'de iki anahtar açık.
 
 **Bak:** Profil ekranında ad ve tanıtım görünüyor; "Rozetler" altında "Oynadıkça rozet kazanırsın." (rozetler bu adımda boş, beklenen).
 **Hata olursa:** kaydedilmeyen alanı ve mesajı yaz.
@@ -233,28 +235,28 @@ Amaç: telefonda konum servisi ve kamerada konum etiketi açıkken çekilen foto
 
 ## V7. Lobide "profilli" etiketi, katılma isteği (A ve B) [P0]
 
-> Otomatik: oda kurma, botun isteği, kabul (`04-room-tabu.yaml`). Elle: "profilli" etiketi (bot anonim katılır).
+> Otomatik: oda kurma (niyet "Oyun", anonim), botun profilli isteği, kabul, sohbetle başlayan oda (`04-room-tabu.yaml`). Elle: lobideki "profilli" etiketi.
 
-1. A: Mekan ekranından **Mekandan ayrıl**, sonra yeniden check-in; bu kez **2** ve **Profille** seç, **Masayı aç**.
-2. A: **Oda kur** → **Tabu** → **Mekana açık** → **Odayı kur**.
-3. B: Keşfet → test mekanı → check-in → **3** ve **Profille** → **Masayı aç**. Mekan ekranındaki "Açık odalar"a bak.
-4. B: A'nın odasında **Katılmak istiyorum**.
-5. A: "Katılma isteği" penceresi → **Kabul**.
+1. A: **Oda kur**. Ekranda oyun seçimi **yok**: yalnızca niyet (Etiket yok / Oyun / Sohbet) ve katılım (**Anonim** seçili / Profilimle). **Oyun** ve **Profilimle** seç → **Odayı kur**.
+2. B: Keşfet → test mekanı → check-in → **3** → **Masayı aç**. Mekan ekranındaki "Açık odalar"a bak.
+3. B: A'nın odasında **Katılmak istiyorum** → açılan pencerede **Profilimle** → **İsteği gönder**.
+4. A: "Katılma isteği" penceresi → **Kabul**.
 
 **Bak:**
 
-- B'nin lobisinde A'nın takma adının yanında küçük **"profilli"** etiketi. A'nın görünen adı, fotoğrafı ya da tanıtımı **lobide yok**.
+- B'nin lobisinde A'nın odasında **"Oyun"** etiketi ve takma adın yanında küçük **"profilli"** etiketi. Oyun adı, A'nın görünen adı, fotoğrafı ya da tanıtımı **lobide yok**.
 - A'nın istek penceresinde B'nin takma adı, "(3 kişi)" ve **"profilli"** etiketi; ad ya da fotoğraf yok.
+- Kabulden sonra oda **sohbetle** başlar: üstte "Oyun öner" (Sesli Tabu öner / Sohbet kartları öner), altta sohbet. Oyun kendiliğinden başlamaz.
 
-## T1. Oyunu başlat [P0]
+## T1. Oyun önerisi ve başlatma [P0]
 
-> Otomatik: başlatma, kapalı kart, Pas, tur geçişi ve hakemlik; tur, bot tarafından bitirilir (`04-room-tabu.yaml`). Elle: sesli oyun, aynı anda basma (T3.4), T4 gecikmesi, 6 tur ve oyun sonu.
+> Otomatik: botun önerisini kabul, kapalı kart, Pas, tur geçişi ve hakemlik; tur, bot tarafından bitirilir; "Oyunu bitir" ile sohbete dönüş ve botun kabul etmediği öneri (`04-room-tabu.yaml`). Elle: sesli oyun, aynı anda basma (T3.4), T4 gecikmesi, 6 tur ve oyun sonu.
 
-V7'deki odada devam. V7'de şunlar da görülmüş olmalı:
+V7'deki odada devam.
 
-1. A'nın "Oda kur" ekranında Tabu seçeneğinin altında **"Bu oyun yüz yüze oynanır…"** notu.
-2. B'nin lobisinde oda **"Tabu · yüz yüze"**; A'nın istek penceresinde aynı not.
-3. B'de "Oda sahibinin oyunu başlatması bekleniyor." A: **Oyunu başlat**.
+1. B: **Sohbet kartları öner**. B'de "Sohbet kartları önerdin. Yanıt bekleniyor (… sn)."; A'da "Diğer masa Sohbet kartları öneriyor." ve **Oynayalım** / **Şimdi değil**.
+2. A: **Şimdi değil**. B'de **hemen** "Öneri kabul edilmedi." Bir kez daha önerip bu kez 30 sn cevapsız bırak: B'de aynı metin.
+3. B: **Sesli Tabu öner** → A: **Oynayalım**.
 
 **Bak:** İki ekranda "Tur 1/6", aynı sayaç (en fazla 1 sn fark), iki masa kutusu ve 0–0 skor. A'nın kutusunda "anlatıyor", B'nin ekranında "A … anlatıyor. Hakem sizsiniz."
 
@@ -302,7 +304,8 @@ Basan telefon: anında / gecikmeli
 
 1. Süre bitince iki ekranda "Tur bitiyor…", ardından "Tur 2/6": anlatan B, hakem A. B'nin kartı kapalı başlar.
 2. 6 tur sonunda iki ekranda skorlar ve **"… kazandı!"** ya da **"Berabere!"**
-3. A'da **Yeniden oyna**; B'de bekleme metni.
+3. İki ekranda oda sohbete döner: son oyunun skoru ve yeniden "Oyun öner". İki masa da yeni bir öneri yapabilir.
+4. (P1) Bir oyun sürerken **Oyunu bitir**: iki ekranda oda sohbete döner.
 
 **Bak:** Profil → Rozetler: iki hesapta da **İlk oyun** görünür.
 
@@ -372,7 +375,7 @@ Gerekli: APK `google-services.json` ile alınmış olmalı (CLAUDE.md → "Push"
 
 ## S1. Sohbet (A ve B) [P1]
 
-1. A: **Oda kur** → **Sohbet** → **Mekana açık** → **Odayı kur**; B katılır (V7'nin 4–5. adımları). İki telefonda karşılıklı birkaç mesaj yaz.
+1. A: **Oda kur** → niyet **Sohbet** → **Odayı kur**; B katılır (V7'nin 3–4. adımları). İki telefonda karşılıklı birkaç mesaj yaz.
 2. Küfürlü bir mesaj dene: "Mesajın uygun olmayan bir ifade içeriyor." Mesaj gitmez.
 3. Aynı saniyede iki mesaj göndermeyi dene: ikincisi "Çok fazla istek gönderdin…" ile reddedilir.
 4. Gündelik kelimeler reddedilmemeli: "çok şık olmuşsun", "sık sık geliriz", "sıkıldım".
@@ -409,7 +412,7 @@ Bu senaryo iki kez oynanır. Her turda **odayı bitirmeyen telefon** izlenir: ek
 
 **V8a (A bitirir, B izlenir):**
 
-1. A yeni açık **Tabu** odası kurar, B katılır (V7'nin 2 ve 4–5. adımları). A **Oyunu başlat**. 1–2 tur oyna (Doğru ya da Pas).
+1. A yeni oda kurar, B katılır (V7'nin 1 ve 3–4. adımları). A **Sesli Tabu öner**, B **Oynayalım**. 1–2 tur oyna (Doğru ya da Pas).
 2. A: **Odayı bitir**.
 3. **B'yi izle.**
 
@@ -417,7 +420,7 @@ Bu senaryo iki kez oynanır. Her turda **odayı bitirmeyen telefon** izlenir: ek
 
 **V8b (B bitirir, A izlenir):**
 
-1. A yeniden açık oda kurar (Tabu), B katılır (V7'nin 4–5. adımları), A oyunu başlatır, 1–2 tur.
+1. A yeniden oda kurar, B katılır (V7'nin 3–4. adımları), Sesli Tabu önerilip kabul edilir, 1–2 tur.
 2. B: **Odayı bitir**.
 3. **A'yı izle.**
 
@@ -427,7 +430,7 @@ Bu senaryo iki kez oynanır. Her turda **odayı bitirmeyen telefon** izlenir: ek
 
 ## V9. Odada profil görme ve profil şikayeti (A ve B) [P1]
 
-1. A yeniden açık oda kurar, B katılır (ikisi de V7'deki gibi **Profille** masadalar).
+1. A yeniden oda kurar, B katılır (ikisi de V7'deki gibi **Profilimle**: A oda kurarken, B katılma isteğinde).
 2. B: oda ekranında **"Diğer masanın profilini gör"** → A'nın adı, tanıtımı ve (varsa) fotoğrafı.
 3. A: aynı düğmeyle B'nin profilini açar: V6'daki fotoğraf görünür.
 4. B: A'nın profilinde **Profili şikayet et** → bir sebep → **"Şikayetin alındı. Teşekkürler."**
@@ -436,7 +439,7 @@ Bu senaryo iki kez oynanır. Her turda **odayı bitirmeyen telefon** izlenir: ek
 **Bak:**
 
 - Profil ekranında mekan, konum ya da masa bilgisi yok; yalnızca ad, fotoğraf, tanıtım, rozetler.
-- Anonim bir masa katılırsa (istersen dene: B Anonim masayla katılsın) düğme **hiç görünmez**.
+- Anonim katılan masanın profili açılmaz (istersen dene: B istekte **Anonim** seçsin): düğme **hiç görünmez**.
 
 **Sonra (panelde):** `reports` tablosunda `target_type = 'profile'` satırı; `profile_snapshot` içinde A'nın adı ve tanıtımı.
 
@@ -488,7 +491,7 @@ Reddedilen masa o odayı lobide bir daha görmez; bu yüzden iki deneme için A 
 **Bak:**
 
 - 1'de (FCM'li build) B'de bildirim: **"Kabuk"**, **"Yeni bir arkadaşlık isteğin var"**; ad ya da içerik yok. Arkadaşlar sekmesinde "1 yeni arkadaşlık isteği".
-- 2'de istek oyun bağlamıyla görünür: "… Tabu oynadığınız … masası arkadaşın olmak istiyor". A'nın görünen adı ya da fotoğrafı **yok**.
+- 2'de istek oyun bağlamıyla görünür: "… Sesli Tabu oynadığınız … masası arkadaşın olmak istiyor". A'nın görünen adı ya da fotoğrafı **yok**.
 - 3'ten sonra A'da satır "… masasına istek gönderildi" olarak **kalır**; red A'ya hiçbir yerde görünmez ve bildirim gitmez.
 
 **Hata olursa:** A'da "reddedildi" anlamına gelen herhangi bir değişiklik gördüysen ekran görüntüsü al; bu ❌'dır.
@@ -510,16 +513,25 @@ Reddedilen masa o odayı lobide bir daha görmez; bu yüzden iki deneme için A 
 
 ## S5. Odada engelleme ve engeli kaldırma [P1]
 
-Engelleyen odadan çıktığı için bu adım en sona yakın yapılır. F5'ten beri A ile B arkadaş değil; engelleme bir arkadaşlığı da düşürürdü.
+Engelleme odayı bitirdiği için bu adım en sona yakın yapılır. F5'ten beri A ile B arkadaş değil; engelleme bir arkadaşlığı da düşürürdü.
 
-1. A yeni açık oda kurar, B katılır.
-2. B: **Engelle** → onay. B odadan çıkar.
-3. B ana ekranda: A'nın odası lobide görünmez. B açık oda kurar: A'nın lobisinde de görünmez.
-4. B: Profil → dişli → Ayarlar → Engellenenler: A'nın o andaki takma adı ve tarih. **Engeli kaldır**.
-5. Lobiler yeniden birbirini gösterir.
+1. A yeni oda kurar, B katılır.
+2. B: **Engelle** → onay. İki ekranda "Tanışalım mı?" açılır; B'de "Cevabın alındı. Sonuç birazdan." (engelleme B için "Hayır" sayılır).
+3. A: **Evet**. 30 sn dolunca A'da **"Güzel oyundu"**: A bunu B'nin "Hayır"ından ayırt edemez. İki taraf **Mekana dön**.
+4. B ana ekranda: A'nın odası lobide görünmez. B açık oda kurar: A'nın lobisinde de görünmez.
+5. B: Profil → dişli → Ayarlar → Engellenenler: A'nın o andaki takma adı ve tarih. **Engeli kaldır**.
+6. Lobiler yeniden birbirini gösterir.
 
-**Bak:** Engellenenler listesinde yalnızca takma ad ve tarih var.
+**Bak:** A'nın ekranı engellemeden sonra da "Tanışalım mı?" penceresine geçer, oda "dağılmaz"; oda ekranında "Odadan çık" yok, tek çıkış **Odayı bitir**. Engellenenler listesinde yalnızca takma ad ve tarih var.
 **Hata olursa:** engelden sonra hâlâ görünen odayı ve kimin lobisinde göründüğünü yaz.
+
+## S6. Masanla oyna [P1]
+
+> Otomatik: özel oda, tek masa Tabu ve "Odayı bitir" (`06-white-screen.yaml`).
+
+1. A: Mekan ekranında **Masanla oyna**. Oda ekranı açılır; niyet ya da katılım sorulmaz. Oyun seçenekleri doğrudan: **Sesli Tabu başlat** / **Sohbet kartları başlat**.
+2. B'nin lobisinde bu oda **görünmez**.
+3. A: Sesli Tabu → 1 tur oyna → **Oyunu bitir** → **Odayı bitir**: "Tanışalım mı?" sorulmadan Mekan ekranına döner.
 
 ## V11. Kapanış [P1]
 

@@ -186,7 +186,7 @@ export const tr = {
     noIncoming: 'Yeni istek yok.',
     incoming: (playedAt: string, concept: HistoryConcept, alias: string) =>
       concept === 'tabu'
-        ? `${dayMonthAt(playedAt)} Tabu oynadığınız ${alias} masası arkadaşın olmak istiyor`
+        ? `${dayMonthAt(playedAt)} Sesli Tabu oynadığınız ${alias} masası arkadaşın olmak istiyor`
         : `${dayMonthAt(playedAt)} sohbet ettiğiniz ${alias} masası arkadaşın olmak istiyor`,
     accept: 'Kabul et',
     decline: 'Reddet',

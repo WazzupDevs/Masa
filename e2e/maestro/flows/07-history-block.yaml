@@ -5,7 +5,7 @@ appId: app.kabuk.mobile
     id: tab-friends
 - tapOn: Geçmiş ve istekler
 - extendedWaitUntil:
-    visible: .*masasıyla Tabu.*
+    visible: .*masasıyla Sesli Tabu.*
     timeout: 15000
 - takeScreenshot: 30-history
 - tapOn:
