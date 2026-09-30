@@ -19,12 +19,14 @@ type Props = Omit<TextInputProps, 'style' | 'placeholderTextColor'> & {
   code?: boolean;
   // A multi-line field that starts several lines high (the bio).
   tall?: boolean;
+  // Short fields centred in their box (the birth date's day, month and year).
+  centered?: boolean;
 };
 
 // A text field. Its outline is the theme's border where that reads 3:1 against the surface, the
 // secondary text colour otherwise; focus draws it in the accent.
 export const Input = forwardRef<TextInput, Props>(function Input(
-  { label, hint, error, prefix, counter, code, tall, multiline, ...rest },
+  { label, hint, error, prefix, counter, code, tall, centered, multiline, ...rest },
   ref,
 ) {
   const theme = useTheme();
@@ -77,6 +79,7 @@ export const Input = forwardRef<TextInput, Props>(function Input(
               minHeight: tall ? TOUCH.large + SPACING[8] : undefined,
             },
             code ? { textAlign: 'center', letterSpacing: SPACING[2] } : null,
+            centered ? { textAlign: 'center' } : null,
           ]}
         />
       </View>

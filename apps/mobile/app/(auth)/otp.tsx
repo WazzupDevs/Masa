@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import { Button } from '@/components/Button';
-import { Input } from '@/components/Input';
+import { CodeInput } from '@/components/CodeInput';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { authErrorMessage } from '@/features/auth/authErrors';
@@ -60,10 +60,10 @@ export default function OtpScreen() {
         subtitle={tr.auth.otpHint(phone)}
         onBack={() => router.back()}
       />
-      <View className="mt-6">
-        <Input
+      <View className="mt-6 gap-2">
+        <CodeInput
           testID="otp-input"
-          code
+          length={CODE_LENGTH}
           accessibilityLabel={tr.auth.otpTitle}
           keyboardType="number-pad"
           autoComplete="sms-otp"
@@ -71,22 +71,23 @@ export default function OtpScreen() {
           autoFocus
           value={code}
           onChangeText={onChange}
-          maxLength={CODE_LENGTH}
           error={error}
         />
+        <View className="self-start">
+          <Button
+            variant="ghost"
+            label={secondsLeft > 0 ? tr.auth.resendIn(secondsLeft) : tr.auth.resend}
+            onPress={() => void resend()}
+            disabled={secondsLeft > 0}
+          />
+        </View>
       </View>
-      <View className="mt-auto gap-3 pt-8">
+      <View className="mt-auto pt-8">
         <Button
           label={tr.auth.verify}
           onPress={() => void verify(code)}
           disabled={code.length !== CODE_LENGTH}
           loading={verifying}
-        />
-        <Button
-          variant="secondary"
-          label={secondsLeft > 0 ? tr.auth.resendIn(secondsLeft) : tr.auth.resend}
-          onPress={() => void resend()}
-          disabled={secondsLeft > 0}
         />
       </View>
     </Screen>

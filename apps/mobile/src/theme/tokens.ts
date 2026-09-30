@@ -96,6 +96,7 @@ export type ShadowSet = {
   raised: string | null; // the selected segment of a switch
   pin: string | null; // map pins
   tabBar: string | null; // the floating tab bar
+  focus: string | null; // the code box that takes the next digit
 };
 
 export type Shape = {

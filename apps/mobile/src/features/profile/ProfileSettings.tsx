@@ -37,7 +37,7 @@ export function ProfileSettings() {
   return (
     <View className="gap-6">
       <View accessibilityRole="radiogroup" className="gap-2">
-        <Text variant="heading" accessibilityRole="header">
+        <Text variant="overline" tone="muted" accessibilityRole="header">
           {tr.settings.privacySection}
         </Text>
         <Text>{tr.settings.defaultParticipation}</Text>
@@ -55,7 +55,7 @@ export function ProfileSettings() {
       </View>
 
       <View>
-        <Text variant="heading" accessibilityRole="header">
+        <Text variant="overline" tone="muted" accessibilityRole="header">
           {tr.settings.notificationsSection}
         </Text>
         <ToggleRow

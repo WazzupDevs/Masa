@@ -38,6 +38,10 @@ appId: app.kabuk.mobile
 - assertVisible: Kabuk 18 yaş ve üzeri içindir
 - takeScreenshot: 03a-under-age
 # The account was deleted; the same number signs up again.
+- tapOn: Kapat
+- extendedWaitUntil:
+    visible: Telefon numaran
+    timeout: 10000
 - runFlow:
     file: login-code.yaml
 - extendedWaitUntil:

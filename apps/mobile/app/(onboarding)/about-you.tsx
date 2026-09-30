@@ -93,38 +93,47 @@ export default function AboutYouScreen() {
           <View className="gap-2">
             <Text variant="label">{tr.signup.birthLabel}</Text>
             <View className="flex-row gap-2.5">
-              <View className="flex-1">
+              <View className="flex-1 gap-1">
                 <Input
                   testID="birth-day"
                   accessibilityLabel={tr.signup.day}
-                  placeholder={tr.signup.day}
                   keyboardType="number-pad"
                   maxLength={2}
                   value={day}
                   onChangeText={setDay}
+                  centered
                 />
+                <Text variant="fine" align="center">
+                  {tr.signup.day}
+                </Text>
               </View>
-              <View className="flex-1">
+              <View className="flex-1 gap-1">
                 <Input
                   testID="birth-month"
                   accessibilityLabel={tr.signup.month}
-                  placeholder={tr.signup.month}
                   keyboardType="number-pad"
                   maxLength={2}
                   value={month}
                   onChangeText={setMonth}
+                  centered
                 />
+                <Text variant="fine" align="center">
+                  {tr.signup.month}
+                </Text>
               </View>
-              <View className="flex-[1.5]">
+              <View className="flex-[1.6] gap-1">
                 <Input
                   testID="birth-year"
                   accessibilityLabel={tr.signup.year}
-                  placeholder={tr.signup.year}
                   keyboardType="number-pad"
                   maxLength={4}
                   value={year}
                   onChangeText={setYear}
+                  centered
                 />
+                <Text variant="fine" align="center">
+                  {tr.signup.year}
+                </Text>
               </View>
             </View>
             <Text variant="fine" tone={dateError ? 'danger' : undefined}>

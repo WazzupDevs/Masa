@@ -5,12 +5,14 @@ import { View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
+import { ProfilePhoto } from '@/components/ProfilePhoto';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Text } from '@/components/Text';
+import { useProfile } from '@/features/account/useProfile';
 import { useOnboardingStore } from '@/features/onboarding/store';
-import { choosePhoto, PhotoError } from '@/features/profile/photo';
-import { profileViewKeys } from '@/features/profile/queries';
+import { choosePhoto, PhotoError, type PhotoSource } from '@/features/profile/photo';
+import { profileViewKeys, useProfileView } from '@/features/profile/queries';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { track } from '@/lib/analytics';
@@ -22,13 +24,17 @@ export default function ExtrasScreen() {
   const queryClient = useQueryClient();
   const [bio, setBio] = useState('');
   const [photoSet, setPhotoSet] = useState(false);
+  // The preview: the uploaded photo, or the display name's initials.
+  const own = useProfile();
+  const view = useProfileView(own.data?.public_id);
 
   const photo = useMutation({
-    mutationFn: () => choosePhoto('library'),
-    onSuccess: (changed) => {
+    mutationFn: (source: PhotoSource) => choosePhoto(source),
+    onSuccess: async (changed) => {
       if (changed) {
         setPhotoSet(true);
         track('profile_photo_set', {});
+        await queryClient.invalidateQueries({ queryKey: profileViewKeys.all });
       }
     },
   });
@@ -52,13 +58,23 @@ export default function ExtrasScreen() {
     <Screen>
       <ScreenHeader title={tr.signup.extrasTitle} subtitle={tr.signup.extrasBody} />
       <View className="mt-6 gap-6">
-        <View className="gap-2">
+        <View className="gap-3">
+          <View className="items-center">
+            <ProfilePhoto url={view.data?.photoUrl ?? null} name={own.data?.display_name} />
+          </View>
           <Button
             variant="secondary"
             icon="image-outline"
-            label={photoSet ? tr.profile.photoChange : tr.profile.photoAdd}
-            onPress={() => photo.mutate()}
-            loading={photo.isPending}
+            label={tr.profile.photoFromLibrary}
+            onPress={() => photo.mutate('library')}
+            disabled={photo.isPending}
+          />
+          <Button
+            variant="secondary"
+            icon="camera-outline"
+            label={tr.profile.photoFromCamera}
+            onPress={() => photo.mutate('camera')}
+            disabled={photo.isPending}
           />
           <Text variant="fine">{tr.profile.photoPrivacy}</Text>
           {photo.isError ? (

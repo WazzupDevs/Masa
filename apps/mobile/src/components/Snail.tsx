@@ -54,6 +54,16 @@ export function Snail({ height, variant = 'full' }: Props) {
   );
 }
 
+// The app's name beside the snail, at the top of the phone screen (canvas: Telefon numaran).
+export function BrandLine() {
+  return (
+    <View className="flex-row items-center" style={{ gap: SPACING[2.5] }}>
+      <Snail height={SPACING[8]} />
+      <Text variant="title">{tr.app.name}</Text>
+    </View>
+  );
+}
+
 // The Mekan tab's line icon, tinted like the other tab icons.
 export function SnailLineIcon({ size, color }: { size: number; color: string }) {
   return (
