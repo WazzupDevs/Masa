@@ -4,6 +4,9 @@ import {
   JOIN_REQUEST_TTL_SECONDS,
   MAX_JOIN_REQUESTS_PER_HOUR,
   requesterStatus,
+  ROOM_CHECK_COLUMNS,
+  ROOM_CHECK_SECONDS,
+  roomCheckDiffers,
   sessionChannel,
   venueChannel,
 } from './rooms.ts';
@@ -36,5 +39,31 @@ describe('requesterStatus', () => {
 
   it('never lets a requester tell unavailable from pending before expiry', () => {
     expect(requesterStatus('unavailable', expiresAt, before)).toBe('pending');
+  });
+});
+
+describe('room status check', () => {
+  const active = { status: 'active', owner_session_id: 'o', guest_session_id: 'g' };
+
+  it('reads the columns it compares, often enough to catch a missed change in seconds', () => {
+    expect(ROOM_CHECK_COLUMNS.split(', ').sort()).toEqual(
+      ['guest_session_id', 'owner_session_id', 'status'].sort(),
+    );
+    expect(ROOM_CHECK_SECONDS).toBeLessThanOrEqual(5);
+  });
+
+  it('sees no difference when nothing the screen shows changed', () => {
+    expect(roomCheckDiffers(active, { ...active })).toBe(false);
+    expect(roomCheckDiffers(null, null)).toBe(false);
+    expect(roomCheckDiffers(undefined, null)).toBe(false);
+  });
+
+  it('sees a closed room, a left guest and a room it can no longer read', () => {
+    expect(roomCheckDiffers(active, { ...active, status: 'closed' })).toBe(true);
+    expect(roomCheckDiffers(active, { ...active, status: 'waiting', guest_session_id: null })).toBe(
+      true,
+    );
+    expect(roomCheckDiffers(active, null)).toBe(true);
+    expect(roomCheckDiffers(null, active)).toBe(true);
   });
 });

@@ -3,7 +3,13 @@
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { BROADCAST, sessionChannel, venueChannel } from '../functions/_shared/pure/rooms.ts';
+import {
+  BROADCAST,
+  ROOM_CHECK_COLUMNS,
+  roomCheckDiffers,
+  sessionChannel,
+  venueChannel,
+} from '../functions/_shared/pure/rooms.ts';
 import { deleteFixtureVenues, insertFixtureVenues } from './fixtures/venues.ts';
 import { checkInAt, onboarded, PHONES } from './helpers.ts';
 import { anonKey, apiUrl, type Client, deleteUserByPhone, invoke, sql } from './local.ts';
@@ -179,5 +185,125 @@ describe('private table channels', { timeout: 60_000 }, () => {
     // The server's broadcast arrives: the guest leaves, the room is back in the lobby.
     await invoke(guest, 'rooms', { action: 'leave' });
     await expect.poll(() => seen.events, { timeout: 8000 }).toEqual([BROADCAST.lobbyChanged]);
+  });
+});
+
+// The room screen follows its room with Postgres Changes on the private `room:{id}` channel
+// (apps/mobile/src/features/rooms/queries.ts → useRoom), and re-reads it (`ROOM_CHECK_COLUMNS`) when
+// the app comes to the foreground, when the channel (re)subscribes and every few seconds.
+// Device report: the owner left a 1:1 room; the guest's screen stayed in the room until the app
+// was restarted. Realtime delivers a change only to a channel that is subscribed at that moment and
+// never replays it, and the screen had no other way to learn that the room closed.
+function watchRoomRow(client: Client, roomId: string) {
+  const rows: { status?: string }[] = [];
+  const channel = client
+    .channel(`room:${roomId}`, { config: { private: true } })
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` },
+      (payload: { new?: { status?: string } }) => rows.push(payload.new ?? {}),
+    );
+  const subscribed = new Promise<string>((resolve) => {
+    const timer = setTimeout(() => resolve('TIMED_OUT'), 8000);
+    channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        clearTimeout(timer);
+        resolve(status);
+      }
+    });
+  });
+  return { rows, channel, subscribed };
+}
+
+// SUBSCRIBED comes before Postgres Changes are live: touch the row until a change arrives, then
+// start from an empty list.
+async function untilLive(watch: ReturnType<typeof watchRoomRow>, roomId: string) {
+  expect(await watch.subscribed).toBe('SUBSCRIBED');
+  await expect
+    .poll(
+      async () => {
+        await sql`update public.rooms set last_activity_at = last_activity_at where id = ${roomId}`;
+        return watch.rows.length;
+      },
+      { timeout: 15_000, interval: 500 },
+    )
+    .toBeGreaterThan(0);
+  await quiet();
+  watch.rows.length = 0;
+}
+
+// What the room screen's status check reads (apps/mobile/src/features/rooms/queries.ts).
+async function statusCheck(client: Client, roomId: string) {
+  const { data, error } = await client
+    .from('rooms')
+    .select(ROOM_CHECK_COLUMNS)
+    .eq('id', roomId)
+    .maybeSingle();
+  expect(error).toBeNull();
+  return data;
+}
+
+describe('room row changes', { timeout: 60_000 }, () => {
+  it('reach a subscribed guest when the owner leaves', async () => {
+    const { owner, guest, roomId } = await roomWithGuest(false);
+    const watch = watchRoomRow(guest, roomId);
+    await untilLive(watch, roomId);
+
+    await invoke(owner, 'rooms', { action: 'leave' });
+    await expect.poll(() => watch.rows.map((r) => r.status), { timeout: 8000 }).toContain('closed');
+  });
+
+  it('are not replayed to a guest that was away; only a re-read shows the closed room', async () => {
+    const { owner, guest, roomId } = await roomWithGuest(false);
+    const before = await statusCheck(guest, roomId);
+    expect(before?.status).toBe('active');
+
+    // The app went to the background and its socket dropped (or the network blinked).
+    const away = watchRoomRow(guest, roomId);
+    await untilLive(away, roomId);
+    await guest.removeChannel(away.channel);
+    await invoke(owner, 'rooms', { action: 'leave' });
+    // Realtime handles the change while no channel of the guest is there.
+    await quiet();
+
+    // Back: the channel subscribes again, but the change it missed never comes.
+    const back = watchRoomRow(guest, roomId);
+    expect(await back.subscribed).toBe('SUBSCRIBED');
+    await quiet();
+    await quiet();
+    expect(back.rows).toEqual([]);
+
+    // The re-read does show it, and the check says the cached row is out of date.
+    const after = await statusCheck(guest, roomId);
+    expect(after?.status).toBe('closed');
+    expect(roomCheckDiffers(before, after)).toBe(true);
+  });
+
+  // Rule 5: during the "Tanışalım mı?" window the table that said yes learns nothing of the other
+  // table's no or leaving, neither from its channel nor from the re-reads added for this bug.
+  it('show the yes table nothing while the other table says no and leaves', async () => {
+    const { owner, guest, roomId } = await roomWithGuest(false);
+    expect((await invoke(owner, 'rooms', { action: 'end' })).status).toBe(200);
+    expect(
+      (await invoke(owner, 'reveal', { action: 'decide', roomId, wantsMeet: true })).status,
+    ).toBe(200);
+
+    const watch = watchRoomRow(owner, roomId);
+    await untilLive(watch, roomId);
+    const before = await statusCheck(owner, roomId);
+    const fullBefore = (await owner.from('rooms').select('*').eq('id', roomId).single()).data;
+    expect(before?.status).toBe('ending');
+
+    await invoke(guest, 'reveal', { action: 'decide', roomId, wantsMeet: false });
+    await invoke(guest, 'rooms', { action: 'leave' });
+    await invoke(guest, 'checkin', { action: 'leave' });
+    await quiet();
+
+    expect(watch.rows).toEqual([]);
+    const after = await statusCheck(owner, roomId);
+    expect(after).toEqual(before);
+    expect(roomCheckDiffers(before, after)).toBe(false);
+    const fullAfter = (await owner.from('rooms').select('*').eq('id', roomId).single()).data;
+    expect(fullAfter).toEqual(fullBefore);
   });
 });
