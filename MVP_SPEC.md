@@ -4,7 +4,7 @@ Uygulama adı: Kabuk (kod içi çalışma adı Masa; paket kimliği `app.kabuk.m
 
 > **v2:** Navigasyon, Keşfet, profil, arkadaşlar ve DM, sesli Tabu için onaylı teknik tasarım `docs/SPEC_V2.md`'dedir. Bu belgede v2 ile değişen kararlar "**v2:**" notuyla işaretlidir; v2 adımları uygulandıkça metin güncellenir.
 
-> **v3 (Kabuk v1, Sakarya Üniversitesi pilotu; taslak, onay bekliyor):** Tasarım `docs/SPEC_V3.md`'dedir. Değişecek kararlar aşağıda "**v3:**" notuyla işaretlidir; onaydan ve ilgili adımdan sonra metin güncellenir.
+> **v3 (Kabuk v1, Sakarya Üniversitesi pilotu; onaylı):** Tasarım `docs/SPEC_V3.md`'dedir. Değişen kararlar aşağıda "**v3:**" notuyla işaretlidir; ilgili adım uygulandıkça metin güncellenir.
 
 ## 1. Ürün tanımı
 Aynı mekandaki insanların, konsept üzerine kurulu odalarda birlikte oyun oynayıp sohbet edebildiği bir mobil uygulama. Tanışma ikinci planda ve isteğe bağlı: iki taraf da isterse oda sonunda fiziksel olarak buluşurlar. Kafe anlaşması gerekmez.
@@ -50,7 +50,7 @@ Aynı mekandaki insanların, konsept üzerine kurulu odalarda birlikte oyun oyna
 3. Kullanıcı takma adı yoktur: diğer kullanıcılara hiçbir şey gösterilmediği ve hiçbir akışta kullanılmadığı için MVP'den çıkarıldı. Diğer masalar yalnızca masa takma adını görür (§4.2). **v2:** isteğe bağlı görünen ad (`display_name`) eklenir; kayıtta sorulmaz, profil kurulurken, arkadaşlık isteği gönderirken ve ilk arkadaşlık kabulünde zorunludur (`docs/SPEC_V2.md` §6.3).
 
 ### 4.2 Check-in ve masa
-> **v3:** Sınırı tanımlı mekanda (kampüs) check-in 300 m yerine sınırın içinde olmayı ister; masa kampüs içindeki noktasını seçer. Katılım biçimi check-in'den kalkar, oda başına seçilir. Masa adı yeniden çekilebilir (`docs/SPEC_V3.md` §4, §5.6).
+> **v3:** Sınırı tanımlı mekanda (kampüs) check-in 300 m yerine sınırın içinde olmayı ister (50 m tolerans); masa kampüs içindeki noktasını seçer. Katılım biçimi check-in'den kalkar, oda başına seçilir. Masa adı yeniden çekilebilir (`docs/SPEC_V3.md` §4, §5.6).
 
 > **v2:** Mekan Keşfet'te (liste ya da harita) elle seçilir; konum yalnızca seçilen mekanda 300 m içinde olunduğunu doğrular. Yakındaki mekanlar listesi kalkar (`docs/SPEC_V2.md` §4).
 
@@ -63,7 +63,7 @@ Aynı mekandaki insanların, konsept üzerine kurulu odalarda birlikte oyun oyna
 6. Kullanıcının aynı anda tek aktif masası olur. Aktif masası varken yeniden check-in yaparsa eski masa biter (odaları kapanır) ve yenisi açılır.
 
 ### 4.3 Oda kurma ve lobi
-> **v3:** Oda kurulurken oyun seçilmez; oda sohbetle başlar, oyunu bir masa önerir, diğeri kabul eder. Lobide konsept yerine isteğe bağlı niyet etiketi ("Oyun" / "Sohbet") ve oda sahibinin noktası görünür; yüz yüze oyun ve tanışma yalnızca aynı noktadaki masalar arasında (`docs/SPEC_V3.md` §4.3, §5).
+> **v3:** Oda kurulurken oyun ve görünürlük seçilmez; "Oda kur" her zaman mekana açık, "Masanla oyna" tek masalı özel odayı kurar. Oda sohbetle başlar, oyunu bir masa önerir, diğeri kabul eder. Lobide konsept yerine isteğe bağlı niyet etiketi ("Oyun" / "Sohbet") ve oda sahibinin noktası görünür; yüz yüze oyun ve tanışma yalnızca aynı noktadaki masalar arasında (`docs/SPEC_V3.md` §4.3, §5).
 
 1. Masa, konsept (Tabu / Sohbet) ve görünürlük (Sadece masam / Mekana açık) seçerek oda kurar.
 2. `open` oda lobide şu bilgilerle görünür: masa takma adı, kişi sayısı, konsept, bekleme süresi. Masa numarası, konum ya da profil bilgisi yok.
@@ -80,7 +80,7 @@ Aynı mekandaki insanların, konsept üzerine kurulu odalarda birlikte oyun oyna
 6. `unavailable` ile sonuçlanan istekten sonra aynı masa aynı odaya tekrar istek gönderemez.
 
 ### 4.5 Oda içi
-> **v3:** Ayrı "Odadan çık" kalkar; tek çıkış "Odayı bitir". İki masalı odada engelleme ve mekandan ayrılma o masa için "Hayır" sayılır (`docs/SPEC_V3.md` §5.5).
+> **v3:** Ayrı "Odadan çık" kalkar; tek çıkış "Odayı bitir". İki masalı odada engelleme ve mekandan ayrılma o masa için "Hayır" sayılır; 10 dakika hareketsizlik pencereyi iki taraf için açar (`docs/SPEC_V3.md` §5.5).
 
 - Üstte konsept alanı (oyun ya da sohbet kartı), altta sohbet.
 - Menüde: Odadan çık, Şikayet et, Engelle.

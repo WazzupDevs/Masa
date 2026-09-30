@@ -1,6 +1,6 @@
 # Kabuk v1 (kod içi v3) — Teknik tasarım
 
-Durum: **taslak, proje sahibinin onayını bekliyor.** Onaydan önce kod yazılmaz. §17'deki açık sorular cevaplanınca kararlar bu belgeye, `MVP_SPEC.md`'ye, `CLAUDE.md`'ye ve `docs/DECISIONS.md`'ye işlenir. Uygulama §14'teki sırayla yapılır; her adım kendi dalı, PR'ı ve güncel E2E akışıyla gelir. Bu belgede olmayan bir karar gerekirse uygulama durur ve proje sahibine sorulur.
+Durum: **onaylandı** (30.09.2026). Proje sahibinin S2–S14 cevapları ve ek düzeltmeleri (profilli mekan sohbeti mesajında masa adı yok, kampüs sınırına 50 m tolerans, tasarım dosyalarına dokunmama, FIELD_TEST) işlendi; kararlar §17'de. S1 (poligon ve nokta adları) proje sahibinden gelecek ve yalnızca adım 2'yi bekletir. Kararlar `MVP_SPEC.md`, `CLAUDE.md` ve `docs/DECISIONS.md`'ye de işlenir. Uygulama §14'teki sırayla yapılır; her adım kendi dalı, PR'ı ve güncel E2E akışıyla gelir. Bu belgede olmayan bir karar gerekirse uygulama durur ve proje sahibine sorulur.
 
 Bu belge, Sakarya Üniversitesi pilotuna çıkacak **Kabuk v1**'in ürün kararlarını mevcut şemaya, RLS'e, Edge Function'lara ve Realtime'a oturtur. Kod içinde sürüm adı **v3**'tür (v1 = MVP, v2 = `docs/SPEC_V2.md`); kullanıcıya görünen sürüm Kabuk v1'dir.
 
@@ -140,11 +140,11 @@ Netgsm hazır olunca, önce dev projesinde, sonra üretimde:
   - `complete-onboarding` hesabı **siler** (`auth.admin.deleteUser`) ve `under_age` döner. Profil satırı, onay ya da doğum tarihi yazılmaz, telefon hash'i tutulmaz.
   - İstemci çıkış yapar ve "Kabuk 18 yaş ve üzeri içindir." gösterir.
   - Silme, yaş kontrolünden önce hiçbir yazma olmamasıyla birlikte test edilir (§13).
-  - Aynı numara yeniden kayıt olabilir. Bu kabul edilmiş risktir ve §17-S2'de sorulur.
+  - Aynı numara yeniden kayıt olabilir. Bu kabul edilmiş risktir (S2).
 - **Değişmezlik:**
   - Doğum tarihi kayıttan sonra uygulamadan değiştirilemez; yanlış girilen tarih iletişim e-postasıyla düzeltilir.
   - Yeni admin script'i `pnpm admin:set-birth-date <userId> <YYYY-MM-DD>`, `admin:ban` gibi geliştirici makinesinde çalışır.
-  - Gerekçe: yaşı sonradan küçültüp büyütmek kötüye kullanıma açık. Bkz. §17-S8.
+  - Gerekçe: yaşı sonradan küçültüp büyütmek kötüye kullanıma açık. (S8, kabul.)
 - **Görünürlük:**
   - Profilde **yaş** görünür, doğum tarihi görünmez.
   - `birth_date` kolonu istemciye kapalıdır (kolon yetkisi). Kendi doğum tarihi de tablo okumasıyla gelmez; Ayarlar → Hesap'ta `profile/me` ile gösterilir.
@@ -193,7 +193,7 @@ Adım 1'in parçası, OTA'dan önce:
   ```
   - `boundary` bir GeoJSON dış halkasıdır: `[lng, lat]` dizisi, kapalı, saat yönünün tersine.
   - `spots` sıralı listedir. Nokta koordinatı tutulmaz; nokta, kampüs içindeki masanın kendi beyanıdır.
-  - Poligon ve nokta adları proje sahibinden gelir (§17-S1). Koordinat tahmin edilmez.
+  - Poligon ve nokta adları proje sahibinden gelir (S1). Koordinat tahmin edilmez.
 - **Diğer mekanlar:**
   - `venues-pilot.json` (Beylikdüzü) ve `venues-test.json` içerikte kapatılır (`isActive: false`).
   - Seed yalnızca ekler ya da günceller; kapatma da seed'le yapılır.
@@ -204,15 +204,16 @@ Adım 1'in parçası, OTA'dan önce:
 ### 4.2 Check-in: sınır ya da yarıçap
 
 - `venues.boundary geography(Polygon, 4326) null` eklenir.
-- **`private.venue_contains(venue_id, lat, lng)`** yalnızca service role'e açıktır ve aynı çağrıda koordinatı saklamadan karar verir:
-  - Sınırı olan mekanda `ST_Covers(boundary, point)`.
+- **`private.venue_contains(venue_id, lat, lng, tolerance_m)`** yalnızca service role'e açıktır ve aynı çağrıda koordinatı saklamadan karar verir:
+  - Sınırı olan mekanda sınıra **50 m tolerans**: `ST_DWithin(boundary, point, tolerance_m)`. Bina içinde GPS 30–50 m sapabildiği için (proje sahibi düzeltmesi).
   - Sınırı olmayan mekanda bugünkü 300 m (`venue_distance_m`).
+  - Tolerans tek sabittir: `pure/checkin.ts` → `BOUNDARY_TOLERANCE_M = 50`. Fonksiyon onu parametre olarak alır; SQL'de sayı yazılmaz.
 - `checkin` fonksiyonu bu kararı kullanır. Hata kodları aynıdır (`too_far`), mesaj koordinat ya da mesafe içermez.
 - **İstemci uyarısı:** Sınırı olan mekanda "Kampüsün içinde görünmüyorsun" uyarısı verilir.
-  - Uyarı `pure/geo.ts` → `pointInPolygon` ile hesaplanır; saf ve testlidir.
+  - Uyarı `pure/geo.ts` → `withinBoundary(point, polygon, BOUNDARY_TOLERANCE_M)` ile hesaplanır (poligon içi ya da kenara en fazla 50 m); saf ve testlidir. Sunucu ile aynı toleransı kullanır.
   - Poligon `explore_venues()` yanıtında gelir. Kampüs sınırı herkese açık bir bilgidir, kişisel veri değildir.
   - Karar yine sunucudadır.
-- **Kural 6'nın genişlemesi:** "Konum yalnızca check-in anında, mekanın sınırı içinde ya da sınırı yoksa 300 m yakınında olunduğunu doğrulamak için alınır."
+- **Kural 6'nın genişlemesi:** "Konum yalnızca check-in anında, mekanın sınırı içinde ya da sınırı yoksa 300 m yakınında olunduğunu doğrulamak için alınır; sınır toleransı 50 m."
 
 ### 4.3 Kampüs noktaları
 
@@ -224,10 +225,10 @@ Adım 1'in parçası, OTA'dan önce:
 - **Nokta değiştirme:**
   - `checkin/change-spot { spotId }` yeni GPS istemez; kampüsten çıkılmadı varsayılır ve masa süresi değişmez.
   - Masa bir odadaysa ya da bekleyen bir katılma isteği varsa `in_room` döner.
-  - Bkz. §17-S10.
+  - GPS'siz ve odada değilken serbesttir (S10, kabul).
 - **Lobi:**
   - `venue_lobby()` her açık odanın noktasını (`spot_id`, `spot_name`) döner. Ekran odaları nokta başlıklarıyla gruplar, kendi noktası en üstte.
-  - Başka noktadaki odalar görünür ama "Katılmak istiyorum" yalnızca aynı noktadakilerde çalışır.
+  - Başka noktadaki odalar görünür. Aynı noktadaki oda kartında "Katılmak istiyorum" vardır; başka noktadaki oda kartında onun yerine **"Bu noktadayım"** düğmesi vardır. Düğme `change-spot` çağırır; sonra kart "Katılmak istiyorum"a döner ve istek gönderilebilir. Kullanıcı çıkmaz bir ekranda kalmaz (proje sahibi düzeltmesi).
   - Başka noktadaki odaya istek `different_spot` döner. Bu, oda sahibinin masası hakkında lobide zaten görünen bilgiden fazlasını söylemez.
 - **Yüz yüze kuralı:** Oyunlar ve tanışma yalnızca aynı noktadaki masalar arasında olur. Oda iki masalıyken masalardan biri noktasını değiştiremez; `change-spot` odadayken reddedilir.
 - **Kişi sayısı gösterilmez:** Nokta başına masa sayısı hiçbir yerde dönmez. Lobi yalnızca açık odaları listeler, bugünkü gibi.
@@ -240,7 +241,7 @@ Adım 1'in parçası, OTA'dan önce:
   - Mekan kartı: ad, hareketlilik kovası, "Buraya giriş yap".
   - Mekanın süren ve 7 gün içindeki **bütün** etkinlikleri. Bugün en yakın tek etkinlik dönüyor; tek mekan görünümü için liste gerekir.
   - "Yeni mekanlar yakında" notu.
-- **İki ya da daha fazla aktif mekan (`'list'`):** Bugünkü liste ve harita geri gelir. İçerik değişikliğiyle kendiliğinden olur, kod değişmez. Eşik §17-S9'da sorulur.
+- **İki ya da daha fazla aktif mekan (`'list'`):** Bugünkü liste ve harita geri gelir. İçerik değişikliğiyle kendiliğinden olur, kod değişmez. Eşik 2 aktif mekan (S9).
 - **`explore_venues()`:** Her mekan için etkinlik listesini ve sınırı döner. Kişi ya da masa sayısı yine dönmez.
 
 ---
@@ -250,9 +251,10 @@ Adım 1'in parçası, OTA'dan önce:
 ### 5.1 Oda önce sohbettir
 
 - **Oda kurarken oyun seçilmez.** Oda kur ekranında yalnızca şunlar seçilir:
-  - görünürlük (bugünkü "Sadece masam" / "Mekana açık"; §17-S4);
   - isteğe bağlı niyet etiketi;
-  - katılım biçimi (§5.4).
+  - katılım biçimi: Anonim / Profilimle (§5.4).
+- **Görünürlük seçimi kalkar (S4):** "Oda kur" her zaman mekana açık oda kurar (`visibility = 'open'`).
+- **"Masanla oyna"** mekan ekranında ayrı bir düğmedir. Arka planda tek masalı özel odayı kurar (`rooms/create-solo`; niyet ve katılım sorulmaz, anonim) ve doğrudan oyun seçimine geçer. Kampüste kimse yokken tek başına oynanabilsin diye bu yol kalır. Özel oda lobide görünmez ve katılma isteği alamaz (değişmez).
 - **Oda ekranı:** Sohbet ve üstte "Oyun öner" alanı.
 - **Oyunlar:** v1'de Sesli Tabu ve Sohbet kartları (mevcutlar; yeni oyun yok).
 - **`rooms.concept`** "odadaki etkinlik" olur: `null` = sohbet, `'tabu'` ya da `'sohbet'` = süren oyun.
@@ -276,7 +278,7 @@ Adım 1'in parçası, OTA'dan önce:
 - **`rooms/answer-game { roomId, accept }`:**
   - Yalnızca öneriyi yapmayan masa cevaplar.
   - Kabulde oyun başlar: Tabu'da bugünkü `tabu/start` mantığı, Sohbet'te ilk kart.
-  - Red ya da 30 sn zaman aşımı öneriyi siler. Önerene ikisi de aynı görünür: "Öneri kabul edilmedi". Bkz. §17-S7.
+  - Red ya da 30 sn zaman aşımı öneriyi siler. Önerene ikisi de aynı metinle görünür: "Öneri kabul edilmedi". Red **hemen** gösterilir, 30 sn bekletilmez (S7): iki masa zaten sohbet ediyor, bu bir gizlilik sinyali değildir. Kural 5'e eklenmez; test zamanlama eşitliği iddia etmez, yalnızca satırın silinmesini ve metnin aynı olmasını doğrular.
 - **Tek masalı oda:**
   - Öneri yoktur. Masa oyunu doğrudan başlatır: tek masa Tabu (bugünkü yerel reducer) ya da Sohbet kartları.
   - Katılma isteği kabul edilince yerel oyun biter ve oda sohbete döner. Bugün iki masalı Tabu'ya geçiyordu; artık öneriyle başlar.
@@ -305,20 +307,20 @@ Adım 1'in parçası, OTA'dan önce:
   - "Odayı bitir" iki tarafa "Tanışalım mı?" penceresini açar (bugünkü `rooms/end` + `reveal`).
 - **Tek masalı oda:** "Odayı bitir" odayı doğrudan kapatır (değişmez).
 - **`rooms/leave` kalkar.** Masanın odadan başka türlü ayrılması şu yollarla olur:
-  - **Engelleme** (§17-S5, öneri): odayı "Odayı bitir" gibi bitirir ve engelleyen taraf için kararı "Hayır" sayar.
+  - **Engelleme** (S5, kabul): odayı "Odayı bitir" gibi bitirir ve engelleyen taraf için kararı "Hayır" sayar.
     - Karşı taraf pencereyi görür. "Evet" derse sonucu `reveal_ends_at`'te "Güzel oyundu" olur.
     - Bu, engellemeyi "Hayır"dan ayırt edilemez yapar (kural 5'in genişlemesi).
     - Bugün engelleme odadan ayrılma gibi çalışıyor ve karşı taraf odanın dağıldığını hemen görüyor.
   - **Mekandan ayrılma ya da masanın süresinin dolması:** Aynı yol; iki masalı oda pencereye geçer, ayrılan tarafın kararı "Hayır"dır. Tek masalı oda kapanır.
-  - **10 dakika hareketsizlik:** Oda kapanır (değişmez). İki masalı odada pencere açılmaz; bugünkü davranış.
+  - **10 dakika hareketsizlik:** İki masalı odada oda sessizce kapanmaz; "Tanışalım mı?" penceresi iki taraf için de aynı şekilde açılır (S5 eki). Hiçbir taraf için karar önceden yazılmaz; iki taraf da cevap verebilir. Tek masalı oda bugünkü gibi kapanır.
 - **Oyun geçmişi:** Karşılaşma bitişleri pencere, engelleme, masa bitişi ve hareketsizliktir. 3 dakika kuralı değişmez. `play_history.concept` odada oynanan son oyundur; oyun yoksa `'chat'`. Check kısıtı buna göre genişler.
 
 ### 5.6 Masa adları
 
 - **Yeni kelime listeleri:** `content/aliases-tr.json` yenilenir, en az 40 sıfat × 40 isim.
   - İçerik kuralları bugünküyle aynı: olumlu ya da nötr, hakaret ya da alay gibi okunmayan birleşimler.
-  - Liste adım 4'te üretilir, proje sahibi ayıklar.
-  - Kelime türü "hayvan"la sınırlı kalmayabilir (§17-S13). `alias_words.kind` `adjective`/`noun` olur.
+  - Biçim sıfat + isim; isimler hayvanla sınırlı değildir: yiyecek, bitki, nesne, doğa (S13). Kampüse özel tema yoktur, başka mekanlar eklenecek.
+  - Liste adım 3'ün PR'ında verilir, proje sahibi ayıklar. `alias_words.kind` `adjective`/`noun` olur.
 - **Adı yeniden çekme:** `checkin/reroll-alias`.
   - Masa odadayken ya da bekleyen isteği varken `in_room` döner.
   - Check-in başına en fazla 3 kez; sonra `reroll_limit`.
@@ -331,9 +333,8 @@ Adım 1'in parçası, OTA'dan önce:
 ### 6.1 Modu sunucu belirler
 
 - Oyun başlarken iki masanın `headcount`'ı (`rooms.owner_headcount`, `guest_headcount`) okunur.
-- **Öneri (§17-S3):** Masalardan biri tek kişiyse bütün oyun **iş birliği modu**nda, ikisi de 2+ ise **hakemli mod**da oynanır.
+- **Oyun düzeyinde (S3):** Masalardan biri tek kişiyse bütün oyun **iş birliği modu**nda, ikisi de 2+ ise **hakemli mod**da oynanır.
   - Gerekçe: tek kişilik masa kendi anlatanını tahmin edecek takım arkadaşından yoksundur. Tur tur mod değiştirmek skoru karşılaştırılamaz yapar.
-  - Alternatif: mod her tur anlatan masanın kişi sayısına göre seçilir. Proje sahibinin cümlesi ("anlatan masa tek kişiyse") buna daha yakın; karar sorulur.
 - `pure/tabu.ts` → `tabuMode(ownerHeadcount, guestHeadcount)` tek kaynaktır ve testlidir. Mod `game_state.mode`'a yazılır ve oyun boyunca değişmez.
 - `game_state`:
   ```
@@ -380,7 +381,8 @@ Bugünkü iki masa sesli Tabu aynen kalır:
 - **`venue_chat_reports`:** `message_id` → `venue_chat_messages` on delete cascade, `reporter_user_id` (istemciye kapalı), `created_at`; primary key `(message_id, reporter_user_id)`.
 - **Silme:** Mesajlar 24 saatte silinir (saatlik cron). Şikayet kopyası `reports`'ta 30 gün kalır (bugünkü cron).
 - **Okuma:** Tablo okumasıyla değil, `venue_chat_page(venue_id, before?)` RPC'siyle. Security definer, yalnızca okur, `set search_path = ''`. Her mesaj için döner:
-  - `id`, `sender_alias`, `profiled`, `display_name` (yalnızca `profiled` ise), `body`, `created_at`, `from_me`.
+  - `id`, `profiled`, `sender_alias` (**yalnızca anonim mesajda**), `display_name` (yalnızca profilli mesajda), `body`, `created_at`, `from_me`.
+  - **Profilli mesajda masa adı gitmez** (proje sahibi düzeltmesi): ad, fotoğraf ve masa adı birlikte giderse lobideki nokta başlığıyla kişinin kampüsteki yeri ortaya çıkar. `sender_alias` kolonu tabloda durur (şikayet kopyası, yalnızca sunucu), RPC profilli mesajda `null` döner. Entegrasyon testi bunu `venue_chat_page`, `venue_chat:` yükleri ve `profile/get` yanıtları üzerinden doğrular.
   - Aktif masası o mekanda olmayana boş döner.
   - İki yönlü engel varsa mesaj dönmez.
   - `hidden_at` dolu mesaj dönmez; gönderenin kendisine döner (kendi mesajının gizlendiğini ayırt edemez).
@@ -390,7 +392,7 @@ Bugünkü iki masa sesli Tabu aynen kalır:
 
 - Varsayılan anonimdir: mesaj masa takma adıyla görünür.
 - Sohbet ekranında "Profilimle yaz" anahtarı vardır. Mesaj başına `venue-chat/send { profiled }` ile gider; anahtarın son hâli yalnızca cihazda hatırlanır.
-- Profilli mesaj görünen adı gösterir. Görünen ad kayıtta zorunlu olduğu için her zaman vardır.
+- Profilli mesaj yalnızca görünen adı gösterir, masa adını göstermez (§7.2). Görünen ad kayıtta zorunlu olduğu için her zaman vardır.
 
 ### 7.4 Gönderme ve güvenlik
 
@@ -401,13 +403,13 @@ Bugünkü iki masa sesli Tabu aynen kalır:
   4. Mesajı yazar ve `venue_chat:{venue_id}` kanalına veri içermeyen `venue_chat` yayını yapar.
 - **Push yoktur.**
 - **Şikayet:** `safety/report { target: 'venue_chat', messageId, reason }`.
-  - `reports`'a şikayet edilen mesajla birlikte o mekanın son 50 görünür mesajının kopyası yazılır (`target_type = 'venue_chat'`; `messages_snapshot`). Kopyada gönderen masa adı, profilliyse görünen ad ve zaman vardır.
+  - `reports`'a şikayet edilen mesajla birlikte o mekanın son 50 görünür mesajının kopyası yazılır (`target_type = 'venue_chat'`; `messages_snapshot`). Kopya yalnızca sunucudadır (`reports` istemciye kapalı); gönderen masa adını, profilliyse görünen adı ve zamanı içerir.
   - `venue_chat_reports`'a satır eklenir; aynı hesabın aynı mesaja ikinci şikayeti sayılmaz.
 - **Otomatik gizleme:** Bir mesaj **3 ayrı hesaptan** şikayet alınca `hidden_at` dolar ve mesaj hiç kimseye verilmez (gönderen hariç).
   - Aynı hesabın tekrar şikayeti ya da kendi mesajını şikayet etmesi sayılmaz.
   - Kontrol aynı transaction'da yapılır; eşik `pure/venueChat.ts`'te durur.
   - Gizlenen mesaj için yayın yapılır; istemciler yeniden okur.
-- **Engelleme:** `safety/block { venueChatMessageId, report?: reason }` gönderenin hesabını engeller (`blocked_alias` = mesajdaki takma ad). Engel iki yönlüdür: iki taraf birbirinin mesajlarını görmez.
+- **Engelleme:** `safety/block { venueChatMessageId, report?: reason }` gönderenin hesabını engeller. Engellenenler listesinde anonim mesajdan gelen engel masa adıyla, profilli mesajdan gelen engel **görünen adla** durur (`blocked_alias` bu adı taşır; masa adı yazılmaz). Engel iki yönlüdür: iki taraf birbirinin mesajlarını görmez.
 
 ### 7.5 Profil ve arkadaşlık isteği
 
@@ -424,8 +426,10 @@ Bugünkü iki masa sesli Tabu aynen kalır:
   - Kurallar bugünkü istekle aynıdır: kalıcı red hesap çiftine bağlıdır, engel iki yönde sessizce yutar, zaten arkadaşsa `already_friends` döner, diğer her durumda `{ ok: true }`.
   - Hız sınırı: hesap başına günde 10 istek (mekan sohbetinden). Aşılınca da `{ ok: true }` döner ve hiçbir şey yazılmaz; sınırın varlığı sızdırılmaz.
   - `friend_requests.encounter_id` null olabilir hâle gelir. Yeni kolonlar `source text check (in 'encounter','venue_chat')` ve `venue_chat_context jsonb` (mekan adı, tarih; mesaj metni yok).
-- **Alıcının görünümü:** "Sakarya Üniversitesi sohbet odasından **Ayşe** arkadaşın olmak istiyor".
-  - İstek sahibinin görünen adı gösterilir: istek sahibi, istek göndererek adını alıcıya açmayı kabul etmiş sayılır. Fotoğraf ve `public_id` yok. Bkz. §17-S6.
+- **Gönderme onayı:** İstek göndermeden önce onay penceresinde "İstek gönderirsen profilin ona görünür" yazar.
+- **Alıcının görünümü:** "Sakarya Üniversitesi sohbet odasından **Ayşe (21)** arkadaşın olmak istiyor", yanında fotoğraf (gizlenmemişse).
+  - İstek sahibinin görünen adı, yaşı ve fotoğrafı gösterilir (S6): kampüs ölçeğinde yalnızca ad kimseyi tanıtmaz. İstek sahibi onay penceresiyle bunu kabul etmiştir. `public_id`, biyografi ve rozetler gitmez.
+  - Fotoğraf `my_incoming_requests` yerine `friends/list` gibi fonksiyonda imzalanır (1 saatlik imzalı URL; `friends/incoming` eylemi). İstek sahibinin masa adı gitmez.
   - Kabul, red, engel ve şikayet bu istek kaydıyla yapılır.
 - **Gönderenin görünümü:** `my_sent_requests()` alıcının o mesajdaki görünen adını ve durumu (`pending`/`accepted`; red süresiz `pending`) döner.
 
@@ -537,18 +541,18 @@ Genel testler yeni RPC'lerin de hesap id'si ve arkadaşlık öncesi `public_id` 
 
 ## 11. API (Edge Function'lar)
 
-| Fonksiyon           | Eylemler                                                                                                                                                                                                                 | Durum   |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- |
-| `sms` (yeni)        | Send SMS Hook hedefi: imza doğrulama, `+905` kilidi, sağlayıcı bağdaştırıcısı                                                                                                                                            | Yeni    |
-| `account`           | `complete-onboarding { termsVersion, kvkkVersion, displayName, birthDate }` (18 altında hesabı siler, `under_age`); `delete`, `register-push` değişmez                                                                   | Değişir |
-| `profile`           | `me` (kendi doğum tarihi dahil); `get { publicId }` ya da `get { venueChatMessageId }` (`age` döner, doğum tarihi dönmez); `update` (`default_participation` kalkar)                                                     | Değişir |
-| `checkin`           | `check-in { …, spotId? }` (sınır ya da 300 m; `participation` kalkar); `change-spot { spotId }`; `reroll-alias`; `leave` (iki masalı odada pencere)                                                                      | Değişir |
-| `rooms`             | `create { visibility, intent?, profiled }` (konsept yok); `request-join { roomId, profiled }` (`different_spot`); `respond`; `propose-game { roomId, concept }`; `answer-game { roomId, accept }`; `end`; `leave` kalkar | Değişir |
-| `tabu`              | `start` (öneri kabulünden ya da tek masadan; mod sunucuda); `turn-cards` (iş birliğinde yalnızca anlatan); `mark` (iş birliğinde yalnızca anlatan, üç eylem); `end-turn`                                                 | Değişir |
-| `sohbet`            | `next-card` (değişmez; oyun öneriyle başlar)                                                                                                                                                                             | Değişir |
-| `venue-chat` (yeni) | `send { venueId, body, profiled }`                                                                                                                                                                                       | Yeni    |
-| `safety`            | `report` + `target: 'venue_chat', messageId`; `block` + `venueChatMessageId`; odadaki engel pencereyi açar                                                                                                               | Değişir |
-| `friends`           | `request { historyId }` ya da `request { venueChatMessageId }` (günlük sınır, sessiz)                                                                                                                                    | Değişir |
+| Fonksiyon           | Eylemler                                                                                                                                                                                                                                                                                        | Durum   |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `sms` (yeni)        | Send SMS Hook hedefi: imza doğrulama, `+905` kilidi, sağlayıcı bağdaştırıcısı                                                                                                                                                                                                                   | Yeni    |
+| `account`           | `complete-onboarding { termsVersion, kvkkVersion, displayName, birthDate }` (18 altında hesabı siler, `under_age`); `delete`, `register-push` değişmez                                                                                                                                          | Değişir |
+| `profile`           | `me` (kendi doğum tarihi dahil); `get { publicId }` ya da `get { venueChatMessageId }` (`age` döner, doğum tarihi dönmez); `update` (`default_participation` kalkar)                                                                                                                            | Değişir |
+| `checkin`           | `check-in { …, spotId? }` (sınır ya da 300 m; `participation` kalkar); `change-spot { spotId }`; `reroll-alias`; `leave` (iki masalı odada pencere)                                                                                                                                             | Değişir |
+| `rooms`             | `create { intent?, profiled }` (konsept ve görünürlük yok, her zaman açık); `create-solo` ("Masanla oyna": tek masalı özel oda); `request-join { roomId, profiled }` (`different_spot`); `respond`; `propose-game { roomId, concept }`; `answer-game { roomId, accept }`; `end`; `leave` kalkar | Değişir |
+| `tabu`              | `start` (öneri kabulünden ya da tek masadan; mod sunucuda); `turn-cards` (iş birliğinde yalnızca anlatan); `mark` (iş birliğinde yalnızca anlatan, üç eylem); `end-turn`                                                                                                                        | Değişir |
+| `sohbet`            | `next-card` (değişmez; oyun öneriyle başlar)                                                                                                                                                                                                                                                    | Değişir |
+| `venue-chat` (yeni) | `send { venueId, body, profiled }`                                                                                                                                                                                                                                                              | Yeni    |
+| `safety`            | `report` + `target: 'venue_chat', messageId`; `block` + `venueChatMessageId`; odadaki engel pencereyi açar                                                                                                                                                                                      | Değişir |
+| `friends`           | `request { historyId }` ya da `request { venueChatMessageId }` (günlük sınır, sessiz)                                                                                                                                                                                                           | Değişir |
 
 **Kalıp:** Hepsi bugünkü kalıbı izler: tek endpoint, `action`, zod v4, `{ error: { code, message } }`. Yeni fonksiyonlar `config.toml`'a `verify_jwt = false` ile ve CLAUDE.md'deki deploy listesine birlikte eklenir. Liste 12'den 14'e çıkar: `sms`, `venue-chat`.
 
@@ -597,6 +601,7 @@ Her adımın sonunda: `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm format:c
   - `birth_date` istemci okumasında yoktur (kolon yetkisi). `profile/get` `age` döner, doğum tarihi hiçbir yanıtta yoktur.
   - `sms`: imzasız istek `401` alır ve göndermez. Yerel stack'te hook açıkken test numarasına SMS isteği hook'u çağırmadan başarılı olur (ayrı yapılandırmayla elle koşulan test, §2.2). Doğrulanamazsa uygulama durur ve sorulur.
 - **E2E:** Yeni kayıt akışı (onay, ad, doğum tarihi, fotoğrafı atla). 18 altı tarih girilince "Kabuk 18 yaş ve üzeri içindir" görünür ve oturum kapanır.
+- **Belge:** `docs/FIELD_TEST.md` v3 akışlarına ve Kabuk adına göre güncellenir; bildirim başlığı artık "Kabuk".
 - **Kabul:**
   - Test numarasıyla yeni hesap profil kurmadan uygulamaya giremiyor.
   - 18 altı için hiçbir kayıt kalmıyor.
@@ -606,34 +611,37 @@ Her adımın sonunda: `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm format:c
 ### Adım 2: Kampüs pilotu
 
 - **Birim:**
-  - `pure/geo.ts` → `pointInPolygon`: kenar, köşe, iç, dış, delik yok.
+  - `pure/geo.ts` → `withinBoundary`: iç, kenar, köşe; dışarıda 40 m kabul, 60 m ret.
   - Seed poligon doğrulaması.
   - `exploreLayout`: tek ve çok mekan.
 - **Entegrasyon (fixture poligonu; gerçek kampüs değil):**
-  - Sınır içinden check-in kabul; sınırın 10 m dışından `too_far`.
+  - Sınır içinden check-in kabul; sınırın **40 m dışı kabul, 60 m dışı `too_far`** (50 m tolerans).
   - Sınırı olmayan mekanda 300 m kuralı değişmez.
   - Noktasız check-in `spot_required`; başka mekanın noktası `spot_invalid`.
-  - Başka noktadaki odaya istek `different_spot`. Odadayken `change-spot` `in_room`.
+  - Başka noktadaki odaya istek `different_spot`; `change-spot` sonrası aynı istek kabul edilir ("Bu noktadayım" yolu). Odadayken `change-spot` `in_room`.
   - Lobi yanıtında nokta başına sayı yok.
   - Koordinat saklanmıyor: bugünkü tarama testi yeni tablolarla birlikte.
-- **E2E:** Check-in'de nokta seçimi; lobi nokta başlıkları; Keşfet tek mekan kartı ve "Yeni mekanlar yakında".
+- **E2E:** Check-in'de nokta seçimi; lobi nokta başlıkları; başka noktadaki odada "Bu noktadayım"; Keşfet tek mekan kartı ve "Yeni mekanlar yakında".
 - **Kabul:** Pilot içeriğiyle Keşfet yalnızca kampüsü gösteriyor. Kampüs dışından check-in reddediliyor. Yeni nokta yalnızca JSON ve seed ile ekleniyor (testte bir nokta eklenip seed yeniden uygulanır).
 
 ### Adım 3: Oda akışı
 
 - **Entegrasyon:**
   - Konseptsiz oda kurulur, sohbetle başlar. Öneri yalnızca iki masalı odada yapılır; aynı anda tek öneri olur.
-  - Önerene red ve zaman aşımı birebir aynı görünür (satır, yanıt, yayın).
+  - Red ve zaman aşımı öneri satırını siler ve önerenin gördüğü metin aynıdır ("Öneri kabul edilmedi"). Red hemen görünür; test zamanlama eşitliği iddia etmez (S7).
   - Kabulle oyun başlar; oyun bitince `concept = null`.
+  - "Oda kur" her zaman açık oda kurar; `rooms/create` görünürlük almaz, "Masanla oyna" yolu (`create-solo`, `private`) ayrıdır ve lobide görünmez.
   - Tek masalı oda öneri istemeden yerel oyuna izin verir.
   - `rooms/leave` yok.
   - Engelleme iki masalı odada pencereyi açar. Karşı tarafın "Evet"i için satırlar, yayınlar ve zamanlama "Hayır" ile birebir aynıdır (bugünkü kural 5 testinin genişlemesi).
   - Mekandan ayrılma iki masalı odada aynı yolu izler.
+  - İki masalı odada 10 dakika hareketsizlik pencereyi iki taraf için de açar; iki taraf da karar verebilir. Tek masalı hareketsiz oda kapanır.
   - Oda düzeyinde anonimlik: `room_member_profile` odanın işaretine bakar; masa oturumu profilli olsa bile oda anonimse boş döner.
   - Lobi niyet etiketini döner, konsept dönmez.
   - `reroll-alias` 3 kez çalışır, 4.'sü `reroll_limit` alır. Odadayken `in_room` döner. Yeni ad mekanda benzersizdir.
   - `locks`: yeni yollar kilit sırasını izler.
-- **E2E:** Oda kur (niyet, profilli/anonim), sohbet, bot'un önerisini kabul (bot `BOT_ROLE=host` akışı güncellenir), oyun sonu sohbete dönüş, "Odayı bitir".
+- **E2E:** Oda kur (niyet, profilli/anonim), sohbet, bot'un önerisini kabul (bot `BOT_ROLE=host` akışı güncellenir), oyun sonu sohbete dönüş, "Odayı bitir"; "Masanla oyna".
+- **İçerik:** Yeni masa adı listeleri (sıfat + isim; hayvan, yiyecek, bitki, nesne, doğa) bu PR'da proje sahibinin ayıklamasına sunulur.
 - **Kabul:** Oda kurarken oyun sorulmuyor. Oyun yalnızca iki tarafın onayıyla başlıyor. Tek çıkış "Odayı bitir". Engelleme "Hayır"dan ayırt edilemiyor.
 
 ### Adım 4: Tabu modları
@@ -653,8 +661,10 @@ Her adımın sonunda: `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm format:c
   - Aktif masası olmayan okuyamaz ve yazamaz, `venue_chat:`'e abone olamaz. Masa bitince `venue_chat_page` boş döner.
   - Küfür reddi; hız sınırı.
   - Şikayet son 50 mesajı kopyalar. 3 ayrı hesabın şikayeti gizler; aynı hesabın 3 şikayeti gizlemez. Gizlenen mesaj gönderene döner, başkasına dönmez.
-  - Engel iki yönde mesajları gizler.
+  - Engel iki yönde mesajları gizler. Profilli mesajdan gelen engel, engellenenler listesinde görünen adla durur.
+  - **Profilli mesajda masa adı yok:** `venue_chat_page`, `venue_chat:` yükleri, `profile/get` ve istek yanıtlarının hiçbirinde profilli mesajın göndereninin masa adı geçmez.
   - `profile/get { venueChatMessageId }`: anonim mesaj, gizli mesaj, engel, aktif masa yokluğu ve var olmayan mesaj birebir aynı yanıtı verir.
+  - Alıcının gelen istek görünümü gönderenin görünen adını, yaşını ve (gizlenmemişse) fotoğrafını içerir; `public_id` ve masa adı içermez.
   - Arkadaşlık isteği: anonim mesaja yapılan istek sessizce yutulur. Günlük sınır aşımı `{ ok: true }` döner ve satır oluşmaz. Kalıcı red ve engel bugünkü gibi.
   - Hesap id'si ve arkadaşlık öncesi `public_id` taraması `venue_chat_page`, `profile/get` ve `venue_chat:` yüklerini kapsar.
   - 24 saat cron'u mesajları siler, şikayet kopyası kalır.
@@ -676,7 +686,7 @@ Her adımın sonunda: `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm format:c
 
 - Her adım ayrı PR'dır ve `e2e` etiketi taşır. Birleştirmeyi proje sahibi yapar.
 - Her PR'da sunucu önce yayına girer (CLAUDE.md "Neyi ne zaman yayınlamalı").
-- Yeni ekranlar `src/components` bileşenleriyle, tema tokenlarıyla kurulur; sabit renk yazılmaz. Görünümü tasarım oturumu yeniden çizecek.
+- **Tasarım oturumu paralel çalışıyor:** Tema tokenlarına (`src/theme/*`) ve `src/components` içindeki mevcut bileşenlerin görünümüne dokunulmaz. Yeni ekranlar mevcut bileşenlerle sade kurulur, sabit renk yazılmaz. Yeni ortak bileşen gerekirse eklenir ve PR özetinde listelenir. Görünümü tasarım oturumu yeniden çizecek.
 - Kullanıcıya görünen bütün metinler `tr.ts`'tedir. E2E akışındaki metin eşleşmeleri aynı PR'da güncellenir.
 
 ---
@@ -688,7 +698,6 @@ Yeni olaylar `_shared/pure/analytics.ts` izin listesine eklenir. Hepsi yalnızca
 | Olay                             | Özellikler                                                        |
 | -------------------------------- | ----------------------------------------------------------------- |
 | `onboarding_completed` (mevcut)  | + `with_photo: boolean`, `with_bio: boolean` (yaş gitmez)         |
-| `onboarding_under_age`           | — (hesap silindikten sonra anonim; kullanıcı id'si yok)           |
 | `room_created` (mevcut)          | `concept` yerine `intent: 'game' \| 'chat' \| 'none'`, `profiled` |
 | `game_proposed`, `game_accepted` | `concept`                                                         |
 | `game_completed` (mevcut)        | + `tabu_mode: 'refereed' \| 'cooperative'`                        |
@@ -698,13 +707,13 @@ Yeni olaylar `_shared/pure/analytics.ts` izin listesine eklenir. Hepsi yalnızca
 | `venue_chat_reported`            | —                                                                 |
 | `friend_request_sent` (mevcut)   | `source` + `'venue_chat'`                                         |
 
-`onboarding_under_age` için PostHog'a kimlik gönderilmez. Olay sayımı yaş kapısının ne sıklıkla çalıştığını gösterir; kişiye bağlanmaz. Bkz. §17-S2.
+18 yaş altı için hiçbir olay gönderilmez, anonim olarak da (S2): reşit olmayan birinin cihaz kimliği gitmez. PostHog yalnızca `complete-onboarding` başarılı olduktan sonra `identify` ile başlar.
 
 ---
 
-## 16. CLAUDE.md değişmez kuralları: önerilen yeni metinler
+## 16. CLAUDE.md değişmez kuralları: yeni metinler
 
-Onaydan sonra CLAUDE.md'ye işlenir. Onaya kadar CLAUDE.md'de ilgili kuralların altında yalnızca "v3:" notu durur.
+Onaylandı; CLAUDE.md'ye işlendi. Kurallar, ilgili adım uygulanana kadar o adımın kapsamındaki kodu bağlar; önceki davranışı koruyan kod o adımda değişir.
 
 **Kural 3 (sunucu otoriter).** Sesli Tabu cümlesinin yerine:
 
@@ -712,15 +721,17 @@ Onaydan sonra CLAUDE.md'ye işlenir. Onaya kadar CLAUDE.md'de ilgili kuralların
 
 **Kural 4 (anonimlik).**
 
-> "Anonimlik: diğer masalara varsayılan olarak yalnızca masa takma adı, kişi sayısı ve varsa niyet etiketi gider. Anonim ya da profilli katılım oda başına seçilir (oda kurarken ve katılma isteğinde; varsayılan anonim) ve mekan sohbetinde mesaj başına seçilir. Profilli odada lobi ve katılma isteği yalnızca 'profilli' işaretini görür; profil (görünen ad, yaş, fotoğraf, biyografi, rozetler) ve profil kimliği yalnızca oda sürerken o odanın üyelerine gider. Mekan sohbetinde profilli mesajın profili, o an mekanda aktif masası olanlara mesaj üzerinden açılır; profil kimliği gitmez. Doğum tarihi hiçbir kullanıcıya gitmez, yalnızca yaş gider. (devamı aynı: arkadaşlar, arkadaşlık öncesi public_id yok, koordinat/mekan/aktif masa yok, hesap kimliği yok, masa oturum id'si)"
+> "Anonimlik: diğer masalara varsayılan olarak yalnızca masa takma adı, kişi sayısı ve varsa niyet etiketi gider. Anonim ya da profilli katılım oda başına seçilir (oda kurarken ve katılma isteğinde; varsayılan anonim) ve mekan sohbetinde mesaj başına seçilir. Profilli odada lobi ve katılma isteği yalnızca 'profilli' işaretini görür; profil (görünen ad, yaş, fotoğraf, biyografi, rozetler) ve profil kimliği yalnızca oda sürerken o odanın üyelerine gider. Mekan sohbetinde profilli mesajın profili, o an mekanda aktif masası olanlara mesaj üzerinden açılır; profil kimliği gitmez. Profilli mekan sohbeti mesajında masa adı gitmez. Mekan sohbetinden arkadaşlık isteği gönderen, alıcıya görünen adını, yaşını ve fotoğrafını açar. Doğum tarihi hiçbir kullanıcıya gitmez, yalnızca yaş gider. (devamı aynı: arkadaşlar, arkadaşlık öncesi public_id yok, koordinat/mekan/aktif masa yok, hesap kimliği yok, masa oturum id'si)"
 
 **Kural 5 (red = zaman aşımı).** Sona:
 
-> "İki masalı odada engelleme ve mekandan ayrılma, o masa için 'Hayır' sayılır ve pencereyi açar; karşı taraf bunları 'Hayır'dan ayırt edemez. Oyun önerisinde red ve zaman aşımı önerene aynı görünür. Mekan sohbetinden gelen arkadaşlık isteğinde günlük sınır aşımı da sessizdir."
+> "İki masalı odada engelleme ve mekandan ayrılma, o masa için 'Hayır' sayılır ve pencereyi açar; karşı taraf bunları 'Hayır'dan ayırt edemez. İki masalı odada 10 dakika hareketsizlik odayı kapatmaz, pencereyi iki taraf için de aynı şekilde açar. Mekan sohbetinden gelen arkadaşlık isteğinde günlük sınır aşımı da sessizdir."
+
+(Oyun önerisinin reddi kural 5'e girmez, S7.)
 
 **Kural 6 (konum).**
 
-> "Konum yalnızca check-in anında, uygulama açıkken, mekanın sınırı içinde (sınırı yoksa 300 m yakınında) olunduğunu doğrulamak için alınır. Koordinat saklanmaz; yalnızca seçilen `venue_id` ve masanın kendi beyan ettiği nokta (`spot_id`) saklanır. Nokta başına masa sayısı gösterilmez. (devamı aynı)"
+> "Konum yalnızca check-in anında, uygulama açıkken, mekanın sınırı içinde (50 m toleransla; sınırı yoksa 300 m yakınında) olunduğunu doğrulamak için alınır. Koordinat saklanmaz; yalnızca seçilen `venue_id` ve masanın kendi beyan ettiği nokta (`spot_id`) saklanır. Nokta başına masa sayısı gösterilmez. (devamı aynı)"
 
 **Kural 7 (metin).** Kapsama mekan sohbeti eklenir: "(oda sohbeti, mekan sohbeti, DM, biyografi, görünen ad)".
 
@@ -746,29 +757,26 @@ Onaydan sonra CLAUDE.md'ye işlenir. Onaya kadar CLAUDE.md'de ilgili kuralların
 
 ---
 
-## 17. Açık sorular
+## 17. Kararlar (açık soruların cevapları)
 
-Cevaplanmadan ilgili adıma başlanmaz. Parantez içinde önerim.
+- **S1 — Kampüs sınırı ve noktalar:** Poligon ve nokta adları proje sahibinden ayrıca gelecek. Yalnızca adım 2'yi bekletir; koordinat tahmin edilmez.
+- **S2 — 18 yaş altı:** Kabul: hiçbir kayıt tutulmaz, aynı numara yeniden kayıt olabilir. `onboarding_under_age` olayı **hiç gönderilmez**, anonim de olsa (§15).
+- **S3 — Tabu modu:** Oyun düzeyinde. Masalardan biri tek kişiyse bütün oyun iş birliği modunda (§6.1).
+- **S4 — Görünürlük:** Oda kur ekranından kalkar; "Oda kur" her zaman mekana açık, ekranda yalnızca niyet ve Anonim/Profilimle. "Masanla oyna" ayrı düğme, arka planda tek masalı özel odayı kurar (§5.1).
+- **S5 — Odada engelleme ve mekandan ayrılma:** Kabul, o masa için "Hayır". Ek: iki masalı odada 10 dakika hareketsizlik pencereyi iki taraf için de aynı şekilde açar; tek masalı oda bugünkü gibi kapanır (§5.5).
+- **S6 — Mekan sohbetinden istek:** Alan kişi gönderenin görünen adını, yaşını ve fotoğrafını (gizlenmemişse) görür; `public_id` gitmez. Onay penceresinde "İstek gönderirsen profilin ona görünür" (§7.5).
+- **S7 — Öneri reddi:** Red ve zaman aşımı aynı metin ("Öneri kabul edilmedi"), red hemen gösterilir. Kural 5'e eklenmez; test yalnızca satırın silinmesini ve metnin aynılığını doğrular (§5.3).
+- **S8 — Doğum tarihi değişikliği:** Kabul; uygulamadan değiştirilemez, `admin:set-birth-date` (§3.2).
+- **S9 — Keşfet eşiği:** Kabul, 2 aktif mekandan itibaren liste ve harita (§4.4).
+- **S10 — Nokta değiştirme:** Kabul, GPS'siz ve odada değilken serbest. Ek: başka noktadaki oda kartında "Bu noktadayım" düğmesi `change-spot` çağırır, sonra istek gönderilebilir (§4.3).
+- **S11 — Hız sınırları:** Kabul (§7.4, §7.5).
+- **S12 — Gizlenen mesaj:** Kabul, kalıcı gizli.
+- **S13 — Masa adları:** Sıfat + isim; isimler hayvanla sınırlı değil (yiyecek, bitki, nesne, doğa); kampüse özel tema yok. Liste adım 3'ün PR'ında verilir (§5.6).
+- **S14 — Netgsm:** Adım 1 Netgsm'i beklemez. Netgsm hazır olana kadar dev projesi Twilio Verify ile çalışır (§2.3).
 
-- **S1 — Kampüs sınırı ve noktalar (adım 2'yi engeller):**
-  - Esentepe Kampüsü poligonu nereden gelecek? Bu ortamdan OpenStreetMap'e erişim yok ve koordinat tahmin etmiyorum.
-    - (a) Ortamın ağ izinlerine `overpass-api.de` eklenir; poligonu OSM'deki kampüs alanından (`amenity=university`) çekip `fetch:venues` gibi bir script'le üretirim, sen haritada kontrol edersin.
-    - (b) Sen GeoJSON verirsin (ör. geojson.io'da çizip).
-  - Nokta adları ve sırası? (Örnek: Merkez Kantin, Kütüphane önü, Mühendislik Fakültesi kafeteryası…)
-- **S2 — 18 yaş altı:**
-  - Hiçbir kayıt tutulmadığı için aynı numara hemen farklı bir tarihle yeniden kayıt olabilir. Kabul mü? (Öneri: kabul; KVKK'da reşit olmayanın verisini tutmamak daha güçlü bir gerekçe.)
-  - `onboarding_under_age` olayını anonim saymak uygun mu, yoksa hiç gönderilmesin mi?
-- **S3 — Tabu modu:** Oyun düzeyinde mi (bir masa tek kişiyse bütün oyun iş birliği; önerim), yoksa tur düzeyinde mi (her tur anlatan masanın kişi sayısına göre)?
-- **S4 — "Sadece masam" odası:** Oda önce sohbet olunca tek masalı özel oda yalnızca yerel Tabu ve Sohbet kartları için kalıyor.
-  - Görünürlük seçimi kalsın mı (öneri: kalsın, "Masanla oyna" bunu kullanır)?
-  - Yoksa her oda mekana açık mı olsun, tek masa oyunu odasız bir ekrana mı taşınsın?
-- **S5 — Odada engelleme ve mekandan ayrılma:** O masa için "Hayır" sayılıp pencerenin açılması (öneri)? Bugün engelleme karşı tarafa odanın hemen dağılması olarak görünüyor.
-- **S6 — Mekan sohbetinden gelen istek:** İsteği alan kişi, isteği gönderenin görünen adını görsün mü (öneri: evet, fotoğraf ve profil kimliği yok)? Yoksa istek yalnızca "sohbet odasından biri" mi görünsün?
-- **S7 — Oyun önerisinde red:** Önerene red ve zaman aşımı aynı görünsün mü ("Öneri kabul edilmedi"; öneri), yoksa açık "Hayır" mı?
-- **S8 — Doğum tarihi değişikliği:** Uygulamadan değiştirilemez, düzeltme e-postayla ve `admin:set-birth-date` ile yapılır (öneri). Uygun mu?
-- **S9 — Keşfet eşiği:** Liste ve harita 2 aktif mekandan itibaren mi geri gelsin (öneri), başka bir sayıdan mı?
-- **S10 — Nokta değiştirme:** GPS'siz, odada değilken serbest (öneri)? Yoksa her nokta değişikliği yeni check-in mi olsun?
-- **S11 — Mekan sohbeti hız sınırı:** 3 sn'de 1 ve 10 dakikada 20 mesaj; istekte günde 10 (öneri). Uygun mu?
-- **S12 — Gizlenen mesaj:** 3 şikayetle gizlenen mesaj kalıcı olarak gizli mi kalsın (24 saatte zaten siliniyor; öneri), yoksa inceleme sonrası geri açma aracı mı olsun?
-- **S13 — Masa adları:** Yeni listeler yine "Sıfat + Hayvan" mı, yoksa hayvan dışında isimler de (nesne, bitki, yiyecek) mi? Kampüse özgü bir tema istiyor musun?
-- **S14 — Netgsm:** Hesap açılış tarihi belli mi? Adım 1 hook'u kapalı olarak getirir; açma §2.3'e göre panelden yapılır. Adım 1'in kabulü gerçek Netgsm denemesini beklemesin mi (öneri: beklemesin)?
+**Proje sahibinin ek düzeltmeleri (onayla birlikte):**
+
+1. Profilli mekan sohbeti mesajında masa adı gitmez; bu mesajdan gelen engel engellenenler listesinde görünen adla durur; kural 4'e eklendi; entegrasyon testiyle (§7.2, §7.4, §13).
+2. Kampüs sınırına 50 m tolerans (`ST_DWithin`); tolerans `pure/` içinde tek sabit, istemci uyarısı da aynısını kullanır; test 40 m kabul, 60 m ret (§4.2, §13).
+3. Tasarım oturumu paralel çalışıyor: tema tokenlarına ve mevcut bileşenlerin görünümüne dokunulmaz; yeni ortak bileşenler PR özetinde listelenir (§14).
+4. `docs/FIELD_TEST.md` adım 1'in PR'ında v3 akışlarına ve Kabuk adına göre güncellenir; bildirim başlığı "Kabuk" (§13).

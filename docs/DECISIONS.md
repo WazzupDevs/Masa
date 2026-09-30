@@ -449,3 +449,19 @@ Release build'de bulunan hata (yönden bağımsız): NativeWind'in `Pressable` s
 | `scheme`, `slug` | `masa` kaldı                                                                                                                                                                          | `slug` EAS projesinin adı; değişmesi proje taşıması ister, kazancı yok                                      |
 | `version`        | 0.3.0'da kaldı                                                                                                                                                                        | 0.3.0 ile henüz build alınmadı; bu `runtimeVersion`'a giden OTA'lar yalnızca yeni kimlikli build'lere gider |
 | Panel adımları   | Sıra `docs/store/PACKAGE_ID_MIGRATION.md`'de: sayacı not et, Firebase, birleştir, sayacı eski değerden başlat, build (yeni keystore), Expo FCM anahtarı, isteğe bağlı `MIN_APP_BUILD` | Sayaç ve Firebase build'den önce; FCM anahtarı kimlik girişi oluştuktan sonra                               |
+
+## Kabuk v1 (SPEC_V3) onayı
+
+`docs/SPEC_V3.md` 30.09.2026'da onaylandı. Kararların tamamı §17'de; burada yalnızca v2'den sapanlar:
+
+| Konu          | Karar                                                                                                                     | Gerekçe                                                                      |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| SMS           | Send SMS Hook (Free ve Pro), `sms` fonksiyonu, Netgsm bağdaştırıcısı; hook kapalıyken Twilio Verify                       | Sağlayıcıdan bağımsızlık; geçiş ve geri dönüş panelde tek anahtar            |
+| Kayıt         | Görünen ad ve doğum tarihi zorunlu; 18 altında hesap o çağrıda silinir, hiçbir veri ve analitik olayı yok                 | Reşit olmayanın verisini hiç tutmamak; yeniden kayıt riski kabul edildi      |
+| Kampüs sınırı | `ST_DWithin(boundary, point, 50)`; tolerans `pure/` içinde tek sabit                                                      | Bina içinde GPS 30–50 m sapıyor                                              |
+| Oda           | Görünürlük seçimi yok, "Oda kur" açık; "Masanla oyna" tek masalı özel oda; oyun öneri ve kabulle; tek çıkış "Odayı bitir" | Oda önce sohbet; kampüste kimse yokken tek başına oynanabilsin               |
+| Hareketsizlik | İki masalı odada 10 dakika hareketsizlik pencereyi iki taraf için açar                                                    | Sessiz kapanış, engelleme ve ayrılmadan ayırt edilebilirdi                   |
+| Öneri reddi   | Red ve zaman aşımı aynı metin, red hemen; kural 5'e girmez                                                                | İki masa zaten sohbet ediyor, gizlilik sinyali değil                         |
+| Mekan sohbeti | Profilli mesajda masa adı yok; istek alan gönderenin adını, yaşını ve fotoğrafını görür                                   | Ad, fotoğraf ve masa adı birlikte nokta başlığıyla kişinin yerini gösterirdi |
+| Tabu modu     | Oyun düzeyinde: masalardan biri tek kişiyse bütün oyun iş birliği                                                         | Tur tur mod değişimi skoru karşılaştırılamaz yapar                           |
+| Tasarım       | Tema tokenlarına ve mevcut bileşenlerin görünümüne dokunulmaz; yeni ortak bileşenler PR özetinde listelenir               | Tasarım oturumu paralel çalışıyor                                            |
