@@ -8,7 +8,7 @@ import { Button } from '@/components/Button';
 import { EmptyState } from '@/components/EmptyState';
 import { ListRow } from '@/components/ListRow';
 import { ScreenHeader } from '@/components/ScreenHeader';
-import { TAB_BAR_HEIGHT } from '@/components/TabBar';
+import { useTabBarSpace } from '@/components/TabBar';
 import { Segmented } from '@/components/Segmented';
 import { Text } from '@/components/Text';
 import { useActiveTable } from '@/features/checkin/useActiveTable';
@@ -34,6 +34,8 @@ export default function ExploreScreen() {
   const [view, setView] = useState<View_>('list');
   // The map lies under the header; its opening camera keeps the venues below it.
   const [headerHeight, setHeaderHeight] = useState(0);
+  // The floating tab bar covers the bottom of the map and the list.
+  const barSpace = useTabBarSpace();
 
   useEffect(() => {
     track('explore_viewed', { view });
@@ -54,7 +56,7 @@ export default function ExploreScreen() {
       <View style={{ flex: 1 }}>
         {venues.isSuccess && view === 'map' && headerHeight > 0 ? (
           <View style={StyleSheet.absoluteFill}>
-            <ExploreMap venues={sorted} headerHeight={headerHeight} tabBarHeight={TAB_BAR_HEIGHT} />
+            <ExploreMap venues={sorted} headerHeight={headerHeight} tabBarHeight={barSpace} />
           </View>
         ) : null}
         <View
@@ -94,14 +96,22 @@ export default function ExploreScreen() {
           </View>
         ) : null}
 
-        {venues.isSuccess && view === 'list' ? <VenueList venues={sorted} /> : null}
+        {venues.isSuccess && view === 'list' ? (
+          <VenueList venues={sorted} bottomSpace={barSpace} />
+        ) : null}
       </View>
     </SafeAreaView>
   );
 }
 
 // The mockup's sheet: a surface with rounded top corners, the count, and venue rows.
-function VenueList({ venues }: { venues: readonly ExploreVenue[] }) {
+function VenueList({
+  venues,
+  bottomSpace,
+}: {
+  venues: readonly ExploreVenue[];
+  bottomSpace: number;
+}) {
   const { colors, shape } = useTheme();
   return (
     <View
@@ -115,7 +125,10 @@ function VenueList({ venues }: { venues: readonly ExploreVenue[] }) {
         borderColor: colors.border,
       }}
     >
-      <ScrollView contentContainerClassName="px-4 pb-8 pt-3">
+      <ScrollView
+        contentContainerClassName="px-4 pt-3"
+        contentContainerStyle={{ paddingBottom: bottomSpace }}
+      >
         <View className="flex-row items-center justify-between px-1 pb-1">
           <Text variant="label">{tr.explore.count(venues.length)}</Text>
           <Text variant="fine">{tr.explore.locationHidden}</Text>

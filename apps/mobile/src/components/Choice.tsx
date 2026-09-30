@@ -14,9 +14,10 @@ type Props = {
   testID?: string;
 };
 
-const DOT = SPACING[5];
+const DOT = SPACING[6];
 
-// One option of a single choice: a card with a radio mark; selected draws the accent ring.
+// One option of a single choice (canvas: Bileşenler): a card with the radio mark first; the
+// selected one fills with the quiet colour and lifts on the theme's hard shadow.
 export function Choice({ label, hint, selected, onPress, disabled, testID }: Props) {
   const { colors, shape } = useTheme();
   return (
@@ -28,22 +29,19 @@ export function Choice({ label, hint, selected, onPress, disabled, testID }: Pro
       onPress={onPress}
       style={{
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: hint ? 'flex-start' : 'center',
         gap: SPACING[3],
         minHeight: TOUCH.tab,
         paddingHorizontal: SPACING[4],
-        paddingVertical: SPACING[3],
+        paddingVertical: SPACING[3] + SPACING[0.5],
         borderRadius: shape.radius.md,
-        backgroundColor: colors.surface,
-        borderWidth: selected ? Math.max(shape.stroke.control, 2) : shape.stroke.control,
-        borderColor: selected ? colors.accent : colors.border,
+        backgroundColor: selected ? colors.surface2 : colors.surface,
+        borderWidth: Math.max(shape.stroke.control, 1),
+        borderColor: colors.border,
+        boxShadow: selected ? shape.shadow.raised : undefined,
         opacity: disabled ? 0.4 : 1,
       }}
     >
-      <View className="flex-1 gap-1">
-        <Text variant="bodyStrong">{label}</Text>
-        {hint ? <Text variant="fine">{hint}</Text> : null}
-      </View>
       <View
         className="items-center justify-center"
         style={{
@@ -51,7 +49,8 @@ export function Choice({ label, hint, selected, onPress, disabled, testID }: Pro
           height: DOT,
           borderRadius: shape.radius.pill,
           borderWidth: 2,
-          borderColor: selected ? colors.accent : colors.muted,
+          borderColor: colors.border,
+          backgroundColor: colors.surface,
         }}
       >
         {selected ? (
@@ -64,6 +63,10 @@ export function Choice({ label, hint, selected, onPress, disabled, testID }: Pro
             }}
           />
         ) : null}
+      </View>
+      <View className="flex-1 gap-1">
+        <Text variant="bodyStrong">{label}</Text>
+        {hint ? <Text variant="fine">{hint}</Text> : null}
       </View>
     </Pressable>
   );

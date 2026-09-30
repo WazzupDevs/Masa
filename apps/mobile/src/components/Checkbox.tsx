@@ -25,12 +25,12 @@ export function Checkbox({ label, checked, onToggle }: Props) {
       <View
         className="items-center justify-center"
         style={{
-          width: SPACING[6],
-          height: SPACING[6],
-          borderRadius: shape.radius.sm / 2,
+          width: SPACING[6] + SPACING[0.5],
+          height: SPACING[6] + SPACING[0.5],
+          borderRadius: shape.radius.sm - SPACING[1],
           borderWidth: Math.max(shape.stroke.control, 2),
-          borderColor: checked ? colors.accent : colors.muted,
-          backgroundColor: checked ? colors.accent : 'transparent',
+          borderColor: colors.border,
+          backgroundColor: checked ? colors.accent : colors.surface,
         }}
       >
         {checked ? <Ionicons name="checkmark" size={ICON.sm} color={colors.onAccent} /> : null}

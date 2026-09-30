@@ -30,14 +30,18 @@
           "image": "./assets/icon/splash.png",
           "imageWidth": 180,
           "resizeMode": "contain",
-          "backgroundColor": "#2e2d31"
+          "backgroundColor": "#FFF7E6",
+          "dark": {
+            "image": "./assets/icon/splash-dark.png",
+            "backgroundColor": "#140E26"
+          }
         }
       ],
       [
         "expo-notifications",
         {
           "icon": "./assets/icon/notification.png",
-          "color": "#5a0f2e"
+          "color": "#5B2EEA"
         }
       ],
       "expo-dev-client",

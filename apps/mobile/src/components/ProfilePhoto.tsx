@@ -24,7 +24,13 @@ function initials(name: string): string {
 export function ProfilePhoto({ url, name, size = 'large' }: Props) {
   const { colors, shape } = useTheme();
   const side = SIZES[size];
-  const frame = { width: side, height: side, borderRadius: shape.radius.pill };
+  const frame = {
+    width: side,
+    height: side,
+    borderRadius: shape.radius.pill,
+    borderWidth: shape.stroke.card,
+    borderColor: colors.border,
+  };
 
   if (url) {
     return (

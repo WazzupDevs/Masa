@@ -94,6 +94,15 @@ export function Button({
     boxShadow: shadow,
   };
 
+  // Pressed: the hard shadow goes and the button moves into its place. Disabled: a quiet fill,
+  // muted text, no shadow.
+  const pressOffset = shadow ? shape.stroke.control + 1 : 0;
+  if (inactive && !tint) {
+    bg = variant === 'ghost' ? 'transparent' : colors.surface2;
+    fg = colors.muted;
+    borderColor = variant === 'ghost' ? 'transparent' : colors.muted;
+  }
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -104,7 +113,21 @@ export function Button({
       onPress={onPress}
     >
       {({ pressed }) => (
-        <View style={[style, { opacity: inactive ? 0.4 : pressed ? 0.85 : 1 }]}>
+        <View
+          style={[
+            style,
+            { backgroundColor: bg, borderColor },
+            inactive
+              ? { boxShadow: undefined, opacity: tint ? 0.4 : 1 }
+              : pressed
+                ? {
+                    boxShadow: undefined,
+                    transform: [{ translateX: pressOffset }, { translateY: pressOffset }],
+                    opacity: shadow ? 1 : 0.85,
+                  }
+                : null,
+          ]}
+        >
           {loading ? (
             <ActivityIndicator color={fg} />
           ) : (

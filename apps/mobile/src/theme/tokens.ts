@@ -70,11 +70,11 @@ export function colorClass(key: PaletteKey): string {
 // Font family names as registered with expo-font (the @expo-google-fonts export names). Only these
 // weights are bundled (src/theme/fonts.ts maps each to its file).
 export type FontName =
-  | 'Fraunces_600SemiBold'
-  | 'Figtree_400Regular'
-  | 'Figtree_600SemiBold'
-  | 'Figtree_700Bold'
-  | 'Figtree_800ExtraBold';
+  | 'BricolageGrotesque_800ExtraBold'
+  | 'Nunito_400Regular'
+  | 'Nunito_600SemiBold'
+  | 'Nunito_700Bold'
+  | 'Nunito_800ExtraBold';
 
 export type FontSet = {
   display: FontName; // headings, aliases, scores, the Tabu word
@@ -95,6 +95,7 @@ export type ShadowSet = {
   venueButton: string | null; // the raised Mekan tab
   raised: string | null; // the selected segment of a switch
   pin: string | null; // map pins
+  tabBar: string | null; // the floating tab bar
 };
 
 export type Shape = {
