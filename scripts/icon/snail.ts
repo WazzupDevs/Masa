@@ -1,12 +1,17 @@
-// The Kabuk snail as SVG: one line colour, round caps and joins, drawn on the 108 × 108 dp canvas of
-// an Android adaptive icon with everything inside the 66 dp safe circle. Pure, so the geometry is
-// tested; scripts/build-icons.ts rasterises it with sharp.
+// The Kabuk snail ("Çıkartma", Oyun Gecesi) as SVG: a lemon body, a purple shell with a lemon
+// spiral, ink outline and a hard ink shadow. One drawing for every size: the Android adaptive icon
+// (108 × 108 dp canvas, everything inside the 66 dp safe circle), the store icons, the splash image,
+// the one-colour notification icon and the in-app images (apps/mobile/assets/brand). Pure, so the
+// geometry is tested; scripts/build-icons.ts rasterises it with sharp.
+// Design source: the Claude Design canvas, "Aşama 1 · Son".
 
 export type IconTokens = {
-  backgroundTop: string;
-  backgroundBottom: string;
-  line: string;
-  notificationAccent: string;
+  cream: string; // light canvas: icon background, splash
+  ink: string; // outline and shadow
+  purple: string; // shell
+  lemon: string; // body and spiral
+  paper: string; // outline and shadow on dark grounds
+  night: string; // dark canvas: dark splash
 };
 
 export type Point = [number, number];
@@ -15,172 +20,268 @@ export const CANVAS = 108;
 const CENTER = CANVAS / 2;
 // Adaptive icon safe zone: a 66 dp circle; the launcher may crop anything outside it.
 export const SAFE_RADIUS = 33;
-// Line width on the 108 canvas: about 2.7 px at a 48 dp launcher icon (72 of the 108 units show),
-// 1.8 px when the whole square is drawn at 48 px.
-export const STROKE = 4;
-// Antennae end in round caps: dots on the tips merged with the antenna at 48 px.
-const DOT = 0;
+// Radius the whole drawing (outline and shadow included) is fitted into, per use.
+export const RADIUS = { adaptive: 32, store: 42, splash: 50, notification: 50 } as const;
 
-// Drawn in the reference image's units (1600 px divided by 10), then scaled to fit.
-const SHELL_CENTER: Point = [82, 76];
-const SHELL_RADIUS = 36;
-// Fewer turns than the reference so the gaps stay wider than the line at 48 px.
-const SHELL_TURNS = 1.55;
-const SHELL_INNER_RADIUS = 5;
-// The outer turn ends at the lower right of the shell and becomes the top edge of the foot.
-const SHELL_END_ANGLE = (60 * Math.PI) / 180;
-
-function spiralPoint(t: number): Point {
-  // t in [0, 1]: inner end to outer end, clockwise on screen (y grows downwards).
-  const angle = SHELL_END_ANGLE - (1 - t) * SHELL_TURNS * 2 * Math.PI;
-  const radius = SHELL_INNER_RADIUS + (SHELL_RADIUS - SHELL_INNER_RADIUS) * t;
-  return [SHELL_CENTER[0] + radius * Math.cos(angle), SHELL_CENTER[1] + radius * Math.sin(angle)];
-}
-
-function spiral(steps = 180): Point[] {
-  return Array.from({ length: steps + 1 }, (_, i) => spiralPoint(i / steps));
-}
-
-// The point of the outer turn at a screen angle in degrees (where the neck meets the shell).
-function outerTurnAt(degrees: number): Point {
-  let angle = (degrees * Math.PI) / 180;
-  while (angle > SHELL_END_ANGLE) angle -= 2 * Math.PI;
-  return spiralPoint(1 - (SHELL_END_ANGLE - angle) / (SHELL_TURNS * 2 * Math.PI));
-}
-
-const shellEnd = spiralPoint(1);
-const neckJoin = outerTurnAt(142);
-const TAIL: Point = [128, 116];
-const FOOT_Y = 118.5;
-
-// Foot and head as one line, traced from the reference with a larger head for the heavier line:
-// from the shell's end along the top of the foot to the tail tip, back along the bottom, up the
-// chin, round the head and along the neck into the shell.
-function bodyPath(): string {
-  const [ex, ey] = shellEnd;
-  const [nx, ny] = neckJoin;
-  return [
-    `M ${ex} ${ey}`,
-    `L ${TAIL[0] - 7} ${TAIL[1] - 2.5}`,
-    `Q ${TAIL[0]} ${TAIL[1]} ${TAIL[0] - 7} ${FOOT_Y}`,
-    `L 60 ${FOOT_Y}`,
-    `C 50 ${FOOT_Y} 44 112 38 106`,
-    `C 29.5 98 31 86.5 39.5 86.5`,
-    `C 46 86.5 48.5 93 50.5 97.5`,
-    `C 52 100 ${nx - 4} ${ny + 1} ${nx} ${ny}`,
-  ].join(' ');
-}
-
-// Two antennae from the top of the head. The reference's small rings on the tips are left out: at
-// 48 px they merged with the line.
-const ANTENNAE: { from: Point; to: Point }[] = [
-  { from: [36.5, 88.5], to: [25, 69] },
-  { from: [42.5, 88], to: [46.5, 67] },
+// ------------------------------------------------------------------ geometry (local units)
+const W = 5; // outline
+export const SHADOW = 5; // hard shadow offset, right and down
+const PAD = 3;
+const BODY =
+  'M 8 88 C 8 83 16 79 28 79 L 50 79 L 50 60 L 68 60 L 68 50 C 68 40 74 34 82 34 C 90 34 96 40 96 50 ' +
+  'L 96 81 C 96 88.5 91 93 84 93 L 14 93 C 10.5 93 8 91 8 88 Z';
+const SHELL = { cx: 42, cy: 55, r: 31 };
+const ANTENNAE: [number, number, number, number][] = [
+  [77, 38, 71, 17],
+  [88, 38, 95, 18],
 ];
+const DOT = 5.2;
+const EYE = { cx: 86.5, cy: 53, r: 3.6 };
+const SMILE = 'M 81.5 63 Q 86.5 67.5 91.5 63';
 
-// Every point that carries ink: for fitting, and for the safe-zone test.
+const f = (n: number) => Number(n.toFixed(2));
+
+// Two-centre spiral from the outside in: upper arcs centred on (cx, cy), lower arcs on
+// (cx + g/2, cy); each half turn shrinks the radius by g/2.
+export function spiral(
+  cx: number,
+  cy: number,
+  radius: number,
+  gap: number,
+  halfTurns: number,
+): string {
+  let d = `M ${f(cx - radius)} ${f(cy)}`;
+  for (let i = 0; i < halfTurns; i++) {
+    const upper = i % 2 === 0;
+    const r = radius - (i * gap) / 2;
+    const centre = upper ? cx : cx + gap / 2;
+    d += ` A ${f(r)} ${f(r)} 0 0 1 ${f(upper ? centre + r : centre - r)} ${f(cy)}`;
+  }
+  return d;
+}
+const SPIRAL = spiral(43.5, 56.5, 20, 9.5, 4);
+
+// Every point that carries ink (before the outline, dot radii and shadow are added).
 export function inkPoints(): Point[] {
-  const head: Point[] = [
-    [32, 96],
-    [40, 87],
-    [50, 97],
-    [38, 106],
-  ];
   return [
-    ...spiral(),
-    shellEnd,
-    TAIL,
-    [TAIL[0] - 7, FOOT_Y],
-    [58, FOOT_Y],
-    ...head,
-    neckJoin,
-    ...ANTENNAE.flatMap((a) => [a.from, a.to]),
+    [8, 90],
+    [96, 50],
+    [96, 81],
+    [84, 93],
+    [14, 93],
+    [SHELL.cx - SHELL.r, SHELL.cy],
+    [SHELL.cx, SHELL.cy - SHELL.r],
+    [20.1, 33.1],
+    [71, 12],
+    [95, 13],
+    [66, 12],
+    [100, 18],
   ];
 }
 
 export type Fit = { scale: number; dx: number; dy: number };
 
-// Uniform scale and offset that centre the drawing and keep every point, with half the line width
-// (or a dot), inside `radius` of the canvas centre.
-export function fit(radius: number, stroke: number, dot: number): Fit {
+// Uniform scale and offset that centre the drawing (shadow included) on the canvas and keep every
+// ink point, with the pad and half the shadow, inside `radius` of the centre.
+export function fit(radius: number, shadow = SHADOW): Fit {
   const points = inkPoints();
   const xs = points.map((p) => p[0]);
   const ys = points.map((p) => p[1]);
-  const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
-  const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
-  const far = Math.max(...points.map(([x, y]) => Math.hypot(x - cx, y - cy)));
-  const scale = (radius - Math.max(stroke / 2, dot)) / far;
+  const cx = (Math.min(...xs) + Math.max(...xs) + shadow) / 2;
+  const cy = (Math.min(...ys) + Math.max(...ys) + shadow) / 2;
+  const far = Math.max(...points.map(([x, y]) => Math.hypot(x - cx, y - cy))) + PAD + shadow / 2;
+  const scale = radius / far;
   return { scale, dx: CENTER - cx * scale, dy: CENTER - cy * scale };
 }
-
-// The snail inside `radius` of the centre, `stroke` and `dot` in canvas units.
-function lineArt(color: string, radius = SAFE_RADIUS - 1, stroke = STROKE, dot = DOT): string {
-  const { scale, dx, dy } = fit(radius, stroke, dot);
-  const shell = spiral()
-    .map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`)
-    .join(' ');
-  const antennae = ANTENNAE.map(
-    (a) =>
-      `<path d="M ${a.from[0]} ${a.from[1]} L ${a.to[0]} ${a.to[1]}"/>` +
-      (dot > 0
-        ? `<circle cx="${a.to[0]}" cy="${a.to[1]}" r="${(dot / scale).toFixed(3)}" fill="${color}" stroke="none"/>`
-        : ''),
-  ).join('');
-  return (
-    `<g transform="translate(${dx.toFixed(3)} ${dy.toFixed(3)}) scale(${scale.toFixed(5)})" ` +
-    `fill="none" stroke="${color}" stroke-width="${(stroke / scale).toFixed(3)}" ` +
-    `stroke-linecap="round" stroke-linejoin="round">` +
-    `<path d="${shell}"/><path d="${bodyPath()}"/>${antennae}</g>`
+// How far the drawing reaches from the canvas centre once fitted, in canvas units.
+export function reach(radius: number, shadow = SHADOW): number {
+  const { scale, dx, dy } = fit(radius, shadow);
+  const shadowed = inkPoints().flatMap(([x, y]): Point[] => [
+    [x, y],
+    [x + shadow, y + shadow],
+  ]);
+  return Math.max(
+    ...shadowed.map(
+      ([x, y]) => Math.hypot(x * scale + dx - CENTER, y * scale + dy - CENTER) + PAD * scale,
+    ),
   );
 }
 
-function svg(size: number, content: string, defs = ''): string {
+// The tight box of the drawing in local units (for the in-app images).
+export function box(shadow = SHADOW): [number, number, number, number] {
+  const points = inkPoints();
+  const x0 = Math.min(...points.map((p) => p[0])) - PAD;
+  const y0 = Math.min(...points.map((p) => p[1])) - PAD;
+  const x1 = Math.max(...points.map((p) => p[0])) + PAD + shadow;
+  const y1 = Math.max(...points.map((p) => p[1])) + PAD + shadow;
+  return [f(x0), f(y0), f(x1 - x0), f(y1 - y0)];
+}
+
+// ------------------------------------------------------------------ drawing
+type Palette = {
+  line: string;
+  shadow: string;
+  body: string;
+  shell: string;
+  swirl: string;
+  detail: string;
+};
+export function palette(tokens: IconTokens, ground: 'light' | 'dark'): Palette {
+  const line = ground === 'light' ? tokens.ink : tokens.paper;
+  return {
+    line,
+    shadow: line,
+    body: tokens.lemon,
+    shell: tokens.purple,
+    swirl: tokens.lemon,
+    detail: tokens.ink,
+  };
+}
+
+export type Layer = 'all' | 'body' | 'shell' | 'antennae';
+type DrawOptions = { face?: boolean; shadow?: boolean; layer?: Layer };
+
+// The snail in local units. `layer` draws one part only, in the same place (the crawl animation
+// moves the parts separately): the body with its face and shadow, the shell with its shadow, or the
+// antennae.
+export function snail(
+  p: Palette,
+  { face = true, shadow = true, layer = 'all' }: DrawOptions = {},
+): string {
+  const has = (l: Layer) => layer === 'all' || layer === l;
+  const antennae = ANTENNAE.map(
+    ([x1, y1, x2, y2]) =>
+      `<path d="M ${x1} ${y1} L ${x2} ${y2}" stroke="${p.line}" stroke-width="${W}" stroke-linecap="round"/>` +
+      `<circle cx="${x2}" cy="${y2}" r="${DOT}" fill="${p.line}"/>`,
+  ).join('');
+  const shadowGroup = (inner: string) =>
+    shadow
+      ? `<g transform="translate(${SHADOW} ${SHADOW})" fill="${p.shadow}" stroke="${p.shadow}" stroke-width="${W}" stroke-linejoin="round">${inner}</g>`
+      : '';
+  const shellDisc = `<circle cx="${SHELL.cx}" cy="${SHELL.cy}" r="${SHELL.r}"/>`;
+  const bodyPath = `<path d="${BODY}"/>`;
+  let out = '';
+  // With every part: one shadow under the whole silhouette. Alone: each part's own shadow.
+  if (layer === 'all') out += shadowGroup(bodyPath + shellDisc);
+  if (layer === 'body') out += shadowGroup(bodyPath);
+  if (layer === 'shell') out += shadowGroup(shellDisc);
+  if (has('antennae')) out += antennae;
+  if (has('body')) {
+    out += `<path d="${BODY}" fill="${p.body}" stroke="${p.line}" stroke-width="${W}" stroke-linejoin="round"/>`;
+    if (face)
+      out +=
+        `<circle cx="${EYE.cx}" cy="${EYE.cy}" r="${EYE.r}" fill="${p.detail}"/>` +
+        `<path d="${SMILE}" fill="none" stroke="${p.detail}" stroke-width="3" stroke-linecap="round"/>`;
+  }
+  if (has('shell'))
+    out +=
+      `<circle cx="${SHELL.cx}" cy="${SHELL.cy}" r="${SHELL.r}" fill="${p.shell}" stroke="${p.line}" stroke-width="${W}"/>` +
+      `<path d="${SPIRAL}" fill="none" stroke="${p.swirl}" stroke-width="6.2" stroke-linecap="round"/>`;
+  return out;
+}
+
+// One colour, the details cut out (spiral and the shell's edge; the face only when asked).
+export function silhouette(color: string, face = false): string {
+  const cut = '#000';
+  return (
+    `<defs><mask id="silhouette" maskUnits="userSpaceOnUse" x="-30" y="-30" width="170" height="170">` +
+    `<g fill="#fff" stroke="#fff" stroke-width="${W}" stroke-linejoin="round" stroke-linecap="round">` +
+    `<path d="${BODY}"/><circle cx="${SHELL.cx}" cy="${SHELL.cy}" r="${SHELL.r}"/>` +
+    ANTENNAE.map(
+      ([x1, y1, x2, y2]) =>
+        `<path d="M ${x1} ${y1} L ${x2} ${y2}"/><circle cx="${x2}" cy="${y2}" r="${DOT}"/>`,
+    ).join('') +
+    `</g>` +
+    `<circle cx="${SHELL.cx}" cy="${SHELL.cy}" r="${SHELL.r + 0.2}" fill="none" stroke="${cut}" stroke-width="4.2"/>` +
+    `<circle cx="${SHELL.cx}" cy="${SHELL.cy}" r="${SHELL.r - 2}" fill="#fff"/>` +
+    `<path d="${SPIRAL}" fill="none" stroke="${cut}" stroke-width="5.6" stroke-linecap="round"/>` +
+    (face
+      ? `<circle cx="${EYE.cx}" cy="${EYE.cy}" r="${EYE.r}" fill="${cut}"/><path d="${SMILE}" fill="none" stroke="${cut}" stroke-width="3" stroke-linecap="round"/>`
+      : '') +
+    `</mask></defs><rect x="-30" y="-30" width="170" height="170" fill="${color}" mask="url(#silhouette)"/>`
+  );
+}
+
+function place(inner: string, radius: number, shadow = SHADOW): string {
+  const { scale, dx, dy } = fit(radius, shadow);
+  return `<g transform="translate(${f(dx)} ${f(dy)}) scale(${scale.toFixed(5)})">${inner}</g>`;
+}
+
+function svg(size: number, content: string): string {
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" ` +
-    `viewBox="0 0 ${CANVAS} ${CANVAS}">${defs}${content}</svg>`
+    `viewBox="0 0 ${CANVAS} ${CANVAS}">${content}</svg>`
   );
 }
 
-function gradient(tokens: IconTokens): string {
-  return (
-    `<defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">` +
-    `<stop offset="0" stop-color="${tokens.backgroundTop}"/>` +
-    `<stop offset="1" stop-color="${tokens.backgroundBottom}"/></linearGradient></defs>`
-  );
-}
-
-const BACKGROUND = `<rect width="${CANVAS}" height="${CANVAS}" fill="url(#bg)"/>`;
-
-// Adaptive icon: foreground (line on transparent, inside the safe circle) and background layers.
+// ------------------------------------------------------------------ launcher and stores
+// Adaptive icon: the snail on transparent inside the safe circle, and a flat cream background.
 export function foregroundSvg(tokens: IconTokens, size: number): string {
-  return svg(size, lineArt(tokens.line));
+  return svg(size, place(snail(palette(tokens, 'light')), RADIUS.adaptive));
 }
-
 export function backgroundSvg(tokens: IconTokens, size: number): string {
-  return svg(size, BACKGROUND, gradient(tokens));
+  return svg(size, `<rect width="${CANVAS}" height="${CANVAS}" fill="${tokens.cream}"/>`);
 }
-
-// Android 13 themed icon: the system tints by alpha, so the colour does not matter.
+// Android 13 themed icon: the system tints by alpha. A silhouette without the face.
 export function monochromeSvg(size: number): string {
-  return svg(size, lineArt('#ffffff'));
+  return svg(size, place(silhouette('#ffffff'), RADIUS.adaptive, 0));
 }
-
-// iOS (1024, no rounded corners, opaque) and Play (512): background and line in one square. Their
-// masks are rounded squares that cut less than a launcher's circle, so the snail is drawn larger
-// (inside a 40 unit radius, which a 22 % corner radius does not reach).
-export const FULL_ICON_RADIUS = 40;
+// iOS (1024, opaque) and Play (512): background and snail in one square. Their masks cut less than
+// a launcher's circle, so the snail is larger.
 export function fullIconSvg(tokens: IconTokens, size: number): string {
-  return svg(size, BACKGROUND + lineArt(tokens.line, FULL_ICON_RADIUS), gradient(tokens));
+  return svg(
+    size,
+    `<rect width="${CANVAS}" height="${CANVAS}" fill="${tokens.cream}"/>` +
+      place(snail(palette(tokens, 'light')), RADIUS.store),
+  );
 }
-
-// Splash screen image: the line on transparent, filling its square (the plugin sets the width and
-// the background colour).
-export function splashSvg(tokens: IconTokens, size: number): string {
-  return svg(size, lineArt(tokens.line, CANVAS / 2 - 1));
+// Splash image on transparent (the plugin draws the background colour), light and dark ground.
+export function splashSvg(
+  tokens: IconTokens,
+  size: number,
+  ground: 'light' | 'dark' = 'light',
+): string {
+  return svg(size, place(snail(palette(tokens, ground)), RADIUS.splash));
 }
-
-// Android status bar icon: white on transparent, no mask, so the snail fills the square with a
-// heavier line (it is drawn at 24 dp).
+// Android status bar icon: white on transparent, no mask, a silhouette without the face.
 export function notificationSvg(size: number): string {
-  return svg(size, lineArt('#ffffff', CANVAS / 2 - 1, STROKE * 1.8, 0));
+  return svg(size, place(silhouette('#ffffff'), RADIUS.notification, 0));
+}
+
+// ------------------------------------------------------------------ in-app images
+// The snail on its tight box (aspect `box()[2] / box()[3]`), for the app: empty states, the Mekan
+// tab, avatars and the crawl animation. `height` in px.
+export function brandSvg(
+  tokens: IconTokens,
+  height: number,
+  {
+    ground = 'light',
+    face = true,
+    layer = 'all',
+  }: { ground?: 'light' | 'dark'; face?: boolean; layer?: Layer } = {},
+): string {
+  const [x, y, w, h] = box();
+  const width = Math.round((w / h) * height);
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="${x} ${y} ${w} ${h}">` +
+    snail(palette(tokens, ground), { face, layer }) +
+    `</svg>`
+  );
+}
+
+// The Mekan tab's line icon (24 dp, 1.8 stroke like the other tab icons), white: the app tints it.
+export function lineIconSvg(size: number): string {
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" ` +
+    `stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">` +
+    '<path d="M 2.4 18 C 2.9 18.9 3.6 19.3 4.6 19.3 L 18.6 19.3 C 19.8 19.3 20.6 18.5 20.6 17.3 L 20.6 11.3 C 20.6 9.9 19.6 8.9 18.4 8.9 C 17.2 8.9 16.2 9.9 16.2 11.3 L 16.2 14.2"/>' +
+    '<circle cx="9.6" cy="12.3" r="6.2"/><path d="M 9.6 14.9 A 2.6 2.6 0 1 1 12.2 12.3"/>' +
+    '<path d="M 17.3 9.1 L 16.4 5.4"/><path d="M 19.6 9.1 L 20.7 5.5"/></svg>'
+  );
+}
+
+// Where the crawl animation turns the antennae: the top of the head, as a fraction of the box.
+export function antennaPivot(): [number, number] {
+  const [x, y, w, h] = box();
+  return [f((82.5 - x) / w), f((38 - y) / h)];
 }

@@ -18,11 +18,7 @@ export function RouteError({ error, retry }: ErrorBoundaryProps) {
   return (
     <Screen>
       <View className="flex-1 justify-center gap-3">
-        <EmptyState
-          icon="alert-circle-outline"
-          title={tr.errorScreen.title}
-          body={tr.errorScreen.body}
-        />
+        <EmptyState snail title={tr.errorScreen.title} body={tr.errorScreen.body} />
         <Button label={tr.errorScreen.retry} onPress={() => void retry()} />
         <Button
           variant="secondary"
