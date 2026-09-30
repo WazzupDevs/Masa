@@ -65,6 +65,11 @@ appId: app.kabuk.mobile
     visible: Profilini tamamla
     timeout: 20000
 - takeScreenshot: 03c-extras
+# The photo preview, both photo buttons and the bio push the actions below the fold.
+- scrollUntilVisible:
+    element:
+      id: signup-skip
+    direction: DOWN
 - tapOn:
     id: signup-skip
 - extendedWaitUntil:
