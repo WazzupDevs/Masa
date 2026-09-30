@@ -294,12 +294,16 @@ describe('privacy', () => {
       }
     }
 
-    // The only spatial column is the venue location.
+    // The only spatial columns are the venue's point and boundary (docs/SPEC_V3.md §4.2).
     const spatial = await sql`
       select table_name, column_name from information_schema.columns
       where table_schema = 'public' and udt_name in ('geography', 'geometry')
+      order by column_name
     `;
-    expect(spatial.map((c) => `${c.table_name}.${c.column_name}`)).toEqual(['venues.location']);
+    expect(spatial.map((c) => `${c.table_name}.${c.column_name}`)).toEqual([
+      'venues.boundary',
+      'venues.location',
+    ]);
   });
 
   it('keeps the server-side helpers closed to clients', async () => {
@@ -310,6 +314,18 @@ describe('privacy', () => {
       ...ANCHOR,
     });
     expect(distance.error?.code).toBe('42501');
+    const contains = await client.rpc('venue_contains', {
+      target_venue_id: venueId('at-anchor'),
+      ...ANCHOR,
+      tolerance_m: 50,
+      radius_m: 300,
+    });
+    expect(contains.error?.code).toBe('42501');
+    const spot = await client.rpc('change_table_spot', {
+      target_user_id: id,
+      target_spot_id: venueId('at-anchor'),
+    });
+    expect(spot.error?.code).toBe('42501');
     const start = await client.rpc('start_table_session', {
       target_user_id: id,
       target_venue_id: venueId('at-anchor'),

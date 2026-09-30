@@ -1,16 +1,46 @@
-# V7 and T1–T3: open Tabu room, the bot table asks to join, accept, one voice Tabu turn.
+# V7 and T1–T3: open Tabu room, the bot table asks to join, accept, one voice Tabu turn. First the
+# spots: a room at another spot, "Bu noktadayım", then the same spot.
 appId: app.kabuk.mobile
 ---
 - runScript:
     file: ../scripts/bot.js
     env:
       ACTION: login
+# The bot table checks in at another spot and opens a room there: the lobby groups it under its
+# spot with "Bu noktadayım" instead of a request (docs/SPEC_V3.md §4.3).
 - runScript:
     file: ../scripts/bot.js
     env:
       ACTION: checkin
+      BODY: '{"spot":"kutuphane"}'
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: create-room
 - tapOn:
     id: tab-venue
+- extendedWaitUntil:
+    visible:
+      id: spot-here
+    timeout: 20000
+- assertVisible: Kütüphane
+- assertNotVisible: Katılmak istiyorum
+- takeScreenshot: 12b-lobby-other-spot
+- tapOn:
+    id: spot-here
+- extendedWaitUntil:
+    visible: Katılmak istiyorum
+    timeout: 15000
+- assertVisible: 'Noktan: Kütüphane'
+- takeScreenshot: 12c-lobby-same-spot
+# The bot closes its room; this phone opens one at the same spot and the bot asks to join it.
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: end-room
+- extendedWaitUntil:
+    notVisible: Katılmak istiyorum
+    timeout: 20000
 - extendedWaitUntil:
     visible: Oda kur
     timeout: 10000

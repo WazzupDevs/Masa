@@ -25,6 +25,8 @@ export type AnalyticsEventProps = {
   session_ended: { duration_min: number };
   explore_viewed: { view: 'list' | 'map' };
   checkin_out_of_range: Record<string, never>;
+  // "Bu noktadayım" or a spot change (docs/SPEC_V3.md §15); never which spot.
+  spot_changed: Record<string, never>;
   participation_chosen: { mode: Participation };
   profile_photo_set: Record<string, never>;
   profile_bio_set: Record<string, never>;
@@ -55,6 +57,7 @@ const ALLOWED: { [E in AnalyticsEvent]: readonly (keyof AnalyticsEventProps[E])[
   session_ended: ['duration_min'],
   explore_viewed: ['view'],
   checkin_out_of_range: [],
+  spot_changed: [],
   participation_chosen: ['mode'],
   profile_photo_set: [],
   profile_bio_set: [],

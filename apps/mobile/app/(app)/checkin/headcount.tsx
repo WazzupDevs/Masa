@@ -27,7 +27,7 @@ type Choices = { headcount: number; participation: Participation };
 export default function HeadcountScreen() {
   const queryClient = useQueryClient();
   const profile = useProfile();
-  const { position, venue, clear } = useCheckinDraft();
+  const { position, venue, spot, clear } = useCheckinDraft();
   const [headcount, setHeadcount] = useState<number | null>(null);
   const [chosen, setChosen] = useState<Participation | null>(null);
 
@@ -48,6 +48,7 @@ export default function HeadcountScreen() {
         headcount: choices.headcount,
         locationConsentVersion: CURRENT_LOCATION_CONSENT_VERSION,
         participation: choices.participation,
+        ...(spot ? { spotId: spot.id } : {}),
       });
     },
     onSuccess: async (result, choices) => {
@@ -65,7 +66,7 @@ export default function HeadcountScreen() {
   return (
     <Screen>
       <ScreenHeader
-        eyebrow={venue.name}
+        eyebrow={spot ? tr.checkin.venueAtSpot(venue.name, spot.name) : venue.name}
         eyebrowIcon="location-outline"
         title={tr.checkin.headcountTitle}
         subtitle={tr.checkin.headcountHint}

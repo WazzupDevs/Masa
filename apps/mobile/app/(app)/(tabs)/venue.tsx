@@ -10,6 +10,7 @@ import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Tag } from '@/components/Tag';
 import { Text } from '@/components/Text';
+import { useVenueSpots } from '@/features/checkin/spots';
 import { useActiveTable } from '@/features/checkin/useActiveTable';
 import { Lobby } from '@/features/rooms/Lobby';
 import { useCurrentRoom } from '@/features/rooms/queries';
@@ -36,6 +37,8 @@ export default function VenueScreen() {
   const queryClient = useQueryClient();
   const table = useActiveTable();
   const currentRoom = useCurrentRoom(table.data?.id);
+  const spots = useVenueSpots(table.data?.venue_id);
+  const venueHasSpots = (spots.data ?? []).length > 0;
   const now = useNow(30_000);
 
   const leave = useMutation({
@@ -103,6 +106,22 @@ export default function VenueScreen() {
             </Text>
           </View>
         </View>
+        {venueHasSpots ? (
+          <View className="mt-3 flex-row items-center justify-between gap-2">
+            <View className="flex-1 flex-row items-center gap-1">
+              <Ionicons name="navigate-outline" size={ICON.sm} color={colors.muted} />
+              <Text variant="fine" className="flex-1" testID="my-spot">
+                {table.data.spot?.name ? tr.venue.spot(table.data.spot.name) : tr.venue.noSpot}
+              </Text>
+            </View>
+            <Button
+              variant="ghost"
+              testID="change-spot"
+              label={table.data.spot_id ? tr.venue.changeSpot : tr.venue.chooseSpot}
+              onPress={() => router.push('/spot')}
+            />
+          </View>
+        ) : null}
         <View className="mt-3">
           <Button label={tr.rooms.create} onPress={() => router.push('/room/new')} />
         </View>
@@ -112,6 +131,8 @@ export default function VenueScreen() {
         venueId={table.data.venue_id}
         sessionId={table.data.id}
         since={table.data.created_at}
+        mySpotId={table.data.spot_id}
+        venueHasSpots={venueHasSpots}
       />
 
       <View className="mt-auto gap-3 pt-8">

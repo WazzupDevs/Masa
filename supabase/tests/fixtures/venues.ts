@@ -2,6 +2,10 @@
 // places; real venue data comes from content/venues-pilot.json.
 import type { Sql } from 'postgres';
 
+import type { CampusVenue } from '../../../scripts/seed/content.ts';
+import { CAMPUS_SOURCE, campusSql } from '../../../scripts/seed/sections.ts';
+import type { LngLat } from '../../functions/_shared/pure/geo.ts';
+
 export const ANCHOR = { lat: 41.0, lng: 28.64 } as const;
 
 const EARTH_RADIUS_M = 6_371_008.8;
@@ -71,4 +75,53 @@ export async function insertFixtureVenues(sql: Sql): Promise<Record<string, stri
 
 export async function deleteFixtureVenues(sql: Sql): Promise<void> {
   await sql`delete from public.venues where source = ${FIXTURE_SOURCE}`;
+}
+
+// A fake campus (docs/SPEC_V3.md §4): a square boundary 300 m wide, 5 km north of the anchor so
+// it is far from the point venues, with spots. Not a real place; inserted through the seed's own
+// SQL (scripts/seed/sections.ts → campusSql), so the tests also exercise the seed.
+export const CAMPUS_HALF_M = 150;
+export const CAMPUS_CENTER = offset(ANCHOR, 5000, 0);
+
+// A counterclockwise square of half-width `halfM` around `center`: SW, SE, NE, NW, SW.
+export function squareRing(center: { lat: number; lng: number }, halfM: number): LngLat[] {
+  return [225, 135, 45, 315, 225].map((bearing) => {
+    const p = offset(center, halfM * Math.SQRT2, bearing);
+    return [p.lng, p.lat] as LngLat;
+  });
+}
+
+export const FIXTURE_CAMPUS: CampusVenue = {
+  ref: 'fixture-campus',
+  name: 'Test Kampüsü',
+  city: 'Sakarya',
+  district: 'Test',
+  isActive: true,
+  boundary: squareRing(CAMPUS_CENTER, CAMPUS_HALF_M),
+  spots: [
+    { ref: 'kantin', name: 'Kantin', isActive: true },
+    { ref: 'kutuphane', name: 'Kütüphane', isActive: true },
+    { ref: 'eski', name: 'Eski Nokta', isActive: false },
+  ],
+};
+
+export type FixtureCampus = { venueId: string; spots: Record<string, string> };
+
+export async function insertFixtureCampus(
+  sql: Sql,
+  campus: CampusVenue = FIXTURE_CAMPUS,
+): Promise<FixtureCampus> {
+  await sql.unsafe(campusSql([campus]));
+  const rows = await sql<{ venue_id: string; ref: string; id: string }[]>`
+    select v.id as venue_id, s.ref, s.id from public.venues v
+    join public.venue_spots s on s.venue_id = v.id
+    where v.source = ${CAMPUS_SOURCE} and v.source_ref = ${campus.ref}
+  `;
+  const venueId = rows[0]?.venue_id;
+  if (!venueId) throw new Error('fixture campus not inserted');
+  return { venueId, spots: Object.fromEntries(rows.map((r) => [r.ref, r.id])) };
+}
+
+export async function deleteFixtureCampus(sql: Sql): Promise<void> {
+  await sql`delete from public.venues where source = ${CAMPUS_SOURCE} and source_ref like 'fixture-%'`;
 }

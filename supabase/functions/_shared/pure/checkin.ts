@@ -21,3 +21,8 @@ export function isValidHeadcount(n: number): boolean {
 export function headcountLabel(n: number): string {
   return n >= MAX_HEADCOUNT ? `${MAX_HEADCOUNT}+` : String(n);
 }
+
+// A venue with a boundary (the campus) takes a check-in inside it or at most this far outside: GPS
+// drifts 30–50 m inside buildings (docs/SPEC_V3.md §4.2). venue_contains takes it as a parameter;
+// the app's warning uses it too (geo.ts → withinBoundary).
+export const BOUNDARY_TOLERANCE_M = 50;

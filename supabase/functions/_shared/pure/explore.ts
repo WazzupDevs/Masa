@@ -69,3 +69,12 @@ export function distanceMeters(
     Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
 }
+
+// Keşfet with one active venue (the campus pilot) is a single venue card with its events; from two
+// active venues on, the list and the map come back (docs/SPEC_V3.md §4.4, S9). Content decides.
+export type ExploreLayout = 'single' | 'list';
+export const SINGLE_VENUE_MAX = 1;
+
+export function exploreLayout(activeVenueCount: number): ExploreLayout {
+  return activeVenueCount === SINGLE_VENUE_MAX ? 'single' : 'list';
+}

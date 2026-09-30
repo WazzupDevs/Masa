@@ -1,5 +1,6 @@
 import type { AliasWords } from '../../supabase/functions/_shared/pure/alias.ts';
-import type { ProfanityList, SohbetCard, TabuCard, VenueRecord } from './content.ts';
+import type { LngLat } from '../../supabase/functions/_shared/pure/geo.ts';
+import type { CampusVenue, ProfanityList, SohbetCard, TabuCard, VenueRecord } from './content.ts';
 import { sqlLiteral } from './sql.ts';
 
 // Replaces the word list, so words removed from the JSON disappear from the database too.
@@ -80,5 +81,55 @@ export function cardsSql(tabu: readonly TabuCard[], sohbet: readonly SohbetCard[
     '  word = excluded.word, forbidden = excluded.forbidden, theme = excluded.theme,',
     '  prompt = excluded.prompt, is_active = true;',
     '',
+  ].join('\n');
+}
+
+// A venue with a boundary and spots. Upserted by ('campus', ref) and (venue, spot ref): safe to
+// re-run, keeps ids stable, never deletes (a spot left out of the JSON stays as it was; set
+// isActive: false to retire it). The venue's point, used by Keşfet's map, is a point on the
+// boundary's surface.
+export const CAMPUS_SOURCE = 'campus';
+
+function polygonSql(ring: readonly LngLat[]): string {
+  const wkt = `POLYGON((${ring.map(([lng, lat]) => `${lng} ${lat}`).join(', ')}))`;
+  return `extensions.st_geomfromtext(${sqlLiteral(wkt)}, 4326)`;
+}
+
+export function campusSql(
+  venues: readonly CampusVenue[],
+  file = 'content/venues-campus.json',
+): string {
+  if (venues.length === 0) return `-- ${file}: no venues\n`;
+  return [
+    `-- ${file}`,
+    ...venues.flatMap((v) => {
+      const polygon = polygonSql(v.boundary);
+      const spotRows = v.spots.map(
+        (s, i) => `(${sqlLiteral(s.ref)}, ${sqlLiteral(s.name)}, ${i}, ${sqlLiteral(s.isActive)})`,
+      );
+      return [
+        'insert into public.venues (name, city, district, location, boundary, source, source_ref, is_active) values',
+        `  (${[
+          sqlLiteral(v.name),
+          sqlLiteral(v.city),
+          sqlLiteral(v.district),
+          `extensions.st_pointonsurface(${polygon})::extensions.geography`,
+          `${polygon}::extensions.geography`,
+          sqlLiteral(CAMPUS_SOURCE),
+          sqlLiteral(v.ref),
+          sqlLiteral(v.isActive),
+        ].join(', ')})`,
+        'on conflict (source, source_ref) do update set',
+        '  name = excluded.name, city = excluded.city, district = excluded.district,',
+        '  location = excluded.location, boundary = excluded.boundary, is_active = excluded.is_active;',
+        'insert into public.venue_spots (venue_id, ref, name, sort, is_active)',
+        'select v.id, s.ref, s.name, s.sort, s.is_active',
+        `from public.venues v cross join (values\n  ${spotRows.join(',\n  ')}\n) as s (ref, name, sort, is_active)`,
+        `where v.source = ${sqlLiteral(CAMPUS_SOURCE)} and v.source_ref = ${sqlLiteral(v.ref)}`,
+        'on conflict (venue_id, ref) do update set',
+        '  name = excluded.name, sort = excluded.sort, is_active = excluded.is_active;',
+        '',
+      ];
+    }),
   ].join('\n');
 }

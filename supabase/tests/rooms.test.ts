@@ -110,7 +110,17 @@ describe('rooms/create and the lobby', () => {
     expect(rows).toHaveLength(1);
     // v2: + the "profilli" flag (docs/SPEC_V2.md §5.4); still no account or profile id.
     expect(Object.keys(rows[0] ?? {}).sort()).toEqual(
-      ['alias', 'concept', 'headcount', 'profiled', 'room_id', 'waiting_since'].sort(),
+      [
+        'alias',
+        'concept',
+        'headcount',
+        'profiled',
+        'room_id',
+        'waiting_since',
+        // The room's spot (docs/SPEC_V3.md §4.3): venue data, no count.
+        'spot_id',
+        'spot_name',
+      ].sort(),
     );
     expect(rows[0]).toMatchObject({
       room_id: roomId,

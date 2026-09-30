@@ -13,7 +13,12 @@ import type {
   RequestJoinResponse,
   RoomsOkResponse,
 } from '@shared/api/rooms.ts';
-import type { CheckInRequest, CheckInResponse, LeaveResponse } from '@shared/api/checkin.ts';
+import type {
+  ChangeSpotResponse,
+  CheckInRequest,
+  CheckInResponse,
+  LeaveResponse,
+} from '@shared/api/checkin.ts';
 import type { DmOkResponse, FriendsListResponse, FriendsOkResponse } from '@shared/api/friends.ts';
 import type { ProfileRequest, ProfileUploadUrl, ProfileView } from '@shared/api/profile.ts';
 import type { ReportReason } from '@shared/chat.ts';
@@ -82,6 +87,11 @@ export function callAccount(body: AccountRequest): Promise<AccountResponse> {
 
 export function callCheckIn(body: CheckInRequest): Promise<CheckInResponse> {
   return invoke<CheckInResponse>('checkin', body);
+}
+
+// "Bu noktadayım" and changing the spot (docs/SPEC_V3.md §4.3).
+export function callChangeSpot(spotId: string): Promise<ChangeSpotResponse> {
+  return invoke<ChangeSpotResponse>('checkin', { action: 'change-spot', spotId });
 }
 
 export function callLeave(): Promise<LeaveResponse> {

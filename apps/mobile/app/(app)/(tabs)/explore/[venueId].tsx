@@ -57,7 +57,13 @@ export default function VenueDetailScreen() {
           label={tr.explore.checkInHere}
           icon="location-outline"
           onPress={() => {
-            setVenue({ id: venue.id, name: venue.name, lat: venue.lat, lng: venue.lng });
+            setVenue({
+              id: venue.id,
+              name: venue.name,
+              lat: venue.lat,
+              lng: venue.lng,
+              boundary: venue.boundary,
+            });
             router.push('/checkin');
           }}
         />

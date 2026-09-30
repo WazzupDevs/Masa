@@ -1,0 +1,24 @@
+{
+  "note": "YER TUTUCU. Sınır ve noktalar gerçek değil: 500 m'lik bir kare ve örnek adlar. Proje sahibi gerçek poligonu ve nokta adlarını (S1) verince yalnızca bu dosya değişir ve isActive true olur. boundary: GeoJSON dış halkası, [boylam, enlem], kapalı, saat yönünün tersine. Nokta ref'leri kalıcıdır; kaldırılan nokta silinmez, isActive false olur.",
+  "venues": [
+    {
+      "ref": "sau-esentepe",
+      "name": "Sakarya Üniversitesi Esentepe Kampüsü",
+      "city": "Sakarya",
+      "district": "Serdivan",
+      "isActive": false,
+      "boundary": [
+        [30.327033, 40.737752],
+        [30.332967, 40.737752],
+        [30.332967, 40.742248],
+        [30.327033, 40.742248],
+        [30.327033, 40.737752]
+      ],
+      "spots": [
+        { "ref": "ornek-1", "name": "Örnek nokta 1" },
+        { "ref": "ornek-2", "name": "Örnek nokta 2" },
+        { "ref": "ornek-3", "name": "Örnek nokta 3" }
+      ]
+    }
+  ]
+}
