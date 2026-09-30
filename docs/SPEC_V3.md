@@ -54,8 +54,7 @@ Bu belge, Sakarya Üniversitesi pilotuna çıkacak **Kabuk v1**'in ürün kararl
   - Her yanıt `Content-Type: application/json` olmalıdır.
   - HTTP hook birkaç saniyelik süre sınırıyla çalışır (belgedeki `auth.hook_timeouts.http_hooks`).
 - **Netgsm:** OTP servisi var (anlık gönderim, "3 dakika içinde iletilir"; kullanıcı kodu, parola ve onaylı başlık ile).
-  - Uç noktanın tam biçimi ve hata kodları bu ortamdan doğrulanamadı: `netgsm.com.tr` ağ politikasınca kapalı, yalnızca `github.com/netgsm1/otp` okunabildi.
-  - Adım 1'de Netgsm dokümanından doğrulanır ve `docs/DECISIONS.md`'ye kaynağıyla yazılır.
+  - Adım 1'de resmi Netgsm OTP paketiyle (`github.com/netgsm1/otp`, `src/otp.php`) karşılaştırıldı: adres, XML alanları, `text/xml`, yanıt ve belgelenen kodlar (`docs/DECISIONS.md`). Gerçek gönderim denemesi hesap açılınca yapılacak.
 
 ### 2.2 Tasarım
 
@@ -90,7 +89,9 @@ Netgsm hazır olunca, önce dev projesinde, sonra üretimde:
 1. **Netgsm:**
    - Hesap ve OTP servisi yetkisi alınır.
    - SMS başlığı (gönderici adı, ör. `KABUK`) onaylatılır.
-   - API için bir alt kullanıcı açılır. Edge Function'ların sabit IP'si olmadığı için API'de IP kısıtı **kapalı** olmalıdır; Netgsm bunu zorunlu tutarsa uygulama durur ve sorulur.
+   - Hesapta **OTP SMS paketi** tanımlı olmalıdır; yoksa Netgsm kod 60 döner ve kod gitmez.
+   - API için bir alt kullanıcı açılır. Edge Function'ların sabit IP'si olmadığı için API alt kullanıcısında IP kısıtı **olmamalıdır**; varsa Netgsm kod 30 döner. Netgsm bunu zorunlu tutarsa uygulama durur ve sorulur.
+   - Gönderim sınırı dakikada 100 sorgudur (aşımda kod 80; kanca Supabase'e yeniden dene yanıtı verir). Supabase'in saatlik 100 SMS sınırı bunun altında kalır.
 2. **Sırlar:** Değerler kabukta verilir, hiçbir dosyaya yazılmaz:
    ```
    pnpm supabase secrets set SMS_PROVIDER=netgsm NETGSM_USERCODE=… NETGSM_PASSWORD=… NETGSM_HEADER=…
@@ -147,7 +148,7 @@ Netgsm hazır olunca, önce dev projesinde, sonra üretimde:
   - Gerekçe: yaşı sonradan küçültüp büyütmek kötüye kullanıma açık. (S8, kabul.)
 - **Görünürlük:**
   - Profilde **yaş** görünür, doğum tarihi görünmez.
-  - `birth_date` kolonu istemciye kapalıdır (kolon yetkisi). Kendi doğum tarihi de tablo okumasıyla gelmez; Ayarlar → Hesap'ta `profile/me` ile gösterilir.
+  - `birth_date` kolonu istemciye kapalıdır (kolon yetkisi). Kendi doğum tarihi de tablo okumasıyla gelmez; Ayarlar → Hesap'ta kendi profil yanıtıyla (`profile/get`, `birthDate`) gösterilir. İstemci yalnızca `has_birth_date` üretilmiş kolonunu okur.
   - Başkalarına `profile/get` yalnızca `age` döner.
 - **Mevcut kullanıcılar** (dev ve saha testi hesapları): `birth_date` ya da `display_name` yoksa açılışta profil ekranı gelir. 18 altı girilirse hesap silinir. `age_confirmed_at` kolonu korunur (geçmiş kayıt) ama artık okunmaz.
 
@@ -545,7 +546,7 @@ Genel testler yeni RPC'lerin de hesap id'si ve arkadaşlık öncesi `public_id` 
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
 | `sms` (yeni)        | Send SMS Hook hedefi: imza doğrulama, `+905` kilidi, sağlayıcı bağdaştırıcısı                                                                                                                                                                                                                   | Yeni    |
 | `account`           | `complete-onboarding { termsVersion, kvkkVersion, displayName, birthDate }` (18 altında hesabı siler, `under_age`); `delete`, `register-push` değişmez                                                                                                                                          | Değişir |
-| `profile`           | `me` (kendi doğum tarihi dahil); `get { publicId }` ya da `get { venueChatMessageId }` (`age` döner, doğum tarihi dönmez); `update` (`default_participation` kalkar)                                                                                                                            | Değişir |
+| `profile`           | `get { publicId }` kendi profilinde doğum tarihini de döner (_adım 1 notu: ayrı `me` eylemi gerekmedi, bkz. DECISIONS_); `get { publicId }` ya da `get { venueChatMessageId }` (`age` döner, doğum tarihi dönmez); `update` (`default_participation` kalkar)                                    | Değişir |
 | `checkin`           | `check-in { …, spotId? }` (sınır ya da 300 m; `participation` kalkar); `change-spot { spotId }`; `reroll-alias`; `leave` (iki masalı odada pencere)                                                                                                                                             | Değişir |
 | `rooms`             | `create { intent?, profiled }` (konsept ve görünürlük yok, her zaman açık); `create-solo` ("Masanla oyna": tek masalı özel oda); `request-join { roomId, profiled }` (`different_spot`); `respond`; `propose-game { roomId, concept }`; `answer-game { roomId, accept }`; `end`; `leave` kalkar | Değişir |
 | `tabu`              | `start` (öneri kabulünden ya da tek masadan; mod sunucuda); `turn-cards` (iş birliğinde yalnızca anlatan); `mark` (iş birliğinde yalnızca anlatan, üç eylem); `end-turn`                                                                                                                        | Değişir |

@@ -33,9 +33,10 @@ async function onboarded(phone: string): Promise<Client> {
   const client = await signIn(phone);
   const res = await invoke(client, 'account', {
     action: 'complete-onboarding',
-    ageConfirmed: true,
     termsVersion: CURRENT_TERMS_VERSION,
     kvkkVersion: CURRENT_KVKK_VERSION,
+    displayName: 'Test Masa',
+    birthDate: '2000-01-15',
   });
   expect(res.status).toBe(200);
   return client;
@@ -163,6 +164,18 @@ describe('checkin/check-in', () => {
       status: 409,
       body: errorBody('consent_outdated'),
     });
+  });
+
+  it('requires the v3 profile: an account from before v3 finishes it first', async () => {
+    const client = await onboarded(PHONE_A);
+    const { data } = await client.auth.getUser();
+    await sql`update public.profiles set display_name = null where id = ${data.user?.id ?? ''}`;
+    expect(await checkIn(client)).toEqual({ status: 409, body: errorBody('profile_required') });
+    await sql`
+      update public.profiles set display_name = 'Test Masa', birth_date = null
+      where id = ${data.user?.id ?? ''}
+    `;
+    expect(await checkIn(client)).toEqual({ status: 409, body: errorBody('profile_required') });
   });
 
   it('validates headcount and coordinates', async () => {

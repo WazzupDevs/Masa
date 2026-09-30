@@ -5,10 +5,13 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { Text } from '@/components/Text';
 import { authErrorMessage } from '@/features/auth/authErrors';
+import { useOnboardingStore } from '@/features/onboarding/store';
 import { tr } from '@/i18n/tr';
 import { supabase } from '@/lib/supabase';
 
@@ -16,6 +19,8 @@ export default function PhoneScreen() {
   const [input, setInput] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  // Set when sign-up ended under 18: the account was deleted, nothing was kept.
+  const underAge = useOnboardingStore((s) => s.underAge);
 
   async function sendCode() {
     const phone = toTrMobileE164(input);
@@ -24,6 +29,7 @@ export default function PhoneScreen() {
       return;
     }
     setError(null);
+    useOnboardingStore.setState({ underAge: false });
     setSending(true);
     const { error: otpError } = await supabase.auth.signInWithOtp({ phone });
     setSending(false);
@@ -37,6 +43,12 @@ export default function PhoneScreen() {
   return (
     <Screen>
       <ScreenHeader title={tr.auth.phoneTitle} subtitle={tr.auth.phoneHint} />
+      {underAge ? (
+        <Card tone="note" className="mt-4" testID="under-age">
+          <Text variant="bodyStrong">{tr.underAge.title}</Text>
+          <Text variant="fine">{tr.underAge.body}</Text>
+        </Card>
+      ) : null}
       <View className="mt-6">
         <Input
           testID="phone-input"

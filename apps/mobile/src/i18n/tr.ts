@@ -88,12 +88,35 @@ export const tr = {
   },
   consents: {
     title: 'Başlamadan önce',
-    age: '18 yaşından büyüğüm.',
     terms: 'Kullanım Koşulları’nı okudum ve kabul ediyorum.',
     kvkk: 'KVKK Aydınlatma Metni’ni okudum.',
     read: 'Oku',
     accept: 'Onayla ve devam et',
     outdated: 'Metinler güncellendi. Lütfen tekrar onayla.',
+  },
+  // Sign-up = profile (docs/SPEC_V3.md §3).
+  signup: {
+    title: 'Seni tanıyalım',
+    adultsOnly: `${APP_NAME} 18 yaş ve üzeri içindir.`,
+    nameLabel: 'Görünen ad',
+    nameHint:
+      '2–24 karakter. Profilinle katıldığın odalarda ve arkadaşların arasında bu ad görünür.',
+    birthLabel: 'Doğum tarihin',
+    day: 'Gün',
+    month: 'Ay',
+    year: 'Yıl',
+    birthHint:
+      'Doğum tarihin kimseye gösterilmez, profilinde yalnızca yaşın görünür. Sonradan değiştirilemez.',
+    birthInvalid: 'Geçerli bir tarih gir.',
+    continue: 'Devam',
+    extrasTitle: 'Profilini tamamla',
+    extrasBody: 'Fotoğraf ve tanıtım isteğe bağlı. İstersen sonra Profil’den de ekleyebilirsin.',
+    skip: 'Şimdilik geç',
+    finish: 'Bitir',
+  },
+  underAge: {
+    title: `${APP_NAME} 18 yaş ve üzeri içindir`,
+    body: 'Hesabın açılmadı ve bilgilerin saklanmadı.',
   },
   legal: {
     termsTitle: 'Kullanım Koşulları',
@@ -102,7 +125,7 @@ export const tr = {
     draftNotice: 'Bu metin taslaktır ve pilot öncesinde güncellenecektir.',
     termsBody: `${APP_NAME}, aynı mekandaki masaların birlikte oyun oynayıp sohbet etmesi için bir uygulamadır. Diğer kullanıcılara saygılı davranmayı, taciz, hakaret ve uygunsuz içerik paylaşmamayı kabul edersin.`,
     kvkkBody:
-      'Hesabını oluşturmak için telefon numaran işlenir. Numaran diğer kullanıcılarla paylaşılmaz. Hesabını istediğin zaman uygulama içinden silebilirsin.',
+      'Hesabını oluşturmak için telefon numaran, görünen adın ve doğum tarihin işlenir. Numaran ve doğum tarihin diğer kullanıcılarla paylaşılmaz; profilinde yalnızca yaşın görünür. 18 yaşından küçüksen hesap açılmaz ve bilgilerin saklanmaz. Hesabını istediğin zaman uygulama içinden silebilirsin.',
   },
   tabs: {
     explore: 'Keşfet',
@@ -193,6 +216,7 @@ export const tr = {
   },
   profile: {
     noName: 'Henüz bir adın yok',
+    nameWithAge: (name: string, age: number) => `${name}, ${age}`,
     addName: 'Ad ekle',
     edit: 'Profili düzenle',
     editTitle: 'Profili düzenle',
@@ -429,6 +453,11 @@ export const tr = {
   },
   settings: {
     title: 'Ayarlar',
+    accountSection: 'Hesap',
+    birthDate: 'Doğum tarihin',
+    // "2000-01-15" → "15.01.2000"
+    birthDateValue: (iso: string) => iso.split('-').reverse().join('.'),
+    birthDateHint: 'Yalnızca sen görürsün. Yanlışsa düzeltmek için bize yaz.',
     privacySection: 'Gizlilik',
     defaultParticipation: 'Masaya varsayılan katılım',
     defaultParticipationHint: 'Her girişte o masa için değiştirebilirsin.',
@@ -454,6 +483,9 @@ export const tr = {
     unauthorized: 'Oturumun sona ermiş. Tekrar giriş yap.',
     consent_outdated: 'Metinler güncellendi. Lütfen tekrar onayla.',
     onboarding_required: 'Önce kaydını tamamlaman gerekiyor.',
+    profile_required: 'Önce profilini tamamlaman gerekiyor.',
+    under_age: `${APP_NAME} 18 yaş ve üzeri içindir.`,
+    birth_date_invalid: 'Geçerli bir doğum tarihi gir. Kayıtlı doğum tarihi değiştirilemez.',
     venue_not_found: 'Bu mekan artık listede değil.',
     too_far: 'Bu mekana çok uzaktasın. Mekandayken tekrar dene.',
     alias_exhausted: 'Şu an bu mekanda masa açılamıyor. Biraz sonra tekrar dene.',

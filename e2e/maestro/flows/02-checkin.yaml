@@ -48,8 +48,8 @@ appId: app.kabuk.mobile
 - extendedWaitUntil:
     visible: Masada kaç kişisiniz\?
     timeout: 30000
-# No display name yet: joining with a profile is off.
-- assertVisible: Profille katılmak için önce Profil sekmesinden bir ad seç.
+# The name comes from sign-up (docs/SPEC_V3.md §3): joining with the profile is available.
+- assertNotVisible: Profille katılmak için önce Profil sekmesinden bir ad seç.
 - takeScreenshot: 09-headcount
 - tapOn:
     id: headcount-2

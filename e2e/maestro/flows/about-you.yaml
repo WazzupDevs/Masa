@@ -1,0 +1,19 @@
+# The sign-up profile step: display name and birth date (env NAME, DAY, MONTH, YEAR).
+appId: app.kabuk.mobile
+---
+- tapOn:
+    id: signup-name
+- eraseText
+- inputText: ${NAME}
+- tapOn:
+    id: birth-day
+- inputText: ${DAY}
+- tapOn:
+    id: birth-month
+- inputText: ${MONTH}
+- tapOn:
+    id: birth-year
+- inputText: ${YEAR}
+- hideKeyboard
+- tapOn:
+    id: signup-continue

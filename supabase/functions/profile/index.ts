@@ -8,6 +8,7 @@ import { z } from '../_shared/deps.ts';
 import { handle } from '../_shared/http.ts';
 import { loadProfanity } from '../_shared/profanity.ts';
 import type { ProfileRequest, ProfileResponse, ProfileView } from '../_shared/pure/api/profile.ts';
+import { ageOn, istanbulToday, parseIsoDate } from '../_shared/pure/age.ts';
 import { earnedBadges } from '../_shared/pure/badges.ts';
 import { AppError } from '../_shared/pure/errors.ts';
 import { inspectJpeg } from '../_shared/pure/jpegMetadata.ts';
@@ -63,9 +64,15 @@ async function getProfile(viewer: string, publicId: string): Promise<ProfileView
   // Unknown, blocked, or not allowed: the same answer on the same path.
   if (!row) throw new AppError('not_found', 'Profile not found.');
 
-  const stats = await db.rpc('user_stats', { target_user_id: row.user_id });
+  const [stats, birth] = await Promise.all([
+    db.rpc('user_stats', { target_user_id: row.user_id }),
+    db.from('profiles').select('birth_date').eq('id', row.user_id).single(),
+  ]);
   if (stats.error) throw dbError('user_stats', stats.error);
+  if (birth.error) throw dbError('profiles', birth.error);
   const counts = stats.data[0];
+  const born = birth.data.birth_date ? parseIsoDate(birth.data.birth_date) : null;
+  const age = born ? ageOn(born, istanbulToday(new Date())) : null;
 
   let photoUrl: string | null = null;
   if (row.photo_path && !row.photo_hidden) {
@@ -83,7 +90,9 @@ async function getProfile(viewer: string, publicId: string): Promise<ProfileView
       voiceTabuWins: counts?.voice_tabu_wins ?? 0,
       distinctTables: counts?.distinct_tables ?? 0,
     }),
-    ...(row.is_self ? { photoHidden: row.photo_hidden } : {}),
+    age,
+    // The owner sees their own birth date (Ayarlar → Hesap); nobody else does.
+    ...(row.is_self ? { photoHidden: row.photo_hidden, birthDate: birth.data.birth_date } : {}),
   };
 }
 
