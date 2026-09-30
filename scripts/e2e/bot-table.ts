@@ -23,7 +23,7 @@ import {
   CURRENT_TERMS_VERSION,
 } from '../../supabase/functions/_shared/pure/consent.ts';
 import type { VoiceTabuState } from '../../supabase/functions/_shared/pure/tabu.ts';
-import { ANCHOR, offset } from '../../supabase/tests/fixtures/venues.ts';
+import { ANCHOR, offset, squareRing } from '../../supabase/tests/fixtures/venues.ts';
 
 // The hosted dev project (CLAUDE.md, "Barındırılan dev projesi"). No other remote is accepted.
 const DEV_PROJECT_HOST = 'kphwbpqxhugrpoicmski.supabase.co';
@@ -51,12 +51,27 @@ const BOT_PHONE = process.env.BOT_PHONE ?? '+905550000002';
 const BOT_OTP = process.env.BOT_OTP ?? '123456';
 const BOT_NAME = process.env.BOT_NAME ?? 'Bot Masa';
 const DEVICE_PHONE = process.env.DEVICE_PHONE ?? '+905550000001';
+// A campus-like venue (docs/SPEC_V3.md §4): a 200 m square boundary around the anchor and two
+// spots. The device checks in at "Kantin"; the bot opens a room at "Kütüphane" for "Bu noktadayım".
 export const E2E_VENUE = {
   name: process.env.E2E_VENUE_NAME ?? 'E2E Kafe',
   sourceRef: 'e2e-kafe',
   at: ANCHOR,
+  boundary: squareRing(ANCHOR, 100),
+  spots: [
+    { ref: 'kantin', name: 'Kantin' },
+    { ref: 'kutuphane', name: 'Kütüphane' },
+  ],
 };
-// Where the device stands for the out-of-radius check (CHECKIN_RADIUS_M is 300).
+// A second venue so Keşfet starts as the list and the map (two active venues); `single-venue`
+// closes every other venue for the pilot's single-venue view.
+export const E2E_SECOND_VENUE = {
+  name: 'E2E Kafe İki',
+  sourceRef: 'e2e-kafe-2',
+  at: offset(ANCHOR, 1500, 200),
+};
+// Where the device stands for the out-of-boundary check: 210 m outside the boundary, far past the
+// 50 m tolerance.
 export const OUTSIDE = offset(ANCHOR, 310, 90);
 
 type Json = Record<string, unknown>;
@@ -114,22 +129,61 @@ async function myRoom(): Promise<{ id: string; game_state: Json; status: string 
 }
 
 export const actions: Record<string, (args: Json) => Promise<Json>> = {
-  // Local only: the E2E venue, and both test accounts deleted so each run starts from zero.
+  // Local only: the E2E venues, and both test accounts deleted so each run starts from zero.
   async setup() {
     const sql = db();
     try {
       await sql`delete from auth.users where phone in (${BOT_PHONE.slice(1)}, ${DEVICE_PHONE.slice(1)})`;
+      const wkt = `POLYGON((${E2E_VENUE.boundary.map(([lng, lat]) => `${lng} ${lat}`).join(', ')}))`;
       const [venue] = await sql<{ id: string }[]>`
-        insert into public.venues (name, city, district, location, source, source_ref, is_active)
+        insert into public.venues (name, city, district, location, boundary, source, source_ref, is_active)
         values (
           ${E2E_VENUE.name}, 'İstanbul', 'Test',
           extensions.st_setsrid(extensions.st_makepoint(${E2E_VENUE.at.lng}, ${E2E_VENUE.at.lat}), 4326)::extensions.geography,
+          extensions.st_geomfromtext(${wkt}, 4326)::extensions.geography,
           'e2e', ${E2E_VENUE.sourceRef}, true
         )
-        on conflict (source, source_ref) do update set name = excluded.name, is_active = true
+        on conflict (source, source_ref) do update
+          set name = excluded.name, location = excluded.location, boundary = excluded.boundary,
+              is_active = true
         returning id
       `;
-      return { venueId: venue?.id ?? null, inside: E2E_VENUE.at, outside: OUTSIDE };
+      const venueId = venue?.id ?? null;
+      for (const [i, spot] of E2E_VENUE.spots.entries()) {
+        await sql`
+          insert into public.venue_spots (venue_id, ref, name, sort)
+          values (${venueId}, ${spot.ref}, ${spot.name}, ${i})
+          on conflict (venue_id, ref) do update
+            set name = excluded.name, sort = excluded.sort, is_active = true
+        `;
+      }
+      const second = E2E_SECOND_VENUE.at;
+      await sql`
+        insert into public.venues (name, city, district, location, source, source_ref, is_active)
+        values (
+          ${E2E_SECOND_VENUE.name}, 'İstanbul', 'Test',
+          extensions.st_setsrid(extensions.st_makepoint(${second.lng}, ${second.lat}), 4326)::extensions.geography,
+          'e2e', ${E2E_SECOND_VENUE.sourceRef}, true
+        )
+        on conflict (source, source_ref) do update set name = excluded.name, is_active = true
+      `;
+      return { venueId, inside: E2E_VENUE.at, outside: OUTSIDE };
+    } finally {
+      await sql.end();
+    }
+  },
+
+  // Local only: the pilot's Keşfet (docs/SPEC_V3.md §4.4). Every venue but the E2E venue is closed,
+  // so Keşfet shows the single venue card. `setup` opens the second E2E venue again; the seed's
+  // venues come back with `pnpm db:reset`.
+  async 'single-venue'() {
+    const sql = db();
+    try {
+      await sql`
+        update public.venues set is_active = false
+        where is_active and not (source = 'e2e' and source_ref = ${E2E_VENUE.sourceRef})
+      `;
+      return { ok: true };
     } finally {
       await sql.end();
     }
@@ -154,7 +208,8 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
     return { ok: true };
   },
 
-  // At BOT_VENUE (name or id; the E2E venue by default), standing on the venue's own point.
+  // At BOT_VENUE (name or id; the E2E venue by default), standing on the venue's own point. At a
+  // venue with spots, at `spot` or BOT_SPOT (ref or name), else the first spot.
   async checkin(args) {
     const wanted = String(args.venue ?? process.env.BOT_VENUE ?? E2E_VENUE.name);
     const { data, error } = await me().rpc('explore_venues', {});
@@ -164,6 +219,20 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
     ).find((v) => v.venue_id === wanted || v.name === wanted);
     if (!venue) throw new Error(`venue "${wanted}" not found among the active venues`);
     venueId = venue.venue_id;
+    const { data: spots, error: spotsError } = await me()
+      .from('venue_spots')
+      .select('id, ref, name')
+      .eq('venue_id', venueId)
+      .eq('is_active', true)
+      .order('sort');
+    if (spotsError) throw spotsError;
+    const wantedSpot = args.spot ?? process.env.BOT_SPOT;
+    const spot =
+      wantedSpot === undefined
+        ? spots?.[0]
+        : spots?.find((s) => s.ref === wantedSpot || s.name === wantedSpot);
+    if (wantedSpot !== undefined && !spot)
+      throw new Error(`spot "${String(wantedSpot)}" not found`);
     return call('checkin', {
       action: 'check-in',
       venueId,
@@ -173,7 +242,13 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
       headcount: Number(args.headcount ?? 3),
       locationConsentVersion: CURRENT_LOCATION_CONSENT_VERSION,
       participation: args.participation === 'profile' ? 'profile' : 'anonymous',
+      ...(spot ? { spotId: spot.id } : {}),
     });
+  },
+
+  // An open Tabu room of the bot's table (for "Bu noktadayım" in the lobby of another spot).
+  async 'create-room'() {
+    return call('rooms', { action: 'create', concept: 'tabu', visibility: 'open' });
   },
 
   // Asks to join the first open room of another table in the lobby (the device's).
@@ -287,7 +362,8 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
 };
 
 // "Karşı masa": the other table for a one-phone P0 test on the dev project. Checks in at
-// BOT_VENUE and then, every two seconds, does what the other table would: as a guest
+// BOT_VENUE (at a venue with spots: BOT_SPOT, else the first spot; only tables at the same spot
+// play together) and then, every two seconds, does what the other table would: as a guest
 // (BOT_ROLE=guest, default) asks to join each new room in the lobby; as a host (BOT_ROLE=host)
 // keeps an open Tabu room and accepts the first request. In the room it starts the game (host),
 // presses Doğru on each card after a few seconds, ends turns and the answer window when their time
@@ -454,7 +530,7 @@ async function run(action: string, args: Json): Promise<Json> {
   const fn = actions[action];
   if (!fn) throw new Error(`unknown action ${action}; one of ${Object.keys(actions).join(', ')}`);
   // Each CLI call is its own process: sign in first unless the action does not need it.
-  if (!client && action !== 'setup' && action !== 'login') await actions.login?.({});
+  if (!client && !['setup', 'single-venue', 'login'].includes(action)) await actions.login?.({});
   return fn(args);
 }
 

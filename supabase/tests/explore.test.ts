@@ -79,17 +79,7 @@ describe('explore_venues', () => {
     await refresh();
     const row = (await explore()).find((v) => v.venue_id === venue['at-anchor']);
     expect(Object.keys(row ?? {}).sort()).toEqual(
-      [
-        'bucket',
-        'district',
-        'event_ends_at',
-        'event_starts_at',
-        'event_title',
-        'lat',
-        'lng',
-        'name',
-        'venue_id',
-      ].sort(),
+      ['boundary', 'bucket', 'district', 'events', 'lat', 'lng', 'name', 'venue_id'].sort(),
     );
     expect(Object.values(row ?? {})).not.toContain(4);
   });
@@ -127,24 +117,34 @@ describe('planned events', () => {
     `;
   }
 
-  async function eventOf(venueId: string) {
+  async function eventsOf(venueId: string) {
     const row = (await explore()).find((v) => v.venue_id === venueId);
-    return row?.event_title ?? null;
+    return (row?.events ?? []) as { title: string; startsAt: string; endsAt: string }[];
   }
 
-  it('shows a running event, else the next one within 7 days', async () => {
+  // The single-venue view lists them all (docs/SPEC_V3.md §4.4); the list shows the first.
+  it('lists the running event and every one starting within 7 days, earliest first', async () => {
     const id = venue['at-anchor'] ?? '';
     await addEvent(id, 'Bitti', '-5 hours');
     await addEvent(id, 'Salı Masa gecesi', '3 days');
-    expect(await eventOf(id)).toBe('Salı Masa gecesi');
+    expect((await eventsOf(id)).map((e) => e.title)).toEqual(['Salı Masa gecesi']);
     await addEvent(id, 'Şimdi Tabu', '-1 hour');
-    expect(await eventOf(id)).toBe('Şimdi Tabu');
+    await addEvent(id, 'Cuma turnuvası', '5 days');
+    const events = await eventsOf(id);
+    expect(events.map((e) => e.title)).toEqual([
+      'Şimdi Tabu',
+      'Salı Masa gecesi',
+      'Cuma turnuvası',
+    ]);
+    expect(Date.parse(events[0]?.endsAt ?? '') - Date.parse(events[0]?.startsAt ?? '')).toBe(
+      3 * 60 * 60 * 1000,
+    );
   });
 
   it('hides events further than 7 days and ended ones', async () => {
     const id = venue['at-anchor'] ?? '';
     await addEvent(id, 'Çok ileride', '8 days');
     await addEvent(id, 'Geçmiş', '-10 hours');
-    expect(await eventOf(id)).toBeNull();
+    expect(await eventsOf(id)).toEqual([]);
   });
 });

@@ -1,5 +1,6 @@
 // Types and validation for content/*.json. Invalid content fails `pnpm seed` loudly.
 import type { AliasWords } from '../../supabase/functions/_shared/pure/alias.ts';
+import { type LngLat, validateRing } from '../../supabase/functions/_shared/pure/geo.ts';
 import { SOHBET_THEMES, type SohbetTheme } from '../../supabase/functions/_shared/pure/sohbet.ts';
 
 export type VenueRecord = {
@@ -137,4 +138,76 @@ export function parseSohbetCards(json: unknown): SohbetCard[] {
     }
     return { theme: card.theme as SohbetTheme, prompt: card.prompt };
   });
+}
+
+// content/venues-campus.json (docs/SPEC_V3.md §4.1): venues with a boundary and spots. The
+// boundary is a GeoJSON outer ring ([lng, lat], closed, counterclockwise); spots have no
+// coordinates. `ref`s are permanent: a removed spot is set `isActive: false`, never deleted.
+export type CampusSpot = { ref: string; name: string; isActive: boolean };
+export type CampusVenue = {
+  ref: string;
+  name: string;
+  city: string;
+  district: string;
+  isActive: boolean;
+  boundary: LngLat[];
+  spots: CampusSpot[];
+};
+
+export const REF_PATTERN = /^[a-z0-9-]{1,40}$/;
+export const SPOT_NAME_MAX = 40;
+
+function parseSpot(value: unknown, where: string): CampusSpot {
+  if (!isRecord(value)) throw new Error(`${where} must be an object`);
+  const { ref, name, isActive = true } = value;
+  if (typeof ref !== 'string' || !REF_PATTERN.test(ref)) {
+    throw new Error(`${where}.ref must be 1–40 of a-z, 0-9 and -`);
+  }
+  if (typeof name !== 'string' || name.trim() === '' || name.length > SPOT_NAME_MAX) {
+    throw new Error(`${where}.name must be 1–${SPOT_NAME_MAX} characters`);
+  }
+  if (typeof isActive !== 'boolean') throw new Error(`${where}.isActive must be a boolean`);
+  return { ref, name, isActive };
+}
+
+export function parseCampusVenues(json: unknown): CampusVenue[] {
+  if (!isRecord(json) || !Array.isArray(json.venues)) {
+    throw new Error('venues-campus.json must have a venues list');
+  }
+  const venues = json.venues.map((value: unknown, i: number): CampusVenue => {
+    const where = `venues-campus.json venues[${i}]`;
+    if (!isRecord(value)) throw new Error(`${where} must be an object`);
+    const { ref, name, city, district, isActive = true, boundary, spots } = value;
+    if (typeof ref !== 'string' || !REF_PATTERN.test(ref)) {
+      throw new Error(`${where}.ref must be 1–40 of a-z, 0-9 and -`);
+    }
+    for (const [field, v] of Object.entries({ name, city, district })) {
+      if (typeof v !== 'string' || v.trim() === '')
+        throw new Error(`${where}.${field} is required`);
+    }
+    if (typeof isActive !== 'boolean') throw new Error(`${where}.isActive must be a boolean`);
+    if (!Array.isArray(boundary)) throw new Error(`${where}.boundary must be a list`);
+    const problem = validateRing(boundary);
+    if (problem) throw new Error(`${where}.boundary: ${problem}`);
+    if (!Array.isArray(spots) || spots.length === 0) {
+      throw new Error(`${where}.spots must list at least one spot`);
+    }
+    const parsed = spots.map((s: unknown, j: number) => parseSpot(s, `${where}.spots[${j}]`));
+    if (new Set(parsed.map((s) => s.ref)).size !== parsed.length) {
+      throw new Error(`${where}.spots has duplicate refs`);
+    }
+    return {
+      ref,
+      name: name as string,
+      city: city as string,
+      district: district as string,
+      isActive,
+      boundary: boundary as LngLat[],
+      spots: parsed,
+    };
+  });
+  if (new Set(venues.map((v) => v.ref)).size !== venues.length) {
+    throw new Error('venues-campus.json has duplicate refs');
+  }
+  return venues;
 }

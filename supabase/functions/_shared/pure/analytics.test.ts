@@ -10,7 +10,7 @@ import {
 } from './analytics.ts';
 
 describe('analytics events', () => {
-  it('cover exactly the events of MVP_SPEC §12 and the v2 steps shipped so far (SPEC_V2 §13)', () => {
+  it('cover exactly the events of MVP_SPEC §12, SPEC_V2 §13 and the v3 steps shipped so far (SPEC_V3 §15)', () => {
     expect([...ANALYTICS_EVENTS].sort()).toEqual(
       [
         'onboarding_completed',
@@ -28,6 +28,7 @@ describe('analytics events', () => {
         'session_ended',
         'explore_viewed',
         'checkin_out_of_range',
+        'spot_changed',
         'participation_chosen',
         'profile_photo_set',
         'profile_bio_set',

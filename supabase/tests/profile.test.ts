@@ -361,7 +361,17 @@ describe('lobby and room: the "profilli" flag only', () => {
     const { data: lobby } = await c.rpc('venue_lobby', { target_venue_id: venue[V] ?? '' });
     expect(lobby).toEqual([expect.objectContaining({ room_id: roomId, profiled: true })]);
     expect(Object.keys(lobby?.[0] ?? {}).sort()).toEqual(
-      ['alias', 'concept', 'headcount', 'profiled', 'room_id', 'waiting_since'].sort(),
+      [
+        'alias',
+        'concept',
+        'headcount',
+        'profiled',
+        'room_id',
+        'waiting_since',
+        // The room's spot (docs/SPEC_V3.md §4.3): venue data, no count.
+        'spot_id',
+        'spot_name',
+      ].sort(),
     );
 
     expect((await invoke(b, 'rooms', { action: 'request-join', roomId })).status).toBe(200);

@@ -177,9 +177,9 @@ Her adımın sonunda ✅ / ❌ işaretle.
 
 ## V3. Yarıçap dışından check-in (A, mekandan en az 400 m uzakta) [P1]
 
-> Otomatik: 310 m'den ret, emülatör konumuyla (`02-checkin.yaml`). Elle: gerçek GPS ile 400 m.
+> Otomatik: sınırı olan E2E mekanında sınırın 210 m dışından ret ("Kampüsün içinde görünmüyorsun…"), emülatör konumuyla (`02-checkin.yaml`). Elle: gerçek GPS ile 400 m.
 
-1. Keşfet'te test mekanına dokun → mekan detayı → **Buraya giriş yap**.
+1. Keşfet'te test mekanının kartında **Buraya giriş yap** (tek aktif mekan varken Keşfet liste değil tek mekan kartıdır; iki ya da daha fazla mekan varken mekana dokun → mekan detayı → **Buraya giriş yap**).
 2. Rıza kutusunu işaretle → **Konumumu kullan** → izin ver.
 
 **Bak:** konum alındıktan sonra kırmızı yazı: **"Bu mekana çok uzaktasın. Mekandayken tekrar dene."**; kişi sayısı ekranına geçilmez. Masa açılmaz (Mekan sekmesi hâlâ Keşfet'e götürür).
@@ -187,9 +187,9 @@ Her adımın sonunda ✅ / ❌ işaretle.
 
 ## V4. Kişi sayısı ve katılım biçimi (A, mekanda) [P0]
 
-> Otomatik: tamamı, emülatör konumuyla (`02-checkin.yaml`). Elle: gerçek GPS.
+> Otomatik: tamamı, emülatör konumuyla (`02-checkin.yaml`; E2E mekanının noktaları olduğu için önce "Neredesin?"). Elle: gerçek GPS.
 
-1. Mekanda: Keşfet'te test mekanına dokun → mekan detayı → **Buraya giriş yap** → rıza kutusu → **Konumumu kullan** → izin ver. **"Masada kaç kişisiniz?"** ekranı açılır.
+1. Mekanda: Keşfet'te test mekanının kartında **Buraya giriş yap** → rıza kutusu → **Konumumu kullan** → izin ver. **"Masada kaç kişisiniz?"** ekranı açılır. (Noktası olan mekanda, ör. kampüs açılınca, önce **"Neredesin?"** listesi gelir: bir nokta seç → **Devam**.)
 2. Seçenekler: **1 / 2 / 3 / 4+** (5 ve 6 yok).
 3. Altta "Nasıl katılıyorsunuz?": **Anonim** seçili. Ad kayıtta alındığı için **Profille** de seçilebilir. (Katılım biçimi v3 adım 3'te odaya taşınacak.)
 4. **2**'yi seç, Anonim kalsın, **Masayı aç**. "Masan hazır" ekranında takma adı not et.

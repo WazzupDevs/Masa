@@ -196,7 +196,8 @@ Adım 1'in parçası, OTA'dan önce:
   - `spots` sıralı listedir. Nokta koordinatı tutulmaz; nokta, kampüs içindeki masanın kendi beyanıdır.
   - Poligon ve nokta adları proje sahibinden gelir (S1). Koordinat tahmin edilmez.
 - **Diğer mekanlar:**
-  - `venues-pilot.json` (Beylikdüzü) ve `venues-test.json` içerikte kapatılır (`isActive: false`).
+  - `venues-pilot.json` (Beylikdüzü) içerikte kapatılır (`isActive: false`).
+  - _Adım 2 notu (proje sahibi kararı):_ S1 gelene kadar `venues-campus.json`'da kampüs kaydı **yer tutucu** poligon ve örnek noktalarla `isActive: false` durur; dev projesinde cihaz testi için `venues-test.json`'daki test mekanı açık kalır. Gerçek poligon ve nokta adları gelince yalnızca JSON değişir (`isActive: true`); test mekanı o zaman kapatılır.
   - Seed yalnızca ekler ya da günceller; kapatma da seed'le yapılır.
 - **Yeni mekan ya da nokta eklemek yalnızca içerik işidir:** JSON'a satır, sonra `pnpm seed` ve `db push --include-seed`. Kod değişmez.
   - `ref` kalıcı kimliktir. Kaldırılan nokta `isActive: false` olur, silinmez; aktif masaların noktası geçerli kalır.
@@ -205,10 +206,10 @@ Adım 1'in parçası, OTA'dan önce:
 ### 4.2 Check-in: sınır ya da yarıçap
 
 - `venues.boundary geography(Polygon, 4326) null` eklenir.
-- **`private.venue_contains(venue_id, lat, lng, tolerance_m)`** yalnızca service role'e açıktır ve aynı çağrıda koordinatı saklamadan karar verir:
+- **`venue_contains(venue_id, lat, lng, tolerance_m, radius_m)`** yalnızca service role'e açıktır ve aynı çağrıda koordinatı saklamadan karar verir (_adım 2 notu:_ `public` şemasında, `venue_distance_m` gibi: Edge Function'lar RPC'yi yalnızca açık şemadan çağırabilir; `authenticated`'a kapalıdır, testle korunur):
   - Sınırı olan mekanda sınıra **50 m tolerans**: `ST_DWithin(boundary, point, tolerance_m)`. Bina içinde GPS 30–50 m sapabildiği için (proje sahibi düzeltmesi).
-  - Sınırı olmayan mekanda bugünkü 300 m (`venue_distance_m`).
-  - Tolerans tek sabittir: `pure/checkin.ts` → `BOUNDARY_TOLERANCE_M = 50`. Fonksiyon onu parametre olarak alır; SQL'de sayı yazılmaz.
+  - Sınırı olmayan mekanda bugünkü 300 m (`radius_m`).
+  - Tolerans tek sabittir: `pure/checkin.ts` → `BOUNDARY_TOLERANCE_M = 50`. Fonksiyon onu (ve `CHECKIN_RADIUS_M`'yi) parametre olarak alır; SQL'de sayı yazılmaz.
 - `checkin` fonksiyonu bu kararı kullanır. Hata kodları aynıdır (`too_far`), mesaj koordinat ya da mesafe içermez.
 - **İstemci uyarısı:** Sınırı olan mekanda "Kampüsün içinde görünmüyorsun" uyarısı verilir.
   - Uyarı `pure/geo.ts` → `withinBoundary(point, polygon, BOUNDARY_TOLERANCE_M)` ile hesaplanır (poligon içi ya da kenara en fazla 50 m); saf ve testlidir. Sunucu ile aynı toleransı kullanır.
@@ -225,7 +226,8 @@ Adım 1'in parçası, OTA'dan önce:
   - Noktası olmayan mekanda `spot_id` boştur.
 - **Nokta değiştirme:**
   - `checkin/change-spot { spotId }` yeni GPS istemez; kampüsten çıkılmadı varsayılır ve masa süresi değişmez.
-  - Masa bir odadaysa ya da bekleyen bir katılma isteği varsa `in_room` döner.
+  - Masa bir odadaysa ya da bekleyen bir katılma isteği varsa `in_room` döner. Süresi dolmamış reddedilmiş istek de bekleyen sayılır (kural 5: red, süresi dolana kadar beklemeyle aynı görünür).
+  - `rooms.spot_id` oda kurulurken sahibin noktasından tetikleyiciyle kopyalanır; odadaki masa noktasını değiştiremediği için ikisi eşit kalır.
   - GPS'siz ve odada değilken serbesttir (S10, kabul).
 - **Lobi:**
   - `venue_lobby()` her açık odanın noktasını (`spot_id`, `spot_name`) döner. Ekran odaları nokta başlıklarıyla gruplar, kendi noktası en üstte.
@@ -243,7 +245,7 @@ Adım 1'in parçası, OTA'dan önce:
   - Mekanın süren ve 7 gün içindeki **bütün** etkinlikleri. Bugün en yakın tek etkinlik dönüyor; tek mekan görünümü için liste gerekir.
   - "Yeni mekanlar yakında" notu.
 - **İki ya da daha fazla aktif mekan (`'list'`):** Bugünkü liste ve harita geri gelir. İçerik değişikliğiyle kendiliğinden olur, kod değişmez. Eşik 2 aktif mekan (S9).
-- **`explore_venues()`:** Her mekan için etkinlik listesini ve sınırı döner. Kişi ya da masa sayısı yine dönmez.
+- **`explore_venues()`:** Her mekan için etkinlik listesini ve sınırı döner. Kişi ya da masa sayısı yine dönmez. _Adım 2 notu:_ `events` (jsonb, `{ title, startsAt, endsAt }`, başlangıca göre) tek etkinlik kolonlarının (`event_title`, `event_starts_at`, `event_ends_at`) yerini alır; liste ve harita ilkini gösterir. `boundary` dış halkadır (`[lng, lat]` dizisi) ya da null.
 
 ---
 
@@ -581,7 +583,7 @@ Genel testler yeni RPC'lerin de hesap id'si ve arkadaşlık öncesi `public_id` 
   - Noktası olan mekanda boş `spot_id`'li masa lobiyi "noktasız" başlığıyla görür ve `change-spot` ile nokta seçer.
 - **Mevcut hesaplar:** Açılışta profil ekranı (doğum tarihi, ad yoksa ad). Yeni onay sürümleri yeniden onay ister.
 - **Kalkan kolonlar:** `table_sessions.participation` ve `profiles.default_participation` bir sürüm okunmadan durur, sonra düşer (`…_drop_participation.sql`).
-- **İçerik:** Beylikdüzü ve test mekanları `isActive: false`. Kampüs ve noktaları `venues-campus.json`'dan.
+- **İçerik:** Beylikdüzü mekanları `isActive: false`. Kampüs ve noktaları `venues-campus.json`'dan. Test mekanı S1 gelene kadar açık (§4.1 adım 2 notu).
 
 ---
 

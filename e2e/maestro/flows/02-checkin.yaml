@@ -1,4 +1,6 @@
-# V4 (and V3's refusal): pick the venue by hand, check in from 310 m (refused), then inside.
+# V4 (and V3's refusal): pick the venue by hand, check in from outside the boundary (refused), then
+# inside at a spot. Keşfet starts with two venues (list and map), then shows the pilot's single
+# venue card once the bot closes the other venues (docs/SPEC_V3.md §4.4).
 appId: app.kabuk.mobile
 ---
 - scrollUntilVisible:
@@ -27,6 +29,19 @@ appId: app.kabuk.mobile
     visible: Buraya giriş yap
     timeout: 10000
 - takeScreenshot: 06-venue-detail
+- back
+# One active venue: the single venue card, its events and "Yeni mekanlar yakında"; no list/map.
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: single-venue
+- launchApp
+- extendedWaitUntil:
+    visible: Yeni mekanlar yakında.
+    timeout: 30000
+- assertVisible: E2E Kafe
+- assertNotVisible: Liste
+- takeScreenshot: 06b-explore-single
 - tapOn: Buraya giriş yap
 - extendedWaitUntil:
     visible: Konumumu kullan
@@ -38,16 +53,24 @@ appId: app.kabuk.mobile
     longitude: ${OUTSIDE_LNG}
 - tapOn: Konumumu kullan
 - extendedWaitUntil:
-    visible: Bu mekana çok uzaktasın. Mekandayken tekrar dene.
+    visible: Kampüsün içinde görünmüyorsun. Kampüse girince tekrar dene.
     timeout: 30000
 - takeScreenshot: 08-too-far
 - setLocation:
     latitude: ${INSIDE_LAT}
     longitude: ${INSIDE_LNG}
 - tapOn: Konumumu kullan
+# "Neredesin?": the venue's spots, before the headcount.
+- extendedWaitUntil:
+    visible: Neredesin\?
+    timeout: 30000
+- takeScreenshot: 08b-spot
+- tapOn:
+    id: spot-kantin
+- tapOn: Devam
 - extendedWaitUntil:
     visible: Masada kaç kişisiniz\?
-    timeout: 30000
+    timeout: 15000
 # The name comes from sign-up (docs/SPEC_V3.md §3): joining with the profile is available.
 - assertNotVisible: Profille katılmak için önce Profil sekmesinden bir ad seç.
 - takeScreenshot: 09-headcount
@@ -62,4 +85,5 @@ appId: app.kabuk.mobile
 - extendedWaitUntil:
     visible: Oda kur
     timeout: 15000
+- assertVisible: 'Noktan: Kantin'
 - takeScreenshot: 11-venue

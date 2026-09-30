@@ -9,6 +9,10 @@ export type ErrorCode =
   | 'venue_not_found'
   | 'too_far'
   | 'alias_exhausted'
+  | 'spot_required'
+  | 'spot_invalid'
+  | 'different_spot'
+  | 'in_room'
   | 'no_active_table'
   | 'already_in_room'
   | 'room_not_available'
@@ -75,6 +79,10 @@ export function isApiErrorBody(value: unknown): value is ApiErrorBody {
 export const DOMAIN_ERROR_CODES: readonly ErrorCode[] = [
   'no_active_table',
   'already_in_room',
+  'spot_required',
+  'spot_invalid',
+  'different_spot',
+  'in_room',
   'room_not_available',
   'request_pending',
   'rate_limited',

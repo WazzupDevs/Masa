@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import { CHECKIN_RADIUS_M } from './checkin.ts';
-import { activityBucket, describeEventTime, distanceMeters, isActivityBucket } from './explore.ts';
+import {
+  activityBucket,
+  describeEventTime,
+  distanceMeters,
+  exploreLayout,
+  isActivityBucket,
+} from './explore.ts';
 
 describe('activityBucket', () => {
   it('shows 0–2 active tables as calm, so a single table cannot be inferred', () => {
@@ -61,5 +67,15 @@ describe('distanceMeters', () => {
     expect(d).toBeGreaterThan(295);
     expect(d).toBeLessThan(305);
     expect(d > CHECKIN_RADIUS_M).toBe(true);
+  });
+});
+
+describe('exploreLayout', () => {
+  it('shows a single venue card for one active venue', () => {
+    expect(exploreLayout(1)).toBe('single');
+  });
+
+  it('brings the list and the map back from two venues on, and for none', () => {
+    expect([0, 2, 3, 40].map(exploreLayout)).toEqual(['list', 'list', 'list', 'list']);
   });
 });

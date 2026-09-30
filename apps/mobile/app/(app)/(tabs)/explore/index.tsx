@@ -1,3 +1,4 @@
+import { exploreLayout } from '@shared/explore.ts';
 import { hasActiveTable } from '@shared/navigation.ts';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
@@ -5,12 +6,14 @@ import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
 import { ListRow } from '@/components/ListRow';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { TAB_BAR_HEIGHT } from '@/components/TabBar';
 import { Segmented } from '@/components/Segmented';
 import { Text } from '@/components/Text';
+import { useCheckinDraft } from '@/features/checkin/draft';
 import { useActiveTable } from '@/features/checkin/useActiveTable';
 import { ExploreMap } from '@/features/explore/ExploreMap';
 import { type ExploreVenue, useExploreVenues } from '@/features/explore/useExploreVenues';
@@ -25,7 +28,8 @@ type View_ = 'list' | 'map';
 const BUCKET_ORDER = { buzzing: 0, lively: 1, calm: 2 } as const;
 
 // Keşfet (docs/SPEC_V2.md §4): every venue, livelier ones first, as a list or on a map. The venue
-// is chosen by hand; check-in then verifies the position.
+// is chosen by hand; check-in then verifies the position. With one active venue (the campus pilot)
+// it is a single venue card with all its events and no list/map switch (docs/SPEC_V3.md §4.4).
 export default function ExploreScreen() {
   const { colors, shape } = useTheme();
   const table = useActiveTable();
@@ -35,9 +39,11 @@ export default function ExploreScreen() {
   // The map lies under the header; its opening camera keeps the venues below it.
   const [headerHeight, setHeaderHeight] = useState(0);
 
+  const layout = venues.isSuccess ? exploreLayout(venues.data.length) : 'list';
+
   useEffect(() => {
-    track('explore_viewed', { view });
-  }, [view]);
+    if (layout === 'list') track('explore_viewed', { view });
+  }, [layout, view]);
 
   const sorted = useMemo(
     () =>
@@ -52,7 +58,7 @@ export default function ExploreScreen() {
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.canvas }}>
       <View style={{ flex: 1 }}>
-        {venues.isSuccess && view === 'map' && headerHeight > 0 ? (
+        {venues.isSuccess && layout === 'list' && view === 'map' && headerHeight > 0 ? (
           <View style={StyleSheet.absoluteFill}>
             <ExploreMap venues={sorted} headerHeight={headerHeight} tabBarHeight={TAB_BAR_HEIGHT} />
           </View>
@@ -65,15 +71,17 @@ export default function ExploreScreen() {
           <ScreenHeader
             title={tr.tabs.explore}
             trailing={
-              <Segmented
-                accessibilityLabel={tr.explore.viewSwitch}
-                value={view}
-                onChange={setView}
-                options={[
-                  { value: 'list', label: tr.explore.views.list, icon: 'list' },
-                  { value: 'map', label: tr.explore.views.map, icon: 'map-outline' },
-                ]}
-              />
+              layout === 'single' ? undefined : (
+                <Segmented
+                  accessibilityLabel={tr.explore.viewSwitch}
+                  value={view}
+                  onChange={setView}
+                  options={[
+                    { value: 'list', label: tr.explore.views.list, icon: 'list' },
+                    { value: 'map', label: tr.explore.views.map, icon: 'map-outline' },
+                  ]}
+                />
+              )
             }
           />
           {active ? (
@@ -94,7 +102,12 @@ export default function ExploreScreen() {
           </View>
         ) : null}
 
-        {venues.isSuccess && view === 'list' ? <VenueList venues={sorted} /> : null}
+        {venues.isSuccess && layout === 'list' && view === 'list' ? (
+          <VenueList venues={sorted} />
+        ) : null}
+        {venues.isSuccess && layout === 'single' && sorted[0] ? (
+          <SingleVenue venue={sorted[0]} />
+        ) : null}
       </View>
     </SafeAreaView>
   );
@@ -142,5 +155,63 @@ function VenueList({ venues }: { venues: readonly ExploreVenue[] }) {
         </Text>
       </ScrollView>
     </View>
+  );
+}
+
+// The pilot's Keşfet: the one venue, its bucket, all its events within the week and check-in, then
+// "Yeni mekanlar yakında". A second active venue brings the list and the map back (content only).
+function SingleVenue({ venue }: { venue: ExploreVenue }) {
+  const { shape } = useTheme();
+  const setVenue = useCheckinDraft((s) => s.setVenue);
+  return (
+    <ScrollView
+      contentContainerStyle={{ paddingHorizontal: shape.screenPadding }}
+      contentContainerClassName="gap-4 pb-8 pt-2"
+    >
+      <Card>
+        <Text variant="heading" accessibilityRole="header">
+          {venue.name}
+        </Text>
+        <Text variant="fine" className="mt-0.5">
+          {venue.district}
+        </Text>
+        <View className="mt-3 flex-row flex-wrap gap-1.5">
+          <BucketBadge bucket={venue.bucket} />
+        </View>
+        <View className="mt-4">
+          <Button
+            label={tr.explore.checkInHere}
+            icon="location-outline"
+            onPress={() => {
+              setVenue({
+                id: venue.id,
+                name: venue.name,
+                lat: venue.lat,
+                lng: venue.lng,
+                boundary: venue.boundary,
+              });
+              router.push('/checkin');
+            }}
+          />
+        </View>
+      </Card>
+      <View className="gap-2">
+        <Text variant="label" accessibilityRole="header">
+          {tr.explore.eventsTitle}
+        </Text>
+        {venue.events.length === 0 ? (
+          <Text variant="fine">{tr.explore.noEvents}</Text>
+        ) : (
+          <View className="flex-row flex-wrap gap-1.5">
+            {venue.events.map((event) => (
+              <EventTag key={`${event.startsAt}-${event.title}`} event={event} />
+            ))}
+          </View>
+        )}
+      </View>
+      <Card tone="note">
+        <Text variant="fine">{tr.explore.comingSoon}</Text>
+      </Card>
+    </ScrollView>
   );
 }

@@ -755,6 +755,7 @@ export type Database = {
           reveal_ends_at: string | null;
           reveal_result: string | null;
           reveal_token: Json | null;
+          spot_id: string | null;
           status: string;
           venue_id: string;
           visibility: string;
@@ -777,6 +778,7 @@ export type Database = {
           reveal_ends_at?: string | null;
           reveal_result?: string | null;
           reveal_token?: Json | null;
+          spot_id?: string | null;
           status?: string;
           venue_id: string;
           visibility: string;
@@ -799,6 +801,7 @@ export type Database = {
           reveal_ends_at?: string | null;
           reveal_result?: string | null;
           reveal_token?: Json | null;
+          spot_id?: string | null;
           status?: string;
           venue_id?: string;
           visibility?: string;
@@ -820,6 +823,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'rooms_spot_id_fkey';
+            columns: ['spot_id'];
+            isOneToOne: false;
+            referencedRelation: 'venue_spots';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'rooms_venue_id_fkey';
             columns: ['venue_id'];
             isOneToOne: false;
@@ -838,6 +848,7 @@ export type Database = {
           headcount: number;
           id: string;
           participation: string;
+          spot_id: string | null;
           status: string;
           user_id: string;
           venue_id: string;
@@ -851,6 +862,7 @@ export type Database = {
           headcount: number;
           id?: string;
           participation?: string;
+          spot_id?: string | null;
           status?: string;
           user_id: string;
           venue_id: string;
@@ -864,11 +876,19 @@ export type Database = {
           headcount?: number;
           id?: string;
           participation?: string;
+          spot_id?: string | null;
           status?: string;
           user_id?: string;
           venue_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'table_sessions_spot_id_fkey';
+            columns: ['spot_id'];
+            isOneToOne: false;
+            referencedRelation: 'venue_spots';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'table_sessions_venue_id_fkey';
             columns: ['venue_id'];
@@ -1006,8 +1026,44 @@ export type Database = {
           },
         ];
       };
+      venue_spots: {
+        Row: {
+          id: string;
+          is_active: boolean;
+          name: string;
+          ref: string;
+          sort: number;
+          venue_id: string;
+        };
+        Insert: {
+          id?: string;
+          is_active?: boolean;
+          name: string;
+          ref: string;
+          sort?: number;
+          venue_id: string;
+        };
+        Update: {
+          id?: string;
+          is_active?: boolean;
+          name?: string;
+          ref?: string;
+          sort?: number;
+          venue_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'venue_spots_venue_id_fkey';
+            columns: ['venue_id'];
+            isOneToOne: false;
+            referencedRelation: 'venues';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       venues: {
         Row: {
+          boundary: unknown;
           city: string;
           district: string;
           id: string;
@@ -1018,6 +1074,7 @@ export type Database = {
           source_ref: string;
         };
         Insert: {
+          boundary?: unknown;
           city: string;
           district: string;
           id?: string;
@@ -1028,6 +1085,7 @@ export type Database = {
           source_ref: string;
         };
         Update: {
+          boundary?: unknown;
           city?: string;
           district?: string;
           id?: string;
@@ -1061,6 +1119,29 @@ export type Database = {
       };
     };
     Functions: {
+      change_table_spot: {
+        Args: { target_spot_id: string; target_user_id: string };
+        Returns: {
+          alias: string;
+          created_at: string;
+          ended_at: string | null;
+          expires_at: string;
+          gps_accuracy_m: number | null;
+          headcount: number;
+          id: string;
+          participation: string;
+          spot_id: string | null;
+          status: string;
+          user_id: string;
+          venue_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'table_sessions';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       chat_send: {
         Args: {
           min_interval_ms: number;
@@ -1109,11 +1190,10 @@ export type Database = {
       explore_venues: {
         Args: { event_days?: number };
         Returns: {
+          boundary: Json;
           bucket: string;
           district: string;
-          event_ends_at: string;
-          event_starts_at: string;
-          event_title: string;
+          events: Json;
           lat: number;
           lng: number;
           name: string;
@@ -1241,6 +1321,7 @@ export type Database = {
           reveal_ends_at: string | null;
           reveal_result: string | null;
           reveal_token: Json | null;
+          spot_id: string | null;
           status: string;
           venue_id: string;
           visibility: string;
@@ -1281,6 +1362,7 @@ export type Database = {
           reveal_ends_at: string | null;
           reveal_result: string | null;
           reveal_token: Json | null;
+          spot_id: string | null;
           status: string;
           venue_id: string;
           visibility: string;
@@ -1312,6 +1394,7 @@ export type Database = {
           reveal_ends_at: string | null;
           reveal_result: string | null;
           reveal_token: Json | null;
+          spot_id: string | null;
           status: string;
           venue_id: string;
           visibility: string;
@@ -1343,6 +1426,7 @@ export type Database = {
           reveal_ends_at: string | null;
           reveal_result: string | null;
           reveal_token: Json | null;
+          spot_id: string | null;
           status: string;
           venue_id: string;
           visibility: string;
@@ -1426,6 +1510,7 @@ export type Database = {
           reveal_ends_at: string | null;
           reveal_result: string | null;
           reveal_token: Json | null;
+          spot_id: string | null;
           status: string;
           venue_id: string;
           visibility: string;
@@ -1519,6 +1604,7 @@ export type Database = {
           reveal_ends_at: string | null;
           reveal_result: string | null;
           reveal_token: Json | null;
+          spot_id: string | null;
           status: string;
           venue_id: string;
           visibility: string;
@@ -1538,6 +1624,7 @@ export type Database = {
           new_alias: string;
           new_headcount: number;
           new_participation?: string;
+          new_spot_id?: string;
           target_user_id: string;
           target_venue_id: string;
         };
@@ -1550,6 +1637,7 @@ export type Database = {
           headcount: number;
           id: string;
           participation: string;
+          spot_id: string | null;
           status: string;
           user_id: string;
           venue_id: string;
@@ -1580,6 +1668,7 @@ export type Database = {
           reveal_ends_at: string | null;
           reveal_result: string | null;
           reveal_token: Json | null;
+          spot_id: string | null;
           status: string;
           venue_id: string;
           visibility: string;
@@ -1628,6 +1717,7 @@ export type Database = {
           reveal_ends_at: string | null;
           reveal_result: string | null;
           reveal_token: Json | null;
+          spot_id: string | null;
           status: string;
           venue_id: string;
           visibility: string;
@@ -1666,6 +1756,7 @@ export type Database = {
           reveal_ends_at: string | null;
           reveal_result: string | null;
           reveal_token: Json | null;
+          spot_id: string | null;
           status: string;
           venue_id: string;
           visibility: string;
@@ -1695,6 +1786,16 @@ export type Database = {
           voice_tabu_wins: number;
         }[];
       };
+      venue_contains: {
+        Args: {
+          lat: number;
+          lng: number;
+          radius_m: number;
+          target_venue_id: string;
+          tolerance_m: number;
+        };
+        Returns: boolean;
+      };
       venue_distance_m: {
         Args: { lat: number; lng: number; target_venue_id: string };
         Returns: number;
@@ -1707,6 +1808,8 @@ export type Database = {
           headcount: number;
           profiled: boolean;
           room_id: string;
+          spot_id: string;
+          spot_name: string;
           waiting_since: string;
         }[];
       };
