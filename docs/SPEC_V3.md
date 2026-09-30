@@ -54,8 +54,7 @@ Bu belge, Sakarya Üniversitesi pilotuna çıkacak **Kabuk v1**'in ürün kararl
   - Her yanıt `Content-Type: application/json` olmalıdır.
   - HTTP hook birkaç saniyelik süre sınırıyla çalışır (belgedeki `auth.hook_timeouts.http_hooks`).
 - **Netgsm:** OTP servisi var (anlık gönderim, "3 dakika içinde iletilir"; kullanıcı kodu, parola ve onaylı başlık ile).
-  - Uç noktanın tam biçimi ve hata kodları bu ortamdan doğrulanamadı: `netgsm.com.tr` ağ politikasınca kapalı, yalnızca `github.com/netgsm1/otp` okunabildi.
-  - Adım 1'de Netgsm dokümanından doğrulanır ve `docs/DECISIONS.md`'ye kaynağıyla yazılır.
+  - Adım 1'de resmi Netgsm OTP paketiyle (`github.com/netgsm1/otp`, `src/otp.php`) karşılaştırıldı: adres, XML alanları, `text/xml`, yanıt ve belgelenen kodlar (`docs/DECISIONS.md`). Gerçek gönderim denemesi hesap açılınca yapılacak.
 
 ### 2.2 Tasarım
 
@@ -90,7 +89,9 @@ Netgsm hazır olunca, önce dev projesinde, sonra üretimde:
 1. **Netgsm:**
    - Hesap ve OTP servisi yetkisi alınır.
    - SMS başlığı (gönderici adı, ör. `KABUK`) onaylatılır.
-   - API için bir alt kullanıcı açılır. Edge Function'ların sabit IP'si olmadığı için API'de IP kısıtı **kapalı** olmalıdır; Netgsm bunu zorunlu tutarsa uygulama durur ve sorulur.
+   - Hesapta **OTP SMS paketi** tanımlı olmalıdır; yoksa Netgsm kod 60 döner ve kod gitmez.
+   - API için bir alt kullanıcı açılır. Edge Function'ların sabit IP'si olmadığı için API alt kullanıcısında IP kısıtı **olmamalıdır**; varsa Netgsm kod 30 döner. Netgsm bunu zorunlu tutarsa uygulama durur ve sorulur.
+   - Gönderim sınırı dakikada 100 sorgudur (aşımda kod 80; kanca Supabase'e yeniden dene yanıtı verir). Supabase'in saatlik 100 SMS sınırı bunun altında kalır.
 2. **Sırlar:** Değerler kabukta verilir, hiçbir dosyaya yazılmaz:
    ```
    pnpm supabase secrets set SMS_PROVIDER=netgsm NETGSM_USERCODE=… NETGSM_PASSWORD=… NETGSM_HEADER=…

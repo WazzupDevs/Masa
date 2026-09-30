@@ -49,7 +49,8 @@ async function sendNetgsm(e164: string, message: string): Promise<SendOutcome> {
   try {
     const response = await fetch(NETGSM_OTP_URL, {
       method: 'POST',
-      headers: { 'content-type': 'application/xml; charset=utf-8' },
+      // As the official Netgsm OTP client sends it.
+      headers: { 'content-type': 'text/xml' },
       body: netgsmOtpBody({ usercode, password, header }, e164, message),
       signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
     });

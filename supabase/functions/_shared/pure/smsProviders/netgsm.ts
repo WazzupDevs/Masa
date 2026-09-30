@@ -1,10 +1,14 @@
 // Netgsm OTP service adapter (docs/SPEC_V3.md §2.2): the request body and the reading of the
 // answer. The network call is in the sms function.
 //
-// NOT YET VERIFIED against Netgsm's documentation (netgsm.com.tr is not reachable from the
-// development environment). The endpoint, XML shape and codes below follow Netgsm's public OTP
-// examples; before the hook is enabled they are checked against https://www.netgsm.com.tr/dokuman
-// (docs/DECISIONS.md → "SMS: Send SMS Hook"). The hook stays disabled until then.
+// Compared with the official Netgsm OTP package (github.com/netgsm1/otp, src/otp.php): endpoint,
+// XML fields (usercode, password, msgheader, msg, no) and the answer (<main> with <code> and
+// <jobID>). A real send is tried once the account is open; the hook stays disabled until then
+// (docs/DECISIONS.md → "SMS: Send SMS Hook").
+//
+// Documented codes: 0 sent (with jobID); 20 message text or length; 30 username/password, API
+// permission or IP restriction; 40, 41 sender name; 50 number; 60 no OTP SMS package on the
+// account; 70 input parameters; 80 query limit (100 per minute); 100 system error.
 import type { SendOutcome } from '../sms.ts';
 
 export const NETGSM_OTP_URL = 'https://api.netgsm.com.tr/sms/send/otp';
@@ -42,9 +46,9 @@ export function netgsmOtpBody(creds: NetgsmCredentials, e164: string, message: s
   ].join('');
 }
 
-// Codes that mean "try again later": query limit and system errors. Everything else that is not
+// Codes that mean "try again later": the query limit (80) and a system error (100). Everything else that is not
 // success is a setup or input problem that a retry does not fix.
-const RETRY_CODES = new Set(['80', '100', '101']);
+const RETRY_CODES = new Set(['80', '100']);
 
 // The <code> of the answer, or null if the answer is not the expected XML.
 export function netgsmResultCode(responseText: string): string | null {

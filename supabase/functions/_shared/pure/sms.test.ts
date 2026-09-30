@@ -53,6 +53,10 @@ describe('netgsm', () => {
     expect(netgsmOutcome(200, '<xml><main><code>30</code></main></xml>')).toBe('failed');
     expect(netgsmOutcome(200, '<xml><main><code>80</code></main></xml>')).toBe('retry');
     expect(netgsmOutcome(200, '<xml><main><code>100</code></main></xml>')).toBe('retry');
+    // Setup problems a retry cannot fix: no OTP package, credentials or IP restriction, sender.
+    for (const code of ['20', '30', '40', '41', '50', '60', '70', '101']) {
+      expect(netgsmOutcome(200, `<xml><main><code>${code}</code></main></xml>`)).toBe('failed');
+    }
     expect(netgsmOutcome(200, 'garbage')).toBe('retry');
     expect(netgsmOutcome(503, '')).toBe('retry');
     expect(netgsmOutcome(403, '')).toBe('failed');
