@@ -83,16 +83,19 @@ export function parseVenuesFile(json: unknown): VenuesFile {
 }
 
 // content/venues-test.json: hand-entered venues for field tests (source 'test'). Only `ref`, `name`,
-// `lat` and `lng` are required; an empty list (or no file) adds nothing to the seed.
-export function parseTestVenues(json: unknown): VenueRecord[] {
+// `lat` and `lng` are required; an empty list (or no file) adds nothing to the seed. Optional
+// `spots` as in venues-campus.json, for trying spots on a device (the venue keeps its 300 m radius).
+export type TestVenue = VenueRecord & { spots: CampusSpot[] };
+
+export function parseTestVenues(json: unknown): TestVenue[] {
   if (!isRecord(json) || !Array.isArray(json.venues)) {
     throw new Error('venues-test.json must have a venues list');
   }
   const venues = json.venues.map((value: unknown, i: number) => {
     const where = `venues-test.json venues[${i}]`;
     if (!isRecord(value)) throw new Error(`${where} must be an object`);
-    const { ref, name, city = 'İstanbul', district = 'Test', isActive = true } = value;
-    return parseVenue(
+    const { ref, name, city = 'İstanbul', district = 'Test', isActive = true, spots = [] } = value;
+    const venue = parseVenue(
       {
         name,
         city,
@@ -106,6 +109,7 @@ export function parseTestVenues(json: unknown): VenueRecord[] {
       },
       i,
     );
+    return { ...venue, spots: parseSpots(spots, `${where}.spots`) };
   });
   if (new Set(venues.map((v) => v.sourceRef)).size !== venues.length) {
     throw new Error('venues-test.json has duplicate refs');
@@ -170,6 +174,16 @@ function parseSpot(value: unknown, where: string): CampusSpot {
   return { ref, name, isActive };
 }
 
+// A spot list: well-formed, unique refs.
+function parseSpots(value: unknown, where: string): CampusSpot[] {
+  if (!Array.isArray(value)) throw new Error(`${where} must be a list`);
+  const spots = value.map((s: unknown, j: number) => parseSpot(s, `${where}[${j}]`));
+  if (new Set(spots.map((s) => s.ref)).size !== spots.length) {
+    throw new Error(`${where} has duplicate refs`);
+  }
+  return spots;
+}
+
 export function parseCampusVenues(json: unknown): CampusVenue[] {
   if (!isRecord(json) || !Array.isArray(json.venues)) {
     throw new Error('venues-campus.json must have a venues list');
@@ -189,13 +203,8 @@ export function parseCampusVenues(json: unknown): CampusVenue[] {
     if (!Array.isArray(boundary)) throw new Error(`${where}.boundary must be a list`);
     const problem = validateRing(boundary);
     if (problem) throw new Error(`${where}.boundary: ${problem}`);
-    if (!Array.isArray(spots) || spots.length === 0) {
-      throw new Error(`${where}.spots must list at least one spot`);
-    }
-    const parsed = spots.map((s: unknown, j: number) => parseSpot(s, `${where}.spots[${j}]`));
-    if (new Set(parsed.map((s) => s.ref)).size !== parsed.length) {
-      throw new Error(`${where}.spots has duplicate refs`);
-    }
+    const parsed = parseSpots(spots, `${where}.spots`);
+    if (parsed.length === 0) throw new Error(`${where}.spots must list at least one spot`);
     return {
       ref,
       name: name as string,
