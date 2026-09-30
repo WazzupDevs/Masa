@@ -1,5 +1,13 @@
 import type { Database } from '@shared/database.ts';
-import { BROADCAST, type RequesterStatus, sessionChannel, venueChannel } from '@shared/rooms.ts';
+import {
+  BROADCAST,
+  type RequesterStatus,
+  ROOM_CHECK_COLUMNS,
+  ROOM_CHECK_SECONDS,
+  roomCheckDiffers,
+  sessionChannel,
+  venueChannel,
+} from '@shared/rooms.ts';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
@@ -16,6 +24,7 @@ export const roomKeys = {
   myRequest: ['myRequest'] as const,
   incoming: (roomId: string) => ['incomingRequests', roomId] as const,
   room: (roomId: string) => ['room', roomId] as const,
+  roomCheck: (roomId: string) => ['roomCheck', roomId] as const,
 };
 
 // The open room the table is in, as owner or guest (RLS: members only). An 'ending' room does
@@ -52,10 +61,17 @@ export function useRoom(roomId: string) {
     },
   });
 
+  const reread = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: roomKeys.room(roomId) });
+    void queryClient.invalidateQueries({ queryKey: roomKeys.current });
+  }, [queryClient, roomId]);
+
   // Postgres Changes on this room (RLS applies). The new row is used as it arrives, without a
   // second round trip (the other table's Tabu press shows up at once); a delete or an empty
   // payload refetches. The table's current room is refetched too: a room that left
   // 'waiting'/'active' must not send the home screen back into it from cache.
+  // Realtime delivers a change only while the channel is subscribed and never replays it, so every
+  // (re)subscribe (first join, reconnect after the background or a network drop) re-reads the room.
   useChannel<RoomRow | null>(
     `room:${roomId}`,
     (emit) => ({
@@ -65,13 +81,39 @@ export function useRoom(roomId: string) {
         (payload: { new?: Partial<RoomRow> }) =>
           emit(payload.new && payload.new.id === roomId ? (payload.new as RoomRow) : null),
       ),
+      onStatus: (status) => {
+        if (status === 'SUBSCRIBED') emit(null);
+      },
     }),
     (row) => {
-      if (row) queryClient.setQueryData(roomKeys.room(roomId), row);
-      else void queryClient.invalidateQueries({ queryKey: roomKeys.room(roomId) });
-      void queryClient.invalidateQueries({ queryKey: roomKeys.current });
+      if (row) {
+        queryClient.setQueryData(roomKeys.room(roomId), row);
+        void queryClient.invalidateQueries({ queryKey: roomKeys.current });
+      } else reread();
     },
   );
+
+  // Status check (@shared/rooms.ts): every few seconds and when the app comes to the foreground,
+  // the few columns that decide what the screen shows; the full row is read again only when they
+  // differ, so a check never overwrites a newer row from the channel. During the reveal window the
+  // row does not change until reveal_ends_at (rule 5), so the check shows nothing early either.
+  useQuery({
+    queryKey: roomKeys.roomCheck(roomId),
+    enabled: query.isSuccess,
+    refetchInterval: ROOM_CHECK_SECONDS * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('rooms')
+        .select(ROOM_CHECK_COLUMNS)
+        .eq('id', roomId)
+        .maybeSingle();
+      if (error) throw error;
+      if (roomCheckDiffers(queryClient.getQueryData<RoomRow | null>(roomKeys.room(roomId)), data)) {
+        reread();
+      }
+      return data;
+    },
+  });
 
   return query;
 }

@@ -1,13 +1,14 @@
 import { hasActiveTable } from '@shared/navigation.ts';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
 import { EmptyState } from '@/components/EmptyState';
 import { ListRow } from '@/components/ListRow';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { TAB_BAR_HEIGHT } from '@/components/TabBar';
 import { Segmented } from '@/components/Segmented';
 import { Text } from '@/components/Text';
 import { useActiveTable } from '@/features/checkin/useActiveTable';
@@ -31,6 +32,8 @@ export default function ExploreScreen() {
   const now = useNow(30_000);
   const venues = useExploreVenues();
   const [view, setView] = useState<View_>('list');
+  // The map lies under the header; its opening camera keeps the venues below it.
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   useEffect(() => {
     track('explore_viewed', { view });
@@ -48,41 +51,51 @@ export default function ExploreScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.canvas }}>
-      <View style={{ paddingHorizontal: shape.screenPadding }} className="pb-2.5 pt-3">
-        <ScreenHeader
-          title={tr.tabs.explore}
-          trailing={
-            <Segmented
-              accessibilityLabel={tr.explore.viewSwitch}
-              value={view}
-              onChange={setView}
-              options={[
-                { value: 'list', label: tr.explore.views.list, icon: 'list' },
-                { value: 'map', label: tr.explore.views.map, icon: 'map-outline' },
-              ]}
-            />
-          }
-        />
-        {active ? (
-          <View className="mt-2">
-            <Button label={tr.explore.backToVenue} onPress={() => router.navigate('/venue')} />
+      <View style={{ flex: 1 }}>
+        {venues.isSuccess && view === 'map' && headerHeight > 0 ? (
+          <View style={StyleSheet.absoluteFill}>
+            <ExploreMap venues={sorted} headerHeight={headerHeight} tabBarHeight={TAB_BAR_HEIGHT} />
           </View>
         ) : null}
-      </View>
-
-      {venues.isPending ? <ActivityIndicator className="mt-8" color={colors.muted} /> : null}
-      {venues.isError ? (
-        <View style={{ paddingHorizontal: shape.screenPadding }}>
-          <EmptyState
-            icon="cloud-offline-outline"
-            body={tr.common.genericError}
-            action={{ label: tr.checkin.retry, onPress: () => void venues.refetch() }}
+        <View
+          onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
+          style={{ paddingHorizontal: shape.screenPadding, backgroundColor: colors.canvas }}
+          className="pb-2.5 pt-3"
+        >
+          <ScreenHeader
+            title={tr.tabs.explore}
+            trailing={
+              <Segmented
+                accessibilityLabel={tr.explore.viewSwitch}
+                value={view}
+                onChange={setView}
+                options={[
+                  { value: 'list', label: tr.explore.views.list, icon: 'list' },
+                  { value: 'map', label: tr.explore.views.map, icon: 'map-outline' },
+                ]}
+              />
+            }
           />
+          {active ? (
+            <View className="mt-2">
+              <Button label={tr.explore.backToVenue} onPress={() => router.navigate('/venue')} />
+            </View>
+          ) : null}
         </View>
-      ) : null}
 
-      {venues.isSuccess && view === 'map' ? <ExploreMap venues={sorted} /> : null}
-      {venues.isSuccess && view === 'list' ? <VenueList venues={sorted} /> : null}
+        {venues.isPending ? <ActivityIndicator className="mt-8" color={colors.muted} /> : null}
+        {venues.isError ? (
+          <View style={{ paddingHorizontal: shape.screenPadding }}>
+            <EmptyState
+              icon="cloud-offline-outline"
+              body={tr.common.genericError}
+              action={{ label: tr.checkin.retry, onPress: () => void venues.refetch() }}
+            />
+          </View>
+        ) : null}
+
+        {venues.isSuccess && view === 'list' ? <VenueList venues={sorted} /> : null}
+      </View>
     </SafeAreaView>
   );
 }

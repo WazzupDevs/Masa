@@ -132,6 +132,8 @@ export const tr = {
     count: (n: number) => `${n} mekan`,
     locationHidden: 'Konumun gösterilmez',
     viewSwitch: 'Görünüm',
+    mapLabel: 'Mekan haritası. Bir mekana dokununca altta kartı açılır.',
+    goToVenue: 'Mekana git',
     notFound: 'Bu mekan artık listede değil.',
     back: 'Geri dön',
     checkInHint:

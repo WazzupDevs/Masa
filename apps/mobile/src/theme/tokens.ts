@@ -183,6 +183,24 @@ export const ICON = { xs: 12, sm: 16, md: 20, lg: 24, xl: 28 } as const;
 // Minimum touch target (WCAG 2.5.8 is 24; the mockups and Android guidance use 44–48).
 export const TOUCH = { min: 44, button: 48, tab: 56, large: 64 } as const;
 
+// Keşfet map pins, drawn by MapLibre GL layers (sizes in points). Placeholder until the design
+// session's pin image; colours come from the palette. MAP_FONTS must be font stacks served by the
+// map style's glyph server (OpenFreeMap "liberty" serves Noto Sans), not the app's fonts.
+export const MAP_PIN = {
+  radius: 14,
+  ring: 3,
+  outline: 2,
+  eventDot: 6,
+  eventOffset: 12,
+  clusterRadius: [18, 22, 26],
+  clusterSteps: [10, 30],
+  labelSize: 12,
+  countSize: 14,
+  labelOffset: 1.4,
+  labelHalo: 2,
+} as const;
+export const MAP_FONTS = { regular: ['Noto Sans Regular'], bold: ['Noto Sans Bold'] } as const;
+
 // Type sizes from directions.html; the theme overrides what differs.
 export function baseTypography(overrides: Partial<Typography> = {}): Typography {
   return {
