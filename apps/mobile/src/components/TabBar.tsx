@@ -167,14 +167,15 @@ export function TabBar({ state, descriptors, navigation, insets, raised }: Props
               </View>
             );
           } else {
+            // As high as the Mekan disc, so every label sits on the same line.
             glyph = (
-              <View>
+              <View style={{ height: VENUE_DISC, justifyContent: 'center' }}>
                 {options.tabBarIcon?.({ focused, color, size: ICON.lg })}
                 {badge !== undefined ? (
                   <View
                     className="absolute items-center justify-center"
                     style={{
-                      top: -SPACING[1],
+                      top: SPACING[1],
                       left: ICON.lg - SPACING[1.5],
                       minWidth: BADGE,
                       height: BADGE,
@@ -208,7 +209,7 @@ export function TabBar({ state, descriptors, navigation, insets, raised }: Props
                 height: TAB_BAR_HEIGHT,
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: isVenue ? 0 : SPACING[0.5],
+                gap: 0,
               }}
             >
               {glyph}

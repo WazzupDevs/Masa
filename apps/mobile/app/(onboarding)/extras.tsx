@@ -59,23 +59,30 @@ export default function ExtrasScreen() {
       <ScreenHeader title={tr.signup.extrasTitle} subtitle={tr.signup.extrasBody} />
       <View className="mt-6 gap-6">
         <View className="gap-3">
-          <View className="items-center">
-            <ProfilePhoto url={view.data?.photoUrl ?? null} name={own.data?.display_name} />
+          {/* The preview beside the two buttons keeps the whole step on one screen. */}
+          <View className="flex-row items-center gap-4">
+            <ProfilePhoto
+              size="medium"
+              url={view.data?.photoUrl ?? null}
+              name={own.data?.display_name}
+            />
+            <View className="flex-1 gap-3">
+              <Button
+                variant="secondary"
+                icon="image-outline"
+                label={tr.profile.photoFromLibrary}
+                onPress={() => photo.mutate('library')}
+                disabled={photo.isPending}
+              />
+              <Button
+                variant="secondary"
+                icon="camera-outline"
+                label={tr.profile.photoFromCamera}
+                onPress={() => photo.mutate('camera')}
+                disabled={photo.isPending}
+              />
+            </View>
           </View>
-          <Button
-            variant="secondary"
-            icon="image-outline"
-            label={tr.profile.photoFromLibrary}
-            onPress={() => photo.mutate('library')}
-            disabled={photo.isPending}
-          />
-          <Button
-            variant="secondary"
-            icon="camera-outline"
-            label={tr.profile.photoFromCamera}
-            onPress={() => photo.mutate('camera')}
-            disabled={photo.isPending}
-          />
           <Text variant="fine">{tr.profile.photoPrivacy}</Text>
           {photo.isError ? (
             <Text variant="fine" tone="danger">
@@ -94,7 +101,6 @@ export default function ExtrasScreen() {
           onChangeText={setBio}
           maxLength={BIO_MAX}
           multiline
-          tall
         />
       </View>
       {finish.isError ? (
