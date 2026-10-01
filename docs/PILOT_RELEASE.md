@@ -50,9 +50,9 @@ Gerçek poligon ve nokta adları (S1) geldikten sonra. Bu adım bir PR'dır: mai
    pnpm test
    ```
 
-   `pnpm seed` hatalı poligonu (kendini kesen, açık, saat yönünde) ve tekrar eden nokta `ref`'ini reddeder.
+   `pnpm seed` hatalı poligonu (kendini kesen, açık, saat yönünde) ve tekrar eden nokta `ref`'ini reddeder. İçerik değiştiyse `supabase\seeds\` altında yeni adlı tek bir `content-<id>.sql` yazar ve eskisini siler. Adın değişmesi şart: Supabase CLI aynı yoldaki seed'i barındırılan projede bir kez çalıştırır, içerik değişse de yalnızca hash'i günceller (`CLAUDE.md` → `pnpm seed`). Dosyayı elle düzenleme.
 
-4. `supabase\seed.sql` değişikliğiyle PR aç, `ci` yeşil olunca birleştir. Sonra repo kökünde `git checkout main` ve `git pull`.
+4. `supabase\seeds\` değişikliğiyle (eski dosya silindi, yenisi eklendi) PR aç, `ci` yeşil olunca birleştir. Sonra repo kökünde `git checkout main` ve `git pull`.
 
 ## 2. Üretim Supabase projesi (bir kez)
 
@@ -94,6 +94,7 @@ pnpm supabase functions list
 pnpm supabase migration list
 ```
 
+- `--dry-run`: seed satırında `supabase/seeds/content-<id>.sql` görünmeli. `(hash update)` yazıyorsa seed çalışmaz: dosya elle değiştirilmiştir, `pnpm seed` ile yeniden üretip PR'la birleştir.
 - `functions list`: 14 fonksiyonun hepsi `ACTIVE`.
 - `migration list`: her satırda Local ve Remote aynı.
 
