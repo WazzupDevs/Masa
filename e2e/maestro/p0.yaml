@@ -12,4 +12,5 @@ name: P0 kritik yol
 - runFlow: flows/04-room-tabu.yaml
 - runFlow: flows/05-reveal-friend-dm.yaml
 - runFlow: flows/06-white-screen.yaml
+- runFlow: flows/06b-tabu-coop.yaml
 - runFlow: flows/07-history-block.yaml

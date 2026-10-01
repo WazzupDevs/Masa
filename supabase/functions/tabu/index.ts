@@ -1,7 +1,9 @@
-// Tabu (MVP_SPEC §5.1, docs/SPEC_V2.md §8.2). One table: the deck, then the phone runs the game.
-// Two tables: face to face, server-authoritative, started by rooms/answer-game. Both tables get the turn's card list at the
-// start of the turn; every press names its card index, the server checks it and publishes the
-// room row, and a second press on the same card is ignored.
+// Tabu (MVP_SPEC §5.1, docs/SPEC_V2.md §8.2, docs/SPEC_V3.md §6). One table: the deck, then the
+// phone runs the game. Two tables: face to face, server-authoritative, started by
+// rooms/answer-game, in the mode the server sets from the headcounts. Refereed: both tables get the
+// turn's card list. Cooperative: only the describing table does (`not_describer` for the other).
+// Every press names its card index, the server checks it and publishes the room row, and a second
+// press on the same card is ignored.
 import { requireUser, serviceClient } from '../_shared/auth.ts';
 import { dbError } from '../_shared/db.ts';
 import { z } from '../_shared/deps.ts';

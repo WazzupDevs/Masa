@@ -377,6 +377,16 @@ Bugünkü iki masa sesli Tabu aynen kalır:
 - **Eylem yetkisi:** Yalnızca anlatan masa `mark` gönderir. Her eylem `{ turnNo, cardIndex }` ile idempotenttir (kural 3).
 - `game_results` iki hesaba aynı skoru `won = null` ile yazar (iş birliğinde kazanan yok). Rozetlerde "Sesli Tabu galibiyeti" yalnızca hakemli modu sayar.
 
+### 6.4 Uygulamada netleşenler (adım 4 notu)
+
+Gerekçeler `docs/DECISIONS.md` → "Tabu modları (v3 adım 4)".
+
+- Kural SQL'de `private.tabu_mode(owner, guest)`; bir test 1–4 × 1–4 için `pure/tabu.ts` → `tabuMode` ile aynı sonucu verdiğini denetler. Mod oyun başlarken (`start_voice_tabu`) yazılır; oyun sürerken kişi sayısı değişse bile değişmez.
+- `game_results.mode`: hakemli mod `'voice'` olarak kalır (rozet sayımı aynı), iş birliği `'cooperative'`. "Sesli Tabu galibiyeti" yalnızca `mode = 'voice' and won` sayar; iş birliğinde `won = null`.
+- `lastGame.scores` modun skor nesnesidir: `{ owner, guest }` ya da `{ team }`.
+- Tahmin eden masanın ekranında kapanan kartın kelimesi bu adımda gösterilmez (kelime `game_events` → `card_closed` ile o masaya okunabilir; yalnızca kapandıktan sonra). Ekran geri sayım, ortak skor ve "Anlatanı dinleyin" gösterir.
+- Yayında süren `mode: 'voice'` oyunları migration'da `refereed` olur; istemci eski adı da `refereed` okur.
+
 ---
 
 ## 7. Mekan sohbet odası

@@ -13,14 +13,16 @@ import {
   pendingAfter,
   roleOf,
   TABU,
+  tabuMode,
+  type CooperativeTabuState,
   voiceWinner,
-  type VoiceTabuState,
+  type RefereedTabuState,
 } from './tabu.ts';
 
 const now = Date.parse('2026-10-06T20:00:00Z');
-const state: VoiceTabuState = {
+const state: RefereedTabuState = {
   concept: 'tabu',
-  mode: 'voice',
+  mode: 'refereed',
   phase: 'playing',
   gameNo: 1,
   turnNo: 1,
@@ -47,6 +49,60 @@ describe('TABU rules', () => {
   });
 });
 
+describe('tabuMode (S3: per game, from the two headcounts)', () => {
+  it('is cooperative when either table is one person, refereed when both are 2+', () => {
+    expect(tabuMode(1, 1)).toBe('cooperative');
+    expect(tabuMode(1, 3)).toBe('cooperative');
+    expect(tabuMode(4, 1)).toBe('cooperative');
+    expect(tabuMode(2, 2)).toBe('refereed');
+    expect(tabuMode(3, 4)).toBe('refereed');
+  });
+});
+
+const coop: CooperativeTabuState = { ...state, mode: 'cooperative', scores: { team: 0 } };
+
+describe('cooperative mode', () => {
+  it('gives the other table the guesser role', () => {
+    expect(roleOf(coop, 'owner')).toBe('describer');
+    expect(roleOf(coop, 'guest')).toBe('guesser');
+  });
+
+  it('lets only the describing table press, all three, into one team score', () => {
+    const correct = applyMark(coop, mark(0, 'correct'), 'describer', now);
+    expect(correct).toEqual({
+      kind: 'applied',
+      state: { ...coop, scores: { team: 1 }, cardIndex: 1 },
+    });
+    const taboo = applyMark(coop, mark(0, 'taboo'), 'describer', now);
+    expect(taboo.kind === 'applied' && taboo.state.scores).toEqual({ team: -1 });
+    const pass = applyMark(coop, mark(0, 'pass'), 'describer', now);
+    expect(pass.kind === 'applied' && [pass.state.scores, pass.state.passesUsed]).toEqual([
+      { team: 0 },
+      1,
+    ]);
+    for (const result of ['correct', 'taboo', 'pass'] as const) {
+      expect(applyMark(coop, mark(0, result), 'guesser', now)).toEqual({
+        kind: 'rejected',
+        reason: 'not_describer',
+      });
+    }
+  });
+
+  it('keeps one score across turns whichever table describes', () => {
+    const second = { ...coop, turnNo: 2, describingTable: 'guest' as const, scores: { team: 3 } };
+    expect(roleOf(second, 'guest')).toBe('describer');
+    const out = applyMark(second, mark(0, 'correct', 2), 'describer', now);
+    expect(out.kind === 'applied' && out.state.scores).toEqual({ team: 4 });
+  });
+
+  it('limits passes as in the refereed mode', () => {
+    expect(applyMark({ ...coop, passesUsed: 3 }, mark(0, 'pass'), 'describer', now)).toEqual({
+      kind: 'rejected',
+      reason: 'no_passes_left',
+    });
+  });
+});
+
 describe('who may mark what', () => {
   it('Tabu only the judge, Pas only the describer, Doğru both', () => {
     expect(mayMark('judge', 'taboo')).toBe(true);
@@ -55,6 +111,9 @@ describe('who may mark what', () => {
     expect(mayMark('judge', 'pass')).toBe(false);
     expect(mayMark('describer', 'correct')).toBe(true);
     expect(mayMark('judge', 'correct')).toBe(true);
+    for (const result of ['correct', 'taboo', 'pass'] as const) {
+      expect(mayMark('guesser', result)).toBe(false);
+    }
   });
 
   it('knows each table role from the describing table', () => {
@@ -170,6 +229,15 @@ describe('parseGameState', () => {
     expect(parseGameState({ ...state, cardIndex: 'x' })).toBeNull();
   });
 
+  it('reads the cooperative state with its team score, and the old voice name as refereed', () => {
+    const parsed = parseGameState(JSON.parse(JSON.stringify(coop)));
+    expect(parsed).toEqual(coop);
+    expect(parseGameState({ ...coop, scores: { owner: 1, guest: 2 } })).toBeNull();
+    expect(parseGameState({ ...state, scores: { team: 1 } })).toBeNull();
+    expect(parseGameState({ ...state, mode: 'voice' })).toEqual(state);
+    expect(parseGameState({ ...state, mode: 'mystery' })).toBeNull();
+  });
+
   it('reads a Sohbet state and rejects anything else, the written Tabu state included', () => {
     expect(
       parseGameState({
@@ -200,10 +268,13 @@ describe('parseBetweenGames', () => {
         gameNo: 2,
         lastGame: { concept: 'tabu', scores: { owner: 4, guest: 3 } },
       }),
-    ).toEqual({ gameNo: 2, lastGame: { concept: 'tabu', scores: { owner: 4, guest: 3 } } });
+    ).toEqual({
+      gameNo: 2,
+      lastGame: { concept: 'tabu', scores: { owner: 4, guest: 3 }, teamScore: null },
+    });
     expect(parseBetweenGames({ gameNo: 1, lastGame: { concept: 'sohbet' } })).toEqual({
       gameNo: 1,
-      lastGame: { concept: 'sohbet', scores: null },
+      lastGame: { concept: 'sohbet', scores: null, teamScore: null },
     });
   });
 
@@ -216,6 +287,12 @@ describe('parseBetweenGames', () => {
     });
     expect(
       parseBetweenGames({ lastGame: { concept: 'tabu', scores: { owner: '4' } } }).lastGame,
-    ).toEqual({ concept: 'tabu', scores: null });
+    ).toEqual({ concept: 'tabu', scores: null, teamScore: null });
+    expect(
+      parseBetweenGames({ gameNo: 1, lastGame: { concept: 'tabu', scores: { team: 7 } } }),
+    ).toEqual({
+      gameNo: 1,
+      lastGame: { concept: 'tabu', scores: null, teamScore: 7 },
+    });
   });
 });

@@ -505,11 +505,15 @@ async function opponent() {
           }
           return;
         }
-        if (state?.mode !== 'voice' || state.phase !== 'playing') return;
+        if (!state?.mode || state.phase !== 'playing') return;
         if (Date.now() >= Date.parse(state.turnEndsAt ?? '')) {
           await quiet('end-turn', () => call('tabu', { action: 'end-turn', roomId: room.id }));
           return;
         }
+        // Cooperative (docs/SPEC_V3.md §6.3): only the describing table presses; the bot waits
+        // while the other table describes to it.
+        const mySide = isOwner ? 'owner' : 'guest';
+        if (state.mode === 'cooperative' && state.describingTable !== mySide) return;
         // One Doğru per card, after the card has been on the table for a few seconds.
         const card = `${room.id}/${state.gameNo}/${state.turnNo}/${state.cardIndex}`;
         const seen = firstSeen.get(card) ?? Date.now();

@@ -464,6 +464,13 @@ export const tr = {
     voiceWinner: (alias: string) => `${alias} kazandı!`,
     voiceDraw: 'Berabere!',
     cardOnlyHere: 'Kartı yalnızca bu odadaki iki masa görür.',
+    // Cooperative mode (docs/SPEC_V3.md §6.3): one team, the guessing table never sees the card.
+    coopIntro: 'Masalardan biri tek kişi: iki masa tek takım, ortak skor süreye karşı.',
+    coopDescribe: "Sıra sizde: kartı diğer masaya anlatın. Doğru, Pas ve Tabu'ya siz basarsınız.",
+    coopGuess: (alias: string) => `${alias} size anlatıyor. Anlatanı dinleyin ve tahmin edin.`,
+    coopCardHidden: 'Kartı yalnızca anlatan masa görür.',
+    teamScore: 'Ortak skor',
+    lastGameTeam: (score: number) => `Sesli Tabu bitti. Ortak skor: ${score}`,
   },
   reveal: {
     question: 'Tanışalım mı?',

@@ -17,13 +17,25 @@ export const TABU = {
 
 export type TabuCard = { word: string; forbidden: readonly string[] };
 
-// Two-table Tabu, face to face (docs/SPEC_V2.md §8.2): team = table, one score per table. The
-// card list goes to both tables through tabu/turn-cards; rooms.game_state never holds a card.
+// Two-table Tabu, face to face (docs/SPEC_V2.md §8.2, docs/SPEC_V3.md §6). The mode is set for the
+// whole game from the two headcounts (S3):
+// - refereed: team = table, one score per table; the card list goes to both tables, the other
+//   table judges.
+// - cooperative: one team, one score against the clock; only the describing table gets the card
+//   list (tabu/turn-cards answers the guessing table `not_describer`) and presses all three.
+// rooms.game_state never holds the card being played.
 export type TableSide = 'owner' | 'guest';
 
-export type VoiceTabuState = {
+export const TABU_MODES = ['refereed', 'cooperative'] as const;
+export type TabuMode = (typeof TABU_MODES)[number];
+
+// A one-person table has no teammate to guess its describer: the whole game is cooperative.
+export function tabuMode(ownerHeadcount: number, guestHeadcount: number): TabuMode {
+  return Math.min(ownerHeadcount, guestHeadcount) <= 1 ? 'cooperative' : 'refereed';
+}
+
+type TabuStateBase = {
   concept: 'tabu';
-  mode: 'voice';
   phase: 'playing' | 'finished';
   gameNo: number;
   turnNo: number;
@@ -32,26 +44,48 @@ export type VoiceTabuState = {
   cardsPerTurn: number;
   describingTable: TableSide;
   turnEndsAt: string;
-  scores: Record<TableSide, number>;
   passesUsed: number;
   maxPasses: number;
   // Index of the card being played in this turn's list.
   cardIndex: number;
 };
 
+export type RefereedTabuState = TabuStateBase & {
+  mode: 'refereed';
+  scores: Record<TableSide, number>;
+};
+
+export type CooperativeTabuState = TabuStateBase & {
+  mode: 'cooperative';
+  scores: { team: number };
+};
+
+export type VoiceTabuState = RefereedTabuState | CooperativeTabuState;
+
 export const MARK_RESULTS = ['correct', 'taboo', 'pass'] as const;
 export type MarkResult = (typeof MARK_RESULTS)[number];
-// Points for the describing table: Doğru +1, Tabu −1, Pas 0.
+// Points for the describing table (cooperative: the team): Doğru +1, Tabu −1, Pas 0.
 export const MARK_POINTS: Record<MarkResult, number> = { correct: 1, taboo: -1, pass: 0 };
 
-// A table's role in the current turn.
-export type TableRole = 'describer' | 'judge';
+// A table's role in the current turn: the other table judges (refereed) or guesses (cooperative).
+export type TableRole = 'describer' | 'judge' | 'guesser';
 
-// Tabu only the judging table, Pas only the describing table, Doğru either.
+// Refereed: Tabu only the judging table, Pas only the describing table, Doğru either.
+// Cooperative: the describing table presses all three, the guessing table none.
 export function mayMark(role: TableRole, result: MarkResult): boolean {
+  if (role === 'guesser') return false;
   if (result === 'taboo') return role === 'judge';
   if (result === 'pass') return role === 'describer';
   return true;
+}
+
+// The same, for the mode the role belongs to: a cooperative describer may also press Tabu.
+function mayMarkIn(mode: TabuMode, role: TableRole, result: MarkResult): boolean {
+  return mode === 'cooperative' ? role === 'describer' : mayMark(role, result);
+}
+
+function rejection(role: TableRole, result: MarkResult): 'not_judge' | 'not_describer' {
+  return role !== 'guesser' && result === 'taboo' ? 'not_judge' : 'not_describer';
 }
 
 export type Mark = { turnNo: number; cardIndex: number; result: MarkResult };
@@ -73,8 +107,8 @@ export function applyMark(
   now: number,
 ): MarkOutcome {
   if (state.phase !== 'playing') return { kind: 'rejected', reason: 'no_game' };
-  if (!mayMark(role, mark.result)) {
-    return { kind: 'rejected', reason: mark.result === 'taboo' ? 'not_judge' : 'not_describer' };
+  if (!mayMarkIn(state.mode, role, mark.result)) {
+    return { kind: 'rejected', reason: rejection(role, mark.result) };
   }
   if (
     mark.turnNo !== state.turnNo ||
@@ -87,15 +121,21 @@ export function applyMark(
   if (mark.result === 'pass' && state.passesUsed >= state.maxPasses) {
     return { kind: 'rejected', reason: 'no_passes_left' };
   }
+  const points = MARK_POINTS[mark.result];
+  const moved = {
+    passesUsed: state.passesUsed + (mark.result === 'pass' ? 1 : 0),
+    cardIndex: state.cardIndex + 1,
+  };
+  if (state.mode === 'cooperative') {
+    return {
+      kind: 'applied',
+      state: { ...state, ...moved, scores: { team: state.scores.team + points } },
+    };
+  }
   const side = state.describingTable;
   return {
     kind: 'applied',
-    state: {
-      ...state,
-      scores: { ...state.scores, [side]: state.scores[side] + MARK_POINTS[mark.result] },
-      passesUsed: state.passesUsed + (mark.result === 'pass' ? 1 : 0),
-      cardIndex: state.cardIndex + 1,
-    },
+    state: { ...state, ...moved, scores: { ...state.scores, [side]: state.scores[side] + points } },
   };
 }
 
@@ -127,7 +167,8 @@ export function describingTableForTurn(turnNo: number): TableSide {
 }
 
 export function roleOf(state: VoiceTabuState, side: TableSide): TableRole {
-  return state.describingTable === side ? 'describer' : 'judge';
+  if (state.describingTable === side) return 'describer';
+  return state.mode === 'cooperative' ? 'guesser' : 'judge';
 }
 
 export function voiceWinner(scores: Record<TableSide, number>): TableSide | 'draw' {
@@ -150,9 +191,17 @@ const str = (v: unknown): v is string => typeof v === 'string';
 
 export function parseGameState(value: unknown): GameState | null {
   if (!isRecord(value)) return null;
-  if (value.concept === 'tabu' && value.mode === 'voice') {
+  // 'voice' is the refereed mode's name before docs/SPEC_V3.md §6.1.
+  const mode = value.mode === 'voice' ? 'refereed' : value.mode;
+  if (value.concept === 'tabu' && (mode === 'refereed' || mode === 'cooperative')) {
     const v = value;
     const scores = v.scores;
+    const teamScores: { team: number } | null =
+      mode === 'cooperative' && isRecord(scores) && num(scores.team) ? { team: scores.team } : null;
+    const tableScores: Record<TableSide, number> | null =
+      mode === 'refereed' && isRecord(scores) && num(scores.owner) && num(scores.guest)
+        ? { owner: scores.owner, guest: scores.guest }
+        : null;
     if (
       (v.phase === 'playing' || v.phase === 'finished') &&
       num(v.gameNo) &&
@@ -162,16 +211,13 @@ export function parseGameState(value: unknown): GameState | null {
       num(v.cardsPerTurn) &&
       (v.describingTable === 'owner' || v.describingTable === 'guest') &&
       str(v.turnEndsAt) &&
-      isRecord(scores) &&
-      num(scores.owner) &&
-      num(scores.guest) &&
+      (teamScores !== null || tableScores !== null) &&
       num(v.passesUsed) &&
       num(v.maxPasses) &&
       num(v.cardIndex)
     ) {
-      return {
+      const base: TabuStateBase = {
         concept: 'tabu',
-        mode: 'voice',
         phase: v.phase,
         gameNo: v.gameNo,
         turnNo: v.turnNo,
@@ -180,11 +226,13 @@ export function parseGameState(value: unknown): GameState | null {
         cardsPerTurn: v.cardsPerTurn,
         describingTable: v.describingTable,
         turnEndsAt: v.turnEndsAt,
-        scores: { owner: scores.owner, guest: scores.guest },
         passesUsed: v.passesUsed,
         maxPasses: v.maxPasses,
         cardIndex: v.cardIndex,
       };
+      return teamScores
+        ? { ...base, mode: 'cooperative', scores: teamScores }
+        : { ...base, mode: 'refereed', scores: tableScores ?? { owner: 0, guest: 0 } };
     }
     return null;
   }
@@ -209,8 +257,13 @@ export function parseGameState(value: unknown): GameState | null {
 }
 
 // Between games the room is a chat and game_state keeps only the game counter and the last game's
-// result (docs/SPEC_V3.md §5.1): the concept, and for two-table Tabu both scores.
-export type LastGame = { concept: 'tabu' | 'sohbet'; scores: Record<TableSide, number> | null };
+// result (docs/SPEC_V3.md §5.1): the concept, and for two-table Tabu both scores (refereed) or the
+// team's score (cooperative).
+export type LastGame = {
+  concept: 'tabu' | 'sohbet';
+  scores: Record<TableSide, number> | null;
+  teamScore: number | null;
+};
 export type BetweenGames = { gameNo: number; lastGame: LastGame | null };
 
 export function parseBetweenGames(value: unknown): BetweenGames {
@@ -229,6 +282,7 @@ export function parseBetweenGames(value: unknown): BetweenGames {
         isRecord(scores) && num(scores.owner) && num(scores.guest)
           ? { owner: scores.owner, guest: scores.guest }
           : null,
+      teamScore: isRecord(scores) && num(scores.team) ? scores.team : null,
     },
   };
 }

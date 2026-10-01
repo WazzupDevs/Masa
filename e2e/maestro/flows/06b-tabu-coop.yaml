@@ -1,0 +1,112 @@
+# Tabu modes (docs/SPEC_V3.md §6): the bot table is one person, so the game is cooperative. Turn 1
+# this phone describes and presses all three; turn 2 the bot describes and this phone sees no card.
+appId: app.kabuk.mobile
+---
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: leave
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: checkin
+      BODY: '{"spot":"kutuphane","headcount":1}'
+- tapOn:
+    id: tab-venue
+- extendedWaitUntil:
+    visible: Oda kur
+    timeout: 15000
+- tapOn: Oda kur
+- extendedWaitUntil:
+    visible:
+      id: intent-none
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: Odayı kur
+    timeout: 10000
+- tapOn: Odayı kur
+- extendedWaitUntil:
+    visible:
+      id: solo-tabu
+    timeout: 15000
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: request-join
+- extendedWaitUntil:
+    visible: Katılma isteği
+    timeout: 20000
+- tapOn:
+    id: join-accept
+- extendedWaitUntil:
+    visible:
+      id: propose-tabu
+    timeout: 15000
+- tapOn:
+    id: propose-tabu
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: answer-game
+# Turn 1: this phone describes. The card starts covered; then Doğru, Pas and Tabu are all here.
+- extendedWaitUntil:
+    visible: Kartı görmek için dokun
+    timeout: 20000
+- assertVisible: Ortak skor
+- tapOn: Kartı görmek için dokun
+- extendedWaitUntil:
+    visible:
+      id: tabu-card
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      id: tabu-taboo
+    centerElement: true
+    timeout: 10000
+- assertVisible:
+    id: tabu-pass
+- takeScreenshot: 34-coop-describer
+- tapOn:
+    id: tabu-correct
+# Turn 2: the bot table describes; this phone only listens and never gets the card.
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: expire-turn
+- scrollUntilVisible:
+    element:
+      id: tabu-guessing
+    direction: UP
+    timeout: 20000
+- assertNotVisible:
+    id: tabu-card
+- assertNotVisible:
+    id: tabu-correct
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: mark
+      BODY: '{"result":"taboo"}'
+- takeScreenshot: 35-coop-guesser
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: end-room
+- extendedWaitUntil:
+    visible: Tanışalım mı\?
+    timeout: 20000
+- tapOn:
+    id: reveal-no
+- extendedWaitUntil:
+    visible: Güzel oyundu.*
+    timeout: 15000
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: reveal
+      BODY: '{"yes":false}'
+- tapOn: Mekana dön
+- extendedWaitUntil:
+    visible: Oda kur
+    timeout: 15000
