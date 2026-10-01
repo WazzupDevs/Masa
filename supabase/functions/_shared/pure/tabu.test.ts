@@ -8,6 +8,7 @@ import {
   MARK_POINTS,
   mayMark,
   optimisticView,
+  parseBetweenGames,
   parseGameState,
   pendingAfter,
   roleOf,
@@ -189,5 +190,32 @@ describe('parseGameState', () => {
         score: 4,
       }),
     ).toBeNull();
+  });
+});
+
+describe('parseBetweenGames', () => {
+  it('reads the counter and the last game between games', () => {
+    expect(
+      parseBetweenGames({
+        gameNo: 2,
+        lastGame: { concept: 'tabu', scores: { owner: 4, guest: 3 } },
+      }),
+    ).toEqual({ gameNo: 2, lastGame: { concept: 'tabu', scores: { owner: 4, guest: 3 } } });
+    expect(parseBetweenGames({ gameNo: 1, lastGame: { concept: 'sohbet' } })).toEqual({
+      gameNo: 1,
+      lastGame: { concept: 'sohbet', scores: null },
+    });
+  });
+
+  it('is empty for a fresh room or anything malformed', () => {
+    expect(parseBetweenGames({})).toEqual({ gameNo: 0, lastGame: null });
+    expect(parseBetweenGames(null)).toEqual({ gameNo: 0, lastGame: null });
+    expect(parseBetweenGames({ gameNo: 'x', lastGame: { concept: 'poker' } })).toEqual({
+      gameNo: 0,
+      lastGame: null,
+    });
+    expect(
+      parseBetweenGames({ lastGame: { concept: 'tabu', scores: { owner: '4' } } }).lastGame,
+    ).toEqual({ concept: 'tabu', scores: null });
   });
 });

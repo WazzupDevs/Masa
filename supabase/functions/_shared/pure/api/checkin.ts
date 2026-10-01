@@ -1,5 +1,3 @@
-import type { Participation } from '../profile.ts';
-
 // Request and response shapes of the `checkin` Edge Function, shared with the mobile app.
 export type CheckInRequest = {
   action: 'check-in';
@@ -11,9 +9,6 @@ export type CheckInRequest = {
   // 1–4; 4 means "4+".
   headcount: number;
   locationConsentVersion: string;
-  // For this table only; the profile's default_participation when omitted. `profile` needs a
-  // display name.
-  participation?: Participation;
   // Where the table is at a venue with spots (docs/SPEC_V3.md §4.3); required there, absent
   // elsewhere.
   spotId?: string;
@@ -22,12 +17,17 @@ export type CheckInRequest = {
 // "Bu noktadayım": no new position; refused in a room or with a request out (`in_room`).
 export type ChangeSpotRequest = { action: 'change-spot'; spotId: string };
 
+// "Masa adını değiştir" (docs/SPEC_V3.md §5.6): not in a room, at most 3 times per check-in.
+export type RerollAliasRequest = { action: 'reroll-alias' };
+
 export type LeaveRequest = { action: 'leave' };
 
-export type CheckinRequest = CheckInRequest | ChangeSpotRequest | LeaveRequest;
+export type CheckinRequest = CheckInRequest | ChangeSpotRequest | RerollAliasRequest | LeaveRequest;
 
 export type CheckInResponse = { sessionId: string; alias: string; expiresAt: string };
 
 export type ChangeSpotResponse = { spotId: string };
+
+export type RerollAliasResponse = { alias: string; rerollsLeft: number };
 
 export type LeaveResponse = { ok: true };

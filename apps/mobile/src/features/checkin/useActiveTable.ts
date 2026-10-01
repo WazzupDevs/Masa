@@ -15,7 +15,7 @@ export function useActiveTable() {
       const { data, error } = await supabase
         .from('table_sessions')
         .select(
-          'id, alias, headcount, created_at, expires_at, venue_id, spot_id, venue:venues(name), spot:venue_spots(name)',
+          'id, alias, alias_rerolls, headcount, created_at, expires_at, venue_id, spot_id, venue:venues(name), spot:venue_spots(name)',
         )
         .eq('status', 'active')
         .gt('expires_at', new Date().toISOString())

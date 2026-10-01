@@ -1,9 +1,10 @@
+import postgres from 'postgres';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { normalize } from '../functions/_shared/pure/trText.ts';
 import { deleteFixtureVenues, insertFixtureVenues } from './fixtures/venues.ts';
 import { checkInAt, errorBody, onboarded, PHONES } from './helpers.ts';
-import { type Client, deleteUserByPhone, invoke, sql } from './local.ts';
+import { type Client, dbUrl, deleteUserByPhone, invoke, sql } from './local.ts';
 
 let venue: Record<string, string> = {};
 const V = 'at-anchor';
@@ -23,18 +24,20 @@ afterAll(async () => {
 });
 
 const tabu = (client: Client, body: Record<string, unknown>) => invoke(client, 'tabu', body);
+const rooms = (client: Client, body: Record<string, unknown>) => invoke(client, 'rooms', body);
 
-async function room(concept: 'tabu' | 'sohbet', withGuest: boolean) {
+// A room starts as a chat, without a game (docs/SPEC_V3.md §5.1).
+async function room(withGuest: boolean) {
   const [owner, guest, third] = (await Promise.all(PHONES.map((p) => onboarded(p)))) as [
     Client,
     Client,
     Client,
   ];
   for (const c of [owner, guest, third]) await checkInAt(c, venue, V);
-  const created = await invoke(owner, 'rooms', { action: 'create', concept, visibility: 'open' });
+  const created = await rooms(owner, { action: 'create', profiled: false });
   const roomId = (created.body as { roomId: string }).roomId;
   if (withGuest) {
-    await invoke(guest, 'rooms', { action: 'request-join', roomId });
+    await invoke(guest, 'rooms', { action: 'request-join', roomId, profiled: false });
     const [request] =
       await sql`select id from public.join_requests where room_id = ${roomId} and status = 'pending'`;
     await invoke(owner, 'rooms', { action: 'respond', requestId: request?.id, accept: true });
@@ -45,6 +48,30 @@ async function room(concept: 'tabu' | 'sohbet', withGuest: boolean) {
 async function gameState(roomId: string) {
   const [row] = await sql`select game_state from public.rooms where id = ${roomId}`;
   return row?.game_state as Record<string, unknown>;
+}
+
+async function conceptOf(roomId: string) {
+  const [row] = await sql`select concept from public.rooms where id = ${roomId}`;
+  return row?.concept as string | null;
+}
+
+async function proposalOf(roomId: string) {
+  const [row] =
+    await sql`select concept, proposer_session_id from public.game_proposals where room_id = ${roomId}`;
+  return row ?? null;
+}
+
+// One table proposes, the other accepts: the only way a two-table game starts (rule 3).
+async function play(
+  proposer: Client,
+  answerer: Client,
+  roomId: string,
+  concept: 'tabu' | 'sohbet',
+): Promise<void> {
+  const proposed = await rooms(proposer, { action: 'propose-game', roomId, concept });
+  expect(proposed.status, JSON.stringify(proposed.body)).toBe(200);
+  const answered = await rooms(answerer, { action: 'answer-game', roomId, accept: true });
+  expect(answered, JSON.stringify(answered.body)).toEqual({ status: 200, body: { ok: true } });
 }
 
 const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
@@ -81,8 +108,8 @@ async function expireTurn(roomId: string) {
 }
 
 describe('tabu, one table', () => {
-  it('hands the deck to the room member and nobody else', async () => {
-    const { owner, third, roomId } = await room('tabu', false);
+  it('hands the deck to the room member and nobody else, without a proposal', async () => {
+    const { owner, third, roomId } = await room(false);
     const res = await tabu(owner, { action: 'start', roomId });
     expect(res.status).toBe(200);
     const body = res.body as { mode: string; deck: { word: string; forbidden: string[] }[] };
@@ -93,24 +120,149 @@ describe('tabu, one table', () => {
       status: 403,
       body: errorBody('not_in_room'),
     });
+    // The room's activity is Tabu until "Oyunu bitir" (or a second table joins).
+    expect(await conceptOf(roomId)).toBe('tabu');
+    expect(await rooms(owner, { action: 'end-game', roomId })).toEqual({
+      status: 200,
+      body: { ok: true },
+    });
+    expect(await conceptOf(roomId)).toBeNull();
+    expect(await gameState(roomId)).toEqual({ lastGame: { concept: 'tabu' } });
   });
 
-  it('refuses a Sohbet room', async () => {
-    const { owner, roomId } = await room('sohbet', false);
+  it('refuses a second game while Sohbet kartları runs', async () => {
+    const { owner, roomId } = await room(false);
+    expect((await invoke(owner, 'sohbet', { action: 'next-card', roomId })).status).toBe(200);
     expect(await tabu(owner, { action: 'start', roomId })).toEqual({
       status: 409,
-      body: errorBody('wrong_concept'),
+      body: errorBody('game_in_progress'),
     });
+  });
+
+  it('ends the one-table game when a second table joins: the room returns to chat', async () => {
+    const { owner, guest, roomId } = await room(false);
+    expect((await tabu(owner, { action: 'start', roomId })).status).toBe(200);
+    await rooms(guest, { action: 'request-join', roomId, profiled: false });
+    const [request] =
+      await sql`select id from public.join_requests where room_id = ${roomId} and status = 'pending'`;
+    await rooms(owner, { action: 'respond', requestId: request?.id, accept: true });
+    expect(await conceptOf(roomId)).toBeNull();
+    expect(await gameState(roomId)).toEqual({});
+    expect(await tabu(owner, { action: 'start', roomId })).toEqual({
+      status: 409,
+      body: errorBody('no_proposal'),
+    });
+  });
+});
+
+describe('game proposals (docs/SPEC_V3.md §5.3)', () => {
+  it('starts a room as a chat and a game only when the other table accepts', async () => {
+    const { owner, guest, third, roomId } = await room(true);
+    expect(await conceptOf(roomId)).toBeNull();
+    expect(await rooms(owner, { action: 'propose-game', roomId, concept: 'tabu' })).toEqual({
+      status: 200,
+      body: { expiresAt: expect.any(String) },
+    });
+    // Both tables read the proposal; nobody else does.
+    for (const member of [owner, guest]) {
+      const { data } = await member.from('game_proposals').select('concept').eq('room_id', roomId);
+      expect(data).toEqual([{ concept: 'tabu' }]);
+    }
+    expect((await third.from('game_proposals').select('room_id')).data).toEqual([]);
+    // The proposer cannot answer its own proposal; the game has not started.
+    expect(await rooms(owner, { action: 'answer-game', roomId, accept: true })).toEqual({
+      status: 409,
+      body: errorBody('no_proposal'),
+    });
+    expect(await conceptOf(roomId)).toBeNull();
+
+    expect(await rooms(guest, { action: 'answer-game', roomId, accept: true })).toEqual({
+      status: 200,
+      body: { ok: true },
+    });
+    expect(await proposalOf(roomId)).toBeNull();
+    expect(await conceptOf(roomId)).toBe('tabu');
+    expect(await gameState(roomId)).toMatchObject({ phase: 'playing', describingTable: 'owner' });
+  });
+
+  it('allows one proposal at a time, only in a two-table room with no game', async () => {
+    const solo = await room(false);
+    expect(
+      await rooms(solo.owner, { action: 'propose-game', roomId: solo.roomId, concept: 'tabu' }),
+    ).toEqual({ status: 409, body: errorBody('needs_two_tables') });
+    for (const phone of PHONES) await deleteUserByPhone(phone);
+
+    const { owner, guest, roomId } = await room(true);
+    expect((await rooms(owner, { action: 'propose-game', roomId, concept: 'sohbet' })).status).toBe(
+      200,
+    );
+    for (const table of [owner, guest]) {
+      expect(await rooms(table, { action: 'propose-game', roomId, concept: 'tabu' })).toEqual({
+        status: 409,
+        body: errorBody('proposal_pending'),
+      });
+    }
+    await rooms(guest, { action: 'answer-game', roomId, accept: true });
+    expect(await conceptOf(roomId)).toBe('sohbet');
+    expect(await rooms(guest, { action: 'propose-game', roomId, concept: 'tabu' })).toEqual({
+      status: 409,
+      body: errorBody('game_in_progress'),
+    });
+  });
+
+  // S7: a decline shows at once; a timeout at 30 seconds. Both delete the row and leave the
+  // proposer the same thing to read. The test does not claim equal timing.
+  it('deletes a declined and an expired proposal alike', async () => {
+    const { owner, guest, roomId } = await room(true);
+    await rooms(owner, { action: 'propose-game', roomId, concept: 'tabu' });
+    expect(await rooms(guest, { action: 'answer-game', roomId, accept: false })).toEqual({
+      status: 200,
+      body: { ok: true },
+    });
+    const afterDecline = await owner.from('game_proposals').select('*').eq('room_id', roomId);
+    const roomAfterDecline = await gameState(roomId);
+
+    await rooms(owner, { action: 'propose-game', roomId, concept: 'tabu' });
+    await sql`update public.game_proposals set expires_at = now() - interval '1 second' where room_id = ${roomId}`;
+    expect(await rooms(guest, { action: 'answer-game', roomId, accept: true })).toEqual({
+      status: 409,
+      body: errorBody('no_proposal'),
+    });
+    await sql`select private.expire_game_proposals()`;
+    const afterTimeout = await owner.from('game_proposals').select('*').eq('room_id', roomId);
+
+    expect(afterDecline.data).toEqual([]);
+    expect(afterTimeout.data).toEqual(afterDecline.data);
+    expect(await gameState(roomId)).toEqual(roomAfterDecline);
+    expect(await conceptOf(roomId)).toBeNull();
+  });
+
+  it('skips a proposal a user action holds instead of waiting for it', async () => {
+    const { owner, roomId } = await room(true);
+    await rooms(owner, { action: 'propose-game', roomId, concept: 'tabu' });
+    await sql`update public.game_proposals set expires_at = now() - interval '1 second' where room_id = ${roomId}`;
+    const job = postgres(dbUrl, { max: 1, onnotice: () => {} });
+    try {
+      await sql.begin(async (tx) => {
+        await tx`select room_id from public.game_proposals where room_id = ${roomId} for update`;
+        const [ran] = await job.begin(async (jtx) => {
+          await jtx`set local lock_timeout = '2s'`;
+          return jtx`select private.expire_game_proposals() as n`;
+        });
+        expect(ran).toEqual({ n: 0 });
+      });
+    } finally {
+      await job.end();
+    }
+    const [next] = await sql`select private.expire_game_proposals() as n`;
+    expect(next).toEqual({ n: 1 });
   });
 });
 
 describe('tabu, two tables face to face (docs/SPEC_V2.md §8.2)', () => {
   async function started() {
-    const r = await room('tabu', true);
-    expect(await tabu(r.owner, { action: 'start', roomId: r.roomId })).toEqual({
-      status: 200,
-      body: { mode: 'server' },
-    });
+    const r = await room(true);
+    await play(r.guest, r.owner, r.roomId, 'tabu');
     return r;
   }
 
@@ -130,17 +282,16 @@ describe('tabu, two tables face to face (docs/SPEC_V2.md §8.2)', () => {
   ) => tabu(client, { action: 'mark', roomId, turnNo, cardIndex, result });
   const OK = { status: 200, body: { ok: true } };
 
-  it('lets only the owner start, the owner table describes first, and the state holds no card', async () => {
-    const { owner, guest, roomId } = await room('tabu', true);
-    expect(await tabu(guest, { action: 'start', roomId })).toEqual({
-      status: 403,
-      body: errorBody('not_owner'),
-    });
-    expect((await tabu(owner, { action: 'start', roomId })).status).toBe(200);
-    expect(await tabu(owner, { action: 'start', roomId })).toEqual({
-      status: 409,
-      body: errorBody('game_in_progress'),
-    });
+  it('starts only from an accepted proposal, the owner table describes first, and the state holds no card', async () => {
+    const { owner, guest, roomId } = await room(true);
+    for (const table of [owner, guest]) {
+      expect(await tabu(table, { action: 'start', roomId })).toEqual({
+        status: 409,
+        body: errorBody('no_proposal'),
+      });
+    }
+    // Whichever table proposed, the owner's table describes first.
+    await play(guest, owner, roomId, 'tabu');
     const state = await gameState(roomId);
     expect(state).toMatchObject({
       concept: 'tabu',
@@ -290,16 +441,18 @@ describe('tabu, two tables face to face (docs/SPEC_V2.md §8.2)', () => {
     expect(await gameState(roomId)).toMatchObject({ scores: { owner: 0, guest: -1 } });
   });
 
-  it('writes a result per account at the end, and the owner can play again', async () => {
+  it('writes a result per account at the end, returns to chat, and a new proposal plays again', async () => {
     const { owner, guest, roomId } = await started();
     await mark(guest, roomId, 1, 0, 'correct');
     for (let turn = 1; turn <= 6; turn++) {
       await expireTurn(roomId);
       await tabu(owner, { action: 'end-turn', roomId });
     }
-    expect(await gameState(roomId)).toMatchObject({
-      phase: 'finished',
-      scores: { owner: 1, guest: 0 },
+    // The room returns to chat; the result stays as lastGame between games.
+    expect(await conceptOf(roomId)).toBeNull();
+    expect(await gameState(roomId)).toEqual({
+      gameNo: 1,
+      lastGame: { concept: 'tabu', scores: { owner: 1, guest: 0 } },
     });
     const results = await sql`
       select u.phone, g.concept, g.mode, g.score, g.won from public.game_results g
@@ -309,20 +462,27 @@ describe('tabu, two tables face to face (docs/SPEC_V2.md §8.2)', () => {
       { phone: PHONES[0].replace(/\D/g, ''), concept: 'tabu', mode: 'voice', score: 1, won: true },
       { phone: PHONES[1].replace(/\D/g, ''), concept: 'tabu', mode: 'voice', score: 0, won: false },
     ]);
-    expect((await tabu(guest, { action: 'start', roomId })).status).toBe(403);
-    expect((await tabu(owner, { action: 'start', roomId })).status).toBe(200);
+    expect((await tabu(owner, { action: 'start', roomId })).status).toBe(409);
+    await play(owner, guest, roomId, 'tabu');
     expect(await gameState(roomId)).toMatchObject({ gameNo: 2, scores: { owner: 0, guest: 0 } });
   });
 
-  it('resets the game when the guest leaves', async () => {
+  it('ends a game early with "Oyunu bitir", without a result', async () => {
     const { guest, roomId } = await started();
-    await invoke(guest, 'rooms', { action: 'leave' });
-    expect(await gameState(roomId)).toEqual({});
+    expect(await rooms(guest, { action: 'end-game', roomId })).toEqual({
+      status: 200,
+      body: { ok: true },
+    });
+    expect(await conceptOf(roomId)).toBeNull();
+    expect(await gameState(roomId)).toEqual({ gameNo: 1, lastGame: { concept: 'tabu' } });
+    expect(await sql`select 1 from public.game_results`).toHaveLength(0);
+    // Idempotent.
+    expect((await rooms(guest, { action: 'end-game', roomId })).status).toBe(200);
   });
 
   it('keeps the game functions server-side only, and the written flow is gone', async () => {
     const { owner, roomId } = await started();
-    for (const fn of ['tabu_mark', 'tabu_turn_cards', 'tabu_start']) {
+    for (const fn of ['tabu_mark', 'tabu_turn_cards', 'tabu_local_deck', 'tabu_end_turn']) {
       const { error } = await owner.rpc(
         fn as never,
         {
@@ -337,19 +497,21 @@ describe('tabu, two tables face to face (docs/SPEC_V2.md §8.2)', () => {
     }
     const gone = await sql`
       select proname from pg_proc
-      where proname in ('tabu_add_clue', 'tabu_guess', 'tabu_pass', 'tabu_current_card')
+      where proname in ('tabu_add_clue', 'tabu_guess', 'tabu_pass', 'tabu_current_card', 'tabu_start')
     `;
     expect(gone).toEqual([]);
   });
 });
 
 describe('sohbet', () => {
-  it('deals cards to both tables, at most every 5 seconds', async () => {
-    const { owner, guest, third, roomId } = await room('sohbet', true);
+  it('deals cards to both tables once accepted, at most every 5 seconds', async () => {
+    const { owner, guest, third, roomId } = await room(true);
     expect(await invoke(guest, 'sohbet', { action: 'next-card', roomId })).toEqual({
-      status: 200,
-      body: { ok: true },
+      status: 409,
+      body: errorBody('no_proposal'),
     });
+    // The accepted proposal deals the first card.
+    await play(owner, guest, roomId, 'sohbet');
     const { data } = await owner.from('rooms').select('game_state').eq('id', roomId).single();
     const first = data?.game_state as { prompt: string; theme: string; nextAllowedAt: string };
     expect(first.prompt.length).toBeGreaterThan(0);
@@ -369,8 +531,8 @@ describe('sohbet', () => {
     expect((await gameState(roomId)).prompt).not.toBe(first.prompt);
   });
 
-  it('works in a one-table room and lets clients read the Sohbet deck', async () => {
-    const { owner, roomId } = await room('sohbet', false);
+  it('works in a one-table room without a proposal and lets clients read the Sohbet deck', async () => {
+    const { owner, roomId } = await room(false);
     expect((await invoke(owner, 'sohbet', { action: 'next-card', roomId })).status).toBe(200);
     const { data } = await owner.from('cards').select('deck').limit(5);
     expect(new Set((data ?? []).map((c) => c.deck))).toEqual(new Set(['sohbet']));

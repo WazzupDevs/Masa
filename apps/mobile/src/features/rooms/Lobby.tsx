@@ -1,27 +1,29 @@
-import { conceptMode } from '@shared/concepts.ts';
-import { type Concept, requesterStatus } from '@shared/rooms.ts';
+import { PARTICIPATIONS, type Participation } from '@shared/profile.ts';
+import { isIntent, requesterStatus } from '@shared/rooms.ts';
 import { groupRoomsBySpot } from '@shared/spots.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { router } from 'expo-router';
-import { useEffect } from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { Choice } from '@/components/Choice';
 import { EmptyState } from '@/components/EmptyState';
+import { Sheet } from '@/components/Sheet';
+import { Tag } from '@/components/Tag';
 import { Text } from '@/components/Text';
+import { useProfile } from '@/features/account/useProfile';
 import { registerForPush } from '@/features/push/push';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { track, trackOnce } from '@/lib/analytics';
 import { callChangeSpot, roomsApi } from '@/lib/api';
 import { useNow } from '@/lib/useNow';
-import { useTheme } from '@/theme/ThemeProvider';
-import { ICON } from '@/theme/tokens';
 
+import { participationHint } from './participation';
 import { ProfiledTag } from './ProfiledTag';
 import { roomKeys, useLobby, useMyRequest } from './queries';
+import { useCreateSolo } from './useCreateSolo';
 
 type Props = {
   venueId: string;
@@ -36,19 +38,30 @@ type Props = {
 // and "Masanla oyna" shows instead (MVP_SPEC §4.3). At a venue with spots the rooms are grouped by
 // spot, the table's own first; a room at another spot offers "Bu noktadayım" instead of a request.
 export function Lobby({ venueId, sessionId, since, mySpotId, venueHasSpots }: Props) {
-  const { colors } = useTheme();
   const queryClient = useQueryClient();
+  const profile = useProfile();
+  const hasName = !!profile.data?.display_name;
+  // The room this table is about to ask for, and its choice for that room (docs/SPEC_V3.md §5.4).
+  const [asking, setAsking] = useState<string | null>(null);
+  const [participation, setParticipation] = useState<Participation>('anonymous');
+  const solo = useCreateSolo();
   const lobby = useLobby(venueId);
   const myRequest = useMyRequest(sessionId, since);
   const now = useNow(1000);
 
   const request = useMutation({
-    mutationFn: (roomId: string) => {
+    mutationFn: ({ roomId, profiled }: { roomId: string; profiled: boolean }) => {
       void registerForPush();
-      return roomsApi.requestJoin(roomId);
+      return roomsApi.requestJoin(roomId, profiled);
     },
-    onSuccess: () => track('join_requested', {}),
-    onSettled: () => void queryClient.invalidateQueries({ queryKey: roomKeys.myRequest }),
+    onSuccess: (_data, { profiled }) => {
+      track('join_requested', {});
+      track('participation_chosen', { mode: profiled ? 'profile' : 'anonymous' });
+    },
+    onSettled: () => {
+      setAsking(null);
+      void queryClient.invalidateQueries({ queryKey: roomKeys.myRequest });
+    },
   });
   const moveHere = useMutation({
     mutationFn: callChangeSpot,
@@ -100,11 +113,7 @@ export function Lobby({ venueId, sessionId, since, mySpotId, venueHasSpots }: Pr
         <EmptyState
           icon="dice-outline"
           body={tr.rooms.playWithTableHint}
-          action={{
-            label: tr.rooms.playWithTable,
-            onPress: () =>
-              router.push({ pathname: '/room/new', params: { visibility: 'private' } }),
-          }}
+          action={{ label: tr.rooms.playWithTable, onPress: () => solo.mutate() }}
         />
       ) : (
         <View className="gap-3">
@@ -127,8 +136,8 @@ export function Lobby({ venueId, sessionId, since, mySpotId, venueHasSpots }: Pr
               ) : null}
               {group.rooms.map((room) => {
                 const waitedMin = Math.floor((now - Date.parse(room.waiting_since)) / 60_000);
-                const voice = conceptMode(room.concept as Concept) === 'voice';
                 const spotId = room.spot_id;
+                const intent = isIntent(room.intent) ? room.intent : null;
                 return (
                   <Card key={room.room_id}>
                     <View className="flex-row items-center justify-between gap-2">
@@ -138,20 +147,18 @@ export function Lobby({ venueId, sessionId, since, mySpotId, venueHasSpots }: Pr
                       </View>
                       <Text variant="fine">{tr.rooms.waitingFor(waitedMin)}</Text>
                     </View>
-                    <View className="mb-1.5 mt-1 flex-row items-center gap-1">
-                      <Text variant="subtitle">
-                        {tr.rooms.people(room.headcount)} ·{' '}
-                        {tr.conceptWithMode(room.concept as Concept)}
-                      </Text>
-                      {voice ? (
-                        <Ionicons name="mic-outline" size={ICON.sm} color={colors.muted} />
-                      ) : null}
+                    <View className="mb-1.5 mt-1 flex-row flex-wrap items-center gap-2">
+                      <Text variant="subtitle">{tr.rooms.people(room.headcount)}</Text>
+                      {intent ? <Tag variant={intent} label={tr.intents[intent]} /> : null}
                     </View>
                     {group.mine ? (
                       <Button
                         variant="secondary"
                         label={tr.rooms.requestJoin}
-                        onPress={() => request.mutate(room.room_id)}
+                        onPress={() => {
+                          setParticipation('anonymous');
+                          setAsking(room.room_id);
+                        }}
                         disabled={status === 'pending' || request.isPending}
                       />
                     ) : spotId !== null ? (
@@ -172,6 +179,36 @@ export function Lobby({ venueId, sessionId, since, mySpotId, venueHasSpots }: Pr
           ))}
         </View>
       )}
+
+      <Sheet
+        visible={asking !== null}
+        onClose={() => setAsking(null)}
+        title={tr.rooms.requestTitle}
+        icon="people-outline"
+      >
+        <Text variant="label">{tr.participation.title}</Text>
+        <View accessibilityRole="radiogroup" className="gap-2">
+          {PARTICIPATIONS.map((mode) => (
+            <Choice
+              key={mode}
+              testID={`request-${mode}`}
+              label={tr.participation[mode]}
+              hint={participationHint(mode, hasName)}
+              selected={participation === mode}
+              disabled={mode === 'profile' && !hasName}
+              onPress={() => setParticipation(mode)}
+            />
+          ))}
+        </View>
+        <Button
+          testID="request-send"
+          label={tr.rooms.sendRequest}
+          onPress={() =>
+            asking && request.mutate({ roomId: asking, profiled: participation === 'profile' })
+          }
+          loading={request.isPending}
+        />
+      </Sheet>
     </View>
   );
 }

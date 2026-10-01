@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import { formatAlias, pickAlias } from './alias.ts';
 
-const words = { adjectives: ['Mor', 'Mavi'], animals: ['Baykuş', 'Kedi'] };
+const words = { adjectives: ['Mor', 'Mavi'], nouns: ['Baykuş', 'Kedi'] };
 
 describe('pickAlias', () => {
-  it('builds "Adjective Animal"', () => {
+  it('builds "Adjective Noun"', () => {
     expect(formatAlias('Mor', 'Baykuş')).toBe('Mor Baykuş');
     expect(pickAlias(words, new Set(), () => 0)).toBe('Mor Baykuş');
   });
@@ -28,6 +28,6 @@ describe('pickAlias', () => {
   });
 
   it('returns null for empty word lists', () => {
-    expect(pickAlias({ adjectives: [], animals: ['Kedi'] }, new Set(), Math.random)).toBeNull();
+    expect(pickAlias({ adjectives: [], nouns: ['Kedi'] }, new Set(), Math.random)).toBeNull();
   });
 });

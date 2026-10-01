@@ -15,7 +15,7 @@ import { sqlLiteral } from './sql.ts';
 export function aliasWordsSql(words: AliasWords): string {
   const rows = [
     ...words.adjectives.map((w) => `(${sqlLiteral('adjective')}, ${sqlLiteral(w)})`),
-    ...words.animals.map((w) => `(${sqlLiteral('animal')}, ${sqlLiteral(w)})`),
+    ...words.nouns.map((w) => `(${sqlLiteral('noun')}, ${sqlLiteral(w)})`),
   ];
   return [
     '-- content/aliases-tr.json',

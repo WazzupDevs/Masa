@@ -86,11 +86,7 @@ const changeSpot = (client: Client, spotId: string) =>
   invoke(client, 'checkin', { action: 'change-spot', spotId });
 
 async function createRoom(client: Client): Promise<string> {
-  const res = await invoke(client, 'rooms', {
-    action: 'create',
-    concept: 'tabu',
-    visibility: 'open',
-  });
+  const res = await invoke(client, 'rooms', { action: 'create', profiled: false });
   expect(res.status, JSON.stringify(res.body)).toBe(200);
   return (res.body as { roomId: string }).roomId;
 }
@@ -206,7 +202,7 @@ describe('spots in the lobby', () => {
     expect(Object.keys(rows[0] ?? {}).sort()).toEqual(
       [
         'alias',
-        'concept',
+        'intent',
         'headcount',
         'profiled',
         'room_id',
@@ -223,7 +219,9 @@ describe('spots in the lobby', () => {
     const roomId = await createRoom(owner);
     const before = (await sessionOf(guest))?.expires_at;
 
-    expect(await invoke(guest, 'rooms', { action: 'request-join', roomId })).toEqual({
+    expect(
+      await invoke(guest, 'rooms', { action: 'request-join', roomId, profiled: false }),
+    ).toEqual({
       status: 409,
       body: errorBody('different_spot'),
     });
@@ -233,7 +231,9 @@ describe('spots in the lobby', () => {
     });
     // No new position and the table's time stays.
     expect((await sessionOf(guest))?.expires_at).toEqual(before);
-    expect((await invoke(guest, 'rooms', { action: 'request-join', roomId })).status).toBe(200);
+    expect(
+      (await invoke(guest, 'rooms', { action: 'request-join', roomId, profiled: false })).status,
+    ).toBe(200);
   });
 
   it('answers a blocked or closed room as unavailable, never as another spot', async () => {
@@ -244,7 +244,9 @@ describe('spots in the lobby', () => {
       insert into public.blocks (blocker_id, blocked_id, blocked_alias)
       values (${await userIdOf(owner)}, ${await userIdOf(guest)}, 'Test Alias')
     `;
-    expect(await invoke(guest, 'rooms', { action: 'request-join', roomId })).toEqual({
+    expect(
+      await invoke(guest, 'rooms', { action: 'request-join', roomId, profiled: false }),
+    ).toEqual({
       status: 409,
       body: errorBody('room_not_available'),
     });
@@ -260,7 +262,9 @@ describe('spots in the lobby', () => {
       body: errorBody('in_room'),
     });
     // A pending request.
-    expect((await invoke(guest, 'rooms', { action: 'request-join', roomId })).status).toBe(200);
+    expect(
+      (await invoke(guest, 'rooms', { action: 'request-join', roomId, profiled: false })).status,
+    ).toBe(200);
     expect(await changeSpot(guest, spot('kutuphane'))).toEqual({
       status: 409,
       body: errorBody('in_room'),
@@ -309,9 +313,13 @@ describe('spots in the lobby', () => {
     await sql`update public.table_sessions set spot_id = null where user_id = ${await userIdOf(legacy)}`;
     const roomId = await createRoom(owner);
     expect((await lobby(legacy)).map((r) => r.room_id)).toEqual([roomId]);
-    expect((await invoke(legacy, 'rooms', { action: 'request-join', roomId })).status).toBe(409);
+    expect(
+      (await invoke(legacy, 'rooms', { action: 'request-join', roomId, profiled: false })).status,
+    ).toBe(409);
     expect((await changeSpot(legacy, spot('kantin'))).status).toBe(200);
-    expect((await invoke(legacy, 'rooms', { action: 'request-join', roomId })).status).toBe(200);
+    expect(
+      (await invoke(legacy, 'rooms', { action: 'request-join', roomId, profiled: false })).status,
+    ).toBe(200);
   });
 });
 

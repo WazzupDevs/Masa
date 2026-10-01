@@ -3,16 +3,14 @@
 // ended). Blocks: the other table of a room, a friend, or the account behind a history row.
 // History actions answer { ok: true } whatever they find, so they reveal nothing.
 import { requireUser, serviceClient } from '../_shared/auth.ts';
-import { inBackground } from '../_shared/background.ts';
-import { broadcast } from '../_shared/broadcast.ts';
 import { dbError } from '../_shared/db.ts';
 import { z } from '../_shared/deps.ts';
 import { handle } from '../_shared/http.ts';
+import { lobbyChanged } from '../_shared/lobby.ts';
 import { photoCopyHex } from '../_shared/photos.ts';
 import type { SafetyRequest, SafetyResponse } from '../_shared/pure/api/chat.ts';
 import { REPORT_REASONS, type ReportReason } from '../_shared/pure/chat.ts';
 import { AppError } from '../_shared/pure/errors.ts';
-import { BROADCAST, venueChannel } from '../_shared/pure/rooms.ts';
 
 const reason = z.enum(REPORT_REASONS);
 
@@ -146,9 +144,9 @@ Deno.serve(
       target_room_id: body.roomId,
     });
     if (error) throw dbError('safety_block', error);
-    if (data.visibility === 'open') {
-      inBackground(broadcast(venueChannel(data.venue_id), BROADCAST.lobbyChanged));
-    }
+    // Blocking in a two-table room is "Odayı bitir" with "Hayır" (docs/SPEC_V3.md §5.5): the same
+    // announcement as rooms/end, so the other table cannot tell them apart (rule 5).
+    if (data.visibility === 'open') lobbyChanged(db, data);
     return { ok: true };
   }),
 );

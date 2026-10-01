@@ -1,5 +1,4 @@
-import { conceptMode } from '@shared/concepts.ts';
-import { type Concept, JOIN_REQUEST_TTL_SECONDS } from '@shared/rooms.ts';
+import { JOIN_REQUEST_TTL_SECONDS } from '@shared/rooms.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { View } from 'react-native';
@@ -19,10 +18,10 @@ import { ICON } from '@/theme/tokens';
 import { ProfiledTag } from './ProfiledTag';
 import { roomKeys, useIncomingRequests } from './queries';
 
-type Props = { roomId: string; ownerSessionId: string | null; concept: Concept };
+type Props = { roomId: string; ownerSessionId: string | null };
 
 // The owner's 60 second window: Kabul / Geç (MVP_SPEC §4.4, screen 4).
-export function IncomingRequest({ roomId, ownerSessionId, concept }: Props) {
+export function IncomingRequest({ roomId, ownerSessionId }: Props) {
   const { colors } = useTheme();
   const queryClient = useQueryClient();
   const requests = useIncomingRequests(roomId, ownerSessionId);
@@ -46,17 +45,8 @@ export function IncomingRequest({ roomId, ownerSessionId, concept }: Props) {
   return (
     <Sheet visible centered title={tr.rooms.incomingTitle} icon="people-outline">
       <Text variant="bodyStrong" align="center">
-        {tr.rooms.incomingBody(
-          request.requester_alias,
-          request.requester_headcount,
-          tr.concepts[concept],
-        )}
+        {tr.rooms.incomingBody(request.requester_alias, request.requester_headcount)}
       </Text>
-      {conceptMode(concept) === 'voice' ? (
-        <Text variant="fine" align="center">
-          {tr.voiceNote}
-        </Text>
-      ) : null}
       {request.requester_profiled ? (
         <View className="items-center">
           <ProfiledTag />

@@ -1,6 +1,9 @@
 import type { Database } from '@shared/database.ts';
 import {
   BROADCAST,
+  CONCEPTS,
+  type Concept,
+  type GameProposal,
   type RequesterStatus,
   ROOM_CHECK_COLUMNS,
   ROOM_CHECK_SECONDS,
@@ -18,12 +21,17 @@ import { useBroadcast } from './useBroadcast';
 
 type RoomRow = Database['public']['Tables']['rooms']['Row'];
 
+function isConcept(value: unknown): value is Concept {
+  return (CONCEPTS as readonly unknown[]).includes(value);
+}
+
 export const roomKeys = {
   current: ['currentRoom'] as const,
   lobby: (venueId: string) => ['lobby', venueId] as const,
   myRequest: ['myRequest'] as const,
   incoming: (roomId: string) => ['incomingRequests', roomId] as const,
   room: (roomId: string) => ['room', roomId] as const,
+  proposal: (roomId: string) => ['gameProposal', roomId] as const,
   roomCheck: (roomId: string) => ['roomCheck', roomId] as const,
 };
 
@@ -64,6 +72,7 @@ export function useRoom(roomId: string) {
   const reread = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: roomKeys.room(roomId) });
     void queryClient.invalidateQueries({ queryKey: roomKeys.current });
+    void queryClient.invalidateQueries({ queryKey: roomKeys.proposal(roomId) });
   }, [queryClient, roomId]);
 
   // Postgres Changes on this room (RLS applies). The new row is used as it arrives, without a
@@ -75,12 +84,19 @@ export function useRoom(roomId: string) {
   useChannel<RoomRow | null>(
     `room:${roomId}`,
     (emit) => ({
-      channel: privateChannel(`room:${roomId}`).on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` },
-        (payload: { new?: Partial<RoomRow> }) =>
-          emit(payload.new && payload.new.id === roomId ? (payload.new as RoomRow) : null),
-      ),
+      channel: privateChannel(`room:${roomId}`)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` },
+          (payload: { new?: Partial<RoomRow> }) =>
+            emit(payload.new && payload.new.id === roomId ? (payload.new as RoomRow) : null),
+        )
+        // A game proposal made, answered or expired (docs/SPEC_V3.md §5.3): re-read it.
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'game_proposals', filter: `room_id=eq.${roomId}` },
+          () => emit(null),
+        ),
       onStatus: (status) => {
         if (status === 'SUBSCRIBED') emit(null);
       },
@@ -116,6 +132,25 @@ export function useRoom(roomId: string) {
   });
 
   return query;
+}
+
+// The room's open game proposal, if any (both tables read it; RLS). The room channel re-reads it
+// on every change; the screen treats one past expires_at as gone.
+export function useGameProposal(roomId: string) {
+  return useQuery({
+    queryKey: roomKeys.proposal(roomId),
+    refetchInterval: ROOM_CHECK_SECONDS * 1000,
+    queryFn: async (): Promise<GameProposal | null> => {
+      const { data, error } = await supabase
+        .from('game_proposals')
+        .select('proposer_session_id, concept, expires_at')
+        .eq('room_id', roomId)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data || !isConcept(data.concept)) return null;
+      return { ...data, concept: data.concept };
+    },
+  });
 }
 
 export function useLobby(venueId: string | undefined) {

@@ -1,43 +1,30 @@
 import { CURRENT_LOCATION_CONSENT_VERSION } from '@shared/consent.ts';
 import { HEADCOUNT_OPTIONS } from '@shared/checkin.ts';
-import { PARTICIPATIONS, type Participation } from '@shared/profile.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
 import { Button } from '@/components/Button';
-import { Choice } from '@/components/Choice';
 import { ChoiceChip } from '@/components/ChoiceChip';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Text } from '@/components/Text';
-import { useProfile } from '@/features/account/useProfile';
 import { useCheckinDraft } from '@/features/checkin/draft';
-import { participationHint } from '@/features/profile/ProfileSettings';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { track } from '@/lib/analytics';
 import { callCheckIn } from '@/lib/api';
 
-type Choices = { headcount: number; participation: Participation };
-
-// "Kaç kişisiniz?" 1 / 2 / 3 / 4+ and, for this table only, anonymous or with the profile
-// (docs/SPEC_V2.md §5.4, §6.6). The default comes from Ayarlar → Gizlilik.
+// "Kaç kişisiniz?" 1 / 2 / 3 / 4+ (docs/SPEC_V2.md §6.6). Anonymous or with the profile is chosen
+// for each room from v3 on (docs/SPEC_V3.md §5.4), not here.
 export default function HeadcountScreen() {
   const queryClient = useQueryClient();
-  const profile = useProfile();
   const { position, venue, spot, clear } = useCheckinDraft();
   const [headcount, setHeadcount] = useState<number | null>(null);
-  const [chosen, setChosen] = useState<Participation | null>(null);
-
-  const hasName = !!profile.data?.display_name;
-  const fallback: Participation =
-    profile.data?.default_participation === 'profile' && hasName ? 'profile' : 'anonymous';
-  const participation = chosen ?? fallback;
 
   const checkIn = useMutation({
-    mutationFn: (choices: Choices) => {
+    mutationFn: (count: number) => {
       if (!position || !venue) throw new Error('No check-in draft');
       return callCheckIn({
         action: 'check-in',
@@ -45,15 +32,13 @@ export default function HeadcountScreen() {
         lat: position.lat,
         lng: position.lng,
         accuracyM: position.accuracyM,
-        headcount: choices.headcount,
+        headcount: count,
         locationConsentVersion: CURRENT_LOCATION_CONSENT_VERSION,
-        participation: choices.participation,
         ...(spot ? { spotId: spot.id } : {}),
       });
     },
-    onSuccess: async (result, choices) => {
-      track('check_in', { headcount: choices.headcount });
-      track('participation_chosen', { mode: choices.participation });
+    onSuccess: async (result, count) => {
+      track('check_in', { headcount: count });
       clear();
       await queryClient.invalidateQueries({ queryKey: ['profile'] });
       router.replace({ pathname: '/checkin/done', params: { alias: result.alias } });
@@ -84,22 +69,6 @@ export default function HeadcountScreen() {
         ))}
       </View>
 
-      <Text variant="heading" className="mt-8">
-        {tr.participation.title}
-      </Text>
-      <View accessibilityRole="radiogroup" className="mt-3 gap-2">
-        {PARTICIPATIONS.map((mode) => (
-          <Choice
-            key={mode}
-            label={tr.participation[mode]}
-            hint={participationHint(mode, hasName)}
-            selected={participation === mode}
-            disabled={mode === 'profile' && !hasName}
-            onPress={() => setChosen(mode)}
-          />
-        ))}
-      </View>
-
       {checkIn.isError ? (
         <Text variant="fine" tone="danger" className="mt-4">
           {errorMessage(checkIn.error)}
@@ -108,7 +77,7 @@ export default function HeadcountScreen() {
       <View className="mt-auto pt-8">
         <Button
           label={tr.checkin.open}
-          onPress={() => headcount !== null && checkIn.mutate({ headcount, participation })}
+          onPress={() => headcount !== null && checkIn.mutate(headcount)}
           disabled={headcount === null}
           loading={checkIn.isPending}
         />

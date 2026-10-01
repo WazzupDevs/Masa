@@ -41,6 +41,14 @@ function dayMonthAt(iso: string): string {
   return `${dayMonth(iso)}${MONTH_SUFFIX[new Date(iso).getMonth()] ?? ''}`;
 }
 
+// play_history.concept: the last game played in the room, or 'chat' (docs/SPEC_V3.md §5.5).
+export type HistoryConcept = 'tabu' | 'sohbet' | 'chat';
+const HISTORY_CONCEPTS: Record<HistoryConcept, string> = {
+  tabu: 'Sesli Tabu',
+  sohbet: 'Sohbet kartları',
+  chat: 'Sohbet',
+};
+
 const WEEKDAYS = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
 
 export const tr = {
@@ -176,9 +184,9 @@ export const tr = {
     since: (iso: string) => `${dayMonthAt(iso)}n beri arkadaşsınız`,
     incomingTitle: 'Gelen istekler',
     noIncoming: 'Yeni istek yok.',
-    incoming: (playedAt: string, concept: 'tabu' | 'sohbet', alias: string) =>
+    incoming: (playedAt: string, concept: HistoryConcept, alias: string) =>
       concept === 'tabu'
-        ? `${dayMonthAt(playedAt)} Tabu oynadığınız ${alias} masası arkadaşın olmak istiyor`
+        ? `${dayMonthAt(playedAt)} Sesli Tabu oynadığınız ${alias} masası arkadaşın olmak istiyor`
         : `${dayMonthAt(playedAt)} sohbet ettiğiniz ${alias} masası arkadaşın olmak istiyor`,
     accept: 'Kabul et',
     decline: 'Reddet',
@@ -188,8 +196,9 @@ export const tr = {
     sentAccepted: (alias: string) => `${alias} masası isteğini kabul etti`,
     historyTitle: 'Oyun geçmişi',
     noHistory: 'Başka bir masayla en az 3 dakika oynadığınızda burada görünür.',
-    historyRow: (alias: string, concept: 'tabu' | 'sohbet', playedAt: string) =>
-      `${alias} masasıyla ${concept === 'tabu' ? 'Tabu' : 'Sohbet'} · ${dayMonth(playedAt)}`,
+    // The last game played in the room, or the chat (docs/SPEC_V3.md §5.5).
+    historyRow: (alias: string, concept: HistoryConcept, playedAt: string) =>
+      `${alias} masasıyla ${HISTORY_CONCEPTS[concept]} · ${dayMonth(playedAt)}`,
     people: (n: number) => `${headcountLabel(n)} kişi`,
     sendRequest: 'İstek gönder',
     addFriend: 'Arkadaş ekle',
@@ -253,14 +262,15 @@ export const tr = {
     report: 'Profili şikayet et',
     back: 'Geri dön',
   },
+  // Anonymous or with the profile, chosen for each room (docs/SPEC_V3.md §5.4).
   participation: {
-    title: 'Nasıl katılıyorsunuz?',
+    title: 'Bu odada nasıl görüneceksiniz?',
     anonymous: 'Anonim',
-    anonymousHint: 'Diğer masalar yalnızca masa adını ve kişi sayısını görür.',
-    profile: 'Profille',
+    anonymousHint: 'Diğer masa yalnızca masa adınızı ve kişi sayınızı görür.',
+    profile: 'Profilimle',
     profileHint:
-      'Lobide "profilli" işareti görünür. Aynı odadaki masa, oda sürerken profilini görebilir.',
-    profileNeedsName: 'Profille katılmak için önce Profil sekmesinden bir ad seç.',
+      'Lobide "profilli" işareti görünür. Odadaki diğer masa, oda sürerken profilini görebilir.',
+    profileNeedsName: 'Profilinle katılmak için önce Profil sekmesinden bir ad seç.',
   },
   home: {
     title: 'Hoş geldin',
@@ -296,11 +306,14 @@ export const tr = {
     doneBody: 'Bu mekanda diğer masalar sizi bu adla görecek:',
     continue: 'Devam',
   },
-  concepts: { tabu: 'Tabu', sohbet: 'Sohbet' },
-  // How a concept is shown with its game type (docs/SPEC_V2.md §8.1): only voice games are
-  // marked, since they need the tables to come together.
+  // The games (docs/SPEC_V3.md §5.1). "Sohbet" alone is the intent label, never a game.
+  concepts: { tabu: 'Sesli Tabu', sohbet: 'Sohbet kartları' },
+  // How a game is shown with its type (docs/SPEC_V2.md §8.1): only voice games are marked, since
+  // they need the tables to come together.
   conceptWithMode: (concept: 'tabu' | 'sohbet') =>
-    concept === 'tabu' ? 'Tabu · yüz yüze' : 'Sohbet',
+    concept === 'tabu' ? 'Sesli Tabu · yüz yüze' : 'Sohbet kartları',
+  // The room's optional intent label (§5.2).
+  intents: { game: 'Oyun', chat: 'Sohbet' },
   voiceNote:
     'Bu oyun yüz yüze oynanır: başka bir masa katılırsa masalar bir araya gelip sesli oynar.',
   rooms: {
@@ -320,25 +333,32 @@ export const tr = {
     requestPending: (seconds: number) => `İsteğin gönderildi. Yanıt bekleniyor (${seconds} sn).`,
     requestUnavailable: 'Masa şu an müsait değil.',
     newTitle: 'Oda kur',
-    conceptLabel: 'Konsept',
-    visibilityLabel: 'Kimler görsün?',
-    visibility: { private: 'Sadece masam', open: 'Mekana açık' },
-    visibilityHint: {
-      private: 'Oda lobide görünmez; kendi masanla oynarsın.',
-      open: 'Mekandaki diğer masalar odanı lobide görür ve katılmak isteyebilir.',
+    newHint:
+      'Oda mekandaki diğer masalara açılır ve sohbetle başlar. Oyunu odada iki masa birlikte seçer.',
+    intentLabel: 'Niyetin (isteğe bağlı)',
+    intentNone: 'Etiket yok',
+    intentHint: {
+      game: 'Oyun oynamak istiyorsunuz.',
+      chat: 'Sohbet etmek istiyorsunuz. Oyun yine önerilebilir.',
     },
     createConfirm: 'Odayı kur',
-    roomTitle: (concept: string) => `${concept} odası`,
-    // The room's eyebrow; voice games say they are played face to face (docs/SPEC_V2.md §8.1).
-    roomEyebrow: (concept: 'tabu' | 'sohbet') =>
-      concept === 'tabu' ? 'Tabu odası · yüz yüze' : 'Sohbet odası',
+    // The room's eyebrow: the running game, else the chat; voice games say they are played face to
+    // face (docs/SPEC_V2.md §8.1).
+    roomEyebrow: (concept: 'tabu' | 'sohbet' | null) =>
+      concept === 'tabu'
+        ? 'Sesli Tabu · yüz yüze'
+        : concept === 'sohbet'
+          ? 'Sohbet kartları'
+          : 'Oda',
     withGuest: (owner: string, guest: string) => `${owner} ve ${guest}`,
     waitingForGuest: 'Başka bir masa katılmak isteyebilir. Bu arada kendi masanla oynayabilirsin.',
-    leave: 'Odadan çık',
     end: 'Odayı bitir',
+    endHint: 'İki masalı odada "Tanışalım mı?" sorulur.',
+    requestTitle: 'Katılma isteği',
+    sendRequest: 'İsteği gönder',
     incomingTitle: 'Katılma isteği',
-    incomingBody: (alias: string, headcount: number, concept: string) =>
-      `${alias} (${headcountLabel(headcount)} kişi) ${concept} odana katılmak istiyor.`,
+    incomingBody: (alias: string, headcount: number) =>
+      `${alias} (${headcountLabel(headcount)} kişi) odana katılmak istiyor.`,
     accept: 'Kabul',
     decline: 'Geç',
     declineNote:
@@ -372,7 +392,7 @@ export const tr = {
     block: 'Engelle',
     blockConfirmTitle: 'Bu masayı engellemek istiyor musun?',
     blockConfirmBody:
-      'Birbirinizin odalarını artık görmezsiniz. Odadan çıkarsın. Engeli ayarlardan kaldırabilirsin.',
+      'Birbirinizin odalarını artık görmezsiniz. Oda biter ve cevabın "Hayır" sayılır. Engeli ayarlardan kaldırabilirsin.',
     blockConfirm: 'Engelle',
     blockedTitle: 'Engellenenler',
     blockedEmpty: 'Engellediğin kimse yok.',
@@ -402,8 +422,22 @@ export const tr = {
     winner: (t: string) => `Takım ${t} kazandı!`,
     draw: 'Berabere!',
     playAgain: 'Yeniden oyna',
-    startServer: 'Oyunu başlat',
-    waitingForOwner: 'Oda sahibinin oyunu başlatması bekleniyor.',
+    // Proposals (docs/SPEC_V3.md §5.3): a game starts only when the other table accepts.
+    proposeTitle: 'Oyun öner',
+    proposeHint: 'Diğer masa kabul edince oyun başlar.',
+    propose: (game: string) => `${game} öner`,
+    proposalMine: (game: string, s: number) => `${game} önerdin. Yanıt bekleniyor (${s} sn).`,
+    proposalTheirs: (game: string) => `Diğer masa ${game} öneriyor.`,
+    acceptProposal: 'Oynayalım',
+    declineProposal: 'Şimdi değil',
+    notAccepted: 'Öneri kabul edilmedi.',
+    // One table: the games start at once.
+    soloTitle: 'Masanla oyna',
+    start: (game: string) => `${game} başlat`,
+    endGame: 'Oyunu bitir',
+    lastGameTabu: (owner: string, ownerScore: number, guest: string, guestScore: number) =>
+      `Son oyun: ${owner} ${ownerScore} – ${guestScore} ${guest}`,
+    lastGameOther: (game: string) => `${game} bitti.`,
     turn: (n: number, total: number) => `Tur ${n}/${total}`,
     turnEyebrow: (n: number, total: number) => `Tabu · Tur ${n}/${total}`,
     passesLeft: (n: number) => `${n} pas hakkı`,
@@ -417,6 +451,7 @@ export const tr = {
     turnOverWait: 'Tur bitiyor…',
     voiceIntro:
       'Yüz yüze oynanır: masalar sırayla anlatır, diğer masa kartı görür ve hakemlik yapar. 6 tur, her tur 60 saniye.',
+    sohbetIntro: 'Sohbet kartları: her kart bir soru; iki masa da sonraki kartı açabilir.',
     voiceDescribe: 'Sıra sizde: kartı masanıza anlatın. Diğer masa kartı görüyor ve Tabu der.',
     tapToReveal: 'Kartı görmek için dokun',
     hideFromTeam: 'Önce telefonu takım arkadaşlarından sakla.',
@@ -463,6 +498,10 @@ export const tr = {
     changeSpotHint:
       'Aynı noktadaki masalarla oynarsın. Odadayken ya da bir isteğin beklerken değiştiremezsin.',
     changeSpotSave: 'Bu noktadayım',
+    // "Masa adını değiştir" (docs/SPEC_V3.md §5.6).
+    rerollAlias: 'Adı değiştir',
+    rerollsLeft: (n: number) =>
+      n > 0 ? `${n} hakkın kaldı` : 'Bu masada adı değiştirme hakkın bitti',
   },
   design: {
     title: 'Tasarım (test)',
@@ -477,9 +516,6 @@ export const tr = {
     // "2000-01-15" → "15.01.2000"
     birthDateValue: (iso: string) => iso.split('-').reverse().join('.'),
     birthDateHint: 'Yalnızca sen görürsün. Yanlışsa düzeltmek için bize yaz.',
-    privacySection: 'Gizlilik',
-    defaultParticipation: 'Masaya varsayılan katılım',
-    defaultParticipationHint: 'Her girişte o masa için değiştirebilirsin.',
     notificationsSection: 'Bildirimler',
     notifyDm: 'Mesajlar',
     notifyFriendRequests: 'Arkadaşlık istekleri',
@@ -511,7 +547,10 @@ export const tr = {
     spot_required: 'Önce nerede olduğunu seç.',
     spot_invalid: 'Bu nokta artık seçilemiyor. Listeden başka bir nokta seç.',
     different_spot: 'Bu oda başka bir noktada. Önce "Bu noktadayım"a dokun.',
-    in_room: 'Odadayken ya da bir isteğin beklerken noktanı değiştiremezsin.',
+    in_room: 'Odadayken ya da bir isteğin beklerken bunu yapamazsın.',
+    reroll_limit: 'Bu masada adı değiştirme hakkın bitti.',
+    proposal_pending: 'Zaten bekleyen bir öneri var.',
+    no_proposal: 'Bu öneri artık geçerli değil.',
     no_active_table: 'Önce mekana giriş yapman gerekiyor.',
     already_in_room: 'Masan zaten bir odada.',
     room_not_available: 'Masa şu an müsait değil.',

@@ -1,5 +1,5 @@
 // Tabu (MVP_SPEC §5.1, docs/SPEC_V2.md §8.2). One table: the deck, then the phone runs the game.
-// Two tables: face to face, server-authoritative. Both tables get the turn's card list at the
+// Two tables: face to face, server-authoritative, started by rooms/answer-game. Both tables get the turn's card list at the
 // start of the turn; every press names its card index, the server checks it and publishes the
 // room row, and a second press on the same card is ignored.
 import { requireUser, serviceClient } from '../_shared/auth.ts';
@@ -36,30 +36,13 @@ Deno.serve(
     const target = { target_user_id: user.id, target_room_id: body.roomId };
 
     switch (body.action) {
+      // One table only: the deck, and the room's activity becomes Tabu (docs/SPEC_V3.md §5.3). A
+      // two-table game starts from an accepted proposal (rooms/answer-game); here it is
+      // no_proposal.
       case 'start': {
-        const room = await db
-          .from('rooms')
-          .select('guest_session_id')
-          .eq('id', body.roomId)
-          .maybeSingle();
-        if (room.error) throw dbError('rooms', room.error);
-        if (!room.data?.guest_session_id) {
-          const deck = await db.rpc('tabu_local_deck', {
-            ...target,
-            deck_size: TABU.localDeckSize,
-          });
-          if (deck.error) throw dbError('tabu_local_deck', deck.error);
-          return { mode: 'local', deck: deck.data };
-        }
-        const started = await db.rpc('tabu_start', {
-          ...target,
-          turn_seconds: TABU.turnSeconds,
-          total_turns: TABU.totalTurns,
-          max_passes: TABU.maxPasses,
-          cards_per_turn: TABU.cardsPerTurn,
-        });
-        if (started.error) throw dbError('tabu_start', started.error);
-        return { mode: 'server' };
+        const deck = await db.rpc('tabu_local_deck', { ...target, deck_size: TABU.localDeckSize });
+        if (deck.error) throw dbError('tabu_local_deck', deck.error);
+        return { mode: 'local', deck: deck.data };
       }
 
       case 'turn-cards': {

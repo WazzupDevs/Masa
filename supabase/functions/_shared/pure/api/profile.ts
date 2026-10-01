@@ -1,5 +1,4 @@
 import type { BadgeId } from '../badges.ts';
-import type { Participation } from '../profile.ts';
 
 // `profile` Edge Function (docs/SPEC_V2.md §5), shared with the mobile app.
 export type ProfileView = {
@@ -22,7 +21,6 @@ export type ProfileRequest =
       action: 'update';
       displayName?: string;
       bio?: string;
-      defaultParticipation?: Participation;
       notifyDm?: boolean;
       notifyFriendRequests?: boolean;
     }

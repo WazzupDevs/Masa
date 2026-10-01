@@ -1,7 +1,12 @@
 import postgres from 'postgres';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { sessionChannel, venueChannel } from '../functions/_shared/pure/rooms.ts';
+import { REVEAL } from '../functions/_shared/pure/reveal.ts';
+import {
+  ROOM_IDLE_MINUTES,
+  sessionChannel,
+  venueChannel,
+} from '../functions/_shared/pure/rooms.ts';
 import { deleteFixtureVenues, insertFixtureVenues } from './fixtures/venues.ts';
 import {
   checkInAt,
@@ -33,12 +38,18 @@ afterAll(async () => {
 
 const rooms = (client: Client, body: Record<string, unknown>) => invoke(client, 'rooms', body);
 
+// "Oda kur" (always open) or, for 'private', "Masanla oyna" (docs/SPEC_V3.md §5.1).
 async function createRoom(
   client: Client,
   visibility: 'open' | 'private' = 'open',
-  concept: 'tabu' | 'sohbet' = 'tabu',
+  intent?: 'game' | 'chat',
 ): Promise<string> {
-  const res = await rooms(client, { action: 'create', concept, visibility });
+  const res = await rooms(
+    client,
+    visibility === 'private'
+      ? { action: 'create-solo' }
+      : { action: 'create', profiled: false, ...(intent ? { intent } : {}) },
+  );
   expect(res.status, JSON.stringify(res.body)).toBe(200);
   return (res.body as { roomId: string }).roomId;
 }
@@ -50,7 +61,7 @@ async function lobby(client: Client, key = V) {
 }
 
 async function requestJoin(client: Client, roomId: string) {
-  return rooms(client, { action: 'request-join', roomId });
+  return rooms(client, { action: 'request-join', roomId, profiled: false });
 }
 
 async function myRequests(client: Client) {
@@ -86,15 +97,13 @@ async function threeTables(): Promise<[Client, Client, Client]> {
 describe('rooms/create and the lobby', () => {
   it('needs an active table and allows one room per table', async () => {
     const client = await onboarded(PHONES[0]);
-    expect(await rooms(client, { action: 'create', concept: 'tabu', visibility: 'open' })).toEqual({
+    expect(await rooms(client, { action: 'create', profiled: false })).toEqual({
       status: 409,
       body: errorBody('no_active_table'),
     });
     await checkInAt(client, venue, V);
     await createRoom(client);
-    expect(
-      await rooms(client, { action: 'create', concept: 'sohbet', visibility: 'open' }),
-    ).toEqual({
+    expect(await rooms(client, { action: 'create', profiled: false, intent: 'chat' })).toEqual({
       status: 409,
       body: errorBody('already_in_room'),
     });
@@ -104,7 +113,7 @@ describe('rooms/create and the lobby', () => {
     const [owner, other] = await threeTables();
     const ownerTable =
       await sql`select alias, headcount from public.table_sessions where user_id = ${await userIdOf(owner)} and status = 'active'`;
-    const roomId = await createRoom(owner, 'open', 'sohbet');
+    const roomId = await createRoom(owner, 'open', 'chat');
 
     const rows = await lobby(other);
     expect(rows).toHaveLength(1);
@@ -112,7 +121,8 @@ describe('rooms/create and the lobby', () => {
     expect(Object.keys(rows[0] ?? {}).sort()).toEqual(
       [
         'alias',
-        'concept',
+        // v3: the intent label instead of the game (docs/SPEC_V3.md §5.2).
+        'intent',
         'headcount',
         'profiled',
         'room_id',
@@ -126,7 +136,7 @@ describe('rooms/create and the lobby', () => {
       room_id: roomId,
       alias: ownerTable[0]?.alias,
       headcount: ownerTable[0]?.headcount,
-      concept: 'sohbet',
+      intent: 'chat',
       profiled: false,
     });
 
@@ -305,7 +315,7 @@ describe('join requests', () => {
     const [requestId] = await pendingRequestIds(owner, roomId);
     await rooms(owner, { action: 'respond', requestId, accept: true });
 
-    expect(await rooms(guest, { action: 'create', concept: 'tabu', visibility: 'open' })).toEqual({
+    expect(await rooms(guest, { action: 'create', profiled: false })).toEqual({
       status: 409,
       body: errorBody('already_in_room'),
     });
@@ -332,7 +342,7 @@ describe('blocks in the lobby', () => {
       [ownerRoom, blockedRoom].sort(),
     );
     // Out of its own room, the blocked table still cannot ask to join.
-    await rooms(blocked, { action: 'leave' });
+    await rooms(blocked, { action: 'end' });
     expect(await requestJoin(blocked, ownerRoom)).toEqual({
       status: 409,
       body: errorBody('room_not_available'),
@@ -356,18 +366,50 @@ describe('leaving', () => {
     return row;
   }
 
-  it('sends the room back to waiting (and the lobby) when the guest leaves', async () => {
-    const { guest, third, roomId } = await roomWithGuest();
-    expect(await rooms(guest, { action: 'leave' })).toEqual({ status: 200, body: { ok: true } });
-    expect(await roomRow(roomId)).toMatchObject({ status: 'waiting', guest_session_id: null });
-    expect((await lobby(third)).map((r) => r.room_id)).toEqual([roomId]);
-    expect(await rooms(guest, { action: 'leave' })).toEqual({ status: 200, body: { ok: true } });
+  async function decisionsOf(roomId: string) {
+    return sql`
+      select ts.user_id, d.wants_meet from public.reveal_decisions d
+      join public.table_sessions ts on ts.id = d.session_id
+      where d.room_id = ${roomId}
+    `;
+  }
+
+  // "Odayı bitir" is the only way out (docs/SPEC_V3.md §5.5).
+  it('has no rooms/leave', async () => {
+    const { guest, roomId } = await roomWithGuest();
+    expect((await rooms(guest, { action: 'leave' })).status).toBe(400);
+    expect(await roomRow(roomId)).toMatchObject({ status: 'active' });
   });
 
-  it('closes the room when the owner leaves', async () => {
-    const { owner, roomId } = await roomWithGuest();
-    await rooms(owner, { action: 'leave' });
-    expect((await roomRow(roomId))?.status).toBe('closed');
+  it('opens the window when either table leaves the venue, with its answer "Hayır"', async () => {
+    for (const leaver of ['guest', 'owner'] as const) {
+      const tables = await roomWithGuest();
+      const leaving = tables[leaver];
+      await invoke(leaving, 'checkin', { action: 'leave' });
+      expect(await roomRow(tables.roomId)).toMatchObject({ status: 'ending' });
+      expect(await decisionsOf(tables.roomId)).toEqual([
+        { user_id: await userIdOf(leaving), wants_meet: false },
+      ]);
+      // The other table may still answer.
+      const other = leaver === 'guest' ? tables.owner : tables.guest;
+      expect(
+        (
+          await invoke(other, 'reveal', {
+            action: 'decide',
+            roomId: tables.roomId,
+            wantsMeet: true,
+          })
+        ).status,
+      ).toBe(200);
+      for (const phone of PHONES) await deleteUserByPhone(phone);
+    }
+  });
+
+  it('closes a one-table room when its table leaves the venue', async () => {
+    const [owner] = await threeTables();
+    const roomId = await createRoom(owner);
+    await invoke(owner, 'checkin', { action: 'leave' });
+    expect(await roomRow(roomId)).toMatchObject({ status: 'closed' });
   });
 
   it('ending a two-table room opens the reveal window, idempotently', async () => {
@@ -386,18 +428,10 @@ describe('leaving', () => {
     expect(row).toMatchObject({ status: 'closed', reveal_result: null });
   });
 
-  it('releases rooms when a table ends', async () => {
-    const { owner, guest, roomId } = await roomWithGuest();
-    await invoke(guest, 'checkin', { action: 'leave' });
-    expect(await roomRow(roomId)).toMatchObject({ status: 'waiting', guest_session_id: null });
-    await invoke(owner, 'checkin', { action: 'leave' });
-    expect((await roomRow(roomId))?.status).toBe('closed');
-  });
-
-  it('releases the room of a guest deleted by admin:delete, as when the table leaves', async () => {
+  it('opens the window when the guest is deleted by admin:delete, as when the table leaves', async () => {
     const { roomId, guest } = await roomWithGuest();
     await deleteAccount(admin, await userIdOf(guest));
-    expect(await roomRow(roomId)).toMatchObject({ status: 'waiting', guest_session_id: null });
+    expect(await roomRow(roomId)).toMatchObject({ status: 'ending' });
   });
 
   it('closes the room of a deleted account', async () => {
@@ -425,6 +459,10 @@ describe('locks', () => {
       (tx, userId) =>
         tx`select public.start_table_session(${userId}, ${venue[V] ?? ''}, 'Kilit Testi',
              2::smallint, 'test', null, 'anonymous')`,
+    ],
+    [
+      'drawing a new alias (reroll_table_alias)',
+      (tx, userId) => tx`select id from public.reroll_table_alias(${userId}, 'Kilit Simit', 3)`,
     ],
     [
       'the expiry job (end_expired_table_sessions)',
@@ -472,7 +510,9 @@ describe('locks', () => {
     await checkInAt(owner, venue, V);
     await checkInAt(requester, venue, V);
     const roomId = await createRoom(owner);
-    expect((await rooms(requester, { action: 'request-join', roomId })).status).toBe(200);
+    expect(
+      (await rooms(requester, { action: 'request-join', roomId, profiled: false })).status,
+    ).toBe(200);
     const [request] =
       await sql`select id from public.join_requests where room_id = ${roomId} and status = 'pending'`;
     const [ownerId, requesterId] = await Promise.all([userIdOf(owner), userIdOf(requester)]);
@@ -514,7 +554,7 @@ describe('scheduled jobs', () => {
     expect(jr?.status).toBe('expired');
 
     await sql`update public.rooms set last_activity_at = now() - interval '11 minutes' where id = ${roomId}`;
-    await sql`select private.close_idle_rooms()`;
+    await sql`select private.close_idle_rooms(${ROOM_IDLE_MINUTES}, ${REVEAL.decisionSeconds})`;
     const [room] = await sql`select status from public.rooms where id = ${roomId}`;
     expect(room?.status).toBe('closed');
 
@@ -538,7 +578,8 @@ describe('scheduled jobs', () => {
         const [ran] = await job.begin(async (jtx) => {
           await jtx`set local lock_timeout = '2s'`;
           return jtx`
-            select private.close_idle_rooms() as rooms, private.expire_join_requests() as requests
+            select private.close_idle_rooms(${ROOM_IDLE_MINUTES}, ${REVEAL.decisionSeconds}) as rooms,
+                   private.expire_join_requests() as requests
           `;
         });
         expect(ran).toEqual({ rooms: 0, requests: 0 });
@@ -548,9 +589,56 @@ describe('scheduled jobs', () => {
     }
     // The next run takes them.
     const [next] = await sql`
-      select private.close_idle_rooms() as rooms, private.expire_join_requests() as requests
+      select private.close_idle_rooms(${ROOM_IDLE_MINUTES}, ${REVEAL.decisionSeconds}) as rooms,
+             private.expire_join_requests() as requests
     `;
     expect(next).toEqual({ rooms: 1, requests: 1 });
+  });
+
+  // S5: an idle two-table room is not closed; the window opens for both tables alike and neither
+  // answer is written in advance.
+  it('opens the window of an idle two-table room for both tables', async () => {
+    const [owner, guest] = await threeTables();
+    const roomId = await createRoom(owner);
+    await requestJoin(guest, roomId);
+    const [requestId] = await pendingRequestIds(owner, roomId);
+    await rooms(owner, { action: 'respond', requestId, accept: true });
+    await sql`update public.rooms set last_activity_at = now() - interval '11 minutes' where id = ${roomId}`;
+    await sql`select private.close_idle_rooms(${ROOM_IDLE_MINUTES}, ${REVEAL.decisionSeconds})`;
+    const [room] = await sql`
+      select status, reveal_ends_at - now() > interval '20 seconds' as open_window
+      from public.rooms where id = ${roomId}
+    `;
+    expect(room).toEqual({ status: 'ending', open_window: true });
+    expect(await sql`select 1 from public.reveal_decisions where room_id = ${roomId}`).toHaveLength(
+      0,
+    );
+    for (const table of [owner, guest]) {
+      expect(
+        (await invoke(table, 'reveal', { action: 'decide', roomId, wantsMeet: true })).status,
+      ).toBe(200);
+    }
+  });
+
+  it('runs the idle job and the proposal job every minute with the numbers of pure/', async () => {
+    const jobs = await sql`
+      select jobname, schedule, command from cron.job
+      where jobname in ('close-idle-rooms', 'expire-game-proposals') order by jobname
+    `;
+    expect(jobs).toEqual([
+      {
+        jobname: 'close-idle-rooms',
+        schedule: '* * * * *',
+        command: `select private.close_idle_rooms(${ROOM_IDLE_MINUTES}, ${REVEAL.decisionSeconds})`,
+      },
+      {
+        jobname: 'expire-game-proposals',
+        schedule: '* * * * *',
+        command: 'select private.expire_game_proposals()',
+      },
+    ]);
+    const [fixed] = await sql`select private.reveal_decision_seconds() as seconds`;
+    expect(fixed?.seconds).toBe(REVEAL.decisionSeconds);
   });
 });
 
@@ -575,10 +663,30 @@ describe('push tokens and closed helpers', () => {
   it('keeps room state changes server-side only', async () => {
     const client = await onboarded(PHONES[0]);
     const id = await userIdOf(client);
+    const roomId = '00000000-0000-0000-0000-000000000000';
     for (const [fn, args] of [
-      ['rooms_create', { target_user_id: id, new_concept: 'tabu', new_visibility: 'open' }],
-      ['rooms_leave', { target_user_id: id }],
+      ['rooms_create', { target_user_id: id, profiled: false }],
+      ['rooms_create_solo', { target_user_id: id }],
+      [
+        'rooms_propose_game',
+        { target_user_id: id, target_room_id: roomId, new_concept: 'tabu', ttl_seconds: 30 },
+      ],
+      [
+        'rooms_answer_game',
+        {
+          target_user_id: id,
+          target_room_id: roomId,
+          accept: true,
+          turn_seconds: 60,
+          total_turns: 6,
+          max_passes: 3,
+          cards_per_turn: 40,
+          cooldown_ms: 5000,
+        },
+      ],
+      ['rooms_end_game', { target_user_id: id, target_room_id: roomId }],
       ['rooms_end', { target_user_id: id, decision_seconds: 60 }],
+      ['reroll_table_alias', { target_user_id: id, new_alias: 'Mor Simit', max_rerolls: 3 }],
     ] as const) {
       const { error } = await client.rpc(fn, args as never);
       expect(error?.code, fn).toBe('42501');

@@ -23,12 +23,13 @@ import {
 } from '@/features/friends/queries';
 import { useRetryAfterName } from '@/features/friends/useRetryAfterName';
 import { errorMessage } from '@/i18n/errors';
-import { tr } from '@/i18n/tr';
+import { type HistoryConcept, tr } from '@/i18n/tr';
 import { track } from '@/lib/analytics';
 import { friendsApi, safetyApi } from '@/lib/api';
 
-type Concept = 'tabu' | 'sohbet';
-const concept = (c: string): Concept => (c === 'tabu' ? 'tabu' : 'sohbet');
+// The last game of the encounter, or the chat (docs/SPEC_V3.md §5.5).
+const concept = (c: string): HistoryConcept =>
+  c === 'tabu' ? 'tabu' : c === 'sohbet' ? 'sohbet' : 'chat';
 
 // Gelen istekler, gönderilen istekler and the play history (docs/SPEC_V2.md §6.1, §6.2). Every
 // action on another table goes through the caller's own history row; nothing here carries a

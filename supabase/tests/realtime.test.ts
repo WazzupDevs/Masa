@@ -44,13 +44,9 @@ async function roomWithGuest(outsiderAtVenue: boolean) {
   const ownerTable = await checkInAt(owner, venue, V);
   await checkInAt(guest, venue, V);
   if (outsiderAtVenue) await checkInAt(outsider, venue, V);
-  const created = await invoke(owner, 'rooms', {
-    action: 'create',
-    concept: 'sohbet',
-    visibility: 'open',
-  });
+  const created = await invoke(owner, 'rooms', { action: 'create', profiled: false });
   const roomId = (created.body as { roomId: string }).roomId;
-  await invoke(guest, 'rooms', { action: 'request-join', roomId });
+  await invoke(guest, 'rooms', { action: 'request-join', roomId, profiled: false });
   const [request] =
     await sql`select id from public.join_requests where room_id = ${roomId} and status = 'pending'`;
   await invoke(owner, 'rooms', { action: 'respond', requestId: request?.id, accept: true });
@@ -182,8 +178,11 @@ describe('private table channels', { timeout: 60_000 }, () => {
     await quiet();
     expect(seen.events).toEqual([]);
 
-    // The server's broadcast arrives: the guest leaves, the room is back in the lobby.
-    await invoke(guest, 'rooms', { action: 'leave' });
+    // The server's broadcast arrives: another table checks in and opens a room.
+    await checkInAt(outsider, venue, V);
+    expect((await invoke(outsider, 'rooms', { action: 'create', profiled: false })).status).toBe(
+      200,
+    );
     await expect.poll(() => seen.events, { timeout: 8000 }).toEqual([BROADCAST.lobbyChanged]);
   });
 });
@@ -244,16 +243,16 @@ async function statusCheck(client: Client, roomId: string) {
 }
 
 describe('room row changes', { timeout: 60_000 }, () => {
-  it('reach a subscribed guest when the owner leaves', async () => {
+  it('reach a subscribed guest when the owner ends the room', async () => {
     const { owner, guest, roomId } = await roomWithGuest(false);
     const watch = watchRoomRow(guest, roomId);
     await untilLive(watch, roomId);
 
-    await invoke(owner, 'rooms', { action: 'leave' });
-    await expect.poll(() => watch.rows.map((r) => r.status), { timeout: 8000 }).toContain('closed');
+    await invoke(owner, 'rooms', { action: 'end' });
+    await expect.poll(() => watch.rows.map((r) => r.status), { timeout: 8000 }).toContain('ending');
   });
 
-  it('are not replayed to a guest that was away; only a re-read shows the closed room', async () => {
+  it('are not replayed to a guest that was away; only a re-read shows the ended room', async () => {
     const { owner, guest, roomId } = await roomWithGuest(false);
     const before = await statusCheck(guest, roomId);
     expect(before?.status).toBe('active');
@@ -262,7 +261,7 @@ describe('room row changes', { timeout: 60_000 }, () => {
     const away = watchRoomRow(guest, roomId);
     await untilLive(away, roomId);
     await guest.removeChannel(away.channel);
-    await invoke(owner, 'rooms', { action: 'leave' });
+    await invoke(owner, 'rooms', { action: 'end' });
     // Realtime handles the change while no channel of the guest is there.
     await quiet();
 
@@ -275,7 +274,7 @@ describe('room row changes', { timeout: 60_000 }, () => {
 
     // The re-read does show it, and the check says the cached row is out of date.
     const after = await statusCheck(guest, roomId);
-    expect(after?.status).toBe('closed');
+    expect(after?.status).toBe('ending');
     expect(roomCheckDiffers(before, after)).toBe(true);
   });
 

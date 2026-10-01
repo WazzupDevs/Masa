@@ -207,3 +207,28 @@ export function parseGameState(value: unknown): GameState | null {
   }
   return null;
 }
+
+// Between games the room is a chat and game_state keeps only the game counter and the last game's
+// result (docs/SPEC_V3.md §5.1): the concept, and for two-table Tabu both scores.
+export type LastGame = { concept: 'tabu' | 'sohbet'; scores: Record<TableSide, number> | null };
+export type BetweenGames = { gameNo: number; lastGame: LastGame | null };
+
+export function parseBetweenGames(value: unknown): BetweenGames {
+  const state = isRecord(value) ? value : {};
+  const gameNo = num(state.gameNo) ? state.gameNo : 0;
+  const last = state.lastGame;
+  if (!isRecord(last) || (last.concept !== 'tabu' && last.concept !== 'sohbet')) {
+    return { gameNo, lastGame: null };
+  }
+  const scores = last.scores;
+  return {
+    gameNo,
+    lastGame: {
+      concept: last.concept,
+      scores:
+        isRecord(scores) && num(scores.owner) && num(scores.guest)
+          ? { owner: scores.owner, guest: scores.guest }
+          : null,
+    },
+  };
+}

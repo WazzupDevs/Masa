@@ -1,5 +1,6 @@
-// Guards content/aliases-tr.json against the rules in MVP_SPEC §11: positive or neutral
-// adjectives, no animals used as insults in Turkish, no combination that reads as mockery.
+// Guards content/aliases-tr.json against the rules in MVP_SPEC §11 and docs/SPEC_V3.md §5.6:
+// positive or neutral adjectives, adjective + noun (animals, food, plants, objects, nature), no
+// noun used as an insult or slang in Turkish, no combination that reads as mockery.
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -68,6 +69,67 @@ const FORBIDDEN_ANIMALS = [
   'Yalıçapkını',
 ];
 
+// Other nouns used as insults, slang or mockery ("hıyar", "armut", "odun", "saksı", ...).
+const FORBIDDEN_NOUNS = [
+  ...FORBIDDEN_ANIMALS,
+  'Hıyar',
+  'Salatalık',
+  'Armut',
+  'Kabak',
+  'Muz',
+  'Dut',
+  'Fıstık',
+  'Şeftali',
+  'Lokum',
+  'Kek',
+  'Patates',
+  'Pırasa',
+  'Odun',
+  'Kütük',
+  'Saksı',
+  'Düdük',
+  'Top',
+  'Boru',
+  'Kazık',
+  'Çuval',
+  'Tencere',
+  // Removed by the project owner: they read as people's names (blurring anonymity and mixing with
+  // profiled names in the venue chat), carry a wrong association, or are too long.
+  ...[
+    'Deniz',
+    'Ada',
+    'Güneş',
+    'Ufuk',
+    'Poyraz',
+    'Şafak',
+    'Meltem',
+    'Bulut',
+    'Yağmur',
+    'Yıldız',
+    'Çınar',
+    'Defne',
+    'Nehir',
+    'Lale',
+    'Nergis',
+    'Menekşe',
+    'Sümbül',
+    'Nilüfer',
+    'Yonca',
+    'Kiraz',
+    'Şahin',
+    'Kamera',
+    'Dürbün',
+    'Teleskop',
+    'Harita',
+    'Helva',
+    'Ayva',
+    'Fener',
+    'Gökkuşağı',
+    'Karanfil',
+    'Kuyrukluyıldız',
+  ],
+];
+
 // Adjectives that are negative or turn any animal into mockery.
 const FORBIDDEN_ADJECTIVES = [
   'Kara',
@@ -97,6 +159,11 @@ const FORBIDDEN_ADJECTIVES = [
   'Kötü',
   'Pis',
   'Sinsi',
+  // Removed by the project owner: they read as people's names.
+  'Özgür',
+  'Yiğit',
+  'Zeki',
+  'Sadık',
 ];
 
 function lower(word: string): string {
@@ -106,24 +173,24 @@ function lower(word: string): string {
 describe('content/aliases-tr.json', () => {
   it('has enough words for unique aliases at a busy venue', () => {
     expect(words.adjectives.length).toBeGreaterThanOrEqual(40);
-    expect(words.animals.length).toBeGreaterThanOrEqual(40);
+    expect(words.nouns.length).toBeGreaterThanOrEqual(40);
   });
 
   it('has no duplicates', () => {
-    for (const list of [words.adjectives, words.animals]) {
+    for (const list of [words.adjectives, words.nouns]) {
       expect(new Set(list.map(lower)).size).toBe(list.length);
     }
   });
 
   it('uses single capitalized words', () => {
-    for (const word of [...words.adjectives, ...words.animals]) {
+    for (const word of [...words.adjectives, ...words.nouns]) {
       expect(word, word).toMatch(/^[A-ZÇĞİÖŞÜ][a-zçğıöşü]+$/);
     }
   });
 
-  it('contains no forbidden animals', () => {
-    const forbidden = new Set(FORBIDDEN_ANIMALS.map(lower));
-    expect(words.animals.filter((w) => forbidden.has(lower(w)))).toEqual([]);
+  it('contains no forbidden nouns', () => {
+    const forbidden = new Set(FORBIDDEN_NOUNS.map(lower));
+    expect(words.nouns.filter((w) => forbidden.has(lower(w)))).toEqual([]);
   });
 
   it('contains no forbidden adjectives', () => {

@@ -1,5 +1,7 @@
-# V7 and T1–T3: open Tabu room, the bot table asks to join, accept, one voice Tabu turn. First the
-# spots: a room at another spot, "Bu noktadayım", then the same spot.
+# V7 and T1–T3 with the v3 room flow (docs/SPEC_V3.md §5): a new alias, the spots (a room at another
+# spot, "Bu noktadayım", then the same spot), an open room with an intent, the bot table asks to
+# join, accept, chat, the bot proposes Sesli Tabu and this phone accepts, one voice Tabu turn, "Oyunu
+# bitir" back to chat, and a proposal the bot does not accept.
 appId: app.kabuk.mobile
 ---
 - runScript:
@@ -19,8 +21,16 @@ appId: app.kabuk.mobile
       ACTION: create-room
 - tapOn:
     id: tab-venue
+# "Adı değiştir": three per check-in (§5.6).
+- tapOn:
+    id: reroll-alias
 - extendedWaitUntil:
-    visible:
+    visible: 2 hakkın kaldı
+    timeout: 15000
+- takeScreenshot: 11b-alias-rerolled
+# The venue card (alias, spot, "Oda kur", "Masanla oyna") is above the lobby: scroll to it.
+- scrollUntilVisible:
+    element:
       id: spot-here
     timeout: 20000
 - assertVisible: Kütüphane
@@ -28,10 +38,10 @@ appId: app.kabuk.mobile
 - takeScreenshot: 12b-lobby-other-spot
 - tapOn:
     id: spot-here
-- extendedWaitUntil:
-    visible: Katılmak istiyorum
+- scrollUntilVisible:
+    element:
+      text: Katılmak istiyorum
     timeout: 15000
-- assertVisible: 'Noktan: Kütüphane'
 - takeScreenshot: 12c-lobby-same-spot
 # The bot closes its room; this phone opens one at the same spot and the bot asks to join it.
 - runScript:
@@ -41,35 +51,68 @@ appId: app.kabuk.mobile
 - extendedWaitUntil:
     notVisible: Katılmak istiyorum
     timeout: 20000
+- scrollUntilVisible:
+    element:
+      text: 'Noktan: Kütüphane'
+    direction: UP
+    timeout: 10000
 - extendedWaitUntil:
     visible: Oda kur
     timeout: 10000
 - tapOn: Oda kur
 - extendedWaitUntil:
-    visible: Odayı kur
+    visible:
+      id: intent-none
     timeout: 10000
-- tapOn: Mekana açık
+# No game is chosen: an optional intent label, and anonymous (default) or with the profile.
+- tapOn:
+    id: intent-game
 - takeScreenshot: 13-new-room
+# The intent and participation choices push the button below the fold.
+- scrollUntilVisible:
+    element:
+      text: Odayı kur
+    timeout: 10000
+- assertVisible:
+    id: participation-anonymous
+- takeScreenshot: 13b-new-room-bottom
 - tapOn: Odayı kur
+# A waiting room: the table can play on its own until another table joins.
 - extendedWaitUntil:
-    visible: Tabu odası.*
+    visible:
+      id: solo-tabu
     timeout: 15000
 - takeScreenshot: 14-room-waiting
 - runScript:
     file: ../scripts/bot.js
     env:
       ACTION: request-join
+      BODY: '{"profiled":true}'
 - extendedWaitUntil:
     visible: Katılma isteği
     timeout: 20000
 - takeScreenshot: 15-join-request
 - tapOn:
     id: join-accept
+# The room starts as a chat: "Oyun öner", no game running.
 - extendedWaitUntil:
-    visible: Oyunu başlat
+    visible:
+      id: propose-tabu
     timeout: 15000
 - takeScreenshot: 16-room-two-tables
-- tapOn: Oyunu başlat
+# The bot table proposes Sesli Tabu; the game starts when this table accepts.
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: propose-game
+      BODY: '{"concept":"tabu"}'
+- extendedWaitUntil:
+    visible:
+      id: proposal-accept
+    timeout: 20000
+- takeScreenshot: 16b-proposal
+- tapOn:
+    id: proposal-accept
 # Turn 1: the owner table (this phone) describes; its card starts covered.
 - extendedWaitUntil:
     visible: Kartı görmek için dokun
@@ -121,3 +164,36 @@ appId: app.kabuk.mobile
 - takeScreenshot: 20-judge
 - tapOn:
     id: tabu-correct
+# "Oyunu bitir": back to the chat, the room stays.
+- scrollUntilVisible:
+    element:
+      id: end-game
+    centerElement: true
+    timeout: 10000
+- tapOn:
+    id: end-game
+# The screen is still scrolled down to the button; the last game is at the top.
+- scrollUntilVisible:
+    element:
+      id: last-game
+    direction: UP
+    timeout: 15000
+- assertVisible:
+    id: propose-sohbet
+- takeScreenshot: 20b-back-to-chat
+# This table proposes Sohbet kartları and the bot declines: "Öneri kabul edilmedi" at once (S7).
+- tapOn:
+    id: propose-sohbet
+- extendedWaitUntil:
+    visible: Sohbet kartları önerdin.*
+    timeout: 10000
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: answer-game
+      BODY: '{"accept":false}'
+- extendedWaitUntil:
+    visible:
+      id: proposal-not-accepted
+    timeout: 15000
+- takeScreenshot: 20c-not-accepted

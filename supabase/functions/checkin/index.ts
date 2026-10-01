@@ -13,6 +13,7 @@ import type {
   CheckInResponse,
   CheckinRequest,
   LeaveResponse,
+  RerollAliasResponse,
 } from '../_shared/pure/api/checkin.ts';
 import {
   BOUNDARY_TOLERANCE_M,
@@ -26,7 +27,7 @@ import {
   needsProfile,
 } from '../_shared/pure/consent.ts';
 import { AppError } from '../_shared/pure/errors.ts';
-import { type Participation, PARTICIPATIONS } from '../_shared/pure/profile.ts';
+import { ALIAS_REROLLS_PER_CHECKIN } from '../_shared/pure/rooms.ts';
 
 const Body: z.ZodType<CheckinRequest> = z.discriminatedUnion('action', [
   z.object({
@@ -37,10 +38,10 @@ const Body: z.ZodType<CheckinRequest> = z.discriminatedUnion('action', [
     accuracyM: z.number().nonnegative().max(100_000).nullable(),
     headcount: z.number().int().min(MIN_HEADCOUNT).max(MAX_HEADCOUNT),
     locationConsentVersion: z.string(),
-    participation: z.enum(PARTICIPATIONS).optional(),
     spotId: z.uuid().optional(),
   }),
   z.object({ action: z.literal('change-spot'), spotId: z.uuid() }),
+  z.object({ action: z.literal('reroll-alias') }),
   z.object({ action: z.literal('leave') }),
 ]);
 
@@ -61,21 +62,17 @@ async function loadAliasWords(): Promise<AliasWords> {
   if (error) throw dbError('alias_words', error);
   aliasWords = {
     adjectives: data.filter((w) => w.kind === 'adjective').map((w) => w.word),
-    animals: data.filter((w) => w.kind === 'animal').map((w) => w.word),
+    nouns: data.filter((w) => w.kind === 'noun').map((w) => w.word),
   };
   return aliasWords;
 }
 
-// The table's participation (docs/SPEC_V2.md §5.4): the request's choice, else the profile's
-// default. Joining with the profile needs a display name.
-async function requireOnboarded(
-  db: Db,
-  userId: string,
-  requested: Participation | undefined,
-): Promise<Participation> {
+// Consents and the v3 profile (name and birth date) before a table opens. Anonymous or with the
+// profile is chosen per room from v3 on (docs/SPEC_V3.md §5.4), not here.
+async function requireOnboarded(db: Db, userId: string): Promise<void> {
   const { data, error } = await db
     .from('profiles')
-    .select('terms_version, kvkk_version, display_name, has_birth_date, default_participation')
+    .select('terms_version, kvkk_version, display_name, has_birth_date')
     .eq('id', userId)
     .maybeSingle();
   if (error) throw dbError('profiles', error);
@@ -84,16 +81,21 @@ async function requireOnboarded(
   }
   // Sign-up = profile (docs/SPEC_V3.md §3): accounts from before v3 finish their profile first.
   if (needsProfile(data)) throw new AppError('profile_required', 'Complete your profile first.');
-  const participation =
-    requested ?? (data.default_participation === 'profile' ? 'profile' : 'anonymous');
-  if (participation === 'profile' && !data.display_name) {
-    throw new AppError('display_name_required', 'Choose a display name first.');
-  }
-  return participation;
+}
+
+// Aliases of the venue's active tables, taken by nobody else.
+async function usedAliases(venueId: string): Promise<Set<string>> {
+  const { data, error } = await db
+    .from('table_sessions')
+    .select('alias')
+    .eq('venue_id', venueId)
+    .eq('status', 'active');
+  if (error) throw dbError('table_sessions', error);
+  return new Set(data.map((s) => s.alias));
 }
 
 async function checkIn(userId: string, body: CheckInRequest): Promise<CheckInResponse> {
-  const participation = await requireOnboarded(db, userId, body.participation);
+  await requireOnboarded(db, userId);
   if (body.locationConsentVersion !== CURRENT_LOCATION_CONSENT_VERSION) {
     throw new AppError('consent_outdated', 'Location consent is not the current version.');
   }
@@ -110,12 +112,7 @@ async function checkIn(userId: string, body: CheckInRequest): Promise<CheckInRes
   if (inside.data === null) throw new AppError('venue_not_found', 'Venue not found.');
   if (!inside.data) throw new AppError('too_far', 'You are too far from this venue.');
 
-  const [words, active] = await Promise.all([
-    loadAliasWords(),
-    db.from('table_sessions').select('alias').eq('venue_id', body.venueId).eq('status', 'active'),
-  ]);
-  if (active.error) throw dbError('table_sessions', active.error);
-  const used = new Set(active.data.map((s) => s.alias));
+  const [words, used] = await Promise.all([loadAliasWords(), usedAliases(body.venueId)]);
 
   for (let attempt = 0; attempt < MAX_ALIAS_ATTEMPTS; attempt++) {
     const alias = pickAlias(words, used, Math.random);
@@ -128,7 +125,6 @@ async function checkIn(userId: string, body: CheckInRequest): Promise<CheckInRes
       new_headcount: body.headcount,
       consent_version: body.locationConsentVersion,
       accuracy_m: body.accuracyM ?? undefined,
-      new_participation: participation,
       new_spot_id: body.spotId,
     });
     if (!error) return { sessionId: data.id, alias: data.alias, expiresAt: data.expires_at };
@@ -139,29 +135,68 @@ async function checkIn(userId: string, body: CheckInRequest): Promise<CheckInRes
   throw new AppError('alias_exhausted', 'No table alias is available at this venue.');
 }
 
-Deno.serve(
-  handle(async (req, raw): Promise<CheckInResponse | ChangeSpotResponse | LeaveResponse> => {
-    const body = Body.parse(raw);
-    const user = await requireUser(req, db);
+// "Masa adını değiştir" (docs/SPEC_V3.md §5.6): a new alias unique at the venue; not in a room or
+// with a request out (in_room), at most ALIAS_REROLLS_PER_CHECKIN times (reroll_limit).
+async function rerollAlias(userId: string): Promise<RerollAliasResponse> {
+  const { data: table, error } = await db
+    .from('table_sessions')
+    .select('venue_id, alias')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .maybeSingle();
+  if (error) throw dbError('table_sessions', error);
+  if (!table) throw new AppError('no_active_table', 'No active table.');
 
-    switch (body.action) {
-      case 'check-in':
-        return await checkIn(user.id, body);
-
-      case 'change-spot': {
-        const { error } = await db.rpc('change_table_spot', {
-          target_user_id: user.id,
-          target_spot_id: body.spotId,
-        });
-        if (error) throw domainError('change_table_spot', error);
-        return { spotId: body.spotId };
-      }
-
-      case 'leave': {
-        const { error } = await db.rpc('end_table_session', { target_user_id: user.id });
-        if (error) throw dbError('end_table_session', error);
-        return { ok: true };
-      }
+  const [words, used] = await Promise.all([loadAliasWords(), usedAliases(table.venue_id)]);
+  used.add(table.alias);
+  for (let attempt = 0; attempt < MAX_ALIAS_ATTEMPTS; attempt++) {
+    const alias = pickAlias(words, used, Math.random);
+    if (alias === null) break;
+    const { data, error } = await db.rpc('reroll_table_alias', {
+      target_user_id: userId,
+      new_alias: alias,
+      max_rerolls: ALIAS_REROLLS_PER_CHECKIN,
+    });
+    if (!error) {
+      return { alias: data.alias, rerollsLeft: ALIAS_REROLLS_PER_CHECKIN - data.alias_rerolls };
     }
-  }),
+    if (error.code !== UNIQUE_VIOLATION) throw domainError('reroll_table_alias', error);
+    used.add(alias);
+  }
+  throw new AppError('alias_exhausted', 'No table alias is available at this venue.');
+}
+
+Deno.serve(
+  handle(
+    async (
+      req,
+      raw,
+    ): Promise<CheckInResponse | ChangeSpotResponse | RerollAliasResponse | LeaveResponse> => {
+      const body = Body.parse(raw);
+      const user = await requireUser(req, db);
+
+      switch (body.action) {
+        case 'check-in':
+          return await checkIn(user.id, body);
+
+        case 'change-spot': {
+          const { error } = await db.rpc('change_table_spot', {
+            target_user_id: user.id,
+            target_spot_id: body.spotId,
+          });
+          if (error) throw domainError('change_table_spot', error);
+          return { spotId: body.spotId };
+        }
+
+        case 'reroll-alias':
+          return await rerollAlias(user.id);
+
+        case 'leave': {
+          const { error } = await db.rpc('end_table_session', { target_user_id: user.id });
+          if (error) throw dbError('end_table_session', error);
+          return { ok: true };
+        }
+      }
+    },
+  ),
 );

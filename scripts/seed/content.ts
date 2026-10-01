@@ -44,12 +44,29 @@ export function parseProfanity(json: unknown): ProfanityList {
   };
 }
 
+// A noun's longest form: "Sıfat İsim" must fit the alias line (docs/SPEC_V3.md §5.6).
+export const MAX_ALIAS_NOUN_LENGTH = 12;
+
+function aliasKey(word: string): string {
+  return word.trim().toLocaleLowerCase('tr-TR');
+}
+
 export function parseAliasWords(json: unknown): AliasWords {
   if (!isRecord(json)) throw new Error('aliases-tr.json must be an object');
-  return {
-    adjectives: stringList(json.adjectives, 'adjectives'),
-    animals: stringList(json.animals, 'animals'),
-  };
+  const adjectives = stringList(json.adjectives, 'adjectives');
+  const nouns = stringList(json.nouns, 'nouns');
+  const long = nouns.filter((w) => [...w.trim()].length > MAX_ALIAS_NOUN_LENGTH);
+  if (long.length > 0) {
+    throw new Error(`nouns longer than ${MAX_ALIAS_NOUN_LENGTH} letters: ${long.join(', ')}`);
+  }
+  // No word twice, within a list or across the two.
+  const seen = new Set<string>();
+  for (const word of [...adjectives, ...nouns]) {
+    const key = aliasKey(word);
+    if (seen.has(key)) throw new Error(`alias word repeated: ${word}`);
+    seen.add(key);
+  }
+  return { adjectives, nouns };
 }
 
 function parseVenue(value: unknown, index: number): VenueRecord {

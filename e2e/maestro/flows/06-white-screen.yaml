@@ -1,4 +1,5 @@
 # V8: the bot table ends the room; this phone must move to "Tanışalım mı?" without a blank screen.
+# Then "Masanla oyna": a private one-table room, its games started directly, "Odayı bitir" closes it.
 appId: app.kabuk.mobile
 ---
 - tapOn:
@@ -8,12 +9,19 @@ appId: app.kabuk.mobile
     timeout: 10000
 - tapOn: Oda kur
 - extendedWaitUntil:
-    visible: Odayı kur
+    visible:
+      id: intent-none
     timeout: 10000
-- tapOn: Mekana açık
+# The intent and participation choices push the button below the fold.
+- scrollUntilVisible:
+    element:
+      text: Odayı kur
+    timeout: 10000
 - tapOn: Odayı kur
+# A waiting room: the table can play on its own until another table joins.
 - extendedWaitUntil:
-    visible: Tabu odası.*
+    visible:
+      id: solo-tabu
     timeout: 15000
 - runScript:
     file: ../scripts/bot.js
@@ -25,9 +33,15 @@ appId: app.kabuk.mobile
 - tapOn:
     id: join-accept
 - extendedWaitUntil:
-    visible: Oyunu başlat
+    visible:
+      id: propose-tabu
     timeout: 15000
-- tapOn: Oyunu başlat
+- tapOn:
+    id: propose-tabu
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: answer-game
 - extendedWaitUntil:
     visible: Kartı görmek için dokun
     timeout: 20000
@@ -53,6 +67,39 @@ appId: app.kabuk.mobile
 - assertNotVisible: Bir şeyler ters gitti
 - takeScreenshot: 29-good-game
 - tapOn: Mekana dön
+- extendedWaitUntil:
+    visible: Oda kur
+    timeout: 15000
+- tapOn:
+    id: play-with-table
+- extendedWaitUntil:
+    visible:
+      id: solo-tabu
+    timeout: 15000
+- takeScreenshot: 29b-solo-room
+- tapOn:
+    id: solo-tabu
+- extendedWaitUntil:
+    visible: Takım . başlasın
+    timeout: 15000
+- takeScreenshot: 29c-solo-tabu
+- scrollUntilVisible:
+    element:
+      id: end-game
+    timeout: 10000
+- tapOn:
+    id: end-game
+- scrollUntilVisible:
+    element:
+      id: solo-sohbet
+    direction: UP
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: end-room
+    timeout: 10000
+- tapOn:
+    id: end-room
 - extendedWaitUntil:
     visible: Oda kur
     timeout: 15000

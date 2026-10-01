@@ -10,6 +10,7 @@ import type {
 import type {
   CreateRoomRequest,
   CreateRoomResponse,
+  ProposeGameResponse,
   RequestJoinResponse,
   RoomsOkResponse,
 } from '@shared/api/rooms.ts';
@@ -18,10 +19,12 @@ import type {
   CheckInRequest,
   CheckInResponse,
   LeaveResponse,
+  RerollAliasResponse,
 } from '@shared/api/checkin.ts';
 import type { DmOkResponse, FriendsListResponse, FriendsOkResponse } from '@shared/api/friends.ts';
 import type { ProfileRequest, ProfileUploadUrl, ProfileView } from '@shared/api/profile.ts';
 import type { ReportReason } from '@shared/chat.ts';
+import type { Concept } from '@shared/rooms.ts';
 import type { Mark } from '@shared/tabu.ts';
 import { callName, RETRY_DELAY_MS, retriesAfter } from '@shared/apiRetry.ts';
 import { type ErrorCode, isApiErrorBody } from '@shared/errors.ts';
@@ -94,18 +97,30 @@ export function callChangeSpot(spotId: string): Promise<ChangeSpotResponse> {
   return invoke<ChangeSpotResponse>('checkin', { action: 'change-spot', spotId });
 }
 
+// "Masa adını değiştir" (docs/SPEC_V3.md §5.6).
+export function callRerollAlias(): Promise<RerollAliasResponse> {
+  return invoke<RerollAliasResponse>('checkin', { action: 'reroll-alias' });
+}
+
 export function callLeave(): Promise<LeaveResponse> {
   return invoke<LeaveResponse>('checkin', { action: 'leave' });
 }
 
+// Rooms (docs/SPEC_V3.md §5): "Oda kur" is always open; "Masanla oyna" is a private one-table
+// room; a two-table game starts only from an accepted proposal; "Odayı bitir" is the only exit.
 export const roomsApi = {
   create: (body: Omit<CreateRoomRequest, 'action'>) =>
     invoke<CreateRoomResponse>('rooms', { action: 'create', ...body }),
-  requestJoin: (roomId: string) =>
-    invoke<RequestJoinResponse>('rooms', { action: 'request-join', roomId }),
+  createSolo: () => invoke<CreateRoomResponse>('rooms', { action: 'create-solo' }),
+  requestJoin: (roomId: string, profiled: boolean) =>
+    invoke<RequestJoinResponse>('rooms', { action: 'request-join', roomId, profiled }),
   respond: (requestId: string, accept: boolean) =>
     invoke<RoomsOkResponse>('rooms', { action: 'respond', requestId, accept }),
-  leave: () => invoke<RoomsOkResponse>('rooms', { action: 'leave' }),
+  proposeGame: (roomId: string, concept: Concept) =>
+    invoke<ProposeGameResponse>('rooms', { action: 'propose-game', roomId, concept }),
+  answerGame: (roomId: string, accept: boolean) =>
+    invoke<RoomsOkResponse>('rooms', { action: 'answer-game', roomId, accept }),
+  endGame: (roomId: string) => invoke<RoomsOkResponse>('rooms', { action: 'end-game', roomId }),
   end: () => invoke<RoomsOkResponse>('rooms', { action: 'end' }),
 };
 
@@ -132,8 +147,8 @@ export const safetyApi = {
 };
 
 export const gamesApi = {
-  // Two-table rooms start the voice game (docs/SPEC_V2.md §8.2); one-table rooms get the deck.
-  // One-table rooms get the deck; two-table rooms start the face-to-face game.
+  // One-table rooms only: the deck, and the room's activity becomes Tabu. A two-table game starts
+  // from an accepted proposal (roomsApi.answerGame).
   tabuStart: (roomId: string) => invoke<TabuStartResponse>('tabu', { action: 'start', roomId }),
   tabuTurnCards: (roomId: string) =>
     invoke<TabuTurnCardsResponse>('tabu', { action: 'turn-cards', roomId }),

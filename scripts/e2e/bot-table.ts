@@ -241,24 +241,58 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
       accuracyM: 10,
       headcount: Number(args.headcount ?? 3),
       locationConsentVersion: CURRENT_LOCATION_CONSENT_VERSION,
-      participation: args.participation === 'profile' ? 'profile' : 'anonymous',
       ...(spot ? { spotId: spot.id } : {}),
     });
   },
 
-  // An open Tabu room of the bot's table (for "Bu noktadayım" in the lobby of another spot).
-  async 'create-room'() {
-    return call('rooms', { action: 'create', concept: 'tabu', visibility: 'open' });
+  // An open room of the bot's table (for "Bu noktadayım" in the lobby of another spot); anonymous
+  // unless `profiled`.
+  async 'create-room'(args) {
+    return call('rooms', { action: 'create', profiled: args.profiled === true });
   },
 
   // Asks to join the first open room of another table in the lobby (the device's).
-  async 'request-join'() {
+  async 'request-join'(args) {
     const room = await retryUntil('an open room in the lobby', async () => {
       const { data, error } = await me().rpc('venue_lobby', { target_venue_id: venueId ?? '' });
       if (error) throw error;
       return ((data ?? []) as { room_id: string }[])[0] ?? null;
     });
-    return call('rooms', { action: 'request-join', roomId: room.room_id });
+    return call('rooms', {
+      action: 'request-join',
+      roomId: room.room_id,
+      profiled: args.profiled === true,
+    });
+  },
+
+  // "Oyun öner" in the bot's room (docs/SPEC_V3.md §5.3): `concept` tabu (default) or sohbet.
+  async 'propose-game'(args) {
+    const room = await myRoom();
+    return call('rooms', {
+      action: 'propose-game',
+      roomId: room.id,
+      concept: args.concept === 'sohbet' ? 'sohbet' : 'tabu',
+    });
+  },
+
+  // Answers the other table's proposal: accepts unless `accept` is false.
+  async 'answer-game'(args) {
+    const room = await retryUntil('a proposal from the other table', async () => {
+      const found = await myRoom();
+      const { data, error } = await me()
+        .from('game_proposals')
+        .select('room_id')
+        .eq('room_id', found.id)
+        .limit(1);
+      if (error) throw error;
+      return data?.[0] ? found : null;
+    });
+    return call('rooms', { action: 'answer-game', roomId: room.id, accept: args.accept !== false });
+  },
+
+  async 'end-game'() {
+    const room = await myRoom();
+    return call('rooms', { action: 'end-game', roomId: room.id });
   },
 
   // Marks the card now on the table; the server takes it only from the right side.
@@ -365,8 +399,8 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
 // BOT_VENUE (at a venue with spots: BOT_SPOT, else the first spot; only tables at the same spot
 // play together) and then, every two seconds, does what the other table would: as a guest
 // (BOT_ROLE=guest, default) asks to join each new room in the lobby; as a host (BOT_ROLE=host)
-// keeps an open Tabu room and accepts the first request. In the room it starts the game (host),
-// presses Doğru on each card after a few seconds, ends turns and the answer window when their time
+// keeps an open room and accepts the first request. In the room the host proposes Sesli Tabu once
+// and either table accepts the other's proposal (docs/SPEC_V3.md §5.3); it presses Doğru on each card after a few seconds, ends turns and the answer window when their time
 // is up, says "Evet" to "Tanışalım mı?", adds the friend and answers every new DM. Only the public
 // API: the same calls the app makes.
 async function opponent() {
@@ -396,13 +430,16 @@ async function opponent() {
   const answered = new Set<string>();
   const marked = new Set<string>();
   const firstSeen = new Map<string, number>();
-  let started: string | null = null;
+  const proposed = new Set<string>();
+  const accepted = new Set<string>();
 
   for (;;) {
     await quiet('tick', async () => {
       const { data: rooms, error } = await me()
         .from('rooms')
-        .select('id, status, owner_session_id, guest_session_id, game_state, reveal_ends_at')
+        .select(
+          'id, status, concept, owner_session_id, guest_session_id, game_state, reveal_ends_at',
+        )
         .neq('status', 'closed')
         .order('created_at', { ascending: false })
         .limit(1);
@@ -416,13 +453,13 @@ async function opponent() {
             if (asked.has(room_id)) continue;
             asked.add(room_id);
             await quiet('request-join', () =>
-              call('rooms', { action: 'request-join', roomId: room_id }),
+              call('rooms', { action: 'request-join', roomId: room_id, profiled: false }),
             );
             say('asked to join a room');
           }
         } else {
-          await call('rooms', { action: 'create', concept: 'tabu', visibility: 'open' });
-          say('opened a Tabu room');
+          await call('rooms', { action: 'create', intent: 'game', profiled: false });
+          say('opened a room');
         }
         return;
       }
@@ -445,10 +482,27 @@ async function opponent() {
       if (room.status === 'active') {
         const state = room.game_state as Partial<VoiceTabuState> | null;
         const isOwner = room.owner_session_id === sessionId;
-        if (isOwner && room.guest_session_id && !state?.mode && started !== room.id) {
-          started = room.id;
-          await call('tabu', { action: 'start', roomId: room.id });
-          say('started Tabu');
+        if (room.guest_session_id && room.concept === null) {
+          const { data: proposals } = await me()
+            .from('game_proposals')
+            .select('proposer_session_id, created_at')
+            .eq('room_id', room.id)
+            .limit(1);
+          const proposal = proposals?.[0];
+          const key = `${room.id}/${proposal?.created_at ?? ''}`;
+          if (proposal && proposal.proposer_session_id !== sessionId && !accepted.has(key)) {
+            accepted.add(key);
+            await quiet('answer-game', () =>
+              call('rooms', { action: 'answer-game', roomId: room.id, accept: true }),
+            );
+            say('accepted a game proposal');
+          } else if (!proposal && isOwner && !proposed.has(room.id)) {
+            proposed.add(room.id);
+            await quiet('propose-game', () =>
+              call('rooms', { action: 'propose-game', roomId: room.id, concept: 'tabu' }),
+            );
+            say('proposed Sesli Tabu');
+          }
           return;
         }
         if (state?.mode !== 'voice' || state.phase !== 'playing') return;
