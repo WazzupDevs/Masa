@@ -8,7 +8,6 @@ import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { ListRow } from '@/components/ListRow';
-import { Rise } from '@/components/motion';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Tag } from '@/components/Tag';
@@ -105,105 +104,107 @@ export default function VenueScreen() {
         eyebrowIcon="location-outline"
         title={table.data.venue?.name ?? ''}
       />
-      <Rise>
-        <Card tone="feature" className="mt-3">
-          <View className="flex-row items-center gap-3.5">
-            <Avatar kind="table" alias={table.data.alias} size="hero" />
-            <View className="flex-1 gap-1">
-              <Text variant="overline">{tr.venue.yourTable}</Text>
-              <Text variant="alias" testID="table-alias" numberOfLines={1} adjustsFontSizeToFit>
-                {table.data.alias}
-              </Text>
-              <View className="flex-row flex-wrap items-center gap-1.5">
-                <Tag label={tr.venue.people(table.data.headcount)} />
-                <Tag
-                  icon="time-outline"
-                  label={tr.venue.remaining(Math.floor(minutesLeft / 60), minutesLeft % 60)}
-                />
-              </View>
-            </View>
-          </View>
-          <View
-            className="my-3"
-            style={{ height: shape.stroke.hairline, backgroundColor: colors.divider }}
-          />
-          {venueHasSpots ? (
-            <View className="flex-row items-center justify-between gap-2">
-              <View className="flex-1 flex-row items-center gap-2">
-                <Ionicons name="location-outline" size={ICON.md} color={colors.text} />
-                <Text variant="bodyStrong" className="flex-1">
-                  {table.data.spot?.name ? tr.venue.spot(table.data.spot.name) : tr.venue.noSpot}
-                </Text>
-              </View>
-              <Button
-                variant="ghost"
-                testID="change-spot"
-                label={table.data.spot_id ? tr.venue.changeSpot : tr.venue.chooseSpot}
-                onPress={() => router.push('/spot')}
+      <Card tone="feature" className="mt-3">
+        <View className="flex-row items-center gap-3.5">
+          <Avatar kind="table" alias={table.data.alias} size="xl" />
+          <View className="flex-1 gap-1">
+            <Text variant="overline" tone="muted">
+              {tr.venue.yourTable}
+            </Text>
+            <Text variant="alias" testID="table-alias" numberOfLines={1} adjustsFontSizeToFit>
+              {table.data.alias}
+            </Text>
+            <View className="flex-row flex-wrap items-center gap-1.5">
+              <Tag label={tr.venue.people(table.data.headcount)} />
+              <Tag
+                icon="time-outline"
+                label={tr.venue.remaining(Math.floor(minutesLeft / 60), minutesLeft % 60)}
               />
             </View>
-          ) : null}
+          </View>
+        </View>
+        <View
+          className="my-2.5"
+          style={{ height: shape.stroke.hairline, backgroundColor: colors.divider }}
+        />
+        {venueHasSpots ? (
           <View className="flex-row items-center justify-between gap-2">
-            <Text variant="fine" className="flex-1">
-              {tr.venue.rerollsLeft(ALIAS_REROLLS_PER_CHECKIN - table.data.alias_rerolls)}
-            </Text>
+            <View className="flex-1 flex-row items-center gap-2">
+              <Ionicons name="location-outline" size={ICON.md} color={colors.text} />
+              <Text variant="bodyStrong" className="flex-1">
+                {table.data.spot?.name ? tr.venue.spot(table.data.spot.name) : tr.venue.noSpot}
+              </Text>
+            </View>
             <Button
               variant="ghost"
-              testID="reroll-alias"
-              label={tr.venue.rerollAlias}
-              onPress={() => reroll.mutate()}
-              disabled={table.data.alias_rerolls >= ALIAS_REROLLS_PER_CHECKIN}
-              loading={reroll.isPending}
+              testID="change-spot"
+              label={table.data.spot_id ? tr.venue.changeSpot : tr.venue.chooseSpot}
+              onPress={() => router.push('/spot')}
             />
           </View>
-          {reroll.isError ? (
-            <Text variant="fine" tone="danger">
-              {errorMessage(reroll.error)}
-            </Text>
-          ) : null}
-        </Card>
-      </Rise>
-      <Rise index={1}>
-        <View className="mt-5 gap-3">
-          <Button size="lg" label={tr.rooms.create} onPress={() => router.push('/room/new')} />
+        ) : null}
+        <View className="flex-row items-center justify-between gap-2">
+          <Text variant="fine" className="flex-1">
+            {tr.venue.rerollsLeft(ALIAS_REROLLS_PER_CHECKIN - table.data.alias_rerolls)}
+          </Text>
+          <Button
+            variant="ghost"
+            testID="reroll-alias"
+            label={tr.venue.rerollAlias}
+            onPress={() => reroll.mutate()}
+            disabled={table.data.alias_rerolls >= ALIAS_REROLLS_PER_CHECKIN}
+            loading={reroll.isPending}
+          />
+        </View>
+        {reroll.isError ? (
+          <Text variant="fine" tone="danger">
+            {errorMessage(reroll.error)}
+          </Text>
+        ) : null}
+      </Card>
+      {/* Side by side: the venue chat row stays above the floating tab bar on small phones. */}
+      <View className="mt-5 flex-row gap-3">
+        <View className="flex-1">
+          <Button tight label={tr.rooms.create} onPress={() => router.push('/room/new')} />
+        </View>
+        <View className="flex-1">
           <Button
             variant="secondary"
+            tight
             testID="play-with-table"
             label={tr.rooms.playWithTable}
             onPress={() => solo.mutate()}
             loading={solo.isPending}
           />
         </View>
-      </Rise>
+      </View>
       {solo.isError ? (
         <Text variant="fine" tone="danger" className="mt-2">
           {errorMessage(solo.error)}
         </Text>
       ) : null}
-      <Rise index={2}>
-        <View className="mt-4">
-          <ListRow
-            card
-            testID="venue-chat-open"
-            title={tr.venueChat.open}
-            meta={tr.venueChat.title(table.data.venue?.name ?? '')}
-            onPress={() => router.push('/venue-chat')}
-            leading={
-              <View
-                className="items-center justify-center"
-                style={{
-                  width: TOUCH.button,
-                  height: TOUCH.button,
-                  borderRadius: shape.radius.pill,
-                  backgroundColor: colors.signal,
-                }}
-              >
-                <Ionicons name="chatbubbles-outline" size={ICON.lg} color={colors.onSignal} />
-              </View>
-            }
-          />
-        </View>
-      </Rise>
+      <View className="mt-4">
+        <ListRow
+          card
+          testID="venue-chat-open"
+          title={tr.venueChat.open}
+          meta={tr.venueChat.title(table.data.venue?.name ?? '')}
+          onPress={() => router.push('/venue-chat')}
+          leading={
+            <View
+              className="items-center justify-center"
+              style={{
+                width: TOUCH.button,
+                height: TOUCH.button,
+                borderRadius: shape.radius.pill,
+                backgroundColor: colors.signal,
+              }}
+            >
+              <Ionicons name="chatbubbles-outline" size={ICON.lg} color={colors.onSignal} />
+            </View>
+          }
+        />
+      </View>
 
       <Lobby
         venueId={table.data.venue_id}
