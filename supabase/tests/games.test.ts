@@ -629,12 +629,20 @@ describe('tabu, cooperative mode (docs/SPEC_V3.md §6.3)', () => {
     // Realtime: give the changes time to arrive, then nothing but the closed card.
     await expect.poll(() => watch.payloads.length, { timeout: 10_000 }).toBeGreaterThan(3);
     await new Promise((resolve) => setTimeout(resolve, 1500));
-    // As in readableBy: table aliases come from alias_words, whose animals are Tabu words too.
-    const pushed = normalize(
-      JSON.stringify(watch.payloads, (key, value: unknown) =>
-        ALIAS_COLUMNS.has(key) ? undefined : value,
-      ).replace(UUID, ' '),
+    // As in readableBy: the rows' values only (column names would read as cards: created_at has
+    // "at"), and without the alias columns (alias_words' animals are Tabu words too).
+    const rows = (
+      watch.payloads as { new?: Record<string, unknown>; old?: Record<string, unknown> }[]
+    )
+      .flatMap((p) => [p.new, p.old])
+      .filter((row): row is Record<string, unknown> => !!row);
+    const values = rows.flatMap((row) =>
+      Object.entries(row)
+        .filter(([column]) => !ALIAS_COLUMNS.has(column))
+        .map(([, value]) => value),
     );
+    expect(values.length).toBeGreaterThan(0);
+    const pushed = normalize(JSON.stringify(values).replace(UUID, ' '));
     expect(wordsIn(pushed, unclosed)).toEqual([]);
     await guest.removeChannel(watch.channel);
   });
