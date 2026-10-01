@@ -3,11 +3,12 @@ import { type ActivityBucket, describeEventTime } from '@shared/explore.ts';
 import { View } from 'react-native';
 
 import { ListRow } from '@/components/ListRow';
+import { SnailLineIcon } from '@/components/Snail';
 import { Tag, type TagVariant } from '@/components/Tag';
 import { tr } from '@/i18n/tr';
 import { useNow } from '@/lib/useNow';
 import { useTheme } from '@/theme/ThemeProvider';
-import { ICON, TOUCH } from '@/theme/tokens';
+import { ICON, SPACING, TOUCH } from '@/theme/tokens';
 
 import type { ExploreEvent, ExploreVenue } from './useExploreVenues';
 
@@ -35,6 +36,30 @@ export function EventTag({ event }: { event: NonNullable<ExploreVenue['event']> 
   );
 }
 
+// A venue's picture in the list: the snail on a tile in its bucket's colours.
+export function VenueTile({ bucket }: { bucket: ActivityBucket }) {
+  const { colors, shape } = useTheme();
+  const tone = BUCKET_TAG[bucket];
+  const fill = {
+    calm: [colors.calm, colors.onCalm],
+    lively: [colors.lively, colors.onLively],
+    buzz: [colors.buzz, colors.onBuzz],
+  }[tone];
+  return (
+    <View
+      className="items-center justify-center"
+      style={{
+        width: SPACING[14],
+        height: SPACING[14],
+        borderRadius: shape.radius.md,
+        backgroundColor: fill[0],
+      }}
+    >
+      <SnailLineIcon size={SPACING[8]} color={fill[1] ?? colors.text} />
+    </View>
+  );
+}
+
 // One event in the single-venue Keşfet (canvas: Etkinlikler): a calendar tile, the title and when.
 // The tile is in the event colour while the event is on.
 export function EventRow({ event }: { event: ExploreEvent }) {
@@ -44,15 +69,16 @@ export function EventRow({ event }: { event: ExploreEvent }) {
   const on = when.kind === 'now';
   return (
     <ListRow
+      card
       title={event.title}
       meta={tr.explore.eventTime(when)}
       leading={
         <View
           className="items-center justify-center"
           style={{
-            width: TOUCH.min,
-            height: TOUCH.min,
-            borderRadius: shape.radius.sm,
+            width: TOUCH.button,
+            height: TOUCH.button,
+            borderRadius: shape.radius.pill,
             backgroundColor: on ? colors.event : colors.surface2,
           }}
         >

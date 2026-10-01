@@ -1,7 +1,8 @@
 import { baseTypography, type ThemeDefinition } from './tokens';
 
-// The app's one theme, "Oyun Gecesi": cream ground, ink outlines, a purple accent, lemon and orange
-// stickers, hard ink shadows; Bricolage Grotesque 800 headings over Nunito. Visual source: the
+// The app's one theme, "Oyun Gecesi": cream ground (dark: neutral near-black), a purple accent
+// (dark: lemon), lemon and orange stickers, soft cards, ink outline and hard shadow only on the
+// primary button and the featured card; Bricolage Grotesque 800 headings over Nunito. Visual source: the
 // Claude Design canvas (Aşama 1 · Son → Palet, Tipografi, Bileşenler). Every text/ground pair is
 // AA (contrast.test.ts). Trust surfaces (sheets, `Quiet`) drop the outlines and hard shadows.
 export const THEME: ThemeDefinition = {
@@ -11,10 +12,13 @@ export const THEME: ThemeDefinition = {
       canvas: '#FFF7E6',
       surface: '#FFFFFF',
       surface2: '#FFF0CC',
+      raised: '#FFFFFF',
       text: '#1B1433',
       muted: '#544A6B',
       accent: '#5B2EEA',
       onAccent: '#FFFFFF',
+      violet: '#5B2EEA',
+      onViolet: '#FFFFFF',
       border: '#1B1433',
       divider: '#DDD5EA',
       danger: '#C42B14',
@@ -33,30 +37,35 @@ export const THEME: ThemeDefinition = {
       onEvent: '#1B1433',
       scrim: '#000000',
     },
+    // Neutral near-black ground, two surface tones, lemon accent and a bright violet second
+    // accent (canvas: Aşama 4 · Yenileme → Koyu palet).
     dark: {
-      canvas: '#140E26',
-      surface: '#211842',
-      surface2: '#2C2156',
-      text: '#FBF7FF',
-      muted: '#C6BAE6',
-      accent: '#A98BFF',
-      onAccent: '#140E26',
-      border: '#FBF7FF',
-      divider: '#3E3470',
-      danger: '#FF8B75',
+      canvas: '#0F0F11',
+      surface: '#1B1B1F',
+      surface2: '#26262C',
+      raised: '#34343C',
+      text: '#F6F5F1',
+      muted: '#AEADB6',
+      accent: '#DCFF52',
+      onAccent: '#0F0F11',
+      violet: '#B9A2FF',
+      onViolet: '#0F0F11',
+      border: '#F6F5F1',
+      divider: '#2E2E35',
+      danger: '#FF8A73',
       onDanger: '#1E0903',
-      success: '#7FE08F',
-      onSuccess: '#07210E',
+      success: '#6FE08A',
+      onSuccess: '#06200D',
       signal: '#C9DE7A',
-      onSignal: '#140E26',
-      calm: '#1D3A57',
+      onSignal: '#0F0F11',
+      calm: '#16324A',
       onCalm: '#CDEBFF',
-      lively: '#4E1B3C',
+      lively: '#47172F',
       onLively: '#FFD1EA',
-      buzz: '#D7F75B',
-      onBuzz: '#140E26',
+      buzz: '#DCFF52',
+      onBuzz: '#0F0F11',
       event: '#FF7A50',
-      onEvent: '#140E26',
+      onEvent: '#0F0F11',
       scrim: '#000000',
     },
   },
@@ -71,13 +80,17 @@ export const THEME: ThemeDefinition = {
   },
   shape: {
     radius: { sm: 12, md: 18, lg: 24, pill: 999 },
-    stroke: { card: 2, control: 2, tag: 2, hairline: 1, venueRing: 2 },
+    // Stage 4: outlines and hard shadows only on the primary button and the one featured card;
+    // other cards are soft (the shadow barely shows on the dark ground, the surface tone carries
+    // them there).
+    stroke: { card: 0, feature: 2, control: 2, tag: 0, hairline: 1, venueRing: 2 },
     shadow: {
-      card: '3px 3px 0px {border}',
+      card: '0px 10px 28px -12px rgba(27, 20, 51, 0.22)',
+      feature: '3px 3px 0px {border}',
       primaryButton: '3px 3px 0px {border}',
-      button: '3px 3px 0px {border}',
+      button: null,
       venueButton: null,
-      raised: '3px 3px 0px {border}',
+      raised: '0px 2px 6px -2px rgba(27, 20, 51, 0.2)',
       pin: '0px 4px 10px rgba(0, 0, 0, 0.25)',
       // The floating tab bar: wide, soft, low opacity (no outline on its top edge).
       tabBar: '0px 14px 36px -8px rgba(0, 0, 0, 0.24)',

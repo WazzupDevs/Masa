@@ -49,6 +49,7 @@ export function resolveShadows(
 ): Record<keyof ShadowSet, string | undefined> {
   return {
     card: resolveShadow(set.card, palette),
+    feature: resolveShadow(set.feature, palette),
     primaryButton: resolveShadow(set.primaryButton, palette),
     button: resolveShadow(set.button, palette),
     venueButton: resolveShadow(set.venueButton, palette),

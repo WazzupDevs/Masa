@@ -7,7 +7,14 @@ import { SPACING, TOUCH } from '@/theme/tokens';
 import { Snail } from './Snail';
 import { Text } from './Text';
 
-export const AVATAR_SIZE = { sm: SPACING[8], md: SPACING[10], lg: TOUCH.button } as const;
+// sm 32 (chat), md 40 (top bars), lg 48, xl 56 (list rows and room cards), hero 72 (the table card).
+export const AVATAR_SIZE = {
+  sm: SPACING[8],
+  md: SPACING[10],
+  lg: TOUCH.button,
+  xl: SPACING[14],
+  hero: SPACING[16] + SPACING[2],
+} as const;
 
 type Size = keyof typeof AVATAR_SIZE;
 
@@ -46,7 +53,7 @@ export function Avatar(props: Props) {
         accessibilityLabel={props.alias}
         style={[frame, { backgroundColor: aliasColor(props.alias) }]}
       >
-        <Snail variant="small" height={side * 0.46} />
+        <Snail variant="small" height={side * 0.52} />
       </View>
     );
   }
@@ -58,12 +65,15 @@ export function Avatar(props: Props) {
       style={{ width: side, height: side }}
     />
   ) : (
-    <Text variant={props.size === 'lg' ? 'bodyStrong' : 'tag'} tone="onAccent">
+    <Text
+      variant={side >= AVATAR_SIZE.lg ? (side >= AVATAR_SIZE.xl ? 'heading' : 'bodyStrong') : 'tag'}
+      tone="onViolet"
+    >
       {initials(props.name)}
     </Text>
   );
   const face = (
-    <View style={[frame, { backgroundColor: props.photoUrl ? colors.surface2 : colors.accent }]}>
+    <View style={[frame, { backgroundColor: props.photoUrl ? colors.surface2 : colors.violet }]}>
       {inner}
     </View>
   );

@@ -88,7 +88,7 @@ export function ExploreMap({
 
   if (!opening) return null;
   // Pale pins on a pale map need a ring to stay findable (3:1 for UI shapes).
-  const ring = shape.stroke.card > 1 ? colors.border : colors.accent;
+  const ring = shape.stroke.feature > 1 ? colors.border : colors.accent;
   const label: { layout: NonNullable<SymbolLayer['layout']>; paint: SymbolLayer['paint'] } = {
     layout: {
       'text-field': ['get', 'name'],

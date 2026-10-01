@@ -2,11 +2,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router } from 'expo-router';
 import { useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { ActivityIndicator, Alert, Pressable, View } from 'react-native';
+import { ActivityIndicator, Alert, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { ListRow } from '@/components/ListRow';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Tag } from '@/components/Tag';
@@ -25,7 +26,7 @@ import { track, trackOnce } from '@/lib/analytics';
 import { callLeave, callRerollAlias } from '@/lib/api';
 import { useNow } from '@/lib/useNow';
 import { useTheme } from '@/theme/ThemeProvider';
-import { ICON, SPACING, TOUCH } from '@/theme/tokens';
+import { ICON, TOUCH } from '@/theme/tokens';
 
 function endSession(tableId: string, startedAt: string) {
   trackOnce(`session_ended:${tableId}`, 'session_ended', {
@@ -103,33 +104,36 @@ export default function VenueScreen() {
         eyebrowIcon="location-outline"
         title={table.data.venue?.name ?? ''}
       />
-      <Card className="mt-3">
-        <View className="flex-row items-center gap-3">
-          <Avatar kind="table" alias={table.data.alias} size="lg" />
-          <View className="flex-1">
-            <Text variant="fine">{tr.venue.yourTable}</Text>
-            <Text variant="alias" testID="table-alias">
+      <Card tone="feature" className="mt-3">
+        <View className="flex-row items-center gap-3.5">
+          <Avatar kind="table" alias={table.data.alias} size="xl" />
+          <View className="flex-1 gap-1">
+            <Text variant="overline" tone="muted">
+              {tr.venue.yourTable}
+            </Text>
+            <Text variant="alias" testID="table-alias" numberOfLines={1} adjustsFontSizeToFit>
               {table.data.alias}
             </Text>
+            <View className="flex-row flex-wrap items-center gap-1.5">
+              <Tag label={tr.venue.people(table.data.headcount)} />
+              <Tag
+                icon="time-outline"
+                label={tr.venue.remaining(Math.floor(minutesLeft / 60), minutesLeft % 60)}
+              />
+            </View>
           </View>
         </View>
-        <View className="mt-3 flex-row flex-wrap items-center gap-2">
-          <Tag label={tr.venue.people(table.data.headcount)} />
-          <View className="flex-row items-center gap-1">
-            <Ionicons name="time-outline" size={ICON.sm} color={colors.muted} />
-            <Text variant="fine">
-              {tr.venue.remaining(Math.floor(minutesLeft / 60), minutesLeft % 60)}
-            </Text>
-          </View>
-        </View>
+        <View
+          className="my-2.5"
+          style={{ height: shape.stroke.hairline, backgroundColor: colors.divider }}
+        />
         {venueHasSpots ? (
-          <View className="mt-2 flex-row items-center justify-between gap-2">
-            <View className="flex-1 flex-row">
-              {table.data.spot?.name ? (
-                <Tag icon="navigate-outline" label={tr.venue.spot(table.data.spot.name)} />
-              ) : (
-                <Text variant="fine">{tr.venue.noSpot}</Text>
-              )}
+          <View className="flex-row items-center justify-between gap-2">
+            <View className="flex-1 flex-row items-center gap-2">
+              <Ionicons name="location-outline" size={ICON.md} color={colors.text} />
+              <Text variant="bodyStrong" className="flex-1">
+                {table.data.spot?.name ? tr.venue.spot(table.data.spot.name) : tr.venue.noSpot}
+              </Text>
             </View>
             <Button
               variant="ghost"
@@ -139,7 +143,7 @@ export default function VenueScreen() {
             />
           </View>
         ) : null}
-        <View className="mt-2 flex-row items-center justify-between gap-2">
+        <View className="flex-row items-center justify-between gap-2">
           <Text variant="fine" className="flex-1">
             {tr.venue.rerollsLeft(ALIAS_REROLLS_PER_CHECKIN - table.data.alias_rerolls)}
           </Text>
@@ -158,7 +162,8 @@ export default function VenueScreen() {
           </Text>
         ) : null}
       </Card>
-      <View className="mt-4 flex-row gap-3">
+      {/* Side by side: the venue chat row stays above the floating tab bar on small phones. */}
+      <View className="mt-5 flex-row gap-3">
         <View className="flex-1">
           <Button tight label={tr.rooms.create} onPress={() => router.push('/room/new')} />
         </View>
@@ -178,26 +183,28 @@ export default function VenueScreen() {
           {errorMessage(solo.error)}
         </Text>
       ) : null}
-      <Pressable
-        testID="venue-chat-open"
-        accessibilityRole="button"
-        accessibilityLabel={tr.venueChat.open}
-        onPress={() => router.push('/venue-chat')}
-        className="mt-4 flex-row items-center gap-3"
-        style={{
-          minHeight: TOUCH.large - SPACING[1],
-          paddingHorizontal: SPACING[3],
-          borderRadius: shape.radius.md,
-          backgroundColor: colors.surface2,
-        }}
-      >
-        <Ionicons name="chatbubbles-outline" size={ICON.lg} color={colors.text} />
-        <View className="flex-1">
-          <Text variant="bodyStrong">{tr.venueChat.title(table.data.venue?.name ?? '')}</Text>
-          <Text variant="fine">{tr.venueChat.open}</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={ICON.md} color={colors.muted} />
-      </Pressable>
+      <View className="mt-4">
+        <ListRow
+          card
+          testID="venue-chat-open"
+          title={tr.venueChat.open}
+          meta={tr.venueChat.title(table.data.venue?.name ?? '')}
+          onPress={() => router.push('/venue-chat')}
+          leading={
+            <View
+              className="items-center justify-center"
+              style={{
+                width: TOUCH.button,
+                height: TOUCH.button,
+                borderRadius: shape.radius.pill,
+                backgroundColor: colors.signal,
+              }}
+            >
+              <Ionicons name="chatbubbles-outline" size={ICON.lg} color={colors.onSignal} />
+            </View>
+          }
+        />
+      </View>
 
       <Lobby
         venueId={table.data.venue_id}
@@ -214,7 +221,7 @@ export default function VenueScreen() {
           </Text>
         ) : null}
         <Button
-          variant="secondary"
+          variant="dangerText"
           label={tr.venue.leave}
           onPress={confirmLeave}
           loading={leave.isPending}

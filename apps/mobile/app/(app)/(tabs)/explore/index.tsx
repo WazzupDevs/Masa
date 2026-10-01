@@ -10,6 +10,7 @@ import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
 import { ListRow } from '@/components/ListRow';
+import { Rise } from '@/components/motion';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { useTabBarSpace } from '@/components/TabBar';
 import { Segmented } from '@/components/Segmented';
@@ -19,16 +20,19 @@ import { useCheckinDraft } from '@/features/checkin/draft';
 import { useActiveTable } from '@/features/checkin/useActiveTable';
 import { ExploreMap } from '@/features/explore/ExploreMap';
 import { type ExploreVenue, useExploreVenues } from '@/features/explore/useExploreVenues';
-import { BucketBadge, EventRow, EventTag } from '@/features/explore/VenueTags';
+import { BucketBadge, EventRow, EventTag, VenueTile } from '@/features/explore/VenueTags';
 import { tr } from '@/i18n/tr';
 import { track } from '@/lib/analytics';
 import { useNow } from '@/lib/useNow';
 import { useTheme } from '@/theme/ThemeProvider';
-import { ICON, SPACING } from '@/theme/tokens';
+import { ICON, SPACING, TOUCH } from '@/theme/tokens';
 
 type View_ = 'list' | 'map';
 
 const BUCKET_ORDER = { buzzing: 0, lively: 1, calm: 2 } as const;
+// The single venue's colour block (canvas: Keşfet · tek mekan).
+const HERO_HEIGHT = SPACING[16] * 2 + SPACING[8];
+const HERO_SNAIL = SPACING[16] + SPACING[10];
 
 // Keşfet (docs/SPEC_V2.md §4): every venue, livelier ones first, as a list or on a map. The venue
 // is chosen by hand; check-in then verifies the position. With one active venue (the campus pilot)
@@ -118,7 +122,8 @@ export default function ExploreScreen() {
   );
 }
 
-// The mockup's sheet: a surface with rounded top corners, the count, and venue rows.
+// The venues as cards on the canvas: a colour tile in the venue's bucket, the name and district,
+// the bucket chip; an event shows under the name.
 function VenueList({
   venues,
   bottomSpace,
@@ -126,54 +131,51 @@ function VenueList({
   venues: readonly ExploreVenue[];
   bottomSpace: number;
 }) {
-  const { colors, shape } = useTheme();
+  const { shape } = useTheme();
   return (
-    <View
-      className="flex-1 overflow-hidden"
-      style={{
-        backgroundColor: colors.surface,
-        borderTopLeftRadius: shape.radius.lg,
-        borderTopRightRadius: shape.radius.lg,
-        borderWidth: shape.stroke.card > 1 ? shape.stroke.card : 0,
-        borderBottomWidth: 0,
-        borderColor: colors.border,
+    <ScrollView
+      contentContainerClassName="gap-3 pt-1"
+      contentContainerStyle={{
+        paddingHorizontal: shape.screenPadding,
+        paddingBottom: SPACING[8] + bottomSpace,
       }}
     >
-      <ScrollView
-        contentContainerClassName="px-4 pt-3"
-        contentContainerStyle={{ paddingBottom: bottomSpace }}
-      >
-        <View className="flex-row items-center justify-between px-1 pb-1">
-          <Text variant="label">{tr.explore.count(venues.length)}</Text>
-          <Text variant="fine">{tr.explore.locationHidden}</Text>
-        </View>
-        {venues.length === 0 ? <EmptyState icon="cafe-outline" body={tr.explore.empty} /> : null}
-        {venues.map((v) => (
+      <View className="flex-row items-center justify-between px-1">
+        <Text variant="label">{tr.explore.count(venues.length)}</Text>
+        <Text variant="fine">{tr.explore.locationHidden}</Text>
+      </View>
+      {venues.length === 0 ? <EmptyState icon="cafe-outline" body={tr.explore.empty} /> : null}
+      {venues.map((v, i) => (
+        <Rise key={v.id} index={i}>
           <ListRow
-            key={v.id}
+            card
             title={v.name}
             meta={v.district}
             onPress={() =>
               router.push({ pathname: '/explore/[venueId]', params: { venueId: v.id } })
             }
+            leading={<VenueTile bucket={v.bucket} />}
             below={
-              <View className="mt-1 flex-row flex-wrap gap-1.5">
-                <BucketBadge bucket={v.bucket} />
-                {v.event ? <EventTag event={v.event} /> : null}
-              </View>
+              v.event ? (
+                <View className="mt-1 flex-row">
+                  <EventTag event={v.event} />
+                </View>
+              ) : null
             }
+            trailing={<BucketBadge bucket={v.bucket} />}
           />
-        ))}
-        <Text variant="fine" align="center" className="pt-4">
-          {tr.checkin.osmAttribution}
-        </Text>
-      </ScrollView>
-    </View>
+        </Rise>
+      ))}
+      <Text variant="fine" align="center" className="pt-2">
+        {tr.checkin.osmAttribution}
+      </Text>
+    </ScrollView>
   );
 }
 
-// The pilot's Keşfet: the one venue, its bucket, all its events within the week and check-in, then
-// "Yeni mekanlar yakında". A second active venue brings the list and the map back (content only).
+// The pilot's Keşfet: the one venue as the featured card (a colour block with the snail, the name,
+// check-in), all its events within the week, then "Yeni mekanlar yakında". A second active venue
+// brings the list and the map back (content only).
 function SingleVenue({ venue, bottomSpace }: { venue: ExploreVenue; bottomSpace: number }) {
   const { colors, shape } = useTheme();
   const setVenue = useCheckinDraft((s) => s.setVenue);
@@ -186,55 +188,85 @@ function SingleVenue({ venue, bottomSpace }: { venue: ExploreVenue; bottomSpace:
       }}
       contentContainerClassName="gap-4 pt-2"
     >
-      <Card>
-        <View className="flex-row items-start gap-2.5">
-          <Text variant="heading" accessibilityRole="header" className="flex-1">
-            {venue.name}
+      <Rise>
+        <Card tone="feature" flush>
+          <View
+            style={{ height: HERO_HEIGHT, backgroundColor: colors.violet }}
+            className="flex-row items-end justify-between px-4 pb-3 pt-4"
+          >
+            <View className="self-start">
+              <BucketBadge bucket={venue.bucket} />
+            </View>
+            <Snail variant="ink" height={HERO_SNAIL} />
+          </View>
+          <View className="gap-4 p-4">
+            <View className="gap-1">
+              <Text variant="title" accessibilityRole="header" numberOfLines={2}>
+                {venue.name}
+              </Text>
+              <View className="flex-row items-center gap-1.5">
+                <Ionicons name="location-outline" size={ICON.md} color={colors.muted} />
+                <Text variant="fine">{venue.district}</Text>
+              </View>
+            </View>
+            <Button
+              size="lg"
+              label={tr.explore.checkInHere}
+              onPress={() => {
+                setVenue({
+                  id: venue.id,
+                  name: venue.name,
+                  lat: venue.lat,
+                  lng: venue.lng,
+                  boundary: venue.boundary,
+                });
+                router.push('/checkin');
+              }}
+            />
+          </View>
+        </Card>
+      </Rise>
+      <Rise index={1}>
+        <View className="gap-3">
+          <Text variant="heading" accessibilityRole="header">
+            {tr.explore.eventsTitle}
           </Text>
-          <BucketBadge bucket={venue.bucket} />
+          {venue.events.length === 0 ? (
+            <Card>
+              <View className="flex-row items-center gap-3">
+                <View
+                  className="items-center justify-center"
+                  style={{
+                    width: TOUCH.button,
+                    height: TOUCH.button,
+                    borderRadius: shape.radius.pill,
+                    backgroundColor: colors.surface2,
+                  }}
+                >
+                  <Ionicons name="calendar-outline" size={ICON.lg} color={colors.text} />
+                </View>
+                <Text tone="muted" className="flex-1">
+                  {tr.explore.noEvents}
+                </Text>
+              </View>
+            </Card>
+          ) : (
+            venue.events.map((event) => (
+              <EventRow key={`${event.startsAt}-${event.title}`} event={event} />
+            ))
+          )}
         </View>
-        <View className="mt-1 flex-row items-center gap-1.5">
-          <Ionicons name="location-outline" size={ICON.md} color={colors.muted} />
-          <Text variant="fine">{venue.district}</Text>
-        </View>
-        <View className="mt-4">
-          <Button
-            label={tr.explore.checkInHere}
-            onPress={() => {
-              setVenue({
-                id: venue.id,
-                name: venue.name,
-                lat: venue.lat,
-                lng: venue.lng,
-                boundary: venue.boundary,
-              });
-              router.push('/checkin');
-            }}
-          />
-        </View>
-      </Card>
-      <View>
-        <Text variant="heading" accessibilityRole="header">
-          {tr.explore.eventsTitle}
-        </Text>
-        {venue.events.length === 0 ? (
-          <Text variant="fine" className="mt-2">
-            {tr.explore.noEvents}
-          </Text>
-        ) : (
-          venue.events.map((event) => (
-            <EventRow key={`${event.startsAt}-${event.title}`} event={event} />
-          ))
-        )}
-      </View>
-      <Card tone="note">
-        <View className="flex-row items-center gap-3">
-          <Snail height={SPACING[9]} />
-          <Text variant="bodyStrong" className="flex-1">
-            {tr.explore.comingSoon}
-          </Text>
-        </View>
-      </Card>
+      </Rise>
+      <Rise index={2}>
+        <Card tone="note">
+          <View className="flex-row items-center gap-3">
+            <Snail height={SPACING[11]} />
+            <Text variant="bodyStrong" className="flex-1">
+              {tr.explore.comingSoon}
+            </Text>
+          </View>
+        </Card>
+      </Rise>
     </ScrollView>
   );
 }

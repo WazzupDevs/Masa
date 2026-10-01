@@ -20,6 +20,10 @@ type Props = {
   trailing?: React.ReactNode;
 };
 
+// Longer titles (a campus's full name) take the smaller title style; any title stays within two
+// lines.
+const LONG_TITLE = 22;
+
 // The top of a screen: optional back button, eyebrow, the title (h1) with an action on the right,
 // and a subtitle.
 export function ScreenHeader({
@@ -46,7 +50,12 @@ export function ScreenHeader({
         </View>
       ) : null}
       <View className="flex-row items-center justify-between gap-3">
-        <Text variant="display" accessibilityRole="header" className="flex-1">
+        <Text
+          variant={title.length > LONG_TITLE ? 'title' : 'display'}
+          accessibilityRole="header"
+          numberOfLines={2}
+          className="flex-1"
+        >
           {title}
         </Text>
         {trailing}

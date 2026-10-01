@@ -10,10 +10,14 @@ export type Palette = {
   canvas: string; // screen background
   surface: string; // cards, sheets, tab bar
   surface2: string; // quiet fills: segments, badges, role note, timer track
+  raised: string; // lifted off the canvas and off cards: secondary buttons, fields, others' bubbles
   text: string;
   muted: string; // secondary text
   accent: string;
   onAccent: string;
+  // The second accent: profile faces (initials), the "profilli" tag, colour blocks.
+  violet: string;
+  onViolet: string;
   border: string; // the outline colour (cards, controls)
   divider: string; // hairlines: list rows, trust screens
   danger: string;
@@ -37,10 +41,13 @@ export const PALETTE_KEYS = [
   'canvas',
   'surface',
   'surface2',
+  'raised',
   'text',
   'muted',
   'accent',
   'onAccent',
+  'violet',
+  'onViolet',
   'border',
   'divider',
   'danger',
@@ -89,7 +96,8 @@ export type FontSet = {
 // Where a shadow is drawn. Values are CSS `box-shadow` strings (React Native `boxShadow`); `null`
 // draws none. `{border}` and `{accent}` are replaced with the palette colour.
 export type ShadowSet = {
-  card: string | null;
+  card: string | null; // every card: soft
+  feature: string | null; // the one featured card per screen (and the Tabu card): hard
   primaryButton: string | null;
   button: string | null; // secondary, danger and success buttons
   venueButton: string | null; // the raised Mekan tab
@@ -101,9 +109,16 @@ export type ShadowSet = {
 
 export type Shape = {
   radius: { sm: number; md: number; lg: number; pill: number };
-  // Border widths: cards (0 = none), controls (secondary buttons, inputs, segments), tags, the
-  // hairline (list rows, trust screens) and the raised Mekan tab's ring.
-  stroke: { card: number; control: number; tag: number; hairline: number; venueRing: number };
+  // Border widths: cards (0 = none), the featured card, controls (inputs, segments, switches),
+  // tags, the hairline (list rows, trust screens) and the raised Mekan tab's ring.
+  stroke: {
+    card: number;
+    feature: number;
+    control: number;
+    tag: number;
+    hairline: number;
+    venueRing: number;
+  };
   shadow: ShadowSet;
   // The describing team in Tabu: an accent ring or a filled sticker.
   selectedTeam: 'ring' | 'fill';

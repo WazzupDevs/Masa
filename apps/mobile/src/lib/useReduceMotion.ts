@@ -1,19 +1,21 @@
-import { useEffect, useState } from 'react';
 import { AccessibilityInfo } from 'react-native';
+import { create } from 'zustand';
 
-// The system's "reduce motion" setting, kept up to date. Animations jump to their end state when on.
+// The system's "reduce motion" setting, kept up to date by one listener for the whole app.
+// Animations jump to their end state when on.
+const useStore = create<{ reduce: boolean }>(() => ({ reduce: false }));
+let listening = false;
+
+function listen() {
+  if (listening) return;
+  listening = true;
+  void AccessibilityInfo.isReduceMotionEnabled().then((reduce) => useStore.setState({ reduce }));
+  AccessibilityInfo.addEventListener('reduceMotionChanged', (reduce) =>
+    useStore.setState({ reduce }),
+  );
+}
+
 export function useReduceMotion(): boolean {
-  const [reduce, setReduce] = useState(false);
-  useEffect(() => {
-    let live = true;
-    void AccessibilityInfo.isReduceMotionEnabled().then((v) => {
-      if (live) setReduce(v);
-    });
-    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduce);
-    return () => {
-      live = false;
-      sub.remove();
-    };
-  }, []);
-  return reduce;
+  listen();
+  return useStore((s) => s.reduce);
 }

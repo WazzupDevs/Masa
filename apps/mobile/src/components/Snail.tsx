@@ -36,14 +36,15 @@ const CRAWL = {
 type Props = {
   height: number;
   // `small`: no face, always ink-outlined (avatars, the selected Mekan tab); `full`: the mascot in
-  // the scheme's outline.
-  variant?: 'full' | 'small';
+  // the scheme's outline; `ink`: the mascot ink-outlined in both schemes, on a light colour block.
+  variant?: 'full' | 'small' | 'ink';
 };
 
 // The snail, still. Decorative: screens say what it means in text.
 export function Snail({ height, variant = 'full' }: Props) {
   const { scheme } = useTheme();
-  const source = variant === 'small' ? IMAGES.small : IMAGES[scheme];
+  const source =
+    variant === 'small' ? IMAGES.small : variant === 'ink' ? IMAGES.light : IMAGES[scheme];
   return (
     <Image
       source={source}

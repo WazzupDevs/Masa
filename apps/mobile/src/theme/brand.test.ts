@@ -13,13 +13,18 @@ const tokens = JSON.parse(
 
 describe('snail colours', () => {
   it('are the theme’s palette (assets/icon/tokens.json)', () => {
-    const { light, dark } = THEME.palettes;
+    const { light } = THEME.palettes;
     expect(tokens.cream).toBe(light.canvas);
     expect(tokens.ink).toBe(light.text);
     expect(tokens.purple).toBe(light.accent);
     expect(tokens.lemon).toBe(light.buzz);
-    expect(tokens.paper).toBe(dark.text);
-    expect(tokens.night).toBe(dark.canvas);
+  });
+  // The dark snail and the dark splash keep the Stage 1 colours: they are native assets (a new
+  // build), and the logo does not change with the Stage 4 dark palette. They must still read on it.
+  it('read on the dark palette', () => {
+    const { dark } = THEME.palettes;
+    expect(contrastRatio(tokens.paper ?? '', dark.canvas)).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(tokens.paper ?? '', dark.surface)).toBeGreaterThanOrEqual(3);
   });
 });
 

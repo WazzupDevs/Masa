@@ -21,11 +21,17 @@ type Props = {
   state?: 'sending' | 'failed';
   onRetry?: () => void;
   onDiscard?: () => void;
+  // A run of messages from one sender (canvas: Aşama 4 · Yenileme): the name over the first, the
+  // avatar and the time beside and under the last, tight corners inside the run. A lone message is
+  // both first and last.
+  first?: boolean;
+  last?: boolean;
+  time?: string;
   testID?: string;
 };
 
-// One chat message (canvas: Bileşenler → Sohbet baloncuğu): the other side left with an avatar,
-// the viewer right in the accent colour; the corner on the speaker's side is small.
+// One chat message: the other side left with an avatar, the viewer right in the accent colour; the
+// corners on the speaker's side are small inside a run.
 export function ChatBubble({
   text,
   mine,
@@ -36,11 +42,15 @@ export function ChatBubble({
   state,
   onRetry,
   onDiscard,
+  first = true,
+  last = true,
+  time,
   testID,
 }: Props) {
   const { colors, shape } = useTheme();
-  const big = shape.radius.md;
+  const big = shape.radius.lg - SPACING[1];
   const small = SPACING[1.5];
+  const top = first ? big : small;
   const bubble = (
     <View
       testID={testID}
@@ -48,23 +58,29 @@ export function ChatBubble({
         maxWidth: '100%',
         paddingHorizontal: SPACING[3] + SPACING[0.5],
         paddingVertical: SPACING[2],
-        borderTopLeftRadius: big,
-        borderTopRightRadius: big,
+        borderTopLeftRadius: mine ? big : top,
+        borderTopRightRadius: mine ? top : big,
         borderBottomLeftRadius: mine ? big : small,
         borderBottomRightRadius: mine ? small : big,
-        borderWidth: shape.stroke.card,
-        borderColor: colors.border,
-        backgroundColor: mine ? colors.accent : colors.surface,
+        backgroundColor: mine ? colors.accent : colors.raised,
+        boxShadow: mine ? undefined : shape.shadow.raised,
       }}
     >
       <Text tone={mine ? 'onAccent' : 'text'}>{text}</Text>
     </View>
   );
+  const stamp =
+    time && last && !state ? (
+      <View style={{ paddingHorizontal: SPACING[1.5] }}>
+        <Text variant="fine">{time}</Text>
+      </View>
+    ) : null;
 
   if (mine) {
     return (
       <View className="items-end gap-1 self-end" style={{ maxWidth: '82%' }}>
         {bubble}
+        {stamp}
         {state ? (
           <View className="flex-row items-center gap-3">
             <Text variant="fine" tone={state === 'failed' ? 'danger' : 'muted'}>
@@ -99,7 +115,7 @@ export function ChatBubble({
   }
 
   const head =
-    name || tag ? (
+    first && (name || tag) ? (
       <View className="flex-row items-center gap-1.5" style={{ paddingLeft: SPACING[1] }}>
         {name ? (
           <Text variant="label" tone="muted">
@@ -110,14 +126,25 @@ export function ChatBubble({
       </View>
     ) : null;
   const content = (
-    <View className="gap-1">
+    <View className="items-start gap-1">
       {head}
       {bubble}
+      {stamp}
     </View>
   );
+  // Inside a run the avatar keeps its place, invisible, so the bubbles line up.
+  const face = avatar ? (
+    <View
+      style={{ paddingBottom: stamp ? SPACING[5] : 0, opacity: last ? 1 : 0 }}
+      importantForAccessibility={last ? 'auto' : 'no-hide-descendants'}
+      accessibilityElementsHidden={!last}
+    >
+      {avatar}
+    </View>
+  ) : null;
   return (
     <View className="flex-row items-end gap-2 self-start" style={{ maxWidth: '88%' }}>
-      {avatar}
+      {face}
       <View className="shrink">
         {onPressSender ? (
           <Pressable accessibilityRole="button" accessibilityLabel={name} onPress={onPressSender}>

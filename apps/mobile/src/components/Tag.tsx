@@ -21,8 +21,9 @@ export type TagVariant =
 
 type Props = { label: string; variant?: TagVariant; icon?: IconName };
 
-// A pill label. The theme may outline it (`stroke.tag`), tilt the event sticker (`eventTagTilt`)
-// and dash the "profilli" outline (`profiledTagDashed`). On trust screens it sits still.
+// A filled pill label (no outline since Stage 4, `stroke.tag`). The theme may tilt the event sticker
+// (`eventTagTilt`) and dash the "profilli" outline (`profiledTagDashed`). On trust screens it sits
+// still.
 export function Tag({ label, variant = 'neutral', icon }: Props) {
   const theme = useTheme();
   const quiet = useQuiet();
@@ -34,13 +35,13 @@ export function Tag({ label, variant = 'neutral', icon }: Props) {
     buzz: { bg: colors.buzz, fg: colors.onBuzz },
     event: { bg: colors.event, fg: colors.onEvent },
     neutral: { bg: colors.surface2, fg: colors.text },
-    profiled: { bg: colors.surface, fg: colors.accent },
+    profiled: { bg: colors.violet, fg: colors.onViolet },
     accent: { bg: colors.accent, fg: colors.onAccent },
     game: { bg: colors.accent, fg: colors.onAccent },
     chat: { bg: colors.signal, fg: colors.onSignal },
   };
   const { bg, fg } = fill[variant];
-  const outline = variant === 'profiled' ? Math.max(shape.stroke.tag, 1) : shape.stroke.tag;
+  const outline = shape.stroke.tag;
   const tilt = variant === 'event' && !quiet ? theme.eventTagTilt : 0;
 
   return (
@@ -52,14 +53,9 @@ export function Tag({ label, variant = 'neutral', icon }: Props) {
         paddingHorizontal: SPACING[2.5],
         paddingVertical: SPACING[1],
         borderWidth: quiet ? Math.min(outline, shape.stroke.hairline) : outline,
-        borderColor: quiet
-          ? colors.divider
-          : variant === 'profiled'
-            ? colors.accent
-            : colors.border,
+        borderColor: quiet ? colors.divider : colors.border,
         borderStyle: variant === 'profiled' && theme.profiledTagDashed ? 'dashed' : 'solid',
         transform: tilt ? [{ rotate: `${tilt}deg` }] : undefined,
-        boxShadow: tilt ? shape.shadow.raised : undefined,
       }}
     >
       {icon ? <Ionicons name={icon} size={ICON.sm} color={fg} /> : null}

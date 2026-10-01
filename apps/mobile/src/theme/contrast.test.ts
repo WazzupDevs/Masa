@@ -17,8 +17,14 @@ const PAIRS: readonly Pair[] = [
   ['muted', 'canvas', AA_TEXT],
   ['muted', 'surface', AA_TEXT],
   ['muted', 'surface2', AA_TEXT],
+  ['text', 'raised', AA_TEXT], // others' bubbles, fields, secondary buttons
+  ['muted', 'raised', AA_TEXT], // placeholders, message times
   ['accent', 'canvas', AA_TEXT], // links
   ['accent', 'surface', AA_TEXT],
+  ['accent', 'surface2', AA_TEXT],
+  ['violet', 'canvas', AA_TEXT],
+  ['violet', 'surface', AA_TEXT],
+  ['onViolet', 'violet', AA_TEXT], // initials, "profilli"
   ['danger', 'canvas', AA_TEXT], // error messages
   ['danger', 'surface', AA_TEXT],
   ['onAccent', 'accent', AA_TEXT],
@@ -31,6 +37,8 @@ const PAIRS: readonly Pair[] = [
   ['onEvent', 'event', AA_TEXT],
   ['accent', 'surface', AA_LARGE], // selected ring
   ['muted', 'surface', AA_LARGE], // input outline
+  ['border', 'canvas', AA_LARGE], // primary button and featured card outline
+  ['border', 'surface', AA_LARGE],
 ];
 
 function ratio(p: Palette, fg: PaletteKey, bg: PaletteKey): number {
