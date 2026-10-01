@@ -107,6 +107,8 @@ pnpm supabase secrets list
 
 `MIN_APP_BUILD` henüz ayarlanmaz (5. adım).
 
+**`CHECKIN_SKIP_LOCATION` üretimde tanımlı olmamalı.** `pnpm supabase secrets list` çıktısında bu ad görünmemeli. Bu sır dev projesinde check-in konum kontrolünü kapatır. Üretimde kod onu zaten yok sayar ve hata loglar (`_shared/pure/devProject.ts`), ama tanımlıysa yine de kaldır: `pnpm supabase secrets unset CHECKIN_SKIP_LOCATION`. Bu kontrolü her üretim yayınında, `secrets list` ile tekrarla.
+
 ## 4. Production build
 
 `apps\mobile` (EAS `production` ortamı; değerler bir kez, değişince tekrar):
