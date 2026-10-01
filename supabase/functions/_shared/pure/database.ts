@@ -208,30 +208,36 @@ export type Database = {
       friend_requests: {
         Row: {
           created_at: string;
-          encounter_id: string;
+          encounter_id: string | null;
           from_user_id: string;
           id: string;
           responded_at: string | null;
+          source: string;
           status: string;
           to_user_id: string;
+          venue_chat_context: Json | null;
         };
         Insert: {
           created_at?: string;
-          encounter_id: string;
+          encounter_id?: string | null;
           from_user_id: string;
           id?: string;
           responded_at?: string | null;
+          source?: string;
           status?: string;
           to_user_id: string;
+          venue_chat_context?: Json | null;
         };
         Update: {
           created_at?: string;
-          encounter_id?: string;
+          encounter_id?: string | null;
           from_user_id?: string;
           id?: string;
           responded_at?: string | null;
+          source?: string;
           status?: string;
           to_user_id?: string;
+          venue_chat_context?: Json | null;
         };
         Relationships: [];
       };
@@ -670,6 +676,7 @@ export type Database = {
           room_id: string | null;
           status: string;
           target_type: string;
+          venue_chat_message_id: string | null;
         };
         Insert: {
           context?: Json | null;
@@ -686,6 +693,7 @@ export type Database = {
           room_id?: string | null;
           status?: string;
           target_type?: string;
+          venue_chat_message_id?: string | null;
         };
         Update: {
           context?: Json | null;
@@ -702,6 +710,7 @@ export type Database = {
           room_id?: string | null;
           status?: string;
           target_type?: string;
+          venue_chat_message_id?: string | null;
         };
         Relationships: [
           {
@@ -709,6 +718,13 @@ export type Database = {
             columns: ['room_id'];
             isOneToOne: false;
             referencedRelation: 'rooms';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'reports_venue_chat_message_id_fkey';
+            columns: ['venue_chat_message_id'];
+            isOneToOne: false;
+            referencedRelation: 'venue_chat_messages';
             referencedColumns: ['id'];
           },
         ];
@@ -1045,6 +1061,128 @@ export type Database = {
           },
         ];
       };
+      venue_chat_friend_presses: {
+        Row: {
+          created_at: string;
+          from_user_id: string;
+          to_name: string | null;
+          to_user_id: string;
+          venue_name: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          from_user_id: string;
+          to_name?: string | null;
+          to_user_id: string;
+          venue_name?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          from_user_id?: string;
+          to_name?: string | null;
+          to_user_id?: string;
+          venue_name?: string | null;
+        };
+        Relationships: [];
+      };
+      venue_chat_messages: {
+        Row: {
+          body: string;
+          created_at: string;
+          hidden_at: string | null;
+          id: string;
+          profiled: boolean;
+          sender_alias: string;
+          sender_user_id: string;
+          session_id: string;
+          venue_id: string;
+        };
+        Insert: {
+          body: string;
+          created_at?: string;
+          hidden_at?: string | null;
+          id?: string;
+          profiled: boolean;
+          sender_alias: string;
+          sender_user_id: string;
+          session_id: string;
+          venue_id: string;
+        };
+        Update: {
+          body?: string;
+          created_at?: string;
+          hidden_at?: string | null;
+          id?: string;
+          profiled?: boolean;
+          sender_alias?: string;
+          sender_user_id?: string;
+          session_id?: string;
+          venue_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'venue_chat_messages_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'table_sessions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'venue_chat_messages_venue_id_fkey';
+            columns: ['venue_id'];
+            isOneToOne: false;
+            referencedRelation: 'venues';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      venue_chat_rate: {
+        Row: {
+          count: number;
+          last_sent_at: string;
+          user_id: string;
+          window_started_at: string;
+        };
+        Insert: {
+          count: number;
+          last_sent_at: string;
+          user_id: string;
+          window_started_at: string;
+        };
+        Update: {
+          count?: number;
+          last_sent_at?: string;
+          user_id?: string;
+          window_started_at?: string;
+        };
+        Relationships: [];
+      };
+      venue_chat_reports: {
+        Row: {
+          created_at: string;
+          message_id: string;
+          reporter_user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          message_id: string;
+          reporter_user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          message_id?: string;
+          reporter_user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'venue_chat_reports_message_id_fkey';
+            columns: ['message_id'];
+            isOneToOne: false;
+            referencedRelation: 'venue_chat_messages';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       venue_events: {
         Row: {
           created_at: string;
@@ -1262,6 +1400,17 @@ export type Database = {
           outcome: string;
         }[];
       };
+      friends_incoming_venue_chat: {
+        Args: { target_user_id: string };
+        Returns: {
+          birth_date: string;
+          created_at: string;
+          display_name: string;
+          photo_path: string;
+          request_id: string;
+          venue_name: string;
+        }[];
+      };
       friends_of: {
         Args: { viewer: string };
         Returns: {
@@ -1284,6 +1433,17 @@ export type Database = {
       };
       friends_request: {
         Args: { target_history_id: string; target_user_id: string };
+        Returns: {
+          other_user_id: string;
+          outcome: string;
+        }[];
+      };
+      friends_request_venue_chat: {
+        Args: {
+          daily_max: number;
+          target_message_id: string;
+          target_user_id: string;
+        };
         Returns: {
           other_user_id: string;
           outcome: string;
@@ -1325,6 +1485,15 @@ export type Database = {
           other_alias: string;
           played_at: string;
           status: string;
+        }[];
+      };
+      my_sent_venue_chat_requests: {
+        Args: never;
+        Returns: {
+          created_at: string;
+          status: string;
+          to_name: string;
+          venue_name: string;
         }[];
       };
       nearby_venues: {
@@ -1722,6 +1891,10 @@ export type Database = {
         };
         Returns: undefined;
       };
+      safety_block_friend_request: {
+        Args: { target_request_id: string; target_user_id: string };
+        Returns: boolean;
+      };
       safety_block_history: {
         Args: {
           photo?: string;
@@ -1730,6 +1903,10 @@ export type Database = {
           target_history_id: string;
           target_user_id: string;
         };
+        Returns: boolean;
+      };
+      safety_block_venue_chat: {
+        Args: { target_message_id: string; target_user_id: string };
         Returns: boolean;
       };
       safety_report: {
@@ -1748,6 +1925,14 @@ export type Database = {
         };
         Returns: undefined;
       };
+      safety_report_friend_request: {
+        Args: {
+          new_reason: string;
+          target_request_id: string;
+          target_user_id: string;
+        };
+        Returns: boolean;
+      };
       safety_report_history: {
         Args: {
           new_reason: string;
@@ -1764,6 +1949,16 @@ export type Database = {
           photo?: string;
           reported_photo_path?: string;
           target_public_id: string;
+          target_user_id: string;
+        };
+        Returns: boolean;
+      };
+      safety_report_venue_chat: {
+        Args: {
+          hide_after: number;
+          new_reason: string;
+          snapshot_size: number;
+          target_message_id: string;
           target_user_id: string;
         };
         Returns: boolean;
@@ -1947,6 +2142,50 @@ export type Database = {
           games: number;
           voice_tabu_wins: number;
         }[];
+      };
+      venue_chat_page: {
+        Args: { before?: string; page_size?: number; target_venue_id: string };
+        Returns: {
+          body: string;
+          created_at: string;
+          display_name: string;
+          from_me: boolean;
+          id: string;
+          profiled: boolean;
+          sender_alias: string;
+        }[];
+      };
+      venue_chat_profile_owner: {
+        Args: { target_message_id: string; target_user_id: string };
+        Returns: string;
+      };
+      venue_chat_send: {
+        Args: {
+          min_interval_ms: number;
+          new_body: string;
+          profiled: boolean;
+          target_user_id: string;
+          target_venue_id: string;
+          window_max: number;
+          window_seconds: number;
+        };
+        Returns: {
+          body: string;
+          created_at: string;
+          hidden_at: string | null;
+          id: string;
+          profiled: boolean;
+          sender_alias: string;
+          sender_user_id: string;
+          session_id: string;
+          venue_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'venue_chat_messages';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       venue_contains: {
         Args: {

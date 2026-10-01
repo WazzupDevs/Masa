@@ -8,7 +8,8 @@
 --   alias. The sender's account id and public_id never leave the server.
 -- - Realtime carries a data-free `venue_chat` broadcast on venue_chat:{venue_id}.
 -- Lock order (rule 10): table_sessions → venue_chat_rate → venue_chat_messages →
--- venue_chat_reports. A friend request from the chat starts at the pair lock.
+-- venue_chat_reports. A friend request from the chat starts at the pair lock, then
+-- venue_chat_friend_presses → friend_requests.
 
 -- Tables ------------------------------------------------------------------------------------------
 create table public.venue_chat_messages (
@@ -49,6 +50,21 @@ create table public.venue_chat_rate (
 
 alter table public.venue_chat_rate enable row level security;
 revoke all on table public.venue_chat_rate from anon, authenticated;
+
+-- "Arkadaşlık isteği gönder" presses from the chat. The sender's sent list comes from these, not
+-- from request rows, so a request swallowed for any reason (blocked, declined before, over the
+-- daily limit, already sent) looks exactly like one that waits (rule 5). Server only.
+create table public.venue_chat_friend_presses (
+  from_user_id uuid not null references auth.users (id) on delete cascade,
+  to_user_id uuid not null references auth.users (id) on delete cascade,
+  to_name text,
+  venue_name text,
+  created_at timestamptz not null default now(),
+  primary key (from_user_id, to_user_id)
+);
+
+alter table public.venue_chat_friend_presses enable row level security;
+revoke all on table public.venue_chat_friend_presses from anon, authenticated;
 
 -- Reports and friend requests learn the venue chat ------------------------------------------------
 alter table public.reports drop constraint reports_target_type_check;
@@ -346,12 +362,24 @@ declare
 begin
   select * into m from private.visible_venue_chat_message(target_user_id, target_message_id);
   if m.id is null or not m.profiled or m.hidden_at is not null
-     or m.sender_user_id = target_user_id
-     or private.is_blocked_between(target_user_id, m.sender_user_id) then
+     or m.sender_user_id = target_user_id then
     return query select 'ok'::text, null::uuid;
     return;
   end if;
   perform private.lock_pair(target_user_id, m.sender_user_id);
+
+  -- The press is kept whatever happens next: the sender's list shows it as waiting.
+  select v.name into venue_name from public.venues v where v.id = m.venue_id;
+  select display_name into my_name from public.profiles where id = target_user_id;
+  select display_name into their_name from public.profiles where id = m.sender_user_id;
+  insert into public.venue_chat_friend_presses (from_user_id, to_user_id, to_name, venue_name)
+  values (target_user_id, m.sender_user_id, their_name, venue_name)
+  on conflict (from_user_id, to_user_id) do nothing;
+
+  if private.is_blocked_between(target_user_id, m.sender_user_id) then
+    return query select 'ok'::text, null::uuid;
+    return;
+  end if;
   if private.are_friends(target_user_id, m.sender_user_id) then
     return query select 'already_friends'::text, null::uuid;
     return;
@@ -374,9 +402,6 @@ begin
     return;
   end if;
 
-  select v.name into venue_name from public.venues v where v.id = m.venue_id;
-  select display_name into my_name from public.profiles where id = target_user_id;
-  select display_name into their_name from public.profiles where id = m.sender_user_id;
   insert into public.friend_requests (from_user_id, to_user_id, source, venue_chat_context)
   values (target_user_id, m.sender_user_id, 'venue_chat',
           jsonb_build_object('venueName', venue_name, 'fromName', my_name, 'toName', their_name))
@@ -476,9 +501,9 @@ begin
 end;
 $$;
 
--- Requests the caller sent from the chat: the name the other side showed and the status; a
--- declined or swallowed request stays 'pending' (rule 5). Only rows really written are listed: a
--- swallowed request has no row (the screen keeps the press locally).
+-- Requests the caller sent from the chat: one row per press, with the name the other side showed
+-- and the status. 'accepted' only while they are friends; anything else, a decline or a swallowed
+-- request included, is 'pending' for ever (rule 5).
 create function public.my_sent_venue_chat_requests()
 returns table (to_name text, venue_name text, status text, created_at timestamptz)
 language sql
@@ -486,13 +511,13 @@ stable
 security definer
 set search_path = ''
 as $$
-  select fr.venue_chat_context ->> 'toName', fr.venue_chat_context ->> 'venueName',
-         case when private.are_friends(fr.from_user_id, fr.to_user_id) then 'accepted'
+  select p.to_name, p.venue_name,
+         case when private.are_friends(p.from_user_id, p.to_user_id) then 'accepted'
               else 'pending' end,
-         fr.created_at
-  from public.friend_requests fr
-  where fr.from_user_id = (select auth.uid()) and fr.source = 'venue_chat'
-  order by fr.created_at desc;
+         p.created_at
+  from public.venue_chat_friend_presses p
+  where p.from_user_id = (select auth.uid())
+  order by p.created_at desc;
 $$;
 
 revoke all on function public.my_sent_venue_chat_requests() from public, anon;

@@ -1,0 +1,102 @@
+# Venue chat room (docs/SPEC_V3.md §7): an anonymous and a profiled message from this phone; a
+# second bot account (the first is blocked since 07) writes with its profile; this phone opens its
+# profile through the message and sends a friend request, which the bot accepts.
+appId: app.kabuk.mobile
+---
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: login
+      BODY: '{"second":true}'
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: checkin
+      BODY: '{"spot":"kutuphane"}'
+- tapOn:
+    id: tab-venue
+- scrollUntilVisible:
+    element:
+      id: venue-chat-open
+    timeout: 15000
+- tapOn:
+    id: venue-chat-open
+- extendedWaitUntil:
+    visible: E2E Kafe sohbet odası
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: venue-chat-input
+    timeout: 10000
+- tapOn:
+    id: venue-chat-input
+- inputText: Selam mekan
+- hideKeyboard
+- tapOn:
+    id: venue-chat-send
+- extendedWaitUntil:
+    visible: Selam mekan
+    timeout: 15000
+# "Profilimle yaz": the next message goes with the display name, not the table alias.
+- tapOn: Profilimle yaz
+- assertVisible: Adınla görünür; masa adın görünmez.
+- tapOn:
+    id: venue-chat-input
+- inputText: Adımla yazıyorum
+- hideKeyboard
+- tapOn:
+    id: venue-chat-send
+- extendedWaitUntil:
+    visible: Adımla yazıyorum
+    timeout: 15000
+- takeScreenshot: 36-venue-chat-mine
+# The bot writes with its profile; this phone sees its name and the "profilli" tag.
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: venue-chat-send
+      BODY: '{"body":"Bot İki burada","profiled":true}'
+- scrollUntilVisible:
+    element:
+      text: Bot İki burada
+    timeout: 20000
+- takeScreenshot: 37-venue-chat-profiled
+- tapOn: Bot İki
+- extendedWaitUntil:
+    visible:
+      id: venue-chat-profile
+    timeout: 15000
+- takeScreenshot: 38-venue-chat-profile
+- tapOn:
+    id: venue-chat-request
+- extendedWaitUntil:
+    visible: İstek gönderilsin mi\?
+    timeout: 10000
+- takeScreenshot: 39-venue-chat-request-confirm
+- tapOn:
+    id: venue-chat-request-confirm
+- extendedWaitUntil:
+    visible:
+      id: venue-chat-request-sent
+    timeout: 15000
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: accept-friend
+- scrollUntilVisible:
+    element:
+      text: Geri dön
+    timeout: 10000
+- tapOn: Geri dön
+- scrollUntilVisible:
+    element:
+      text: Geri
+    direction: UP
+    timeout: 10000
+- tapOn: Geri
+- tapOn:
+    id: tab-friends
+- extendedWaitUntil:
+    visible: Bot İki
+    timeout: 20000
+- takeScreenshot: 40-venue-chat-friend

@@ -110,71 +110,71 @@ Deno.serve(
       req,
       raw,
     ): Promise<FriendsListResponse | FriendsIncomingResponse | FriendsOkResponse> => {
-    const body = Body.parse(raw);
-    const user = await requireUser(req, db);
+      const body = Body.parse(raw);
+      const user = await requireUser(req, db);
 
-    switch (body.action) {
-      case 'list':
-        return await list(user.id);
+      switch (body.action) {
+        case 'list':
+          return await list(user.id);
 
-      case 'incoming':
-        return await incoming(user.id);
+        case 'incoming':
+          return await incoming(user.id);
 
-      case 'request': {
-        await requireDisplayName(db, user.id);
-        const { data, error } =
-          'venueChatMessageId' in body
-            ? await db.rpc('friends_request_venue_chat', {
-                target_user_id: user.id,
-                target_message_id: body.venueChatMessageId,
-                daily_max: VENUE_CHAT.dailyFriendRequests,
-              })
-            : await db.rpc('friends_request', {
-                target_user_id: user.id,
-                target_history_id: body.historyId,
-              });
-        if (error) throw dbError('friends_request', error);
-        const result = data[0];
-        if (result?.outcome === 'already_friends') {
-          throw new AppError('already_friends', 'Already friends.');
+        case 'request': {
+          await requireDisplayName(db, user.id);
+          const { data, error } =
+            'venueChatMessageId' in body
+              ? await db.rpc('friends_request_venue_chat', {
+                  target_user_id: user.id,
+                  target_message_id: body.venueChatMessageId,
+                  daily_max: VENUE_CHAT.dailyFriendRequests,
+                })
+              : await db.rpc('friends_request', {
+                  target_user_id: user.id,
+                  target_history_id: body.historyId,
+                });
+          if (error) throw dbError('friends_request', error);
+          const result = data[0];
+          if (result?.outcome === 'already_friends') {
+            throw new AppError('already_friends', 'Already friends.');
+          }
+          announce(user.id, result);
+          return { ok: true };
         }
-        announce(user.id, result);
-        return { ok: true };
-      }
 
-      case 'respond': {
-        if (body.accept) await requireDisplayName(db, user.id);
-        const { data, error } = await db.rpc('friends_respond', {
-          target_user_id: user.id,
-          target_request_id: body.requestId,
-          accept: body.accept,
-        });
-        if (error) throw dbError('friends_respond', error);
-        announce(user.id, data[0]);
-        return { ok: true };
-      }
+        case 'respond': {
+          if (body.accept) await requireDisplayName(db, user.id);
+          const { data, error } = await db.rpc('friends_respond', {
+            target_user_id: user.id,
+            target_request_id: body.requestId,
+            accept: body.accept,
+          });
+          if (error) throw dbError('friends_respond', error);
+          announce(user.id, data[0]);
+          return { ok: true };
+        }
 
-      case 'add-from-room': {
-        await requireDisplayName(db, user.id);
-        const { data, error } = await db.rpc('friends_add_from_room', {
-          target_user_id: user.id,
-          target_history_id: body.historyId,
-        });
-        if (error) throw dbError('friends_add_from_room', error);
-        announce(user.id, data[0]);
-        return { ok: true };
-      }
+        case 'add-from-room': {
+          await requireDisplayName(db, user.id);
+          const { data, error } = await db.rpc('friends_add_from_room', {
+            target_user_id: user.id,
+            target_history_id: body.historyId,
+          });
+          if (error) throw dbError('friends_add_from_room', error);
+          announce(user.id, data[0]);
+          return { ok: true };
+        }
 
-      case 'remove': {
-        const { error } = await db.rpc('friends_remove', {
-          target_user_id: user.id,
-          target_public_id: body.publicId,
-          report_reason: body.report,
-        });
-        if (error) throw dbError('friends_remove', error);
-        return { ok: true };
+        case 'remove': {
+          const { error } = await db.rpc('friends_remove', {
+            target_user_id: user.id,
+            target_public_id: body.publicId,
+            report_reason: body.report,
+          });
+          if (error) throw dbError('friends_remove', error);
+          return { ok: true };
+        }
       }
-    }
     },
   ),
 );

@@ -28,8 +28,7 @@ export function prepareVenueMessage(raw: string): string | null {
 export type VenueChatRate = { windowStartedAt: number; count: number; lastSentAt: number };
 
 export type RateDecision =
-  | { ok: true; next: VenueChatRate }
-  | { ok: false; reason: 'too_soon' | 'rate_limited' };
+  { ok: true; next: VenueChatRate } | { ok: false; reason: 'too_soon' | 'rate_limited' };
 
 // One account's sending window; the SQL function applies the same rule under a row lock.
 export function venueChatRate(prev: VenueChatRate | null, now: number): RateDecision {
@@ -64,7 +63,9 @@ export type VenueChatMessage = {
 };
 
 // The name to show above a message.
-export function senderLabel(message: Pick<VenueChatMessage, 'senderAlias' | 'displayName'>): string {
+export function senderLabel(
+  message: Pick<VenueChatMessage, 'senderAlias' | 'displayName'>,
+): string {
   return message.displayName ?? message.senderAlias ?? '';
 }
 

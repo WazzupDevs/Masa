@@ -290,6 +290,8 @@ describe('cleanup jobs', () => {
     expect(jobs.map((j) => [j.jobname, j.schedule])).toEqual([
       ['delete-old-messages', '0 * * * *'],
       ['delete-old-reports', '0 * * * *'],
+      // The venue chat's own job (venueChat.test.ts checks its command).
+      ['delete-old-venue-chat', '17 * * * *'],
     ]);
   });
 });

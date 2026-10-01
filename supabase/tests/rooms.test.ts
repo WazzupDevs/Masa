@@ -465,6 +465,12 @@ describe('locks', () => {
       (tx, userId) => tx`select id from public.reroll_table_alias(${userId}, 'Kilit Simit', 3)`,
     ],
     [
+      'writing in the venue chat (venue_chat_send)',
+      (tx, userId) =>
+        tx`select id from public.venue_chat_send(${userId}, ${venue[V] ?? ''}, 'kilit', false,
+             3000, 600, 20)`,
+    ],
+    [
       'the expiry job (end_expired_table_sessions)',
       async (tx, _userId, sessionId) => {
         await tx`update public.table_sessions set expires_at = now() - interval '1 minute'

@@ -458,6 +458,17 @@ Gerekçeler `docs/DECISIONS.md` → "Tabu modları (v3 adım 4)".
   - Kabul, red, engel ve şikayet bu istek kaydıyla yapılır.
 - **Gönderenin görünümü:** `my_sent_requests()` alıcının o mesajdaki görünen adını ve durumu (`pending`/`accepted`; red süresiz `pending`) döner.
 
+### 7.6 Uygulamada netleşenler (adım 5 notu)
+
+Gerekçeler `docs/DECISIONS.md` → "Mekan sohbet odası (v3 adım 5)".
+
+- **Gönderilenler:** `my_sent_requests()` yerine ayrı `my_sent_venue_chat_requests()`. Satırlar istek kayıtlarından değil, sunucuda tutulan basışlardan (`venue_chat_friend_presses`) gelir: engel, önceki red, günlük sınır ya da tekrar yüzünden yutulan istek de "bekliyor" görünür (kural 5). Oyun geçmişindeki `friend_action_at` ile aynı ilke.
+- **Gelen istekler:** `friends/incoming` yalnızca mekan sohbetinden gelen istekleri döner (adı, yaşı, imzalı fotoğrafı); karşılaşmadan gelenler `my_incoming_requests()`'te kalır. Uygulama ikisini aynı listede gösterir.
+- **İstekten engel ve şikayet:** `safety/block { friendRequestId, report? }` ve `safety/report { target: 'friend_request', requestId }`. Engellenenler listesinde görünen ad durur.
+- **Hız sınırı tablosu** (`venue_chat_rate`) kilit sırasında masa oturumundan sonra, mesajlardan önce gelir: `table_sessions` → `venue_chat_rate` → `venue_chat_messages` → `venue_chat_reports`.
+- **Aktif masa** `status = 'active' and expires_at > now()`; süresi dolmuş ama henüz bitirilmemiş masa da okuyamaz ve yazamaz. Hata kodu yeni değil: `no_active_table`.
+- **Şikayet kopyası** son 50 görünür mesaj; şikayet edilen mesaj `reported: true` ile işaretli. Kopya mesaj silindikten sonra da kalır (`venue_chat_message_id` null olur).
+
 ---
 
 ## 8. Veri modeli ve migration planı
