@@ -269,13 +269,14 @@ function Turn({
           {tr.games.turnOverWait}
         </Text>
       ) : guessing ? null : server.mode === 'cooperative' ? (
-        <View className="flex-row gap-2.5">
+        <View className="flex-row gap-2">
+          {/* Three in a row (canvas: Tabu iş birliği): no icons, the points under each label. */}
           <View className="flex-1">
             <Button
               variant="success"
               testID="tabu-correct"
               size="lg"
-              icon="checkmark"
+              stack
               label={tr.games.correct}
               detail={tr.games.correctPoints}
               onPress={() => press('correct')}
@@ -287,7 +288,7 @@ function Turn({
               variant="secondary"
               testID="tabu-pass"
               size="lg"
-              icon="play-skip-forward-outline"
+              stack
               label={tr.games.pass}
               detail={tr.games.passDetail(passesLeft)}
               accessibilityLabel={`${tr.games.pass}, ${tr.games.passesLeft(passesLeft)}`}
@@ -300,7 +301,7 @@ function Turn({
               variant="danger"
               testID="tabu-taboo"
               size="lg"
-              icon="close"
+              stack
               label={tr.games.taboo}
               detail={tr.games.tabooPoints}
               onPress={() => press('taboo')}

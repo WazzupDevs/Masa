@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { exploreLayout } from '@shared/explore.ts';
 import { hasActiveTable } from '@shared/navigation.ts';
 import { router } from 'expo-router';
@@ -12,17 +13,18 @@ import { ListRow } from '@/components/ListRow';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { useTabBarSpace } from '@/components/TabBar';
 import { Segmented } from '@/components/Segmented';
+import { Snail } from '@/components/Snail';
 import { Text } from '@/components/Text';
 import { useCheckinDraft } from '@/features/checkin/draft';
 import { useActiveTable } from '@/features/checkin/useActiveTable';
 import { ExploreMap } from '@/features/explore/ExploreMap';
 import { type ExploreVenue, useExploreVenues } from '@/features/explore/useExploreVenues';
-import { BucketBadge, EventTag } from '@/features/explore/VenueTags';
+import { BucketBadge, EventRow, EventTag } from '@/features/explore/VenueTags';
 import { tr } from '@/i18n/tr';
 import { track } from '@/lib/analytics';
 import { useNow } from '@/lib/useNow';
 import { useTheme } from '@/theme/ThemeProvider';
-import { SPACING } from '@/theme/tokens';
+import { ICON, SPACING } from '@/theme/tokens';
 
 type View_ = 'list' | 'map';
 
@@ -173,7 +175,7 @@ function VenueList({
 // The pilot's Keşfet: the one venue, its bucket, all its events within the week and check-in, then
 // "Yeni mekanlar yakında". A second active venue brings the list and the map back (content only).
 function SingleVenue({ venue, bottomSpace }: { venue: ExploreVenue; bottomSpace: number }) {
-  const { shape } = useTheme();
+  const { colors, shape } = useTheme();
   const setVenue = useCheckinDraft((s) => s.setVenue);
   return (
     <ScrollView
@@ -185,19 +187,19 @@ function SingleVenue({ venue, bottomSpace }: { venue: ExploreVenue; bottomSpace:
       contentContainerClassName="gap-4 pt-2"
     >
       <Card>
-        <Text variant="heading" accessibilityRole="header">
-          {venue.name}
-        </Text>
-        <Text variant="fine" className="mt-0.5">
-          {venue.district}
-        </Text>
-        <View className="mt-3 flex-row flex-wrap gap-1.5">
+        <View className="flex-row items-start gap-2.5">
+          <Text variant="heading" accessibilityRole="header" className="flex-1">
+            {venue.name}
+          </Text>
           <BucketBadge bucket={venue.bucket} />
+        </View>
+        <View className="mt-1 flex-row items-center gap-1.5">
+          <Ionicons name="location-outline" size={ICON.md} color={colors.muted} />
+          <Text variant="fine">{venue.district}</Text>
         </View>
         <View className="mt-4">
           <Button
             label={tr.explore.checkInHere}
-            icon="location-outline"
             onPress={() => {
               setVenue({
                 id: venue.id,
@@ -211,22 +213,27 @@ function SingleVenue({ venue, bottomSpace }: { venue: ExploreVenue; bottomSpace:
           />
         </View>
       </Card>
-      <View className="gap-2">
-        <Text variant="label" accessibilityRole="header">
+      <View>
+        <Text variant="heading" accessibilityRole="header">
           {tr.explore.eventsTitle}
         </Text>
         {venue.events.length === 0 ? (
-          <Text variant="fine">{tr.explore.noEvents}</Text>
+          <Text variant="fine" className="mt-2">
+            {tr.explore.noEvents}
+          </Text>
         ) : (
-          <View className="flex-row flex-wrap gap-1.5">
-            {venue.events.map((event) => (
-              <EventTag key={`${event.startsAt}-${event.title}`} event={event} />
-            ))}
-          </View>
+          venue.events.map((event) => (
+            <EventRow key={`${event.startsAt}-${event.title}`} event={event} />
+          ))
         )}
       </View>
       <Card tone="note">
-        <Text variant="fine">{tr.explore.comingSoon}</Text>
+        <View className="flex-row items-center gap-3">
+          <Snail height={SPACING[9]} />
+          <Text variant="bodyStrong" className="flex-1">
+            {tr.explore.comingSoon}
+          </Text>
+        </View>
       </Card>
     </ScrollView>
   );
