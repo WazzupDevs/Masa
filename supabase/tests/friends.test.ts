@@ -6,16 +6,22 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import postgres from 'postgres';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import type { FriendsListResponse } from '../functions/_shared/pure/api/friends.ts';
+import type {
+  DmInboxResponse,
+  FriendsListResponse,
+} from '../functions/_shared/pure/api/friends.ts';
 import type { ProfileUploadUrl } from '../functions/_shared/pure/api/profile.ts';
 import { PHOTO_BUCKET } from '../functions/_shared/pure/profile.ts';
 import { REVEAL } from '../functions/_shared/pure/reveal.ts';
 import {
   BROADCAST,
   dmChannel,
+  dmTypingChannel,
   inboxChannel,
   ROOM_IDLE_MINUTES,
+  TYPING_EVENT,
 } from '../functions/_shared/pure/rooms.ts';
+import { DM_MIN_INTERVAL_MS } from '../functions/_shared/pure/friends.ts';
 import { deleteFixtureVenues, insertFixtureVenues } from './fixtures/venues.ts';
 import {
   checkInAt,
@@ -862,7 +868,13 @@ describe('DMs', () => {
 
     const { data: page } = await b.rpc('dm_messages_page', { target_thread_id: threadId });
     expect(page).toEqual([expect.objectContaining({ body: 'Selam!', from_me: false })]);
-    expect(Object.keys(page?.[0] ?? {}).sort()).toEqual(['body', 'created_at', 'from_me', 'id']);
+    expect(Object.keys(page?.[0] ?? {}).sort()).toEqual([
+      'body',
+      'created_at',
+      'from_me',
+      'id',
+      'status',
+    ]);
     expect((await friendList(b))[0]?.unread).toBe(true);
     expect(await dm(b, { action: 'read', threadId })).toEqual(OK);
     expect((await friendList(b))[0]?.unread).toBe(false);
@@ -914,6 +926,224 @@ describe('DMs', () => {
     await dm(a, { action: 'send', threadId, body: 'selam' });
     await expect.poll(() => dmB.events, { timeout: 8000 }).toEqual([BROADCAST.dmMessage]);
     await expect.poll(() => inboxB.events, { timeout: 8000 }).toEqual([BROADCAST.dm]);
+  });
+});
+
+// v3 step 6 (docs/SPEC_V3.md §18.2): ticks, the Mesajlar list and the typing channel.
+const afterRateLimit = () =>
+  new Promise((resolve) => setTimeout(resolve, DM_MIN_INTERVAL_MS + 100));
+
+async function page(client: Client, threadId: string) {
+  const { data, error } = await client.rpc('dm_messages_page', { target_thread_id: threadId });
+  expect(error).toBeNull();
+  return data ?? [];
+}
+
+async function inboxOf(client: Client) {
+  const res = await dm(client, { action: 'inbox' });
+  expect(res.status).toBe(200);
+  return (res.body as DmInboxResponse).threads;
+}
+
+// A client broadcast on a channel the client has joined (the Realtime socket, as the app sends).
+async function sendTyping(client: Client, topic: string): Promise<string> {
+  const channel = client.channel(topic, { config: { private: true } });
+  const status = await new Promise<string>((resolve) => {
+    const timer = setTimeout(() => resolve('TIMED_OUT'), 8000);
+    channel.subscribe((s) => {
+      if (s === 'SUBSCRIBED' || s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') {
+        clearTimeout(timer);
+        resolve(s);
+      }
+    });
+  });
+  if (status === 'SUBSCRIBED') {
+    await channel.send({ type: 'broadcast', event: TYPING_EVENT, payload: {} });
+  }
+  await client.removeChannel(channel);
+  return status;
+}
+
+// The same send through the REST endpoint, which needs no subscription.
+async function restTyping(client: Client, topic: string): Promise<void> {
+  await fetch(`${apiUrl}/realtime/v1/api/broadcast`, {
+    method: 'POST',
+    headers: {
+      apikey: anonKey,
+      authorization: `Bearer ${await accessToken(client)}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      messages: [{ topic, event: TYPING_EVENT, payload: {}, private: true }],
+    }),
+  });
+}
+
+describe('DM ticks', () => {
+  it('moves sent → delivered → read, announces each step once, and never sends the times', async () => {
+    const { a, b, historyA } = await metOnce();
+    await becomeFriends(a, b, historyA);
+    const threadId = (await friendList(a))[0]?.threadId ?? '';
+    const dmA = await join(a, dmChannel(threadId));
+    expect(dmA.status).toBe('SUBSCRIBED');
+
+    expect(await dm(a, { action: 'send', threadId, body: 'bir' })).toEqual(OK);
+    expect((await page(a, threadId)).map((m) => m.status)).toEqual(['sent']);
+    // The other member's messages carry no status.
+    expect((await page(b, threadId)).map((m) => m.status)).toEqual([null]);
+
+    // Delivered: b's app is open. Not read: b still has it unread.
+    expect(await dm(b, { action: 'delivered' })).toEqual(OK);
+    expect((await page(a, threadId)).map((m) => m.status)).toEqual(['delivered']);
+    expect((await inboxOf(b))[0]?.unreadCount).toBe(1);
+    await expect
+      .poll(() => dmA.events.filter((e) => e === BROADCAST.dmStatus), { timeout: 8000 })
+      .toHaveLength(1);
+
+    // Again with nothing new: same answer, no announcement (pure/apiRetry.ts).
+    expect(await dm(b, { action: 'delivered' })).toEqual(OK);
+    expect((await page(a, threadId)).map((m) => m.status)).toEqual(['delivered']);
+
+    // A newer message is sent, not delivered.
+    await afterRateLimit();
+    expect(await dm(a, { action: 'send', threadId, body: 'iki' })).toEqual(OK);
+    expect((await page(a, threadId)).map((m) => m.status)).toEqual(['sent', 'delivered']);
+
+    // Read: both.
+    expect(await dm(b, { action: 'read', threadId })).toEqual(OK);
+    expect((await page(a, threadId)).map((m) => m.status)).toEqual(['read', 'read']);
+    expect(await dm(b, { action: 'read', threadId })).toEqual(OK);
+    await quiet();
+    expect(dmA.events.filter((e) => e === BROADCAST.dmStatus)).toHaveLength(2);
+    expect(dmA.events.filter((e) => e === BROADCAST.dmMessage)).toHaveLength(2);
+
+    // No time of the other member in anything a can read: only the status.
+    const [mark] = await sql`
+      select to_char(last_read_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US') as at
+      from public.dm_reads where thread_id = ${threadId} and user_id = ${await userIdOf(b)}
+    `;
+    const readAt = String(mark?.at);
+    const seen = JSON.stringify([await page(a, threadId), await inboxOf(a)]);
+    expect(seen).not.toContain(readAt);
+    expect(Object.keys((await inboxOf(a))[0] ?? {}).sort()).toEqual(
+      [
+        'displayName',
+        'lastBody',
+        'lastFromMe',
+        'lastMessageAt',
+        'lastStatus',
+        'photoUrl',
+        'publicId',
+        'threadId',
+        'unreadCount',
+      ].sort(),
+    );
+  });
+
+  it('marks nothing delivered for an account without messages to it', async () => {
+    const { a, b, historyA } = await metOnce();
+    await becomeFriends(a, b, historyA);
+    const threadId = (await friendList(a))[0]?.threadId ?? '';
+    expect(await dm(a, { action: 'delivered' })).toEqual(OK);
+    expect(await dm(b, { action: 'send', threadId, body: 'selam' })).toEqual(OK);
+    expect((await page(b, threadId)).map((m) => m.status)).toEqual(['sent']);
+  });
+});
+
+describe('Mesajlar (dm/inbox)', () => {
+  it('lists every friend, newest conversation first, with an 80-character preview and unread count', async () => {
+    const { a, b, historyA } = await metOnce();
+    await becomeFriends(a, b, historyA);
+    // A second friend without messages, made friends earlier than the first conversation.
+    const c = await named(PHONES[2], 'Cem');
+    await sql`select private.make_friends(${await userIdOf(a)}, ${await userIdOf(c)}, 'request')`;
+    await sql`
+      update public.friendships set created_at = now() - interval '1 day'
+      where ${await userIdOf(c)} in (user_a, user_b)
+    `;
+    const threadId = (await friendList(a))[0]?.threadId ?? '';
+
+    expect((await inboxOf(a)).map((t) => [t.displayName, t.lastBody])).toEqual([
+      ['Burak', null],
+      ['Cem', null],
+    ]);
+
+    const long = 'ç'.repeat(90);
+    expect(await dm(b, { action: 'send', threadId, body: 'selam' })).toEqual(OK);
+    await afterRateLimit();
+    expect(await dm(b, { action: 'send', threadId, body: long })).toEqual(OK);
+    const [first, second] = await inboxOf(a);
+    expect(first).toMatchObject({
+      threadId,
+      publicId: await publicIdOf(b),
+      displayName: 'Burak',
+      lastBody: 'ç'.repeat(80),
+      lastFromMe: false,
+      unreadCount: 2,
+      lastStatus: null,
+    });
+    expect(second).toMatchObject({ displayName: 'Cem', lastBody: null, unreadCount: 0 });
+
+    // a answers: the newest message is a's, with its status; nothing unread for a.
+    expect(await dm(a, { action: 'send', threadId, body: 'merhaba' })).toEqual(OK);
+    expect((await inboxOf(a))[0]).toMatchObject({
+      lastBody: 'merhaba',
+      lastFromMe: true,
+      unreadCount: 0,
+      lastStatus: 'sent',
+    });
+    // Sent twice: the same list (pure/apiRetry.ts).
+    expect(await inboxOf(a)).toEqual(await inboxOf(a));
+
+    // The other friend sees only its own, empty conversation with a.
+    expect(await inboxOf(c)).toEqual([
+      expect.objectContaining({ displayName: 'Ayşe', lastBody: null, unreadCount: 0 }),
+    ]);
+  });
+});
+
+describe('dm_typing channel', () => {
+  it('lets the two members join and send, and nobody else', async () => {
+    const { a, b, historyA } = await metOnce();
+    await becomeFriends(a, b, historyA);
+    const threadId = (await friendList(a))[0]?.threadId ?? '';
+    const topic = dmTypingChannel(threadId);
+    const c = await named(PHONES[2], 'Cem');
+
+    const typingB = await join(b, topic);
+    expect(typingB.status).toBe('SUBSCRIBED');
+    expect(await sendTyping(a, topic)).toBe('SUBSCRIBED');
+    await expect.poll(() => typingB.events, { timeout: 8000 }).toEqual([TYPING_EVENT]);
+
+    // An outsider can neither join nor send.
+    expect((await join(c, topic)).status).toBe('CHANNEL_ERROR');
+    await restTyping(c, topic);
+    await quiet();
+    expect(typingB.events).toEqual([TYPING_EVENT]);
+  });
+
+  it('closes to a removed friend and to a blocked one', async () => {
+    const { a, b, historyA } = await metOnce();
+    await becomeFriends(a, b, historyA);
+    const threadId = (await friendList(a))[0]?.threadId ?? '';
+    const topic = dmTypingChannel(threadId);
+    expect(await friends(b, { action: 'remove', publicId: await publicIdOf(a) })).toEqual(OK);
+    expect((await join(a, topic)).status).toBe('CHANNEL_ERROR');
+    await restTyping(a, topic);
+
+    // Friends again in a new thread, then a block between them that keeps the thread.
+    await sql`select private.make_friends(${await userIdOf(a)}, ${await userIdOf(b)}, 'request')`;
+    const again = (await friendList(a))[0]?.threadId ?? '';
+    const typingB = await join(b, dmTypingChannel(again));
+    expect(typingB.status).toBe('SUBSCRIBED');
+    await sql`
+      insert into public.blocks (blocker_id, blocked_id, blocked_alias)
+      values (${await userIdOf(b)}, ${await userIdOf(a)}, 'Test')
+    `;
+    expect((await join(a, dmTypingChannel(again))).status).toBe('CHANNEL_ERROR');
+    await restTyping(a, dmTypingChannel(again));
+    await quiet();
+    expect(typingB.events).toEqual([]);
   });
 });
 

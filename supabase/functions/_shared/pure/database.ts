@@ -149,16 +149,19 @@ export type Database = {
       };
       dm_reads: {
         Row: {
+          last_delivered_at: string | null;
           last_read_at: string;
           thread_id: string;
           user_id: string;
         };
         Insert: {
+          last_delivered_at?: string | null;
           last_read_at?: string;
           thread_id: string;
           user_id: string;
         };
         Update: {
+          last_delivered_at?: string | null;
           last_read_at?: string;
           thread_id?: string;
           user_id?: string;
@@ -1360,9 +1363,24 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      dm_inbox: {
+        Args: { viewer: string };
+        Returns: {
+          display_name: string;
+          last_body: string;
+          last_from_me: boolean;
+          last_message_at: string;
+          last_status: string;
+          photo_path: string;
+          public_id: string;
+          thread_id: string;
+          unread_count: number;
+        }[];
+      };
+      dm_mark_delivered: { Args: { target_user_id: string }; Returns: string[] };
       dm_mark_read: {
         Args: { target_thread_id: string; target_user_id: string };
-        Returns: undefined;
+        Returns: boolean;
       };
       dm_messages_page: {
         Args: { before?: string; target_thread_id: string };
@@ -1371,6 +1389,7 @@ export type Database = {
           created_at: string;
           from_me: boolean;
           id: string;
+          status: string;
         }[];
       };
       dm_send: {

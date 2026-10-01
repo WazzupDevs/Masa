@@ -10,6 +10,8 @@ describe('IDEMPOTENT_CALLS', () => {
     expect([...IDEMPOTENT_CALLS].sort()).toEqual(
       [
         'checkin/leave',
+        'dm/delivered',
+        'dm/inbox',
         'dm/read',
         'friends/list',
         'ping',

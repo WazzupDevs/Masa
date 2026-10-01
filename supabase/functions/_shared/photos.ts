@@ -1,5 +1,5 @@
 import type { Db } from './auth.ts';
-import { PHOTO_BUCKET } from './pure/profile.ts';
+import { PHOTO_BUCKET, PHOTO_URL_SECONDS } from './pure/profile.ts';
 
 // Deletes every profile photo of an account (account deletion and ban): Storage objects are not
 // removed by foreign keys, so they go explicitly.
@@ -23,4 +23,17 @@ export async function photoCopyHex(db: Db, path: string | null): Promise<string 
     hex += b.toString(16).padStart(2, '0');
   }
   return hex;
+}
+
+// Profile photo URLs for the given paths, signed for an hour (photos are private; only Edge
+// Functions sign them). Keyed by path.
+export async function signPhotos(db: Db, paths: readonly string[]): Promise<Map<string, string>> {
+  const urls = new Map<string, string>();
+  if (paths.length === 0) return urls;
+  const signed = await db.storage
+    .from(PHOTO_BUCKET)
+    .createSignedUrls([...paths], PHOTO_URL_SECONDS);
+  if (signed.error) throw new Error(`storage sign failed (${signed.error.message})`);
+  for (const s of signed.data) if (s.path && s.signedUrl) urls.set(s.path, s.signedUrl);
+  return urls;
 }
