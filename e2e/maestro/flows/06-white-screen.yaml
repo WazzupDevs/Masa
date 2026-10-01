@@ -9,7 +9,13 @@ appId: app.kabuk.mobile
     timeout: 10000
 - tapOn: Oda kur
 - extendedWaitUntil:
-    visible: Odayı kur
+    visible:
+      id: intent-none
+    timeout: 10000
+# The intent and participation choices push the button below the fold.
+- scrollUntilVisible:
+    element:
+      text: Odayı kur
     timeout: 10000
 - tapOn: Odayı kur
 # A waiting room: the table can play on its own until another table joins.
