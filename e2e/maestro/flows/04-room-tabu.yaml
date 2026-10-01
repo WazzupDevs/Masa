@@ -28,8 +28,9 @@ appId: app.kabuk.mobile
     visible: 2 hakkın kaldı
     timeout: 15000
 - takeScreenshot: 11b-alias-rerolled
-- extendedWaitUntil:
-    visible:
+# The venue card (alias, spot, "Oda kur", "Masanla oyna") is above the lobby: scroll to it.
+- scrollUntilVisible:
+    element:
       id: spot-here
     timeout: 20000
 - assertVisible: Kütüphane
@@ -37,10 +38,10 @@ appId: app.kabuk.mobile
 - takeScreenshot: 12b-lobby-other-spot
 - tapOn:
     id: spot-here
-- extendedWaitUntil:
-    visible: Katılmak istiyorum
+- scrollUntilVisible:
+    element:
+      text: Katılmak istiyorum
     timeout: 15000
-- assertVisible: 'Noktan: Kütüphane'
 - takeScreenshot: 12c-lobby-same-spot
 # The bot closes its room; this phone opens one at the same spot and the bot asks to join it.
 - runScript:
@@ -50,6 +51,11 @@ appId: app.kabuk.mobile
 - extendedWaitUntil:
     notVisible: Katılmak istiyorum
     timeout: 20000
+- scrollUntilVisible:
+    element:
+      text: 'Noktan: Kütüphane'
+    direction: UP
+    timeout: 10000
 - extendedWaitUntil:
     visible: Oda kur
     timeout: 10000
