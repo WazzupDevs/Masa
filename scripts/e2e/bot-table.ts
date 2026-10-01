@@ -356,7 +356,13 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
 
   // "Tanışalım mı?" for the room that is ending.
   async reveal(args) {
-    const { data, error } = await me().from('rooms').select('id').eq('status', 'ending').limit(1);
+    // The newest: an earlier room of this account may still be waiting for its window to close.
+    const { data, error } = await me()
+      .from('rooms')
+      .select('id')
+      .eq('status', 'ending')
+      .order('created_at', { ascending: false })
+      .limit(1);
     if (error) throw error;
     const roomId = data?.[0]?.id;
     if (!roomId) throw new Error('no room is waiting for an answer');
