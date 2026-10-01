@@ -83,7 +83,6 @@ export default function NewRoomScreen() {
             key={mode}
             testID={`participation-${mode}`}
             label={tr.participation[mode]}
-            hint={participationHint(mode, hasName)}
             picture={
               mode === 'anonymous' ? (
                 <Avatar kind="table" alias={table.data?.alias ?? ''} size="xl" />
@@ -101,6 +100,15 @@ export default function NewRoomScreen() {
           />
         ))}
       </View>
+      {/* The chosen mode's explanation under the cards, so the two cards stay short. */}
+      <Text variant="fine" className="mt-2 px-1">
+        {participationHint(participation, hasName)}
+      </Text>
+      {!hasName ? (
+        <Text variant="fine" className="mt-1 px-1">
+          {participationHint('profile', false)}
+        </Text>
+      ) : null}
       {create.isError ? (
         <Text variant="fine" tone="danger" className="mt-4">
           {errorMessage(create.error)}

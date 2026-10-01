@@ -39,7 +39,7 @@ export function ChoiceCard({ label, hint, picture, selected, disabled, onPress, 
           style={[
             {
               paddingHorizontal: SPACING[3],
-              paddingVertical: SPACING[4],
+              paddingVertical: SPACING[3],
               borderRadius: shape.radius.lg,
               backgroundColor: colors.surface,
               borderWidth: shape.stroke.feature + 1,
