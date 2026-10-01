@@ -26,6 +26,8 @@ type Props = {
   tint?: { background: string; foreground: string; outline?: boolean };
   accessibilityLabel?: string;
   testID?: string;
+  // A text-only button that lines up with the content's left edge ("Tekrar gönder").
+  flush?: boolean;
 };
 
 export function Button({
@@ -40,6 +42,7 @@ export function Button({
   tint,
   accessibilityLabel,
   testID,
+  flush,
 }: Props) {
   const theme = useTheme();
   const quiet = useQuiet();
@@ -85,9 +88,10 @@ export function Button({
   const style: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING[2],
-    paddingHorizontal: SPACING[5],
+    // With a detail ("Doğru +1" in half a row) the label needs the room more than the padding.
+    gap: detail ? SPACING[1.5] : SPACING[2],
+    paddingHorizontal: flush ? 0 : detail ? SPACING[3] : SPACING[5],
+    justifyContent: flush ? 'flex-start' : 'center',
     paddingVertical: SPACING[2],
     minHeight: size === 'lg' ? TOUCH.large : TOUCH.button,
     borderRadius: shape.radius.md,

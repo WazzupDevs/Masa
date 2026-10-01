@@ -76,6 +76,7 @@ export default function OtpScreen() {
         <View className="self-start">
           <Button
             variant="ghost"
+            flush
             label={secondsLeft > 0 ? tr.auth.resendIn(secondsLeft) : tr.auth.resend}
             onPress={() => void resend()}
             disabled={secondsLeft > 0}

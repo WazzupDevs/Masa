@@ -98,7 +98,7 @@ export function Lobby({ venueId, sessionId, since, mySpotId, venueHasSpots }: Pr
 
       {rooms.length === 0 ? (
         <EmptyState
-          icon="dice-outline"
+          snail
           body={tr.rooms.playWithTableHint}
           action={{
             label: tr.rooms.playWithTable,
