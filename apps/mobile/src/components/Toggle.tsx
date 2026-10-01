@@ -1,7 +1,8 @@
-import { Pressable, Switch, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
+import { switchColors } from '@/theme/switch';
 import { useTheme } from '@/theme/ThemeProvider';
-import { TOUCH } from '@/theme/tokens';
+import { SPACING, TOUCH } from '@/theme/tokens';
 
 import { Text } from './Text';
 
@@ -15,10 +16,15 @@ type Props = {
   testID?: string;
 };
 
+// The canvas switch: a 52 × 32 outlined track and an outlined thumb (`switchColors`).
+const TRACK = { width: SPACING[12] + SPACING[1], height: SPACING[8] } as const;
+const THUMB = SPACING[5] + SPACING[0.5];
+
 // A labelled on/off switch (canvas: "Profilimle yaz"). The whole row toggles, so the label is as
 // good a target as the switch; screen readers hear one switch.
 export function Toggle({ label, value, onChange, hint, disabled, testID }: Props) {
-  const { colors } = useTheme();
+  const { colors, shape } = useTheme();
+  const c = switchColors(colors, value);
   return (
     <Pressable
       testID={testID}
@@ -34,14 +40,31 @@ export function Toggle({ label, value, onChange, hint, disabled, testID }: Props
         <Text variant="bodyStrong">{label}</Text>
         {hint ? <Text variant="fine">{hint}</Text> : null}
       </View>
-      <View importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
-        <Switch
-          value={value}
-          disabled={disabled}
-          onValueChange={onChange}
-          trackColor={{ false: colors.surface2, true: colors.accent }}
-          thumbColor={colors.surface}
-          ios_backgroundColor={colors.surface2}
+      <View
+        importantForAccessibility="no-hide-descendants"
+        accessibilityElementsHidden
+        style={{
+          width: TRACK.width,
+          height: TRACK.height,
+          borderRadius: shape.radius.pill,
+          borderWidth: shape.stroke.control,
+          borderColor: c.trackBorder,
+          backgroundColor: c.track,
+          paddingHorizontal: SPACING[0.5],
+          justifyContent: 'center',
+          alignItems: value ? 'flex-end' : 'flex-start',
+          opacity: disabled ? 0.4 : 1,
+        }}
+      >
+        <View
+          style={{
+            width: THUMB,
+            height: THUMB,
+            borderRadius: shape.radius.pill,
+            borderWidth: shape.stroke.control,
+            borderColor: c.thumbBorder,
+            backgroundColor: c.thumb,
+          }}
         />
       </View>
     </Pressable>
