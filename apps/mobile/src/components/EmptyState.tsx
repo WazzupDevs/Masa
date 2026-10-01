@@ -17,12 +17,27 @@ type Props = {
   action?: { label: string; onPress: () => void };
 };
 
+const DISC = SPACING[16] * 2 + SPACING[4];
+
 // Nothing to show yet: an icon disc, a short explanation and at most one action.
 export function EmptyState({ icon, snail, title, body, action }: Props) {
   const { colors, shape } = useTheme();
   return (
     <View className="items-center gap-3 py-8">
-      {snail ? <Snail height={SPACING[16] + SPACING[4]} /> : null}
+      {snail ? (
+        // Canvas (Aşama 4): an inviting snail in a soft disc.
+        <View
+          className="mb-1 items-center justify-center"
+          style={{
+            width: DISC,
+            height: DISC,
+            borderRadius: shape.radius.pill,
+            backgroundColor: colors.surface2,
+          }}
+        >
+          <Snail height={SPACING[16] + SPACING[6]} />
+        </View>
+      ) : null}
       {icon ? (
         <View
           className="items-center justify-center"
@@ -41,7 +56,7 @@ export function EmptyState({ icon, snail, title, body, action }: Props) {
           {title}
         </Text>
       ) : null}
-      <Text tone="muted" align="center">
+      <Text variant={snail ? 'bodyStrong' : 'body'} tone={snail ? 'text' : 'muted'} align="center">
         {body}
       </Text>
       {action ? (

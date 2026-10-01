@@ -11,7 +11,8 @@ import { Sheet } from '@/components/Sheet';
 import { Text } from '@/components/Text';
 import { ReportModal } from '@/features/chat/ReportModal';
 import { ConfirmWithReport } from '@/features/friends/ConfirmWithReport';
-import { ProfileCard } from '@/features/profile/ProfileCard';
+import { BackPill } from '@/features/profile/BackPill';
+import { Badges, ProfileHero } from '@/features/profile/ProfileCard';
 import { useVenueChatProfile } from '@/features/venueChat/queries';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
@@ -63,39 +64,54 @@ export default function VenueChatProfileScreen() {
       ) : !view.data ? (
         <EmptyState icon="eye-off-outline" body={tr.profile.notVisible} />
       ) : (
-        <View className="mt-4" testID="venue-chat-profile">
-          <ProfileCard profile={view.data} />
-          <View className="mt-8 gap-2.5">
+        <View className="flex-1 gap-5" testID="venue-chat-profile">
+          <ProfileHero profile={view.data} overlay={<BackPill />} />
+          <View className="gap-3">
+            <Text variant="overline" tone="muted">
+              {tr.profile.badgesTitle}
+            </Text>
+            <Badges badges={view.data.badges} />
+          </View>
+          <View className="mt-auto gap-2.5 pt-4">
             {sent ? (
-              <Text variant="fine" testID="venue-chat-request-sent">
+              <Text variant="fine" align="center" testID="venue-chat-request-sent">
                 {tr.venueChat.requestSent}
               </Text>
             ) : (
               <Button
+                size="lg"
                 testID="venue-chat-request"
                 icon="person-add-outline"
                 label={tr.venueChat.sendRequest}
                 onPress={() => setConfirming(true)}
               />
             )}
-            <Button
-              variant="secondary"
-              icon="flag-outline"
-              label={tr.profile.report}
-              onPress={() => setReporting(true)}
-            />
-            <Button
-              variant="ghost"
-              icon="ban-outline"
-              label={tr.safety.block}
-              onPress={() => setBlocking(true)}
-            />
+            <View className="flex-row gap-2.5">
+              <View className="flex-1">
+                <Button
+                  variant="secondary"
+                  tight
+                  label={tr.profile.report}
+                  onPress={() => setReporting(true)}
+                />
+              </View>
+              <View className="flex-1">
+                <Button
+                  variant="secondary"
+                  tight
+                  label={tr.safety.block}
+                  onPress={() => setBlocking(true)}
+                />
+              </View>
+            </View>
           </View>
         </View>
       )}
-      <View className="mt-auto pt-8">
-        <Button label={tr.profile.back} onPress={() => router.back()} />
-      </View>
+      {!view.data ? (
+        <View className="mt-auto pt-8">
+          <Button label={tr.profile.back} onPress={() => router.back()} />
+        </View>
+      ) : null}
       <Sheet
         visible={confirming}
         onClose={() => setConfirming(false)}
