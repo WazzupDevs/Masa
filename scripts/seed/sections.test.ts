@@ -82,6 +82,28 @@ describe('content validation', () => {
     expect(() => parseAliasWords({ adjectives: ['Mor'], nouns: [''] })).toThrow();
   });
 
+  it('accepts nouns up to 12 letters and rejects longer ones', () => {
+    // 12 letters, counted as letters (ğ, ı, ş are one each), not bytes.
+    expect(parseAliasWords({ adjectives: ['Mor'], nouns: ['Karğaşalıkçı'] }).nouns).toEqual([
+      'Karğaşalıkçı',
+    ]);
+    expect(() => parseAliasWords({ adjectives: ['Mor'], nouns: ['Kuyrukluyıldız'] })).toThrow(
+      /longer than 12/,
+    );
+  });
+
+  it('rejects a word repeated within a list or across the two', () => {
+    expect(() => parseAliasWords({ adjectives: ['Mor', 'Mor'], nouns: ['Kedi'] })).toThrow(
+      /repeated: Mor/,
+    );
+    expect(() => parseAliasWords({ adjectives: ['Mor'], nouns: ['Kedi', 'kedi'] })).toThrow(
+      /repeated/,
+    );
+    expect(() => parseAliasWords({ adjectives: ['Mavi'], nouns: ['Kedi', 'MAVİ'] })).toThrow(
+      /repeated: MAVİ/,
+    );
+  });
+
   it('rejects invalid venues and duplicates', () => {
     const file = { attribution: 'a', source: 's', fetchedAt: 't' };
     expect(() => parseVenuesFile({ ...file, venues: [{ ...venue, lat: 91 }] })).toThrow();

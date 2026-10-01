@@ -93,6 +93,41 @@ const FORBIDDEN_NOUNS = [
   'Kazık',
   'Çuval',
   'Tencere',
+  // Removed by the project owner: they read as people's names (blurring anonymity and mixing with
+  // profiled names in the venue chat), carry a wrong association, or are too long.
+  ...[
+    'Deniz',
+    'Ada',
+    'Güneş',
+    'Ufuk',
+    'Poyraz',
+    'Şafak',
+    'Meltem',
+    'Bulut',
+    'Yağmur',
+    'Yıldız',
+    'Çınar',
+    'Defne',
+    'Nehir',
+    'Lale',
+    'Nergis',
+    'Menekşe',
+    'Sümbül',
+    'Nilüfer',
+    'Yonca',
+    'Kiraz',
+    'Şahin',
+    'Kamera',
+    'Dürbün',
+    'Teleskop',
+    'Harita',
+    'Helva',
+    'Ayva',
+    'Fener',
+    'Gökkuşağı',
+    'Karanfil',
+    'Kuyrukluyıldız',
+  ],
 ];
 
 // Adjectives that are negative or turn any animal into mockery.
@@ -124,6 +159,11 @@ const FORBIDDEN_ADJECTIVES = [
   'Kötü',
   'Pis',
   'Sinsi',
+  // Removed by the project owner: they read as people's names.
+  'Özgür',
+  'Yiğit',
+  'Zeki',
+  'Sadık',
 ];
 
 function lower(word: string): string {
