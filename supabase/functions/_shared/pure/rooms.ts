@@ -83,6 +83,10 @@ export const sessionChannel = (sessionId: string): string => `session:${sessionI
 // v2 (docs/SPEC_V2.md §7): the account's own inbox and a DM thread. Server broadcasts only.
 export const inboxChannel = (userId: string): string => `inbox:${userId}`;
 export const dmChannel = (threadId: string): string => `dm:${threadId}`;
+// v3 step 6 (docs/SPEC_V3.md §18.2): the two members send here themselves, event TYPING with an
+// empty payload that the receiver never reads.
+export const dmTypingChannel = (threadId: string): string => `dm_typing:${threadId}`;
+export const TYPING_EVENT = 'typing' as const;
 
 export const BROADCAST = {
   lobbyChanged: 'lobby_changed',
@@ -94,6 +98,8 @@ export const BROADCAST = {
   dm: 'dm',
   // dm:{thread_id}
   dmMessage: 'dm_message',
+  // dm:{thread_id}: a status of the sender's messages moved (delivered or read); no data.
+  dmStatus: 'dm_status',
 } as const;
 
 // The room screen's status check (apps/mobile/src/features/rooms/queries.ts): Realtime delivers a

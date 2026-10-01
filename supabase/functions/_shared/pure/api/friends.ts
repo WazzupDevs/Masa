@@ -41,6 +41,31 @@ export type FriendsIncomingResponse = { requests: VenueChatIncoming[] };
 export type FriendsOkResponse = { ok: true };
 
 export type DmRequest =
-  { action: 'send'; threadId: string; body: string } | { action: 'read'; threadId: string };
+  | { action: 'send'; threadId: string; body: string }
+  | { action: 'read'; threadId: string }
+  // Mesajlar (docs/SPEC_V3.md §18.2): one row per friend, newest conversation first.
+  | { action: 'inbox' }
+  // The app is open: the caller's messages so far count as delivered, in every thread.
+  | { action: 'delivered' };
 
 export type DmOkResponse = { ok: true };
+
+// Of the caller's own messages only: the other member's times never reach the client.
+export type DmStatus = 'sent' | 'delivered' | 'read';
+
+export type DmInboxThread = {
+  threadId: string | null;
+  publicId: string;
+  displayName: string | null;
+  // Signed for an hour; null without a photo or when it is hidden.
+  photoUrl: string | null;
+  // The newest message, cut to 80 characters on the server; null without messages.
+  lastBody: string | null;
+  lastFromMe: boolean;
+  lastMessageAt: string | null;
+  unreadCount: number;
+  // Only when the newest message is the caller's.
+  lastStatus: DmStatus | null;
+};
+
+export type DmInboxResponse = { threads: DmInboxThread[] };

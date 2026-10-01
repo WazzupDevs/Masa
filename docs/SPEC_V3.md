@@ -570,7 +570,8 @@ Genel testler yeni RPC'lerin de hesap id'si ve arkadaşlık öncesi `public_id` 
 | `venue_chat:{venue_id}` (yeni)                   | Mekanda aktif masası olanlar            | Yalnızca sunucu           | `venue_chat` (veri içermez; istemci `venue_chat_page` okur)          |
 | `session:{session_id}`                           | O masa (değişmez)                       | Sunucu                    | `join_request`, `join_accepted`                                      |
 | `room:` `messages:` `game:` `presence:{room_id}` | Odanın iki masası (değişmez)            | Üyeler (presence), sunucu | `game_proposals` değişiklikleri `room:` Postgres Changes'ına eklenir |
-| `inbox:{user_id}`, `dm:{thread_id}`              | Değişmez                                | Sunucu                    | Değişmez                                                             |
+| `inbox:{user_id}`, `dm:{thread_id}`              | Değişmez                                | Sunucu                    | Değişmez; adım 6'dan itibaren `dm:` üzerinde `dm_status` da (§18.2)  |
+| `dm_typing:{thread_id}` (adım 6)                 | Konuşmanın iki üyesi                    | Konuşmanın iki üyesi      | `typing` (yük boş, alıcı okumaz, saklanmaz; §18.2)                   |
 
 - `venue_chat:` politikası `private.realtime_topic_allowed`'a yeni `kind` olarak eklenir: abone olmak için o mekanda aktif masa gerekir, istemci yayını reddedilir.
 - Masa bitince kanal politikası bir sonraki abonelik denemesinde reddeder. İstemci masa bitişinde kanalı kapatır; sunucu tarafı erişim `venue_chat_page`'in boş dönmesiyle zaten biter.
@@ -852,6 +853,7 @@ Sıralama son mesaj zamanına göredir; mesajı olmayan arkadaşlık, arkadaşl�
 - `delivered`: `dm_reads.last_delivered_at`. `dm/delivered` eylemi gövdesizdir; çağıranın bütün konuşmalarında teslim zamanını şimdiye çeker. İstemci bunu uygulama öne geldiğinde ve `inbox:{user_id}` kanalına yayın geldiğinde çağırır (debounce). Uygulama kapalıyken teslim olmaz: karşı taraf uygulamayı açana kadar tek tik görünür. Okundu bilgisini kapatma ayarı pilotta yok.
 - Durum gerçekten ilerlediğinde sunucu `dm:{thread_id}` kanalına verisiz bir `dm_status` yayını yapar; gönderen sayfayı yeniden okur.
 - `dm_messages_page` ve `dm_inbox` durumu döndürür.
+- _Uygulamada netleşen:_ `dm/delivered` teslim işaretini `now()`'a değil, çağıranın gördüğü en yeni gelen mesajın zamanına çeker. Böylece çağrıyla aynı anda yazılan bir mesaj teslim edilmiş sayılmaz. Yeni `dm_reads` satırı `last_read_at = -infinity` ile açılır: teslim okuma değildir. `dm/read` okunan bir mesaj yoksa yayın yapmaz. `dm/inbox` ve `dm/delivered` iki kez gönderilince aynı yanıtı verir (`IDEMPOTENT_CALLS`).
 - v2'deki "okundu bilgisi karşı tarafa gitmez" kuralının yerini bu alır (`docs/SPEC_V2.md` §7): karşı tarafa okunma zamanı değil, yalnızca durum gider.
 
 **Yazıyor kanalı.** Yeni kanal türü `dm_typing:{thread_id}`.

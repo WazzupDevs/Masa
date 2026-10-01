@@ -30,6 +30,12 @@ export const IDEMPOTENT_CALLS = [
   'friends/list',
   // friends.test "DMs": "sends between friends only, filters profanity and limits the rate"
   'dm/read',
+  // friends.test "Mesajlar (dm/inbox)": "lists every friend, newest conversation first, with an
+  // 80-character preview and unread count"
+  'dm/inbox',
+  // friends.test "DM ticks": "moves sent → delivered → read, announces each step once, and never
+  // sends the times"
+  'dm/delivered',
   // games.test "tabu, two tables face to face": "hands the turn's ordered card list to both tables,
   // and to nobody outside the room"
   'tabu/turn-cards',

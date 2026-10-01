@@ -8,6 +8,7 @@ import { dbError } from '../_shared/db.ts';
 import { z } from '../_shared/deps.ts';
 import { handle } from '../_shared/http.ts';
 import { notifyInbox, pushIfAllowed, requireDisplayName } from '../_shared/inbox.ts';
+import { signPhotos } from '../_shared/photos.ts';
 import type {
   Friend,
   FriendsIncomingResponse,
@@ -18,7 +19,6 @@ import type {
 import { ageOn, istanbulToday, parseIsoDate } from '../_shared/pure/age.ts';
 import { REPORT_REASONS } from '../_shared/pure/chat.ts';
 import { AppError } from '../_shared/pure/errors.ts';
-import { PHOTO_BUCKET, PHOTO_URL_SECONDS } from '../_shared/pure/profile.ts';
 import { friendRequestPush } from '../_shared/pure/push.ts';
 import { BROADCAST } from '../_shared/pure/rooms.ts';
 import { VENUE_CHAT } from '../_shared/pure/venueChat.ts';
@@ -52,20 +52,14 @@ function announce(userId: string, result: Outcome | undefined): void {
   }
 }
 
-async function signPhotos(paths: string[]): Promise<Map<string, string>> {
-  const urls = new Map<string, string>();
-  if (paths.length === 0) return urls;
-  const signed = await db.storage.from(PHOTO_BUCKET).createSignedUrls(paths, PHOTO_URL_SECONDS);
-  if (signed.error) throw new Error(`storage sign failed (${signed.error.message})`);
-  for (const s of signed.data) if (s.path && s.signedUrl) urls.set(s.path, s.signedUrl);
-  return urls;
-}
-
 // Requests from the venue chat: name, age and photo of the sender (S6); no public_id, no alias.
 async function incoming(userId: string): Promise<FriendsIncomingResponse> {
   const { data, error } = await db.rpc('friends_incoming_venue_chat', { target_user_id: userId });
   if (error) throw dbError('friends_incoming_venue_chat', error);
-  const urls = await signPhotos(data.map((r) => r.photo_path).filter((p): p is string => !!p));
+  const urls = await signPhotos(
+    db,
+    data.map((r) => r.photo_path).filter((p): p is string => !!p),
+  );
   const today = istanbulToday(new Date());
   return {
     requests: data.map((r) => {
@@ -85,13 +79,10 @@ async function incoming(userId: string): Promise<FriendsIncomingResponse> {
 async function list(userId: string): Promise<FriendsListResponse> {
   const { data, error } = await db.rpc('friends_of', { viewer: userId });
   if (error) throw dbError('friends_of', error);
-  const paths = data.map((f) => f.photo_path).filter((p): p is string => !!p);
-  const urls = new Map<string, string>();
-  if (paths.length > 0) {
-    const signed = await db.storage.from(PHOTO_BUCKET).createSignedUrls(paths, PHOTO_URL_SECONDS);
-    if (signed.error) throw new Error(`storage sign failed (${signed.error.message})`);
-    for (const s of signed.data) if (s.path && s.signedUrl) urls.set(s.path, s.signedUrl);
-  }
+  const urls = await signPhotos(
+    db,
+    data.map((f) => f.photo_path).filter((p): p is string => !!p),
+  );
   const friends: Friend[] = data.map((f) => ({
     publicId: f.public_id,
     displayName: f.display_name,
