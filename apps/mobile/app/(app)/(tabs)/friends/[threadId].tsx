@@ -16,10 +16,11 @@ import { Composer } from '@/components/Composer';
 import { EmptyState } from '@/components/EmptyState';
 import { IconButton } from '@/components/IconButton';
 import { Sheet } from '@/components/Sheet';
+import { useHideTabBar } from '@/components/TabBar';
 import { Text } from '@/components/Text';
 import { ReportModal } from '@/features/chat/ReportModal';
 import { ConfirmWithReport } from '@/features/friends/ConfirmWithReport';
-import { friendKeys, useDmMessages } from '@/features/friends/queries';
+import { friendKeys, useDmMessages, useFriends } from '@/features/friends/queries';
 import { useBroadcast } from '@/features/rooms/useBroadcast';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
@@ -30,10 +31,14 @@ type Params = { threadId: string; publicId: string; name: string };
 
 // A DM thread with a friend (docs/SPEC_V2.md §6.4). The dm: channel carries no data; the page is
 // reread through dm_messages_page (`from_me`, never the sender's account id). Read state stays
-// with the reader.
+// with the reader. The friend's photo comes from the friends list (its signed URL expires, so it
+// never travels in the route). No tab bar here: the message bar sits at the bottom.
 export default function DmScreen() {
   const { threadId, publicId, name } = useLocalSearchParams<Params>();
+  useHideTabBar();
   const queryClient = useQueryClient();
+  const friend = useFriends().data?.find((f) => f.publicId === publicId);
+  const photoUrl = friend?.photoUrl ?? null;
   const messages = useDmMessages(threadId);
   const [draft, setDraft] = useState('');
   const [menu, setMenu] = useState(false);
@@ -102,7 +107,8 @@ export default function DmScreen() {
         <ChatTopBar
           onBack={() => router.back()}
           title={name}
-          leading={<Avatar kind="profile" name={name} size="md" />}
+          subtitle={friend ? tr.friends.since(friend.since) : undefined}
+          leading={<Avatar kind="profile" name={name} size="md" photoUrl={photoUrl} />}
           onPressTitle={openProfile}
           titleAccessibilityLabel={name}
           actions={
@@ -150,7 +156,11 @@ export default function DmScreen() {
             first={first}
             last={last}
             time={tr.chat.time(m.created_at)}
-            avatar={m.from_me ? undefined : <Avatar kind="profile" name={name} size="sm" />}
+            avatar={
+              m.from_me ? undefined : (
+                <Avatar kind="profile" name={name} size="sm" photoUrl={photoUrl} />
+              )
+            }
           />
         </View>
       ))}

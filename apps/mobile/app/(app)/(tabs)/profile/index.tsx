@@ -1,61 +1,35 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { BADGES } from '@shared/badges.ts';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { Linking, View } from 'react-native';
+import { View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
-import { Sheet } from '@/components/Sheet';
 import { SnailLoader } from '@/components/Snail';
 import { Text } from '@/components/Text';
 import { useProfile } from '@/features/account/useProfile';
-import { choosePhoto, PhotoError, type PhotoSource } from '@/features/profile/photo';
-import { Badges, OwnProfileCard } from '@/features/profile/ProfileCard';
-import { profileViewKeys, useProfileView } from '@/features/profile/queries';
+import { useFriends } from '@/features/friends/queries';
+import { Badges, OwnProfileHead } from '@/features/profile/ProfileCard';
+import { useProfileView } from '@/features/profile/queries';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
-import { track } from '@/lib/analytics';
-import { profileApi } from '@/lib/api';
 import { useTheme } from '@/theme/ThemeProvider';
 import { ICON } from '@/theme/tokens';
 
-function photoErrorMessage(err: unknown): string {
-  if (err instanceof PhotoError) {
-    return err.reason === 'permission' ? tr.profile.photoPermission : tr.profile.photoInvalid;
-  }
-  return errorMessage(err);
-}
-
-// The own profile (docs/SPEC_V2.md §5). Settings open only from the gear here (top right).
+// The own profile (docs/SPEC_V2.md §5; canvas: Aşama 5 · Geri bildirim → Profil). The photo, the
+// name and the bio change on the edit screen; settings open only from the gear (top right).
 export default function ProfileScreen() {
   const { colors } = useTheme();
-  const queryClient = useQueryClient();
   const own = useProfile();
   const publicId = own.data?.public_id;
   const view = useProfileView(publicId);
-  const [photoMenu, setPhotoMenu] = useState(false);
-
-  const refresh = () => queryClient.invalidateQueries({ queryKey: profileViewKeys.all });
-  const setPhoto = useMutation({
-    mutationFn: (source: PhotoSource) => choosePhoto(source),
-    onSuccess: (changed) => {
-      if (changed) track('profile_photo_set', {});
-      setPhotoMenu(false);
-    },
-    onSettled: refresh,
-  });
-  const removePhoto = useMutation({
-    mutationFn: () => profileApi.photoRemove(),
-    onSuccess: () => setPhotoMenu(false),
-    onSettled: refresh,
-  });
+  const friends = useFriends();
 
   const hasName = !!own.data?.display_name;
-  const hasPhoto = !!view.data?.photoUrl || view.data?.photoHidden === true;
+  const friendCount = friends.data?.length;
 
   return (
     <Screen>
@@ -80,29 +54,31 @@ export default function ProfileScreen() {
         />
       ) : (
         <View className="mt-2 gap-4">
-          <OwnProfileCard profile={view.data}>
-            <View className="flex-row gap-2.5">
-              <View className="flex-1">
-                <Button
-                  tight
-                  label={hasName ? tr.profile.edit : tr.profile.addName}
-                  onPress={() => router.push('/profile/edit')}
-                />
-              </View>
+          <OwnProfileHead profile={view.data}>
+            <View className="mt-1 flex-row gap-2.5">
               <View className="flex-1">
                 <Button
                   variant="secondary"
                   tight
-                  icon="camera-outline"
-                  label={tr.profile.photo}
-                  accessibilityLabel={hasPhoto ? tr.profile.photoChange : tr.profile.photoAdd}
-                  onPress={() => setPhotoMenu(true)}
-                  disabled={!hasName}
+                  icon="people-outline"
+                  label={tr.profile.friends}
+                  detail={friendCount !== undefined ? String(friendCount) : undefined}
+                  accessibilityLabel={
+                    friendCount !== undefined ? tr.profile.friendsCount(friendCount) : undefined
+                  }
+                  onPress={() => router.navigate('/friends')}
+                />
+              </View>
+              <View className="flex-1">
+                <Button
+                  tight
+                  label={hasName ? tr.profile.editShort : tr.profile.addName}
+                  accessibilityLabel={hasName ? tr.profile.edit : tr.profile.addName}
+                  onPress={() => router.push('/profile/edit')}
                 />
               </View>
             </View>
-            {!hasName ? <Text variant="fine">{tr.profile.photoNeedsName}</Text> : null}
-          </OwnProfileCard>
+          </OwnProfileHead>
           {view.data.photoHidden ? (
             <Card tone="note">
               <View className="flex-row items-start gap-2">
@@ -113,64 +89,17 @@ export default function ProfileScreen() {
               </View>
             </Card>
           ) : null}
-          <Text variant="heading" accessibilityRole="header" className="mt-2">
-            {tr.profile.badgesTitle}
-          </Text>
-          <Badges badges={view.data.badges} />
+          <View className="mt-2 flex-row items-baseline justify-between">
+            <Text variant="heading" accessibilityRole="header">
+              {tr.profile.badgesTitle}
+            </Text>
+            <Text variant="fine">
+              {tr.profile.badgeCount(view.data.badges.length, BADGES.length)}
+            </Text>
+          </View>
+          <Badges badges={view.data.badges} all />
         </View>
       )}
-
-      <Sheet
-        visible={photoMenu}
-        onClose={() => setPhotoMenu(false)}
-        title={tr.profile.photo}
-        icon="image-outline"
-      >
-        <Text variant="fine">{tr.profile.photoPrivacy}</Text>
-        <Button
-          variant="secondary"
-          label={tr.profile.photoFromLibrary}
-          onPress={() => setPhoto.mutate('library')}
-          loading={setPhoto.isPending && setPhoto.variables === 'library'}
-          disabled={setPhoto.isPending || removePhoto.isPending}
-        />
-        <Button
-          variant="secondary"
-          label={tr.profile.photoFromCamera}
-          onPress={() => setPhoto.mutate('camera')}
-          loading={setPhoto.isPending && setPhoto.variables === 'camera'}
-          disabled={setPhoto.isPending || removePhoto.isPending}
-        />
-        {hasPhoto ? (
-          <Button
-            variant="danger"
-            label={tr.profile.photoRemove}
-            onPress={() => removePhoto.mutate()}
-            loading={removePhoto.isPending}
-            disabled={setPhoto.isPending}
-          />
-        ) : null}
-        {setPhoto.isError ? (
-          <View className="gap-2">
-            <Text variant="fine" tone="danger">
-              {photoErrorMessage(setPhoto.error)}
-            </Text>
-            {setPhoto.error instanceof PhotoError && setPhoto.error.reason === 'permission' ? (
-              <Button
-                variant="secondary"
-                label={tr.checkin.openSettings}
-                onPress={() => void Linking.openSettings()}
-              />
-            ) : null}
-          </View>
-        ) : null}
-        {removePhoto.isError ? (
-          <Text variant="fine" tone="danger">
-            {errorMessage(removePhoto.error)}
-          </Text>
-        ) : null}
-        <Button variant="ghost" label={tr.common.cancel} onPress={() => setPhotoMenu(false)} />
-      </Sheet>
     </Screen>
   );
 }

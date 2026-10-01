@@ -25,6 +25,8 @@ const PAIRS: readonly Pair[] = [
   ['violet', 'canvas', AA_TEXT],
   ['violet', 'surface', AA_TEXT],
   ['onViolet', 'violet', AA_TEXT], // initials, "profilli"
+  ['read', 'canvas', AA_TEXT], // DM: read ticks next to the time
+  ['read', 'surface', AA_TEXT],
   ['danger', 'canvas', AA_TEXT], // error messages
   ['danger', 'surface', AA_TEXT],
   ['onAccent', 'accent', AA_TEXT],

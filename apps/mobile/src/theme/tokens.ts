@@ -18,6 +18,7 @@ export type Palette = {
   // The second accent: profile faces (initials), the "profilli" tag, colour blocks.
   violet: string;
   onViolet: string;
+  read: string; // DM: the double tick of a read message
   border: string; // the outline colour (cards, controls)
   divider: string; // hairlines: list rows, trust screens
   danger: string;
@@ -48,6 +49,7 @@ export const PALETTE_KEYS = [
   'onAccent',
   'violet',
   'onViolet',
+  'read',
   'border',
   'divider',
   'danger',
@@ -204,7 +206,13 @@ export const TOUCH = { min: 44, button: 48, tab: 56, large: 64 } as const;
 // session's pin image; colours come from the palette. MAP_FONTS must be font stacks served by the
 // map style's glyph server (OpenFreeMap "liberty" serves Noto Sans), not the app's fonts.
 export const MAP_PIN = {
-  radius: 14,
+  radius: 16,
+  // The selected venue grows and gets a hard shadow (canvas: Aşama 5 · Harita işaretçileri).
+  selectedRadius: 22,
+  shadow: 3,
+  // The kind glyph inside the circle (24 pt in its image): 18 pt, 24 when selected.
+  glyphScale: 0.75,
+  selectedGlyphScale: 1,
   ring: 3,
   outline: 2,
   eventDot: 6,
