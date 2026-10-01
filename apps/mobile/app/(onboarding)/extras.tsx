@@ -61,7 +61,11 @@ export default function ExtrasScreen() {
         <View className="gap-3">
           {/* The preview beside the two buttons keeps the whole step on one screen. */}
           <View className="flex-row items-center gap-4">
-            <ProfilePhoto url={view.data?.photoUrl ?? null} name={own.data?.display_name} />
+            <ProfilePhoto
+              size="medium"
+              url={view.data?.photoUrl ?? null}
+              name={own.data?.display_name}
+            />
             <View className="flex-1 gap-3">
               <Button
                 variant="secondary"

@@ -6,8 +6,9 @@ import { SPACING, TOUCH } from '@/theme/tokens';
 
 import { Text } from './Text';
 
-// Row avatar (48) and profile head (104, the mockup's size).
-const SIZES = { small: TOUCH.button, large: 104 } as const;
+// Row avatar (48), the sign-up preview beside its buttons (72) and profile head (104, the mockup's
+// size).
+const SIZES = { small: TOUCH.button, medium: TOUCH.large + SPACING[2], large: 104 } as const;
 
 type Props = { url: string | null; name?: string | null; size?: keyof typeof SIZES };
 
@@ -48,13 +49,13 @@ export function ProfilePhoto({ url, name, size = 'large' }: Props) {
       style={[frame, { backgroundColor: letters ? colors.accent : colors.surface2 }]}
     >
       {letters ? (
-        <Text variant={size === 'large' ? 'alias' : 'bodyStrong'} tone="onAccent">
+        <Text variant={size === 'small' ? 'bodyStrong' : 'alias'} tone="onAccent">
           {letters}
         </Text>
       ) : (
         <Ionicons
           name="person"
-          size={size === 'large' ? SPACING[12] : SPACING[6]}
+          size={size === 'small' ? SPACING[6] : size === 'medium' ? SPACING[10] : SPACING[12]}
           color={colors.muted}
         />
       )}
