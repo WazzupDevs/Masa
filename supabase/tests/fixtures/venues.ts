@@ -97,6 +97,7 @@ export const FIXTURE_CAMPUS: CampusVenue = {
   city: 'Sakarya',
   district: 'Test',
   isActive: true,
+  location: null,
   boundary: squareRing(CAMPUS_CENTER, CAMPUS_HALF_M),
   spots: [
     { ref: 'kantin', name: 'Kantin', isActive: true },

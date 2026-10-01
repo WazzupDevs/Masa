@@ -65,12 +65,37 @@ describe('parseCampusVenues', () => {
     expect(() =>
       parseCampusVenues(campus({ spots: [{ ref: 'k', name: 'x'.repeat(41) }] })),
     ).toThrow();
-    expect(() => parseCampusVenues(campus({ spots: [] }))).toThrow();
+    // No spots is valid: the venue then asks for none at check-in.
+    expect(parseCampusVenues(campus({ spots: [] }))[0]?.spots).toEqual([]);
+    expect(parseCampusVenues(campus({ spots: undefined }))[0]?.spots).toEqual([]);
   });
 
   it('needs unique venue refs', () => {
     const one = campus().venues[0];
     expect(() => parseCampusVenues({ venues: [one, one] })).toThrow(/duplicate/);
+  });
+});
+
+describe('campus location', () => {
+  it('takes a location inside the boundary and refuses one outside or malformed', () => {
+    const [venue] = parseCampusVenues(campus({ location: { lat: 40.005, lng: 30.005 } }));
+    expect(venue?.location).toEqual({ lat: 40.005, lng: 30.005 });
+    expect(parseCampusVenues(campus())[0]?.location).toBeNull();
+    expect(() => parseCampusVenues(campus({ location: { lat: 40.02, lng: 30.005 } }))).toThrow(
+      /outside the boundary/,
+    );
+    expect(() => parseCampusVenues(campus({ location: [30.005, 40.005] }))).toThrow(
+      /must be \{ lat, lng \}/,
+    );
+  });
+
+  it('writes the given point, else a point on the surface; no spot SQL without spots', () => {
+    const given = campusSql(parseCampusVenues(campus({ location: { lat: 40.005, lng: 30.005 } })));
+    expect(given).toContain('st_makepoint(30.005, 40.005)');
+    expect(given).not.toContain('st_pointonsurface');
+    const none = campusSql(parseCampusVenues(campus({ spots: [] })));
+    expect(none).toContain('st_pointonsurface');
+    expect(none).not.toContain('venue_spots');
   });
 });
 
@@ -97,5 +122,16 @@ describe('content/venues-campus.json', () => {
       readFileSync(resolve(import.meta.dirname, '../../content/venues-campus.json'), 'utf8'),
     );
     expect(parseCampusVenues(json).length).toBeGreaterThan(0);
+  });
+
+  it('opens the campus without spots, with its point inside the boundary (S1)', () => {
+    const json: unknown = JSON.parse(
+      readFileSync(resolve(import.meta.dirname, '../../content/venues-campus.json'), 'utf8'),
+    );
+    const campusVenue = parseCampusVenues(json).find((v) => v.ref === 'sau-esentepe');
+    expect(campusVenue?.isActive).toBe(true);
+    expect(campusVenue?.location).toEqual({ lat: 40.741282, lng: 30.331469 });
+    expect(campusVenue?.boundary).toHaveLength(14);
+    expect(campusVenue?.spots.filter((s) => s.isActive)).toEqual([]);
   });
 });

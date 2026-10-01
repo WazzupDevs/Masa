@@ -1,6 +1,11 @@
 // Types and validation for content/*.json. Invalid content fails `pnpm seed` loudly.
 import type { AliasWords } from '../../supabase/functions/_shared/pure/alias.ts';
-import { type LngLat, validateRing } from '../../supabase/functions/_shared/pure/geo.ts';
+import {
+  insideRing,
+  type LngLat,
+  type Point,
+  validateRing,
+} from '../../supabase/functions/_shared/pure/geo.ts';
 import { SOHBET_THEMES, type SohbetTheme } from '../../supabase/functions/_shared/pure/sohbet.ts';
 
 export type VenueRecord = {
@@ -163,7 +168,9 @@ export function parseSohbetCards(json: unknown): SohbetCard[] {
 
 // content/venues-campus.json (docs/SPEC_V3.md §4.1): venues with a boundary and spots. The
 // boundary is a GeoJSON outer ring ([lng, lat], closed, counterclockwise); spots have no
-// coordinates. `ref`s are permanent: a removed spot is set `isActive: false`, never deleted.
+// coordinates. `ref`s are permanent: a removed spot is set `isActive: false`, never deleted. A
+// venue may have no active spot (check-in then asks for none). `location` ({ lat, lng }, inside the
+// boundary) is the venue's point on the map; without it, a point on the boundary's surface.
 export type CampusSpot = { ref: string; name: string; isActive: boolean };
 export type CampusVenue = {
   ref: string;
@@ -172,6 +179,7 @@ export type CampusVenue = {
   district: string;
   isActive: boolean;
   boundary: LngLat[];
+  location: Point | null;
   spots: CampusSpot[];
 };
 
@@ -208,7 +216,7 @@ export function parseCampusVenues(json: unknown): CampusVenue[] {
   const venues = json.venues.map((value: unknown, i: number): CampusVenue => {
     const where = `venues-campus.json venues[${i}]`;
     if (!isRecord(value)) throw new Error(`${where} must be an object`);
-    const { ref, name, city, district, isActive = true, boundary, spots } = value;
+    const { ref, name, city, district, isActive = true, boundary, location, spots } = value;
     if (typeof ref !== 'string' || !REF_PATTERN.test(ref)) {
       throw new Error(`${where}.ref must be 1–40 of a-z, 0-9 and -`);
     }
@@ -220,8 +228,23 @@ export function parseCampusVenues(json: unknown): CampusVenue[] {
     if (!Array.isArray(boundary)) throw new Error(`${where}.boundary must be a list`);
     const problem = validateRing(boundary);
     if (problem) throw new Error(`${where}.boundary: ${problem}`);
-    const parsed = parseSpots(spots, `${where}.spots`);
-    if (parsed.length === 0) throw new Error(`${where}.spots must list at least one spot`);
+    const parsed = parseSpots(spots ?? [], `${where}.spots`);
+    let point: Point | null = null;
+    if (location !== undefined) {
+      if (
+        !isRecord(location) ||
+        typeof location.lat !== 'number' ||
+        typeof location.lng !== 'number' ||
+        Math.abs(location.lat) > 90 ||
+        Math.abs(location.lng) > 180
+      ) {
+        throw new Error(`${where}.location must be { lat, lng }`);
+      }
+      point = { lat: location.lat, lng: location.lng };
+      if (!insideRing(point, boundary as LngLat[])) {
+        throw new Error(`${where}.location is outside the boundary`);
+      }
+    }
     return {
       ref,
       name: name as string,
@@ -229,6 +252,7 @@ export function parseCampusVenues(json: unknown): CampusVenue[] {
       district: district as string,
       isActive,
       boundary: boundary as LngLat[],
+      location: point,
       spots: parsed,
     };
   });

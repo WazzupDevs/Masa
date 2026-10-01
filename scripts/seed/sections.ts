@@ -94,12 +94,13 @@ export function cardsSql(tabu: readonly TabuCard[], sohbet: readonly SohbetCard[
 
 // A venue with a boundary and spots. Upserted by ('campus', ref) and (venue, spot ref): safe to
 // re-run, keeps ids stable, never deletes (a spot left out of the JSON stays as it was; set
-// isActive: false to retire it). The venue's point, used by Keşfet's map, is a point on the
-// boundary's surface.
+// isActive: false to retire it). The venue's point, used by Keşfet's map, is `location` when
+// given (checked to be inside), else a point on the boundary's surface.
 export const CAMPUS_SOURCE = 'campus';
 
 // A venue's spots, upserted by (venue, ref) in the JSON's order; never deleted.
 export function spotsSql(source: string, sourceRef: string, spots: readonly CampusSpot[]): string {
+  if (spots.length === 0) return `-- ${sourceRef}: no spots`;
   const rows = spots.map(
     (s, i) => `(${sqlLiteral(s.ref)}, ${sqlLiteral(s.name)}, ${i}, ${sqlLiteral(s.isActive)})`,
   );
@@ -143,7 +144,9 @@ export function campusSql(
           sqlLiteral(v.name),
           sqlLiteral(v.city),
           sqlLiteral(v.district),
-          `extensions.st_pointonsurface(${polygon})::extensions.geography`,
+          v.location
+            ? `extensions.st_setsrid(extensions.st_makepoint(${v.location.lng}, ${v.location.lat}), 4326)::extensions.geography`
+            : `extensions.st_pointonsurface(${polygon})::extensions.geography`,
           `${polygon}::extensions.geography`,
           sqlLiteral(CAMPUS_SOURCE),
           sqlLiteral(v.ref),

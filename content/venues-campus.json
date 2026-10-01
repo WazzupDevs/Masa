@@ -1,23 +1,48 @@
 {
-  "note": "YER TUTUCU. Sınır ve noktalar gerçek değil: 500 m'lik bir kare ve örnek adlar. Proje sahibi gerçek poligonu ve nokta adlarını (S1) verince yalnızca bu dosya değişir ve isActive true olur. boundary: GeoJSON dış halkası, [boylam, enlem], kapalı, saat yönünün tersine. Nokta ref'leri kalıcıdır; kaldırılan nokta silinmez, isActive false olur.",
+  "note": "Sakarya Üniversitesi Esentepe Kampüsü (S1). boundary: GeoJSON dış halkası, [boylam, enlem], kapalı, saat yönünün tersine; 13 köşe, yaklaşık 106 hektar. location: haritadaki nokta, { lat, lng }, sınırın içinde. Kampüs şimdilik noktasız açılır: örnek noktalar kapalı (isActive false; ref'ler kalıcıdır, nokta silinmez). Gerçek nokta adları gelince yeni ref'lerle eklenir.",
   "venues": [
     {
       "ref": "sau-esentepe",
       "name": "Sakarya Üniversitesi Esentepe Kampüsü",
       "city": "Sakarya",
       "district": "Serdivan",
-      "isActive": false,
+      "isActive": true,
+      "location": {
+        "lat": 40.741282,
+        "lng": 30.331469
+      },
       "boundary": [
-        [30.327033, 40.737752],
-        [30.332967, 40.737752],
-        [30.332967, 40.742248],
-        [30.327033, 40.742248],
-        [30.327033, 40.737752]
+        [30.3238451, 40.7431412],
+        [30.3241722, 40.7421589],
+        [30.3262592, 40.7399867],
+        [30.3330836, 40.736109],
+        [30.3367493, 40.7357258],
+        [30.3374654, 40.735712],
+        [30.3388961, 40.7357749],
+        [30.3396406, 40.7438018],
+        [30.336763, 40.7445781],
+        [30.3340905, 40.7449684],
+        [30.3306718, 40.7453079],
+        [30.3238941, 40.7452594],
+        [30.323567, 40.744136],
+        [30.3238451, 40.7431412]
       ],
       "spots": [
-        { "ref": "ornek-1", "name": "Örnek nokta 1" },
-        { "ref": "ornek-2", "name": "Örnek nokta 2" },
-        { "ref": "ornek-3", "name": "Örnek nokta 3" }
+        {
+          "ref": "ornek-1",
+          "name": "Örnek nokta 1",
+          "isActive": false
+        },
+        {
+          "ref": "ornek-2",
+          "name": "Örnek nokta 2",
+          "isActive": false
+        },
+        {
+          "ref": "ornek-3",
+          "name": "Örnek nokta 3",
+          "isActive": false
+        }
       ]
     }
   ]

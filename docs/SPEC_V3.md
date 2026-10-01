@@ -186,6 +186,7 @@ Adım 1'in parçası, OTA'dan önce:
         "name": "Sakarya Üniversitesi Esentepe Kampüsü",
         "city": "Sakarya",
         "district": "Serdivan",
+        "location": { "lat": 40.741282, "lng": 30.331469 },
         "boundary": [[30.33, 40.74], "…"],
         "spots": [{ "ref": "kantin", "name": "Merkez Kantin" }, "…"]
       }
@@ -193,11 +194,13 @@ Adım 1'in parçası, OTA'dan önce:
   }
   ```
   - `boundary` bir GeoJSON dış halkasıdır: `[lng, lat]` dizisi, kapalı, saat yönünün tersine.
-  - `spots` sıralı listedir. Nokta koordinatı tutulmaz; nokta, kampüs içindeki masanın kendi beyanıdır.
+  - `spots` sıralı listedir. Nokta koordinatı tutulmaz; nokta, kampüs içindeki masanın kendi beyanıdır. Liste boş olabilir (ya da hiç olmayabilir): aktif noktası olmayan mekanda check-in nokta sormaz. Kaldırılan nokta silinmez, listede `isActive: false` kalır.
+  - `location` isteğe bağlıdır (`venues.location`, Keşfet'teki iğne); sınırın içinde olmalıdır, değilse `pnpm seed` durur. Verilmezse poligonun üzerindeki bir nokta (`st_pointonsurface`) kullanılır.
   - Poligon ve nokta adları proje sahibinden gelir (S1). Koordinat tahmin edilmez.
 - **Diğer mekanlar:**
   - `venues-pilot.json` (Beylikdüzü) içerikte kapatılır (`isActive: false`).
   - _Adım 2 notu (proje sahibi kararı):_ S1 gelene kadar `venues-campus.json`'da kampüs kaydı **yer tutucu** poligon ve örnek noktalarla `isActive: false` durur; dev projesinde cihaz testi için `venues-test.json`'daki test mekanı açık kalır. Gerçek poligon ve nokta adları gelince yalnızca JSON değişir (`isActive: true`); test mekanı o zaman kapatılır.
+  - _S1 notu (proje sahibi kararı):_ sınır ve konum geldi, kampüs **noktasız** açılır (örnek noktalar `isActive: false`); nokta adları sonra yalnızca JSON + seed ile eklenir. Test mekanı dev projesinde açık kalır; üretimde pilot yayın adımlarındaki gibi (`PILOT_RELEASE.md`, henüz açık PR'da) kapanır.
   - Seed yalnızca ekler ya da günceller; kapatma da seed'le yapılır.
 - **Yeni mekan ya da nokta eklemek yalnızca içerik işidir:** JSON'a satır, sonra `pnpm seed` ve `db push --include-seed`. Kod değişmez.
   - `ref` kalıcı kimliktir. Kaldırılan nokta `isActive: false` olur, silinmez; aktif masaların noktası geçerli kalır.
