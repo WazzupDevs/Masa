@@ -146,18 +146,22 @@ export function ChatBubble({
       {avatar}
     </View>
   ) : null;
-  return (
-    <View className="flex-row items-end gap-2 self-start" style={{ maxWidth: '88%' }}>
+  const row = (
+    <View className="flex-row items-end gap-2">
       {face}
-      <View className="shrink">
-        {onPressSender ? (
-          <Pressable accessibilityRole="button" accessibilityLabel={name} onPress={onPressSender}>
-            {content}
-          </Pressable>
-        ) : (
-          content
-        )}
-      </View>
+      <View className="shrink">{content}</View>
+    </View>
+  );
+  // The avatar, the name and the bubble are one target: they all open the sender's profile.
+  return (
+    <View className="self-start" style={{ maxWidth: '88%' }}>
+      {onPressSender ? (
+        <Pressable accessibilityRole="button" accessibilityLabel={name} onPress={onPressSender}>
+          {row}
+        </Pressable>
+      ) : (
+        row
+      )}
     </View>
   );
 }
