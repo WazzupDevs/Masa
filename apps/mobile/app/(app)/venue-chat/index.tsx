@@ -13,7 +13,6 @@ import { ActivityIndicator, Alert, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { ChatBubble } from '@/components/ChatBubble';
-import { Checkbox } from '@/components/Checkbox';
 import { EmptyState } from '@/components/EmptyState';
 import { Input } from '@/components/Input';
 import { ListRow } from '@/components/ListRow';
@@ -22,6 +21,7 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { Sheet } from '@/components/Sheet';
 import { Tag } from '@/components/Tag';
 import { Text } from '@/components/Text';
+import { Toggle } from '@/components/Toggle';
 import { ReportModal } from '@/features/chat/ReportModal';
 import { useActiveTable } from '@/features/checkin/useActiveTable';
 import { ConfirmWithReport } from '@/features/friends/ConfirmWithReport';
@@ -139,10 +139,12 @@ export default function VenueChatScreen() {
       </View>
 
       <View className="mt-auto gap-2 pt-6">
-        <Checkbox label={tr.venueChat.asProfile} checked={asProfile} onToggle={toggleProfile} />
-        <Text variant="fine">
-          {asProfile ? tr.venueChat.asProfileOn : tr.venueChat.asProfileOff}
-        </Text>
+        <Toggle
+          label={tr.venueChat.asProfile}
+          hint={asProfile ? tr.venueChat.asProfileOn : tr.venueChat.asProfileOff}
+          value={asProfile}
+          onChange={toggleProfile}
+        />
         <View className="flex-row items-start gap-2">
           <View className="flex-1">
             <Input

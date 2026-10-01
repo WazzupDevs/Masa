@@ -30,6 +30,8 @@ type Props = {
   flush?: boolean;
   // The detail under the label, for three buttons in a row (cooperative Tabu: "Doğru" over "+1").
   stack?: boolean;
+  // Half a row ("Oda kur" | "Masanla oyna"): tighter padding and the label kept on one line.
+  tight?: boolean;
 };
 
 export function Button({
@@ -46,6 +48,7 @@ export function Button({
   testID,
   flush,
   stack,
+  tight,
 }: Props) {
   const theme = useTheme();
   const quiet = useQuiet();
@@ -93,7 +96,7 @@ export function Button({
     alignItems: 'center',
     // With a detail ("Doğru +1" in half a row) the label needs the room more than the padding.
     gap: detail ? SPACING[1.5] : SPACING[2],
-    paddingHorizontal: flush ? 0 : detail ? SPACING[3] : SPACING[5],
+    paddingHorizontal: flush ? 0 : detail || tight ? SPACING[3] : SPACING[5],
     justifyContent: flush ? 'flex-start' : 'center',
     paddingVertical: SPACING[2],
     minHeight: size === 'lg' ? TOUCH.large : TOUCH.button,
@@ -106,7 +109,7 @@ export function Button({
 
   // Pressed: the hard shadow goes and the button moves into its place. Disabled: a quiet fill,
   // muted text, no shadow.
-  const oneLine = !!detail || !/\s/.test(label.trim());
+  const oneLine = !!detail || !!tight || !/\s/.test(label.trim());
   const pressOffset = shadow ? shape.stroke.control + 1 : 0;
   if (inactive && !tint) {
     bg = textOnly ? 'transparent' : colors.surface2;
