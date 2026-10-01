@@ -19,6 +19,7 @@ import type {
   CheckInRequest,
   CheckInResponse,
   LeaveResponse,
+  LocationModeResponse,
   RerollAliasResponse,
 } from '@shared/api/checkin.ts';
 import type {
@@ -101,6 +102,11 @@ export function callAccount(body: AccountRequest): Promise<AccountResponse> {
 
 export function callCheckIn(body: CheckInRequest): Promise<CheckInResponse> {
   return invoke<CheckInResponse>('checkin', body);
+}
+
+// Whether the server skips the location check (dev project only).
+export function callLocationMode(): Promise<LocationModeResponse> {
+  return invoke<LocationModeResponse>('checkin', { action: 'location-mode' });
 }
 
 // "Bu noktadayım" and changing the spot (docs/SPEC_V3.md §4.3).

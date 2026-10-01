@@ -22,7 +22,11 @@ export type RerollAliasRequest = { action: 'reroll-alias' };
 
 export type LeaveRequest = { action: 'leave' };
 
-export type CheckinRequest = CheckInRequest | ChangeSpotRequest | RerollAliasRequest | LeaveRequest;
+// Whether this server skips the location check (CHECKIN_SKIP_LOCATION, dev project only).
+export type LocationModeRequest = { action: 'location-mode' };
+
+export type CheckinRequest =
+  CheckInRequest | ChangeSpotRequest | RerollAliasRequest | LeaveRequest | LocationModeRequest;
 
 export type CheckInResponse = { sessionId: string; alias: string; expiresAt: string };
 
@@ -31,3 +35,5 @@ export type ChangeSpotResponse = { spotId: string };
 export type RerollAliasResponse = { alias: string; rerollsLeft: number };
 
 export type LeaveResponse = { ok: true };
+
+export type LocationModeResponse = { skipLocation: boolean };
