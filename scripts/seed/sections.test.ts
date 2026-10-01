@@ -11,6 +11,7 @@ const venue = {
   lng: 28.64,
   source: 'osm',
   sourceRef: 'node/1',
+  kind: 'cafe' as const,
   amenity: 'cafe',
   isActive: true,
 };
@@ -38,19 +39,23 @@ describe('venuesSql', () => {
 
   it('labels test venues without the OSM attribution', () => {
     const sql = venuesSql(
-      parseTestVenues({ venues: [{ ref: 'saha', name: 'Test', lat: 41, lng: 28.6 }] }),
+      parseTestVenues({
+        venues: [{ ref: 'saha', name: 'Test', kind: 'cafe', lat: 41, lng: 28.6 }],
+      }),
       'content/venues-test.json',
       null,
     );
     expect(sql.split('\n')[0]).toBe('-- content/venues-test.json');
-    expect(sql).toContain("'test', 'test/saha', true");
+    expect(sql).toContain("'test', 'test/saha', 'cafe', true");
   });
 });
 
 describe('parseTestVenues', () => {
   it('fills defaults from ref, name and coordinates', () => {
     expect(
-      parseTestVenues({ venues: [{ ref: 'saha', name: 'Kafe', lat: 41, lng: 28.6 }] }),
+      parseTestVenues({
+        venues: [{ ref: 'saha', name: 'Kafe', kind: 'cafe', lat: 41, lng: 28.6 }],
+      }),
     ).toEqual([
       {
         name: 'Kafe',
@@ -60,6 +65,7 @@ describe('parseTestVenues', () => {
         lng: 28.6,
         source: 'test',
         sourceRef: 'test/saha',
+        kind: 'cafe',
         amenity: 'cafe',
         isActive: true,
         spots: [],
@@ -70,11 +76,24 @@ describe('parseTestVenues', () => {
   it('accepts an empty list and rejects bad entries', () => {
     expect(parseTestVenues({ venues: [] })).toEqual([]);
     expect(() =>
-      parseTestVenues({ venues: [{ ref: 'a', name: 'K', lat: 91, lng: 28 }] }),
+      parseTestVenues({ venues: [{ ref: 'a', name: 'K', kind: 'cafe', lat: 91, lng: 28 }] }),
     ).toThrow();
-    expect(() => parseTestVenues({ venues: [{ name: 'K', lat: 41, lng: 28 }] })).toThrow();
-    const twice = { ref: 'a', name: 'K', lat: 41, lng: 28 };
+    expect(() =>
+      parseTestVenues({ venues: [{ name: 'K', kind: 'cafe', lat: 41, lng: 28 }] }),
+    ).toThrow();
+    const twice = { ref: 'a', name: 'K', kind: 'cafe', lat: 41, lng: 28 };
     expect(() => parseTestVenues({ venues: [twice, twice] })).toThrow();
+  });
+
+  it('needs kind cafe (docs/SPEC_V3.md §18.1)', () => {
+    const base = { ref: 'a', name: 'K', lat: 41, lng: 28 };
+    expect(() => parseTestVenues({ venues: [base] })).toThrow(/kind is required/);
+    expect(() => parseTestVenues({ venues: [{ ...base, kind: 'bar' }] })).toThrow(
+      /kind is required/,
+    );
+    expect(() => parseTestVenues({ venues: [{ ...base, kind: 'campus' }] })).toThrow(
+      /kind must be cafe/,
+    );
   });
 });
 
@@ -134,6 +153,7 @@ describe('test venue spots', () => {
   const withSpots = {
     ref: 'saha',
     name: 'Kafe',
+    kind: 'cafe',
     lat: 41,
     lng: 28.6,
     spots: [
@@ -149,7 +169,8 @@ describe('test venue spots', () => {
       ['bahce', true],
     ]);
     expect(
-      parseTestVenues({ venues: [{ ref: 'a', name: 'K', lat: 41, lng: 28 }] })[0]?.spots,
+      parseTestVenues({ venues: [{ ref: 'a', name: 'K', kind: 'cafe', lat: 41, lng: 28 }] })[0]
+        ?.spots,
     ).toEqual([]);
   });
 
@@ -165,7 +186,9 @@ describe('test venue spots', () => {
 
   it('upserts the spots of test venues that have them, by the test source reference', () => {
     const sql = testSpotsSql(
-      parseTestVenues({ venues: [withSpots, { ref: 'bos', name: 'Boş', lat: 41, lng: 28 }] }),
+      parseTestVenues({
+        venues: [withSpots, { ref: 'bos', name: 'Boş', kind: 'cafe', lat: 41, lng: 28 }],
+      }),
     );
     expect(sql).toHaveLength(1);
     expect(sql[0]).toContain("('ic-salon', 'İç salon', 0, true)");
