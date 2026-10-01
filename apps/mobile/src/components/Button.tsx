@@ -28,6 +28,8 @@ type Props = {
   testID?: string;
   // A text-only button that lines up with the content's left edge ("Tekrar gönder").
   flush?: boolean;
+  // The detail under the label, for three buttons in a row (cooperative Tabu: "Doğru" over "+1").
+  stack?: boolean;
 };
 
 export function Button({
@@ -43,6 +45,7 @@ export function Button({
   accessibilityLabel,
   testID,
   flush,
+  stack,
 }: Props) {
   const theme = useTheme();
   const quiet = useQuiet();
@@ -103,6 +106,7 @@ export function Button({
 
   // Pressed: the hard shadow goes and the button moves into its place. Disabled: a quiet fill,
   // muted text, no shadow.
+  const oneLine = !!detail || !/\s/.test(label.trim());
   const pressOffset = shadow ? shape.stroke.control + 1 : 0;
   if (inactive && !tint) {
     bg = textOnly ? 'transparent' : colors.surface2;
@@ -140,22 +144,30 @@ export function Button({
           ) : (
             <>
               {icon ? <Ionicons name={icon} size={ICON.md} color={fg} /> : null}
-              <View className="shrink flex-row items-baseline gap-1">
+              <View
+                className={stack ? 'shrink items-center' : 'shrink flex-row items-baseline gap-1'}
+              >
                 <Text
                   variant={size === 'lg' ? 'buttonLarge' : 'button'}
                   color={fg}
                   align="center"
-                  // With a detail ("Doğru +1") the label stays on one line and shrinks to fit a half
-                  // width button instead of breaking inside the word.
-                  numberOfLines={detail ? 1 : 2}
-                  adjustsFontSizeToFit={!!detail}
+                  // A single word or a label with a detail ("Doğru +1") stays on one line and
+                  // shrinks to fit instead of breaking inside the word.
+                  numberOfLines={oneLine ? 1 : 2}
+                  adjustsFontSizeToFit={oneLine}
                   minimumFontScale={0.7}
                   className="shrink"
                 >
                   {label}
                 </Text>
                 {detail ? (
-                  <Text variant="buttonDetail" color={fg}>
+                  <Text
+                    variant="buttonDetail"
+                    color={fg}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
+                  >
                     {detail}
                   </Text>
                 ) : null}

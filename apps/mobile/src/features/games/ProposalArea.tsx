@@ -61,7 +61,8 @@ export function ProposalArea({ roomId, sessionId, gameRunning }: Props) {
   const error = propose.error ?? answer.error;
 
   return (
-    <Card className="mt-4">
+    // Canvas: Oda · sohbet, the "Oyun öner" bar.
+    <Card tone="note" className="mt-4">
       {view.kind === 'theirs' ? (
         <View className="gap-3">
           <Text variant="bodyStrong" accessibilityLiveRegion="polite">
@@ -79,6 +80,7 @@ export function ProposalArea({ roomId, sessionId, gameRunning }: Props) {
             </View>
             <View className="flex-1">
               <Button
+                variant="success"
                 testID="proposal-accept"
                 label={tr.games.acceptProposal}
                 onPress={() => answer.mutate({ accept: true, concept: view.concept })}
@@ -93,7 +95,7 @@ export function ProposalArea({ roomId, sessionId, gameRunning }: Props) {
         </Text>
       ) : (
         <View className="gap-3">
-          <Text variant="label" accessibilityRole="header">
+          <Text variant="bodyStrong" accessibilityRole="header">
             {tr.games.proposeTitle}
           </Text>
           {now < notAcceptedUntil ? (
@@ -103,16 +105,19 @@ export function ProposalArea({ roomId, sessionId, gameRunning }: Props) {
           ) : (
             <Text variant="fine">{tr.games.proposeHint}</Text>
           )}
-          {CONCEPTS.map((concept) => (
-            <Button
-              key={concept}
-              variant="secondary"
-              testID={`propose-${concept}`}
-              label={tr.games.propose(tr.concepts[concept])}
-              onPress={() => propose.mutate(concept)}
-              disabled={propose.isPending}
-            />
-          ))}
+          <View className="flex-row gap-2">
+            {CONCEPTS.map((concept) => (
+              <View key={concept} className="flex-1">
+                <Button
+                  variant="secondary"
+                  testID={`propose-${concept}`}
+                  label={tr.games.propose(tr.concepts[concept])}
+                  onPress={() => propose.mutate(concept)}
+                  disabled={propose.isPending}
+                />
+              </View>
+            ))}
+          </View>
         </View>
       )}
       {error ? (

@@ -2,8 +2,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router } from 'expo-router';
 import { useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { ActivityIndicator, Alert, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, View } from 'react-native';
 
+import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Screen } from '@/components/Screen';
@@ -24,7 +25,7 @@ import { track, trackOnce } from '@/lib/analytics';
 import { callLeave, callRerollAlias } from '@/lib/api';
 import { useNow } from '@/lib/useNow';
 import { useTheme } from '@/theme/ThemeProvider';
-import { ICON } from '@/theme/tokens';
+import { ICON, SPACING, TOUCH } from '@/theme/tokens';
 
 function endSession(tableId: string, startedAt: string) {
   trackOnce(`session_ended:${tableId}`, 'session_ended', {
@@ -35,7 +36,7 @@ function endSession(tableId: string, startedAt: string) {
 // The active table's venue: lobby, rooms, leaving (docs/SPEC_V2.md §2). Without an active table
 // it sends the user to Keşfet; an open room of the table opens directly.
 export default function VenueScreen() {
-  const { colors } = useTheme();
+  const { colors, shape } = useTheme();
   const queryClient = useQueryClient();
   const table = useActiveTable();
   const currentRoom = useCurrentRoom(table.data?.id);
@@ -103,11 +104,42 @@ export default function VenueScreen() {
         title={table.data.venue?.name ?? ''}
       />
       <Card className="mt-3">
-        <Text variant="label">{tr.venue.yourTable}</Text>
-        <Text variant="alias" className="mt-0.5" testID="table-alias">
-          {table.data.alias}
-        </Text>
-        <View className="mb-2 flex-row items-center justify-between gap-2">
+        <View className="flex-row items-center gap-3">
+          <Avatar kind="table" alias={table.data.alias} size="lg" />
+          <View className="flex-1">
+            <Text variant="fine">{tr.venue.yourTable}</Text>
+            <Text variant="alias" testID="table-alias">
+              {table.data.alias}
+            </Text>
+          </View>
+        </View>
+        <View className="mt-3 flex-row flex-wrap items-center gap-2">
+          <Tag label={tr.venue.people(table.data.headcount)} />
+          <View className="flex-row items-center gap-1">
+            <Ionicons name="time-outline" size={ICON.sm} color={colors.muted} />
+            <Text variant="fine">
+              {tr.venue.remaining(Math.floor(minutesLeft / 60), minutesLeft % 60)}
+            </Text>
+          </View>
+        </View>
+        {venueHasSpots ? (
+          <View className="mt-2 flex-row items-center justify-between gap-2">
+            <View className="flex-1 flex-row">
+              {table.data.spot?.name ? (
+                <Tag icon="navigate-outline" label={tr.venue.spot(table.data.spot.name)} />
+              ) : (
+                <Text variant="fine">{tr.venue.noSpot}</Text>
+              )}
+            </View>
+            <Button
+              variant="ghost"
+              testID="change-spot"
+              label={table.data.spot_id ? tr.venue.changeSpot : tr.venue.chooseSpot}
+              onPress={() => router.push('/spot')}
+            />
+          </View>
+        ) : null}
+        <View className="mt-2 flex-row items-center justify-between gap-2">
           <Text variant="fine" className="flex-1">
             {tr.venue.rerollsLeft(ALIAS_REROLLS_PER_CHECKIN - table.data.alias_rerolls)}
           </Text>
@@ -121,37 +153,16 @@ export default function VenueScreen() {
           />
         </View>
         {reroll.isError ? (
-          <Text variant="fine" tone="danger" className="mb-2">
+          <Text variant="fine" tone="danger">
             {errorMessage(reroll.error)}
           </Text>
         ) : null}
-        <View className="flex-row flex-wrap items-center justify-between gap-2">
-          <Tag label={tr.venue.people(table.data.headcount)} />
-          <View className="flex-row items-center gap-1">
-            <Ionicons name="time-outline" size={ICON.sm} color={colors.muted} />
-            <Text variant="fine">
-              {tr.venue.remaining(Math.floor(minutesLeft / 60), minutesLeft % 60)}
-            </Text>
-          </View>
-        </View>
-        {venueHasSpots ? (
-          <View className="mt-3 flex-row items-center justify-between gap-2">
-            <View className="flex-1 flex-row items-center gap-1">
-              <Ionicons name="navigate-outline" size={ICON.sm} color={colors.muted} />
-              <Text variant="fine" className="flex-1" testID="my-spot">
-                {table.data.spot?.name ? tr.venue.spot(table.data.spot.name) : tr.venue.noSpot}
-              </Text>
-            </View>
-            <Button
-              variant="ghost"
-              testID="change-spot"
-              label={table.data.spot_id ? tr.venue.changeSpot : tr.venue.chooseSpot}
-              onPress={() => router.push('/spot')}
-            />
-          </View>
-        ) : null}
-        <View className="mt-3 gap-2.5">
+      </Card>
+      <View className="mt-4 flex-row gap-3">
+        <View className="flex-1">
           <Button label={tr.rooms.create} onPress={() => router.push('/room/new')} />
+        </View>
+        <View className="flex-1">
           <Button
             variant="secondary"
             testID="play-with-table"
@@ -159,20 +170,33 @@ export default function VenueScreen() {
             onPress={() => solo.mutate()}
             loading={solo.isPending}
           />
-          {solo.isError ? (
-            <Text variant="fine" tone="danger">
-              {errorMessage(solo.error)}
-            </Text>
-          ) : null}
-          <Button
-            variant="ghost"
-            testID="venue-chat-open"
-            icon="chatbubbles-outline"
-            label={tr.venueChat.open}
-            onPress={() => router.push('/venue-chat')}
-          />
         </View>
-      </Card>
+      </View>
+      {solo.isError ? (
+        <Text variant="fine" tone="danger" className="mt-2">
+          {errorMessage(solo.error)}
+        </Text>
+      ) : null}
+      <Pressable
+        testID="venue-chat-open"
+        accessibilityRole="button"
+        accessibilityLabel={tr.venueChat.open}
+        onPress={() => router.push('/venue-chat')}
+        className="mt-4 flex-row items-center gap-3"
+        style={{
+          minHeight: TOUCH.large - SPACING[1],
+          paddingHorizontal: SPACING[3],
+          borderRadius: shape.radius.md,
+          backgroundColor: colors.surface2,
+        }}
+      >
+        <Ionicons name="chatbubbles-outline" size={ICON.lg} color={colors.text} />
+        <View className="flex-1">
+          <Text variant="bodyStrong">{tr.venueChat.title(table.data.venue?.name ?? '')}</Text>
+          <Text variant="fine">{tr.venueChat.open}</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={ICON.md} color={colors.muted} />
+      </Pressable>
 
       <Lobby
         venueId={table.data.venue_id}

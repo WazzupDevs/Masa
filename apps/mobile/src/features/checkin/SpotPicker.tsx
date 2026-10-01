@@ -13,7 +13,7 @@ type Props = {
 // "Neredesin?": the venue's spots as a single choice. Shared by check-in and the spot change.
 export function SpotPicker({ spots, selectedId, onSelect }: Props) {
   return (
-    <View accessibilityRole="radiogroup" className="gap-2">
+    <View accessibilityRole="radiogroup" className="gap-2.5">
       {spots.map((spot) => (
         <Choice
           key={spot.id}

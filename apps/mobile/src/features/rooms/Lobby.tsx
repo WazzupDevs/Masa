@@ -1,10 +1,12 @@
 import { PARTICIPATIONS, type Participation } from '@shared/profile.ts';
 import { isIntent, requesterStatus } from '@shared/rooms.ts';
 import { groupRoomsBySpot } from '@shared/spots.ts';
+import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
+import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Choice } from '@/components/Choice';
@@ -19,6 +21,8 @@ import { tr } from '@/i18n/tr';
 import { track, trackOnce } from '@/lib/analytics';
 import { callChangeSpot, roomsApi } from '@/lib/api';
 import { useNow } from '@/lib/useNow';
+import { useTheme } from '@/theme/ThemeProvider';
+import { ICON } from '@/theme/tokens';
 
 import { participationHint } from './participation';
 import { ProfiledTag } from './ProfiledTag';
@@ -38,6 +42,7 @@ type Props = {
 // and "Masanla oyna" shows instead (MVP_SPEC §4.3). At a venue with spots the rooms are grouped by
 // spot, the table's own first; a room at another spot offers "Bu noktadayım" instead of a request.
 export function Lobby({ venueId, sessionId, since, mySpotId, venueHasSpots }: Props) {
+  const { colors } = useTheme();
   const queryClient = useQueryClient();
   const profile = useProfile();
   const hasName = !!profile.data?.display_name;
@@ -126,34 +131,40 @@ export function Lobby({ venueId, sessionId, since, mySpotId, venueHasSpots }: Pr
           {groupRoomsBySpot(rooms, mySpotId).map((group) => (
             <View key={group.spotId ?? 'none'} className="gap-3">
               {venueHasSpots ? (
-                <Text variant="label" accessibilityRole="header" className="mt-2">
-                  {group.spotId === null
-                    ? tr.rooms.noSpot
-                    : group.mine
-                      ? tr.rooms.mySpot(group.spotName ?? '')
-                      : group.spotName}
-                </Text>
+                <View className="mt-1 flex-row items-center gap-2">
+                  <Ionicons name="location-outline" size={ICON.md} color={colors.text} />
+                  <Text variant="heading" accessibilityRole="header" className="flex-1">
+                    {group.spotId === null
+                      ? tr.rooms.noSpot
+                      : group.mine
+                        ? tr.rooms.mySpot(group.spotName ?? '')
+                        : group.spotName}
+                  </Text>
+                </View>
               ) : null}
               {group.rooms.map((room) => {
                 const waitedMin = Math.floor((now - Date.parse(room.waiting_since)) / 60_000);
                 const spotId = room.spot_id;
                 const intent = isIntent(room.intent) ? room.intent : null;
                 return (
-                  <Card key={room.room_id}>
-                    <View className="flex-row items-center justify-between gap-2">
-                      <View className="flex-1 flex-row flex-wrap items-center gap-2">
-                        <Text variant="bodyStrong">{room.alias}</Text>
-                        {room.profiled ? <ProfiledTag /> : null}
+                  <Card key={room.room_id} className="gap-3">
+                    <View className="flex-row items-center gap-3">
+                      <Avatar kind="table" alias={room.alias} size="lg" />
+                      <View className="flex-1">
+                        <Text variant="title">{room.alias}</Text>
+                        <Text variant="fine">
+                          {`${tr.rooms.people(room.headcount)} · ${tr.rooms.waitingFor(waitedMin)}`}
+                        </Text>
                       </View>
-                      <Text variant="fine">{tr.rooms.waitingFor(waitedMin)}</Text>
-                    </View>
-                    <View className="mb-1.5 mt-1 flex-row flex-wrap items-center gap-2">
-                      <Text variant="subtitle">{tr.rooms.people(room.headcount)}</Text>
                       {intent ? <Tag variant={intent} label={tr.intents[intent]} /> : null}
                     </View>
+                    {room.profiled ? (
+                      <View className="flex-row">
+                        <ProfiledTag />
+                      </View>
+                    ) : null}
                     {group.mine ? (
                       <Button
-                        variant="secondary"
                         label={tr.rooms.requestJoin}
                         onPress={() => {
                           setParticipation('anonymous');
@@ -165,6 +176,7 @@ export function Lobby({ venueId, sessionId, since, mySpotId, venueHasSpots }: Pr
                       <Button
                         variant="secondary"
                         testID="spot-here"
+                        icon="location-outline"
                         label={tr.rooms.spotHere}
                         onPress={() => moveHere.mutate(spotId)}
                         disabled={status === 'pending' || moveHere.isPending}
