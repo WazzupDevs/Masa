@@ -111,7 +111,10 @@ export function ProposalArea({ roomId, sessionId, gameRunning }: Props) {
                 <Button
                   variant="secondary"
                   testID={`propose-${concept}`}
-                  label={tr.games.propose(tr.concepts[concept])}
+                  // Canvas: the bar is titled "Oyun öner"; each button names only the game, so
+                  // "Sohbet kartları" fits half a row. The reader still hears the whole action.
+                  label={tr.concepts[concept]}
+                  accessibilityLabel={tr.games.propose(tr.concepts[concept])}
                   onPress={() => propose.mutate(concept)}
                   disabled={propose.isPending}
                 />
