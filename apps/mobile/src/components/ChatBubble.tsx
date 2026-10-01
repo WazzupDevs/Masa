@@ -19,6 +19,8 @@ type Props = {
   onPressSender?: () => void;
   // Own messages still on the way, or refused by the network.
   state?: 'sending' | 'failed';
+  // Why a failed message was refused, when the server said ("Çok hızlı yazıyorsun.").
+  failedText?: string;
   onRetry?: () => void;
   onDiscard?: () => void;
   // A run of messages from one sender (canvas: Aşama 4 · Yenileme): the name over the first, the
@@ -40,6 +42,7 @@ export function ChatBubble({
   tag,
   onPressSender,
   state,
+  failedText,
   onRetry,
   onDiscard,
   first = true,
@@ -63,6 +66,7 @@ export function ChatBubble({
         borderBottomLeftRadius: mine ? big : small,
         borderBottomRightRadius: mine ? small : big,
         backgroundColor: mine ? colors.accent : colors.raised,
+        opacity: state === 'sending' ? 0.6 : 1,
         boxShadow: mine ? undefined : shape.shadow.raised,
       }}
     >
@@ -84,7 +88,7 @@ export function ChatBubble({
         {state ? (
           <View className="flex-row items-center gap-3">
             <Text variant="fine" tone={state === 'failed' ? 'danger' : 'muted'}>
-              {state === 'failed' ? tr.chat.notSent : tr.chat.sending}
+              {state === 'failed' ? (failedText ?? tr.chat.notSent) : tr.chat.sending}
             </Text>
             {state === 'failed' && onRetry ? (
               <Pressable
@@ -142,18 +146,22 @@ export function ChatBubble({
       {avatar}
     </View>
   ) : null;
-  return (
-    <View className="flex-row items-end gap-2 self-start" style={{ maxWidth: '88%' }}>
+  const row = (
+    <View className="flex-row items-end gap-2">
       {face}
-      <View className="shrink">
-        {onPressSender ? (
-          <Pressable accessibilityRole="button" accessibilityLabel={name} onPress={onPressSender}>
-            {content}
-          </Pressable>
-        ) : (
-          content
-        )}
-      </View>
+      <View className="shrink">{content}</View>
+    </View>
+  );
+  // The avatar, the name and the bubble are one target: they all open the sender's profile.
+  return (
+    <View className="self-start" style={{ maxWidth: '88%' }}>
+      {onPressSender ? (
+        <Pressable accessibilityRole="button" accessibilityLabel={name} onPress={onPressSender}>
+          {row}
+        </Pressable>
+      ) : (
+        row
+      )}
     </View>
   );
 }

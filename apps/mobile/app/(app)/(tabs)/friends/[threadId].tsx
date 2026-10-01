@@ -1,16 +1,20 @@
 import type { ReportReason } from '@shared/chat.ts';
 import { DM_MAX_LENGTH, prepareDm } from '@shared/friends.ts';
+import { toRuns } from '@shared/chatRuns.ts';
 import { BROADCAST, dmChannel } from '@shared/rooms.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, View } from 'react-native';
+import { Alert, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { Avatar } from '@/components/Avatar';
 import { ChatBubble } from '@/components/ChatBubble';
+import { ChatScreen, DayLine, dayLabel } from '@/components/ChatScreen';
+import { ChatTopBar } from '@/components/ChatTopBar';
+import { Composer } from '@/components/Composer';
+import { EmptyState } from '@/components/EmptyState';
 import { IconButton } from '@/components/IconButton';
-import { Input } from '@/components/Input';
-import { Screen } from '@/components/Screen';
 import { Sheet } from '@/components/Sheet';
 import { Text } from '@/components/Text';
 import { ReportModal } from '@/features/chat/ReportModal';
@@ -21,7 +25,6 @@ import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { track } from '@/lib/analytics';
 import { dmApi, friendsApi, safetyApi } from '@/lib/api';
-import { TOUCH } from '@/theme/tokens';
 
 type Params = { threadId: string; publicId: string; name: string };
 
@@ -85,60 +88,72 @@ export default function DmScreen() {
     },
   });
 
-  const list = messages.data ?? [];
+  const list = [...(messages.data ?? [])].reverse();
+  const runs = toRuns(
+    list,
+    (m) => (m.from_me ? 'me' : 'them'),
+    (m) => m.created_at,
+  );
+  const openProfile = () => router.push({ pathname: '/people/[publicId]', params: { publicId } });
   return (
-    <Screen>
-      <View className="-mx-3 flex-row items-center justify-between">
-        <IconButton icon="chevron-back" label={tr.friends.back} onPress={() => router.back()} />
-        <IconButton
-          icon="ellipsis-horizontal"
-          label={tr.friends.more}
-          onPress={() => setMenu(true)}
+    <ChatScreen
+      stickToEnd
+      top={
+        <ChatTopBar
+          onBack={() => router.back()}
+          title={name}
+          leading={<Avatar kind="profile" name={name} size="md" />}
+          onPressTitle={openProfile}
+          titleAccessibilityLabel={name}
+          actions={
+            <IconButton
+              icon="ellipsis-horizontal"
+              label={tr.friends.more}
+              onPress={() => setMenu(true)}
+            />
+          }
         />
-      </View>
-      <Pressable
-        accessibilityRole="link"
-        onPress={() => router.push({ pathname: '/people/[publicId]', params: { publicId } })}
-        className="mt-1 self-start"
-        style={{ minHeight: TOUCH.min }}
-      >
-        <Text variant="display">{name}</Text>
-      </Pressable>
-
-      <View className="mt-4 flex-1 gap-3">
-        {list.length === 0 && !messages.isPending ? (
-          <Text tone="muted">{tr.friends.noMessagesYet}</Text>
-        ) : null}
-        {[...list].reverse().map((m) => (
-          <ChatBubble key={m.id} text={m.body} mine={m.from_me} />
-        ))}
-      </View>
-
-      {send.isError ? (
-        <Text variant="fine" tone="danger" className="mt-3">
-          {errorMessage(send.error)}
-        </Text>
+      }
+      composer={
+        <Composer
+          inputTestID="dm-input"
+          sendTestID="dm-send"
+          sendLabel={tr.dm.send}
+          placeholder={tr.dm.placeholder}
+          value={draft}
+          onChangeText={setDraft}
+          maxLength={DM_MAX_LENGTH}
+          sendDisabled={!body}
+          sending={send.isPending}
+          onSend={() => body && send.mutate(body)}
+          above={
+            send.isError ? (
+              <Text variant="fine" tone="danger">
+                {errorMessage(send.error)}
+              </Text>
+            ) : undefined
+          }
+        />
+      }
+    >
+      {list.length === 0 && !messages.isPending ? (
+        <View className="flex-1 justify-center">
+          <EmptyState snail body={tr.friends.noMessagesYet} />
+        </View>
       ) : null}
-      <View className="mt-4 flex-row items-end gap-2">
-        <View className="flex-1">
-          <Input
-            testID="dm-input"
-            accessibilityLabel={tr.dm.placeholder}
-            placeholder={tr.dm.placeholder}
-            value={draft}
-            onChangeText={setDraft}
-            maxLength={DM_MAX_LENGTH}
-            multiline
+      {runs.map(({ item: m, first, last, day }) => (
+        <View key={m.id} className={first ? 'mt-1.5 gap-2' : 'gap-2'}>
+          {day ? <DayLine label={dayLabel(day)} /> : null}
+          <ChatBubble
+            text={m.body}
+            mine={m.from_me}
+            first={first}
+            last={last}
+            time={tr.chat.time(m.created_at)}
+            avatar={m.from_me ? undefined : <Avatar kind="profile" name={name} size="sm" />}
           />
         </View>
-        <Button
-          testID="dm-send"
-          label={tr.dm.send}
-          disabled={!body}
-          loading={send.isPending}
-          onPress={() => body && send.mutate(body)}
-        />
-      </View>
+      ))}
 
       <Sheet visible={menu} onClose={() => setMenu(false)} title={tr.friends.friendMenuTitle}>
         <Button
@@ -146,7 +161,7 @@ export default function DmScreen() {
           label={tr.friends.viewProfile}
           onPress={() => {
             setMenu(false);
-            router.push({ pathname: '/people/[publicId]', params: { publicId } });
+            openProfile();
           }}
         />
         <Button
@@ -193,6 +208,6 @@ export default function DmScreen() {
         onConfirm={(reason) => confirm && end.mutate({ kind: confirm, reason })}
         onClose={() => setConfirm(null)}
       />
-    </Screen>
+    </ChatScreen>
   );
 }
