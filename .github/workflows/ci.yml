@@ -64,8 +64,19 @@ jobs:
           key=$(pnpm -s supabase status -o env | sed -n 's/^PUBLISHABLE_KEY="\(.*\)"$/\1/p')
           timeout 180 bash -c "until curl -sf -X POST http://127.0.0.1:54321/functions/v1/ping -H 'apikey: $key' -H 'content-type: application/json' -d '{}' > /dev/null; do sleep 2; done"
       - run: pnpm test:integration
+      # CHECKIN_SKIP_LOCATION (dev project only) needs a function server started with the secret:
+      # restart serve with it and run only its test (supabase/tests/checkinSkipLocation.test.ts).
+      - name: Check-in with CHECKIN_SKIP_LOCATION=1
+        run: |
+          pkill -f "supabase functions serve" || true
+          until ! pgrep -f "supabase functions serve" > /dev/null; do sleep 1; done
+          echo CHECKIN_SKIP_LOCATION=1 > "$RUNNER_TEMP/skip.env"
+          nohup pnpm supabase functions serve --env-file "$RUNNER_TEMP/skip.env" > functions-skip.log 2>&1 &
+          key=$(pnpm -s supabase status -o env | sed -n 's/^PUBLISHABLE_KEY="\(.*\)"$/\1/p')
+          timeout 180 bash -c "until curl -sf -X POST http://127.0.0.1:54321/functions/v1/ping -H 'apikey: $key' -H 'content-type: application/json' -d '{}' > /dev/null; do sleep 2; done"
+          CHECKIN_SKIP_LOCATION_TEST=1 pnpm vitest run -c vitest.integration.config.ts supabase/tests/checkinSkipLocation.test.ts
       - if: failure()
-        run: tail -n 200 functions.log
+        run: tail -n 200 functions.log functions-skip.log 2>/dev/null || true
 
   # The one required status check.
   ci:

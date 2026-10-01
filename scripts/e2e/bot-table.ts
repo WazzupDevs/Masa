@@ -22,19 +22,17 @@ import {
   CURRENT_LOCATION_CONSENT_VERSION,
   CURRENT_TERMS_VERSION,
 } from '../../supabase/functions/_shared/pure/consent.ts';
+import { isDevProjectUrl, isLocalUrl } from '../../supabase/functions/_shared/pure/devProject.ts';
 import type { VoiceTabuState } from '../../supabase/functions/_shared/pure/tabu.ts';
 import { ANCHOR, offset, squareRing } from '../../supabase/tests/fixtures/venues.ts';
 
-// The hosted dev project (CLAUDE.md, "Barındırılan dev projesi"). No other remote is accepted.
-const DEV_PROJECT_HOST = 'kphwbpqxhugrpoicmski.supabase.co';
-const LOCAL_HOSTS = new Set(['127.0.0.1', 'localhost', '10.0.2.2']);
 // The local stack's fixed publishable key (the same in every `supabase start`).
 const LOCAL_PUBLISHABLE_KEY = 'sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH';
 
 const url = process.env.SUPABASE_URL ?? 'http://127.0.0.1:54321';
-const host = new URL(url).hostname;
-const isLocal = LOCAL_HOSTS.has(host);
-if (!isLocal && !(host === DEV_PROJECT_HOST && url.startsWith('https://'))) {
+// The local stack or the hosted dev project (pure/devProject.ts). No other remote is accepted.
+const isLocal = isLocalUrl(url);
+if (!isLocal && !isDevProjectUrl(url)) {
   console.error(
     `bot-table: refusing ${url}; only the local stack and the dev project are allowed.`,
   );

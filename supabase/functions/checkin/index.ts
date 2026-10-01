@@ -13,6 +13,7 @@ import type {
   CheckInResponse,
   CheckinRequest,
   LeaveResponse,
+  LocationModeResponse,
   RerollAliasResponse,
 } from '../_shared/pure/api/checkin.ts';
 import {
@@ -26,6 +27,7 @@ import {
   needsConsent,
   needsProfile,
 } from '../_shared/pure/consent.ts';
+import { locationCheck } from '../_shared/pure/devProject.ts';
 import { AppError } from '../_shared/pure/errors.ts';
 import { ALIAS_REROLLS_PER_CHECKIN } from '../_shared/pure/rooms.ts';
 
@@ -43,6 +45,7 @@ const Body: z.ZodType<CheckinRequest> = z.discriminatedUnion('action', [
   z.object({ action: z.literal('change-spot'), spotId: z.uuid() }),
   z.object({ action: z.literal('reroll-alias') }),
   z.object({ action: z.literal('leave') }),
+  z.object({ action: z.literal('location-mode') }),
 ]);
 
 // A taken alias (a concurrent check-in at the same venue) is retried with another one.
@@ -50,6 +53,11 @@ const MAX_ALIAS_ATTEMPTS = 5;
 const UNIQUE_VIOLATION = '23505';
 
 const db = serviceClient();
+
+// CHECKIN_SKIP_LOCATION=1 on the dev project only (pure/devProject.ts): no boundary or 300 m check.
+function currentLocationCheck() {
+  return locationCheck(Deno.env.get('CHECKIN_SKIP_LOCATION'), Deno.env.get('SUPABASE_URL'));
+}
 let aliasWords: AliasWords | null = null;
 
 function dbError(step: string, error: { code: string }): Error {
@@ -110,7 +118,16 @@ async function checkIn(userId: string, body: CheckInRequest): Promise<CheckInRes
   });
   if (inside.error) throw dbError('venue_contains', inside.error);
   if (inside.data === null) throw new AppError('venue_not_found', 'Venue not found.');
-  if (!inside.data) throw new AppError('too_far', 'You are too far from this venue.');
+  // The log line never carries the position or the venue.
+  const check = currentLocationCheck();
+  if (check === 'skipped') {
+    console.warn('checkin: CHECKIN_SKIP_LOCATION=1, location check skipped (dev only)');
+  } else if (check === 'ignored') {
+    console.error('checkin: CHECKIN_SKIP_LOCATION is set outside the dev project; ignored');
+  }
+  if (!inside.data && check !== 'skipped') {
+    throw new AppError('too_far', 'You are too far from this venue.');
+  }
 
   const [words, used] = await Promise.all([loadAliasWords(), usedAliases(body.venueId)]);
 
@@ -171,7 +188,13 @@ Deno.serve(
     async (
       req,
       raw,
-    ): Promise<CheckInResponse | ChangeSpotResponse | RerollAliasResponse | LeaveResponse> => {
+    ): Promise<
+      | CheckInResponse
+      | ChangeSpotResponse
+      | RerollAliasResponse
+      | LeaveResponse
+      | LocationModeResponse
+    > => {
       const body = Body.parse(raw);
       const user = await requireUser(req, db);
 
@@ -190,6 +213,11 @@ Deno.serve(
 
         case 'reroll-alias':
           return await rerollAlias(user.id);
+
+        // The check-in screen asks before locating: on the dev project with the switch on, a
+        // position outside the venue or no position at all does not stop the flow.
+        case 'location-mode':
+          return { skipLocation: currentLocationCheck() === 'skipped' };
 
         case 'leave': {
           const { error } = await db.rpc('end_table_session', { target_user_id: user.id });
