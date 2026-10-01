@@ -78,3 +78,12 @@ appId: app.kabuk.mobile
     timeout: 20000
 - takeScreenshot: 27-dm
 - hideKeyboard
+# No tab bar in a DM: back to the friends list first (optional: hideKeyboard may already have
+# gone back when the keyboard was closed).
+- tapOn:
+    id: chat-back
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: tab-friends
+    timeout: 10000

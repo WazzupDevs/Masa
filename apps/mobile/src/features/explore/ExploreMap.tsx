@@ -3,6 +3,7 @@ import {
   type CameraRef,
   GeoJSONSource,
   type GeoJSONSourceRef,
+  Images,
   Layer,
   type LayerProps,
   Map,
@@ -20,6 +21,7 @@ import { View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { MARKER_IMAGES } from '@/components/Glyph';
 import { Text } from '@/components/Text';
 import { tr } from '@/i18n/tr';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -37,6 +39,13 @@ type Filter = NonNullable<SymbolLayer['filter']>;
 
 const IS_CLUSTER: Filter = ['has', 'point_count'];
 const IS_VENUE: Filter = ['!', ['has', 'point_count']];
+
+// The venue's kind glyph inside its circle (signed distance fields, coloured per bucket), picked by
+// the feature's `kind` ('cafe' | 'campus').
+const MAP_IMAGES = {
+  'marker-cafe': { source: MARKER_IMAGES.cafe, sdf: true },
+  'marker-campus': { source: MARKER_IMAGES.campus, sdf: true },
+};
 
 type PressedFeature = {
   geometry?: { type: string; coordinates?: unknown };
@@ -76,6 +85,7 @@ export function ExploreMap({
           lng: v.lng,
           bucket: v.bucket,
           hasEvent: v.event !== null,
+          kind: v.kind,
         })),
       ),
     [venues],
@@ -89,6 +99,8 @@ export function ExploreMap({
   if (!opening) return null;
   // Pale pins on a pale map need a ring to stay findable (3:1 for UI shapes).
   const ring = shape.stroke.feature > 1 ? colors.border : colors.accent;
+  const id = selected ?? '';
+  const outer = MAP_PIN.ring + MAP_PIN.outline;
   const label: { layout: NonNullable<SymbolLayer['layout']>; paint: SymbolLayer['paint'] } = {
     layout: {
       'text-field': ['get', 'name'],
@@ -136,6 +148,7 @@ export function ExploreMap({
         onDidFinishRenderingMapFully={() => setReady(true)}
       >
         <Camera ref={camera} initialViewState={{ bounds: opening, padding }} />
+        <Images images={MAP_IMAGES} />
         <GeoJSONSource
           id="venues"
           ref={source}
@@ -179,12 +192,27 @@ export function ExploreMap({
             paint={{ 'text-color': colors.onAccent }}
           />
           <Layer
+            id="venue-shadow"
+            type="circle"
+            filter={['all', ['!', ['has', 'point_count']], ['==', ['get', 'id'], id]]}
+            paint={{
+              'circle-color': colors.border,
+              'circle-radius': MAP_PIN.selectedRadius + outer,
+              'circle-translate': [MAP_PIN.shadow, MAP_PIN.shadow],
+            }}
+          />
+          <Layer
             id="venue-ring"
             type="circle"
             filter={IS_VENUE}
             paint={{
               'circle-color': ring,
-              'circle-radius': MAP_PIN.radius + MAP_PIN.ring + MAP_PIN.outline,
+              'circle-radius': [
+                'case',
+                ['==', ['get', 'id'], id],
+                MAP_PIN.selectedRadius + outer,
+                MAP_PIN.radius + outer,
+              ],
             }}
           />
           <Layer
@@ -201,9 +229,41 @@ export function ExploreMap({
                 colors.buzz,
                 colors.calm,
               ],
-              'circle-radius': MAP_PIN.radius,
+              'circle-radius': [
+                'case',
+                ['==', ['get', 'id'], id],
+                MAP_PIN.selectedRadius,
+                MAP_PIN.radius,
+              ],
               'circle-stroke-width': MAP_PIN.ring,
               'circle-stroke-color': colors.surface,
+            }}
+          />
+          <Layer
+            id="venue-kinds"
+            type="symbol"
+            filter={IS_VENUE}
+            layout={{
+              'icon-image': ['match', ['get', 'kind'], 'campus', 'marker-campus', 'marker-cafe'],
+              'icon-size': [
+                'case',
+                ['==', ['get', 'id'], id],
+                MAP_PIN.selectedGlyphScale,
+                MAP_PIN.glyphScale,
+              ],
+              'icon-allow-overlap': true,
+              'icon-ignore-placement': true,
+            }}
+            paint={{
+              'icon-color': [
+                'match',
+                ['get', 'bucket'],
+                'lively',
+                colors.onLively,
+                'buzzing',
+                colors.onBuzz,
+                colors.onCalm,
+              ],
             }}
           />
           <Layer

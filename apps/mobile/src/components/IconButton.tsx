@@ -6,13 +6,18 @@ import { ICON, TOUCH } from '@/theme/tokens';
 
 import type { IconName } from './Button';
 
-type Props = { icon: IconName; label: string; onPress: () => void };
+type Props = { icon: IconName; label: string; onPress: () => void; testID?: string };
 
 // A 44 × 44 icon-only button; the label is for screen readers.
-export function IconButton({ icon, label, onPress }: Props) {
+export function IconButton({ icon, label, onPress, testID }: Props) {
   const { colors, shape } = useTheme();
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      testID={testID}
+    >
       {({ pressed }) => (
         <View
           style={{

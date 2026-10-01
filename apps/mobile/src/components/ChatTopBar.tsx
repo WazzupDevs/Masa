@@ -60,7 +60,14 @@ export function ChatTopBar({
         backgroundColor: colors.canvas,
       }}
     >
-      {onBack ? <IconButton icon="chevron-back" label={tr.common.back} onPress={onBack} /> : null}
+      {onBack ? (
+        <IconButton
+          icon="chevron-back"
+          label={tr.common.back}
+          onPress={onBack}
+          testID="chat-back"
+        />
+      ) : null}
       {onPressTitle ? (
         <Pressable
           accessibilityRole="button"

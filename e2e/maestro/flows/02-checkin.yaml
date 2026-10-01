@@ -19,6 +19,10 @@ appId: app.kabuk.mobile
 - assertVisible: Keşfet
 - assertVisible: Liste
 - takeScreenshot: 05b-explore-map
+# Symbol layers (the kind glyph inside each pin, cluster counts) load their images and glyphs after
+# the first full render: a second screenshot a few seconds later shows them.
+- evalScript: ${const end = Date.now() + 4000; while (Date.now() < end) {} }
+- takeScreenshot: 05c-explore-map-settled
 - tapOn: Liste
 - scrollUntilVisible:
     element:

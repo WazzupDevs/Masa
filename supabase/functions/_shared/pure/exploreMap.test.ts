@@ -15,6 +15,7 @@ const venue = (id: string, lat: number, lng: number, hasEvent = false) => ({
   lng,
   bucket: 'calm' as const,
   hasEvent,
+  kind: 'cafe' as const,
 });
 
 describe('Keşfet map', () => {
@@ -27,7 +28,7 @@ describe('Keşfet map', () => {
           type: 'Feature',
           id: 'a',
           geometry: { type: 'Point', coordinates: [28.6, 41.0] },
-          properties: { id: 'a', name: 'Mekan a', bucket: 'calm', event: true },
+          properties: { id: 'a', name: 'Mekan a', bucket: 'calm', event: true, kind: 'cafe' },
         },
       ],
     });

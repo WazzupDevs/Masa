@@ -12,7 +12,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { ListRow } from '@/components/ListRow';
 import { Rise } from '@/components/motion';
 import { ScreenHeader } from '@/components/ScreenHeader';
-import { useTabBarSpace } from '@/components/TabBar';
+import { useTabBarOverMap, useTabBarSpace } from '@/components/TabBar';
 import { Segmented } from '@/components/Segmented';
 import { Snail } from '@/components/Snail';
 import { Text } from '@/components/Text';
@@ -49,6 +49,9 @@ export default function ExploreScreen() {
   const barSpace = useTabBarSpace();
 
   const layout = venues.isSuccess ? exploreLayout(venues.data.length) : 'list';
+  const showMap = venues.isSuccess && layout === 'list' && view === 'map';
+  // The venue card and the tab bar sit right on the map: no fade band over it.
+  useTabBarOverMap(showMap);
 
   useEffect(() => {
     if (layout === 'list') track('explore_viewed', { view });
@@ -67,7 +70,7 @@ export default function ExploreScreen() {
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.canvas }}>
       <View style={{ flex: 1 }}>
-        {venues.isSuccess && layout === 'list' && view === 'map' && headerHeight > 0 ? (
+        {showMap && headerHeight > 0 ? (
           <View style={StyleSheet.absoluteFill}>
             <ExploreMap venues={sorted} headerHeight={headerHeight} tabBarHeight={barSpace} />
           </View>

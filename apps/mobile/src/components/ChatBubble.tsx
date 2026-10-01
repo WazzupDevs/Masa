@@ -1,9 +1,11 @@
-import type { ReactNode } from 'react';
-import { Pressable, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { type ReactNode, useEffect, useState } from 'react';
+import { Animated, Pressable, View } from 'react-native';
 
 import { tr } from '@/i18n/tr';
+import { useReduceMotion } from '@/lib/useReduceMotion';
 import { useTheme } from '@/theme/ThemeProvider';
-import { SPACING, TOUCH } from '@/theme/tokens';
+import { ICON, SPACING, TOUCH } from '@/theme/tokens';
 
 import { Text } from './Text';
 
@@ -29,8 +31,13 @@ type Props = {
   first?: boolean;
   last?: boolean;
   time?: string;
+  // Own DM messages (canvas: Aşama 5 · Geri bildirim → DM): one tick sent, two delivered, two in
+  // the read colour read. Shown next to the time.
+  delivery?: Delivery;
   testID?: string;
 };
+
+export type Delivery = 'sent' | 'delivered' | 'read';
 
 // One chat message: the other side left with an avatar, the viewer right in the accent colour; the
 // corners on the speaker's side are small inside a run.
@@ -48,6 +55,7 @@ export function ChatBubble({
   first = true,
   last = true,
   time,
+  delivery,
   testID,
 }: Props) {
   const { colors, shape } = useTheme();
@@ -75,8 +83,9 @@ export function ChatBubble({
   );
   const stamp =
     time && last && !state ? (
-      <View style={{ paddingHorizontal: SPACING[1.5] }}>
+      <View className="flex-row items-center gap-1" style={{ paddingHorizontal: SPACING[1.5] }}>
         <Text variant="fine">{time}</Text>
+        {mine && delivery ? <Ticks delivery={delivery} /> : null}
       </View>
     ) : null;
 
@@ -162,6 +171,93 @@ export function ChatBubble({
       ) : (
         row
       )}
+    </View>
+  );
+}
+
+function Ticks({ delivery }: { delivery: Delivery }) {
+  const { colors } = useTheme();
+  return (
+    <View accessible accessibilityLabel={tr.dm.delivery[delivery]}>
+      <Ionicons
+        name={delivery === 'sent' ? 'checkmark' : 'checkmark-done'}
+        size={ICON.sm}
+        color={delivery === 'read' ? colors.read : colors.muted}
+      />
+    </View>
+  );
+}
+
+const DOT = SPACING[2];
+const TYPING_MS = 400;
+
+// The other side is typing: three dots in a left bubble, rising in turn; still under reduce motion.
+export function TypingBubble({ avatar }: { avatar?: ReactNode }) {
+  const { colors, shape } = useTheme();
+  const reduce = useReduceMotion();
+  const [dots] = useState(() => [0, 1, 2].map(() => new Animated.Value(0)));
+
+  useEffect(() => {
+    if (reduce) {
+      dots.forEach((d) => d.setValue(0));
+      return undefined;
+    }
+    const loop = Animated.loop(
+      Animated.stagger(
+        TYPING_MS / 3,
+        dots.map((d) =>
+          Animated.sequence([
+            Animated.timing(d, { toValue: 1, duration: TYPING_MS / 2, useNativeDriver: true }),
+            Animated.timing(d, { toValue: 0, duration: TYPING_MS / 2, useNativeDriver: true }),
+          ]),
+        ),
+      ),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [reduce, dots]);
+
+  const big = shape.radius.lg - SPACING[1];
+  return (
+    <View
+      className="flex-row items-end gap-2 self-start"
+      accessible
+      accessibilityLiveRegion="polite"
+      accessibilityLabel={tr.dm.typing}
+    >
+      {avatar}
+      <View
+        className="flex-row items-center"
+        style={{
+          gap: SPACING[1],
+          paddingHorizontal: SPACING[3] + SPACING[0.5],
+          paddingVertical: SPACING[3],
+          borderTopLeftRadius: big,
+          borderTopRightRadius: big,
+          borderBottomRightRadius: big,
+          borderBottomLeftRadius: SPACING[1.5],
+          backgroundColor: colors.raised,
+          boxShadow: shape.shadow.raised,
+        }}
+      >
+        {dots.map((d, i) => (
+          <Animated.View
+            key={i}
+            style={{
+              width: DOT,
+              height: DOT,
+              borderRadius: shape.radius.pill,
+              backgroundColor: colors.muted,
+              opacity: d.interpolate({ inputRange: [0, 1], outputRange: [0.45, 1] }),
+              transform: [
+                {
+                  translateY: d.interpolate({ inputRange: [0, 1], outputRange: [0, -SPACING[1]] }),
+                },
+              ],
+            }}
+          />
+        ))}
+      </View>
     </View>
   );
 }
