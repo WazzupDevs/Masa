@@ -1,6 +1,14 @@
 import type { AliasWords } from '../../supabase/functions/_shared/pure/alias.ts';
 import type { LngLat } from '../../supabase/functions/_shared/pure/geo.ts';
-import type { CampusVenue, ProfanityList, SohbetCard, TabuCard, VenueRecord } from './content.ts';
+import type {
+  CampusSpot,
+  CampusVenue,
+  ProfanityList,
+  SohbetCard,
+  TabuCard,
+  TestVenue,
+  VenueRecord,
+} from './content.ts';
 import { sqlLiteral } from './sql.ts';
 
 // Replaces the word list, so words removed from the JSON disappear from the database too.
@@ -90,6 +98,31 @@ export function cardsSql(tabu: readonly TabuCard[], sohbet: readonly SohbetCard[
 // boundary's surface.
 export const CAMPUS_SOURCE = 'campus';
 
+// A venue's spots, upserted by (venue, ref) in the JSON's order; never deleted.
+export function spotsSql(source: string, sourceRef: string, spots: readonly CampusSpot[]): string {
+  const rows = spots.map(
+    (s, i) => `(${sqlLiteral(s.ref)}, ${sqlLiteral(s.name)}, ${i}, ${sqlLiteral(s.isActive)})`,
+  );
+  return [
+    'insert into public.venue_spots (venue_id, ref, name, sort, is_active)',
+    'select v.id, s.ref, s.name, s.sort, s.is_active',
+    `from public.venues v cross join (values\n  ${rows.join(',\n  ')}\n) as s (ref, name, sort, is_active)`,
+    `where v.source = ${sqlLiteral(source)} and v.source_ref = ${sqlLiteral(sourceRef)}`,
+    'on conflict (venue_id, ref) do update set',
+    '  name = excluded.name, sort = excluded.sort, is_active = excluded.is_active;',
+  ].join('\n');
+}
+
+// Spots of the test venues that have them, after the venues themselves.
+export function testSpotsSql(venues: readonly TestVenue[]): string[] {
+  return venues
+    .filter((v) => v.spots.length > 0)
+    .map(
+      (v) =>
+        `-- content/venues-test.json: spots of ${v.sourceRef}\n${spotsSql(v.source, v.sourceRef, v.spots)}\n`,
+    );
+}
+
 function polygonSql(ring: readonly LngLat[]): string {
   const wkt = `POLYGON((${ring.map(([lng, lat]) => `${lng} ${lat}`).join(', ')}))`;
   return `extensions.st_geomfromtext(${sqlLiteral(wkt)}, 4326)`;
@@ -104,9 +137,6 @@ export function campusSql(
     `-- ${file}`,
     ...venues.flatMap((v) => {
       const polygon = polygonSql(v.boundary);
-      const spotRows = v.spots.map(
-        (s, i) => `(${sqlLiteral(s.ref)}, ${sqlLiteral(s.name)}, ${i}, ${sqlLiteral(s.isActive)})`,
-      );
       return [
         'insert into public.venues (name, city, district, location, boundary, source, source_ref, is_active) values',
         `  (${[
@@ -122,12 +152,7 @@ export function campusSql(
         'on conflict (source, source_ref) do update set',
         '  name = excluded.name, city = excluded.city, district = excluded.district,',
         '  location = excluded.location, boundary = excluded.boundary, is_active = excluded.is_active;',
-        'insert into public.venue_spots (venue_id, ref, name, sort, is_active)',
-        'select v.id, s.ref, s.name, s.sort, s.is_active',
-        `from public.venues v cross join (values\n  ${spotRows.join(',\n  ')}\n) as s (ref, name, sort, is_active)`,
-        `where v.source = ${sqlLiteral(CAMPUS_SOURCE)} and v.source_ref = ${sqlLiteral(v.ref)}`,
-        'on conflict (venue_id, ref) do update set',
-        '  name = excluded.name, sort = excluded.sort, is_active = excluded.is_active;',
+        spotsSql(CAMPUS_SOURCE, v.ref, v.spots),
         '',
       ];
     }),
