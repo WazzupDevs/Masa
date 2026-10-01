@@ -79,9 +79,14 @@ describe('explore_venues', () => {
     await refresh();
     const row = (await explore()).find((v) => v.venue_id === venue['at-anchor']);
     expect(Object.keys(row ?? {}).sort()).toEqual(
-      ['boundary', 'bucket', 'district', 'events', 'lat', 'lng', 'name', 'venue_id'].sort(),
+      ['boundary', 'bucket', 'district', 'events', 'kind', 'lat', 'lng', 'name', 'venue_id'].sort(),
     );
     expect(Object.values(row ?? {})).not.toContain(4);
+  });
+
+  it('returns the kind: cafe for a venue without a boundary', async () => {
+    const row = (await explore()).find((v) => v.venue_id === venue['at-anchor']);
+    expect(row?.kind).toBe('cafe');
   });
 
   it('changes only when the cron job refreshes', async () => {

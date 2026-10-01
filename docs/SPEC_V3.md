@@ -714,14 +714,15 @@ Her adımın sonunda: `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm format:c
 
 ## 14. Uygulama sırası ve yayın türü
 
-| Adım                      | Kapsam | Sunucu                                                                                       | İstemci                                                          | Yayın                                                        |
-| ------------------------- | ------ | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------ |
-| 1. Giriş + kayıt = profil | 1 + 2  | `…_profile_signup.sql`, `sms`, `account`, `profile`, kapı; yasal ve mağaza metinleri         | Onboarding profil ekranı, 18 altı ekranı, Ayarlar → Hesap        | Deploy → **OTA**; hook paneli Netgsm hazır olunca (§2.3)     |
-| 2. Kampüs pilotu          | 3      | `…_campus.sql`, `checkin`, içerik (`venues-campus.json`, diğerleri kapalı), seed doğrulaması | Nokta seçimi, lobi gruplama, Keşfet tek mekan görünümü           | `db push --include-seed` + deploy → **OTA**                  |
-| 3. Oda akışı              | 4      | `…_room_flow.sql`, `rooms`, `safety`, `checkin`, `tabu`/`sohbet` başlatma, yeni masa adları  | Oda kur, oda ekranı (sohbet + öneri), tek çıkış, adı yeniden çek | Seed + deploy → **OTA**                                      |
-| 4. Tabu modları           | 5      | `…_tabu_modes.sql`, `tabu`                                                                   | İş birliği ekranları                                             | Deploy → **OTA**                                             |
-| 5. Mekan sohbet odası     | 6      | `…_venue_chat.sql`, `venue-chat`, `safety`, `friends`, `profile`                             | Mekan sohbeti ekranı, profil kartı, istek                        | Deploy → **OTA**; sonra `…_drop_participation.sql`           |
-| Pilot build'i             | —      | —                                                                                            | Tasarım oturumunun simgesi ve ekranları                          | `version` artışı → **tek** production build, `MIN_APP_BUILD` |
+| Adım                      | Kapsam | Sunucu                                                                                       | İstemci                                                              | Yayın                                                        |
+| ------------------------- | ------ | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------ |
+| 1. Giriş + kayıt = profil | 1 + 2  | `…_profile_signup.sql`, `sms`, `account`, `profile`, kapı; yasal ve mağaza metinleri         | Onboarding profil ekranı, 18 altı ekranı, Ayarlar → Hesap            | Deploy → **OTA**; hook paneli Netgsm hazır olunca (§2.3)     |
+| 2. Kampüs pilotu          | 3      | `…_campus.sql`, `checkin`, içerik (`venues-campus.json`, diğerleri kapalı), seed doğrulaması | Nokta seçimi, lobi gruplama, Keşfet tek mekan görünümü               | `db push --include-seed` + deploy → **OTA**                  |
+| 3. Oda akışı              | 4      | `…_room_flow.sql`, `rooms`, `safety`, `checkin`, `tabu`/`sohbet` başlatma, yeni masa adları  | Oda kur, oda ekranı (sohbet + öneri), tek çıkış, adı yeniden çek     | Seed + deploy → **OTA**                                      |
+| 4. Tabu modları           | 5      | `…_tabu_modes.sql`, `tabu`                                                                   | İş birliği ekranları                                                 | Deploy → **OTA**                                             |
+| 5. Mekan sohbet odası     | 6      | `…_venue_chat.sql`, `venue-chat`, `safety`, `friends`, `profile`                             | Mekan sohbeti ekranı, profil kartı, istek                            | Deploy → **OTA**; sonra `…_drop_participation.sql`           |
+| 6. Test geri bildirimi    | §18    | `…_venue_kind.sql`; `…_dm_status.sql`, `dm` (`inbox`, `delivered`), `dm_typing` politikası   | Sekmeler, bildirim düğmesi, Mesajlar, Aktiviteler, DM tik ve yazıyor | `db push --include-seed` + deploy → **OTA** (native yok)     |
+| Pilot build'i             | —      | —                                                                                            | Tasarım oturumunun simgesi ve ekranları                              | `version` artışı → **tek** production build, `MIN_APP_BUILD` |
 
 - Her adım ayrı PR'dır ve `e2e` etiketi taşır. Birleştirmeyi proje sahibi yapar.
 - Her PR'da sunucu önce yayına girer (CLAUDE.md "Neyi ne zaman yayınlamalı").
@@ -819,3 +820,81 @@ Onaylandı; CLAUDE.md'ye işlendi. Kurallar, ilgili adım uygulanana kadar o ad�
 2. Kampüs sınırına 50 m tolerans (`ST_DWithin`); tolerans `pure/` içinde tek sabit, istemci uyarısı da aynısını kullanır; test 40 m kabul, 60 m ret (§4.2, §13).
 3. Tasarım oturumu paralel çalışıyor: tema tokenlarına ve mevcut bileşenlerin görünümüne dokunulmaz; yeni ortak bileşenler PR özetinde listelenir (§14).
 4. `docs/FIELD_TEST.md` adım 1'in PR'ında v3 akışlarına ve Kabuk adına göre güncellenir; bildirim başlığı "Kabuk" (§13).
+
+---
+
+## 18. Adım 6: Test kullanıcısı geri bildirimi
+
+Proje sahibi kararı (pilot öncesi test kullanıcılarının geri bildirimi). Görsel işler (ikonlar, harita işaretçileri, rozetler, profil düzeni, DM fotoğrafı, DM'de sekme çubuğunun gizlenmesi) tasarım oturumunun "Aşama 5" PR'ında gelir. Bu adımın ekranları tasarım tuvalindeki "Aşama 5 · Geri bildirim" sayfasına göre kurulur. **Yeni native modül yok:** telefondaki build 0.3.0, her şey OTA ile gider. Üç PR, sırayla:
+
+### 18.1 PR 1: Mekan türü
+
+- `venues.kind text not null`, `check (kind in ('cafe', 'campus'))`. Tasarımın harita işaretçileri buna bağlıdır; bu yüzden ilk PR budur.
+- İçerikte zorunlu alan, dosya başına tek değer: `venues-pilot.json` ve `venues-test.json` → `cafe`, `venues-campus.json` → `campus`. Değer `_shared/pure/venueKind.ts`'te tanımlıdır. Seed doğrulaması eksik ya da yanlış türü reddeder; `pnpm fetch:venues` `cafe` yazar.
+- Migration sütunu `'cafe'` varsayılanıyla ekler ve `source = 'campus'` satırlarını `'campus'` yapar. Seed her mekanın türünü açıkça yazar. Barındırılan projede `db push --include-seed` önce migration'ı, sonra yeni adlı seed dosyasını çalıştırır (#46); iki adım da kampüsü `campus` bırakır.
+- `explore_venues` `kind` döndürür; Keşfet onu `ExploreVenue.kind` olarak taşır.
+
+### 18.2 PR 2: Sunucu (mesaj listesi, tikler, yazıyor kanalı)
+
+**Mesaj listesi.** Mesajlar sekmesi için okuma RPC'si `dm_inbox(viewer)`. Security definer'dır, yalnızca okur, `set search_path = ''` ile tanımlıdır ve yalnızca service role çağırır. İstemci onu `dm` fonksiyonunun `inbox` eylemiyle alır; fotoğraf URL'si bugünkü `friends/list` gibi fonksiyonda imzalanır. Her arkadaşlık için bir satır döner:
+
+- thread id, `publicId`, görünen ad, fotoğraf;
+- son mesajın ilk 80 karakteri (sunucuda kesilir);
+- son mesaj benim mi, son mesaj zamanı;
+- okunmamış sayısı;
+- son mesaj benimse durumu.
+
+Sıralama son mesaj zamanına göredir; mesajı olmayan arkadaşlık, arkadaşlığın başladığı zamanla sıralanır.
+
+**Tikler.** Kendi her mesajım için durum `sent`, `delivered` ya da `read`. Karşı tarafın zaman damgası istemciye gitmez, yalnızca durum gider.
+
+- `read`: `dm_reads.last_read_at` (sohbet açılınca `dm/read`).
+- `delivered`: `dm_reads.last_delivered_at`. `dm/delivered` eylemi gövdesizdir; çağıranın bütün konuşmalarında teslim zamanını şimdiye çeker. İstemci bunu uygulama öne geldiğinde ve `inbox:{user_id}` kanalına yayın geldiğinde çağırır (debounce). Uygulama kapalıyken teslim olmaz: karşı taraf uygulamayı açana kadar tek tik görünür. Okundu bilgisini kapatma ayarı pilotta yok.
+- Durum gerçekten ilerlediğinde sunucu `dm:{thread_id}` kanalına verisiz bir `dm_status` yayını yapar; gönderen sayfayı yeniden okur.
+- `dm_messages_page` ve `dm_inbox` durumu döndürür.
+- v2'deki "okundu bilgisi karşı tarafa gitmez" kuralının yerini bu alır (`docs/SPEC_V2.md` §7): karşı tarafa okunma zamanı değil, yalnızca durum gider.
+
+**Yazıyor kanalı.** Yeni kanal türü `dm_typing:{thread_id}`.
+
+- Konuşmanın iki üyesi abone olur ve yayın yapar; başka kimse yapamaz. Arkadaşlıktan çıkarılan ya da engellenen de yapamaz.
+- `private.realtime_topic_allowed`'a eklenir.
+- Olay adı `typing`, yük boştur; alıcı yükü hiç okumaz. Hiçbir şey saklanmaz.
+- `dm:` ve `inbox:` kanallarında hâlâ yalnızca sunucu yayın yapar (kural 9).
+
+### 18.3 PR 3: İstemci
+
+Tasarımın "Aşama 5" PR'ı main'e girmeden başlamaz: `TabBar.tsx`, `profile/index.tsx` ve `friends/[threadId].tsx` o PR'da değişir.
+
+1. **Sekmeler** soldan sağa: Keşfet, Aktiviteler, Mekan (ortada salyangoz), Mesajlar, Profil. İkonlar tasarımın Aşama 5 bileşenlerindendir. Mesajlar sekmesinde toplam okunmamış sayısı görünür.
+2. **Bildirim düğmesi:**
+   - Sekmelerin kök ekranlarında sağ üstte sabittir; haritada harita üstünde yüzer.
+   - Rozeti bekleyen gelen isteklerdir (arkadaşlık ve mekan sohbeti; bugünkü `requestCount`).
+   - DM, oda, mekan sohbeti ve check-in akışında görünmez.
+   - Açtığı Bildirimler ekranı bugünkü "Geçmiş ve istekler" ekranıdır (`friends/requests.tsx`): içerik ve eylemler aynıdır, yeni bildirim tablosu yoktur.
+3. **Mesajlar:** `dm/inbox` ile tuvaldeki liste. Mesajı olmayan arkadaş "Henüz mesaj yok" ile görünür. Satır DM'i açar. DM'de sekme çubuğu ve bildirim düğmesi görünmez.
+4. **Arkadaşlar:** Profil'deki "Arkadaşlar" düğmesi, profil sekmesi içinde arkadaş listesini açar; satır kişinin profiline ya da DM'e gider. Arkadaşlıktan çıkarma ve engelleme bugünkü yerlerinde kalır.
+5. **Aktiviteler** (oyun merkezi):
+   - Sesli Tabu ve Sohbet kartları için birer kart: kısa açıklama ve nasıl oynanır. Metinler `tr.ts`'tedir ve oyun kurallarıyla tutarlıdır.
+   - Mekandaysan iki düğme görünür: "Masanla oyna" (bugünkü yerel oyun) ve "Bu oyunla oda kur" (oda kurma ekranı bu niyet seçili açılır).
+   - Mekanda değilsen "Oynamak için mekana gir" görünür ve check-in'e gider.
+   - Altta "Son oyunların": kendi `game_results` kayıtların (RLS ya da salt okunur RPC ile). Kayıt yoksa bu bölüm görünmez.
+   - Mekan sekmesi işlev olarak değişmez. Yeni oyun ya da yeni içerik yok.
+6. **DM:**
+   - Tikler PR 2'deki durumla gösterilir; gönderilirken tuvaldeki bekleme hâli görünür.
+   - Yazıyor bilgisi: composer'daki metin değiştikçe en fazla 3 saniyede bir `typing` gönderilir.
+   - Karşı tarafta üç nokta görünür; son olaydan 5 saniye sonra ya da mesaj gelince kaybolur.
+7. **Rotalar:** `friends` yolları yeni yapıya taşınır. Push bildirimlerinin açtığı yollar (DM, arkadaşlık isteği, mekan sohbeti isteği) yeni yerlere gider; eski yolla gelen bildirim uygulamayı çökertmez.
+8. **Analitik:** yeni ekranlar olay gerektiriyorsa `analytics.ts` kataloğuna yalnızca izinli özelliklerle eklenir.
+9. **E2E:**
+   - Sekme `testID`'leri ve `05-reveal-friend-dm` dahil etkilenen akışlar güncellenir.
+   - Yeni akış: DM'de karşı taraf (bot) yazar; yazıyor görünür, mesaj gelir, kendi mesajımın tiki okunduya döner.
+
+### 18.4 Kabul
+
+- **PR 1:** Seed sonrası kampüs `campus`, diğer mekanlar `cafe`. Eksik ya da yanlış tür `pnpm seed`'i durdurur. `explore_venues` türü döndürür.
+- **PR 2:** Entegrasyon testleri:
+  - `sent` → `delivered` → `read` geçişleri; yanıtta karşı tarafın zamanı yok.
+  - `dm_inbox` sıralaması, 80 karakter ve okunmamış sayısı.
+  - `dm_typing`: üye abone olur ve yayın yapar; üye olmayan, arkadaşlıktan çıkarılan ve engellenen yapamaz.
+- **PR 3:** E2E açık ve koyu yeşil; yeni DM akışı dahil.
+- Her PR'da typecheck, lint, birim ve entegrasyon testleri temizdir. CI, entegrasyon ve iki E2E yeşilse PR birleştirilir. Deploy proje sahibindedir.

@@ -1260,6 +1260,7 @@ export type Database = {
           district: string;
           id: string;
           is_active: boolean;
+          kind: string;
           location: unknown;
           name: string;
           source: string;
@@ -1271,6 +1272,7 @@ export type Database = {
           district: string;
           id?: string;
           is_active?: boolean;
+          kind?: string;
           location: unknown;
           name: string;
           source: string;
@@ -1282,6 +1284,7 @@ export type Database = {
           district?: string;
           id?: string;
           is_active?: boolean;
+          kind?: string;
           location?: unknown;
           name?: string;
           source?: string;
@@ -1387,6 +1390,7 @@ export type Database = {
           bucket: string;
           district: string;
           events: Json;
+          kind: string;
           lat: number;
           lng: number;
           name: string;

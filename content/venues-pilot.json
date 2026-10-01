@@ -11,6 +11,7 @@
       "lng": 28.6442848,
       "source": "osm",
       "sourceRef": "node/11898270556",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -22,6 +23,7 @@
       "lng": 28.6356771,
       "source": "osm",
       "sourceRef": "node/12197517786",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -33,6 +35,7 @@
       "lng": 28.6261346,
       "source": "osm",
       "sourceRef": "node/12319662960",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -44,6 +47,7 @@
       "lng": 28.6259923,
       "source": "osm",
       "sourceRef": "node/12339800126",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -55,6 +59,7 @@
       "lng": 28.6252385,
       "source": "osm",
       "sourceRef": "node/12339800127",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -66,6 +71,7 @@
       "lng": 28.6289513,
       "source": "osm",
       "sourceRef": "node/12339800131",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -77,6 +83,7 @@
       "lng": 28.6342854,
       "source": "osm",
       "sourceRef": "node/12423633454",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -88,6 +95,7 @@
       "lng": 28.6342478,
       "source": "osm",
       "sourceRef": "node/12423633455",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -99,6 +107,7 @@
       "lng": 28.6336739,
       "source": "osm",
       "sourceRef": "node/12423633456",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -110,6 +119,7 @@
       "lng": 28.6576325,
       "source": "osm",
       "sourceRef": "node/12809077374",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -121,6 +131,7 @@
       "lng": 28.6576535,
       "source": "osm",
       "sourceRef": "node/12809159360",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -132,6 +143,7 @@
       "lng": 28.6377121,
       "source": "osm",
       "sourceRef": "node/13144390571",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -143,6 +155,7 @@
       "lng": 28.65878,
       "source": "osm",
       "sourceRef": "node/13817453185",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -154,6 +167,7 @@
       "lng": 28.6437778,
       "source": "osm",
       "sourceRef": "node/1863970114",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -165,6 +179,7 @@
       "lng": 28.6438343,
       "source": "osm",
       "sourceRef": "node/1863970118",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -176,6 +191,7 @@
       "lng": 28.6571048,
       "source": "osm",
       "sourceRef": "node/1874201495",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -187,6 +203,7 @@
       "lng": 28.6255188,
       "source": "osm",
       "sourceRef": "node/1932224711",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -198,6 +215,7 @@
       "lng": 28.6285336,
       "source": "osm",
       "sourceRef": "node/1932234048",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -209,6 +227,7 @@
       "lng": 28.6588317,
       "source": "osm",
       "sourceRef": "node/2282198301",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -220,6 +239,7 @@
       "lng": 28.6434971,
       "source": "osm",
       "sourceRef": "node/2397936072",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -231,6 +251,7 @@
       "lng": 28.6446172,
       "source": "osm",
       "sourceRef": "node/4390192705",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -242,6 +263,7 @@
       "lng": 28.6288516,
       "source": "osm",
       "sourceRef": "node/4406951307",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -253,6 +275,7 @@
       "lng": 28.6717885,
       "source": "osm",
       "sourceRef": "node/4592883590",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -264,6 +287,7 @@
       "lng": 28.6321769,
       "source": "osm",
       "sourceRef": "node/5794090453",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -275,6 +299,7 @@
       "lng": 28.653784,
       "source": "osm",
       "sourceRef": "node/6182146908",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -286,6 +311,7 @@
       "lng": 28.6440818,
       "source": "osm",
       "sourceRef": "node/6790521563",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -297,6 +323,7 @@
       "lng": 28.6442227,
       "source": "osm",
       "sourceRef": "node/6790553034",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -308,6 +335,7 @@
       "lng": 28.6442969,
       "source": "osm",
       "sourceRef": "node/7053601618",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -319,6 +347,7 @@
       "lng": 28.6365929,
       "source": "osm",
       "sourceRef": "node/7654935640",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -330,6 +359,7 @@
       "lng": 28.6376376,
       "source": "osm",
       "sourceRef": "node/7654975435",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -341,6 +371,7 @@
       "lng": 28.6422519,
       "source": "osm",
       "sourceRef": "node/7655001416",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -352,6 +383,7 @@
       "lng": 28.642435,
       "source": "osm",
       "sourceRef": "node/7655001426",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -363,6 +395,7 @@
       "lng": 28.6445654,
       "source": "osm",
       "sourceRef": "node/7695460484",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -374,6 +407,7 @@
       "lng": 28.6507248,
       "source": "osm",
       "sourceRef": "node/7695484933",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -385,6 +419,7 @@
       "lng": 28.6445285,
       "source": "osm",
       "sourceRef": "node/7695484934",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -396,6 +431,7 @@
       "lng": 28.6328097,
       "source": "osm",
       "sourceRef": "node/8322016278",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -407,6 +443,7 @@
       "lng": 28.6436481,
       "source": "osm",
       "sourceRef": "node/9112371170",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -418,6 +455,7 @@
       "lng": 28.6434243,
       "source": "osm",
       "sourceRef": "node/9112371447",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -429,6 +467,7 @@
       "lng": 28.6459823,
       "source": "osm",
       "sourceRef": "node/9112379430",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -440,6 +479,7 @@
       "lng": 28.6323248,
       "source": "osm",
       "sourceRef": "node/9216110604",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -451,6 +491,7 @@
       "lng": 28.6284846,
       "source": "osm",
       "sourceRef": "way/1124650064",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -462,6 +503,7 @@
       "lng": 28.6504534,
       "source": "osm",
       "sourceRef": "way/822888291",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     },
@@ -473,6 +515,7 @@
       "lng": 28.6694918,
       "source": "osm",
       "sourceRef": "way/895652918",
+      "kind": "cafe",
       "amenity": "cafe",
       "isActive": false
     }
