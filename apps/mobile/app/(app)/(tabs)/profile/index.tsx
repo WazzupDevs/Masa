@@ -14,7 +14,7 @@ import { SnailLoader } from '@/components/Snail';
 import { Text } from '@/components/Text';
 import { useProfile } from '@/features/account/useProfile';
 import { choosePhoto, PhotoError, type PhotoSource } from '@/features/profile/photo';
-import { ProfileCard } from '@/features/profile/ProfileCard';
+import { Badges, OwnProfileCard } from '@/features/profile/ProfileCard';
 import { profileViewKeys, useProfileView } from '@/features/profile/queries';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
@@ -79,10 +79,32 @@ export default function ProfileScreen() {
           action={{ label: tr.common.retry, onPress: () => void view.refetch() }}
         />
       ) : (
-        <View className="mt-2">
-          <ProfileCard profile={view.data} />
+        <View className="mt-2 gap-4">
+          <OwnProfileCard profile={view.data}>
+            <View className="flex-row gap-2.5">
+              <View className="flex-1">
+                <Button
+                  tight
+                  label={hasName ? tr.profile.edit : tr.profile.addName}
+                  onPress={() => router.push('/profile/edit')}
+                />
+              </View>
+              <View className="flex-1">
+                <Button
+                  variant="secondary"
+                  tight
+                  icon="camera-outline"
+                  label={tr.profile.photo}
+                  accessibilityLabel={hasPhoto ? tr.profile.photoChange : tr.profile.photoAdd}
+                  onPress={() => setPhotoMenu(true)}
+                  disabled={!hasName}
+                />
+              </View>
+            </View>
+            {!hasName ? <Text variant="fine">{tr.profile.photoNeedsName}</Text> : null}
+          </OwnProfileCard>
           {view.data.photoHidden ? (
-            <Card tone="note" className="mt-4">
+            <Card tone="note">
               <View className="flex-row items-start gap-2">
                 <Ionicons name="eye-off-outline" size={ICON.md} color={colors.text} />
                 <Text variant="fine" tone="text" className="flex-1">
@@ -91,28 +113,10 @@ export default function ProfileScreen() {
               </View>
             </Card>
           ) : null}
-          <View className="mt-4 flex-row gap-2.5">
-            <View className="flex-1">
-              <Button
-                label={hasName ? tr.profile.edit : tr.profile.addName}
-                onPress={() => router.push('/profile/edit')}
-              />
-            </View>
-            <View className="flex-1">
-              <Button
-                variant="secondary"
-                label={tr.profile.photo}
-                accessibilityLabel={hasPhoto ? tr.profile.photoChange : tr.profile.photoAdd}
-                onPress={() => setPhotoMenu(true)}
-                disabled={!hasName}
-              />
-            </View>
-          </View>
-          {!hasName ? (
-            <Text variant="fine" className="mt-2">
-              {tr.profile.photoNeedsName}
-            </Text>
-          ) : null}
+          <Text variant="heading" accessibilityRole="header" className="mt-2">
+            {tr.profile.badgesTitle}
+          </Text>
+          <Badges badges={view.data.badges} />
         </View>
       )}
 

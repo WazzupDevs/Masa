@@ -21,7 +21,7 @@ function initials(name: string): string {
     .join('');
 }
 
-// The profile photo, or the initials on the accent colour when there is none.
+// The profile photo, or the initials on the violet when there is none.
 export function ProfilePhoto({ url, name, size = 'large' }: Props) {
   const { colors, shape } = useTheme();
   const side = SIZES[size];
@@ -46,10 +46,10 @@ export function ProfilePhoto({ url, name, size = 'large' }: Props) {
   return (
     <View
       className="items-center justify-center"
-      style={[frame, { backgroundColor: letters ? colors.accent : colors.surface2 }]}
+      style={[frame, { backgroundColor: letters ? colors.violet : colors.surface2 }]}
     >
       {letters ? (
-        <Text variant={size === 'small' ? 'bodyStrong' : 'alias'} tone="onAccent">
+        <Text variant={size === 'small' ? 'bodyStrong' : 'alias'} tone="onViolet">
           {letters}
         </Text>
       ) : (
