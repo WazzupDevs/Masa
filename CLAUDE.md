@@ -90,7 +90,7 @@ Gizlilik politikası, KVKK metni, kullanım koşulları ve hesap silme talebi he
 - Repo gizliye çevrilirse GitHub Pages ücretli plan ister (Pro/Team). O zaman Cloudflare Pages: panelde repoyu bağla, build komutu `pnpm site:build`, çıktı klasörü `site` (bkz. `docs/DECISIONS.md` → "Yasal sayfalar").
 
 ### Üretim Supabase projesi (tek seferlik)
-Pilot ve Play kullanıcıları için ayrı proje. Kurulum dev projesiyle aynı sıradadır (yukarıdaki "Barındırılan dev projesi kurulumu"); farklar:
+Pilot ve Play kullanıcıları için ayrı proje. Pilotun baştan sona yayın sırası, Windows cmd komutlarıyla: `docs/PILOT_RELEASE.md`. Kurulum dev projesiyle aynı sıradadır (yukarıdaki "Barındırılan dev projesi kurulumu"); farklar:
 
 | Konu | Dev projesi | Üretim projesi |
 | --- | --- | --- |

@@ -1,27 +1,29 @@
-# Saha testi: Kabuk (v2 adım 1–5 ve v3 adım 1), iki telefonla uçtan uca
+# Saha testi: Kabuk v1 (Sakarya Üniversitesi pilotu), iki telefonla uçtan uca
 
 Tek bir sıra. **A** ve **B** iki telefon, iki hesap, aynı mekan; **A** oda sahibi (sen), **B** misafir masa (arkadaşın). Sesli Tabu'daki gecikme ölçümü (T4) için **üçüncü bir telefon** ya da kamera gerekir. Tamamı yaklaşık 3 saat; T4'ten sonra ve S3'ten sonra mola verilebilir. Her adım **P0** ya da **P1** olarak işaretli: süre yetmezse önce aşağıdaki P0 sırası yapılır, P1'ler kalan sürede tam sıradaki yerlerinde.
 
-Kabuk v1 (`docs/SPEC_V3.md`) adımları uygulandıkça bu belge aynı PR'da güncellenir; şu an v3 adım 1 (kayıt = profil, 18 yaş sınırı) işlendi.
+Kabuk v1'in (`docs/SPEC_V3.md`) bütün adımları işlendi: kayıt = profil ve 18 yaş (adım 1), kampüs ve nokta seçimi (adım 2), oda akışı ve oyun önerisi (adım 3), Tabu modları (adım 4), mekan sohbet odası (adım 5). Kampüs açılana kadar test, noktaları olan test mekanında (Hush Coffee: İç salon, Bahçe) yapılır.
 
-Adım adları: **G** giriş ve kayıt (v3 adım 1), **V** v2 adım 1–3 (iskelet, Keşfet, profil), **T** sesli Tabu (adım 5), **F** arkadaşlar, mesajlar ve bildirimler (adım 4), **S** v1'den kalan ve hâlâ geçerli akışlar. Hata satırında bu adları kullan.
+Adım adları: **G** giriş ve kayıt, **V** iskelet, Keşfet, check-in ve nokta, oda kurma, profil, **T** öneri ve Sesli Tabu (T7: iş birliği modu), **F** arkadaşlar, mesajlar ve bildirimler, **M** mekan sohbet odası, **S** v1'den kalan ve hâlâ geçerli akışlar. Hata satırında bu adları kullan.
 
-## P0 sırası (kritik yol, yaklaşık 1 saat)
+## P0 sırası (kritik yol, yaklaşık 1,5 saat)
 
-Beyaz ekran, check-in, sesli Tabu ve gecikme ölçümü, tanışma sızıntısı, arkadaşlık, mesaj ve bildirim, geçmişten engelleme. Her adım, atlanan P1'lere ihtiyaç duymadan yapılabilir.
+Kayıt, check-in ve nokta, oda kurma ve oyun önerisi, Sesli Tabu'nun iki modu ve gecikme ölçümü, tanışma sızıntısı, arkadaşlık, mesaj ve bildirim, geçmişten engelleme, beyaz ekran, mekan sohbet odası. Her adım, atlanan P1'lere ihtiyaç duymadan yapılabilir.
 
 1. **Test öncesi**: listenin tamamı (evde).
 2. **G1.** Giriş ve kayıt (ad, doğum tarihi), A ve B (~5 dk).
-3. **V4.** Check-in, kişi sayısı ve katılım biçimi, A (~5 dk).
+3. **V4.** Check-in, nokta seçimi ("Neredesin?"), kişi sayısı ve masa adı, A (~5 dk).
 4. **V5.** Yalnızca 1. adım: iki telefonda Profil'de ad ve yaş (~2 dk).
 5. **V7.** Oda kur (niyet, katılım), lobide "profilli" etiketi, katılma isteği (~5 dk).
-6. **T1–T5.** Oyun önerisi ve Sesli Tabu, T4'teki gecikme ölçümü dahil (~15 dk).
+6. **T1–T5.** Oyun önerisi ve Sesli Tabu (hakemli mod), T4'teki gecikme ölçümü dahil (~15 dk).
 7. **T6 → F1.** Karşılıklı Evet, sonuç ekranında "Arkadaş ekle" (~3 dk).
 8. **F3.** Mesajlaşma (~5 dk).
 9. **F4.** Mesaj bildirimi; FCM'li build yoksa atlanır ve not edilir (~5 dk).
 10. **S3.** Tanışma sızıntısı: Hayır ve cevapsız (~6 dk).
 11. **V8.** Beyaz ekran senaryosu, V8a ve V8b (~8 dk).
 12. **F7.** Geçmişten engelleme ve engeli kaldırma (~5 dk).
+13. **T7.** İş birliği modu: B tek kişilik masayla yeniden check-in yapar, Sesli Tabu (~6 dk).
+14. **M1.** Mekan sohbet odası: anonim ve profilli mesaj, mesajdan profil ve arkadaşlık isteği (~6 dk).
 
 ## Otomatik testler (e2e)
 
@@ -64,8 +66,12 @@ Otomatik bir adım yeşilse sahada yine yapılır, ama önce elle kalan kısmın
 | 21  | P1      | F5. Arkadaşlıktan çıkarma                | Hayır    | A, B                 |                                    |
 | 22  | P1      | F6. Arkadaşlık isteği ve red             | Hayır    | A, B                 |                                    |
 | 23  | P0      | F7. Geçmişten engelleme                  | Kısmen   | A, B                 |                                    |
+| 23b | P0      | T7. İş birliği modu                      | Kısmen   | A, B                 | B tek kişilik masayla              |
 | 24  | P1      | S5. Odada engelleme                      | Hayır    | A, B                 |                                    |
 | 24b | P1      | S6. Masanla oyna                         | Evet     | A, B                 |                                    |
+| 24c | P0      | M1. Mekan sohbet odası                   | Kısmen   | A, B                 |                                    |
+| 24d | P1      | M2. Mekan sohbetinde şikayet ve engel    | Hayır    | A, B                 |                                    |
+| 24e | P1      | M3. Mekandan çıkınca erişim biter        | Hayır    | A                    |                                    |
 | 25  | P1      | V11. Kapanış                             | Hayır    | A, B                 |                                    |
 
 ## Uygulama önde kalmalı
@@ -511,6 +517,20 @@ Reddedilen masa o odayı lobide bir daha görmez; bu yüzden iki deneme için A 
 
 **Bak (sonra, panelde):** `reports` tablosunda `target_type = 'history'` satırı (F7'nin "Şikayet de et"i).
 
+## T7. İş birliği modu: tek kişilik masa (A ve B) [P0]
+
+> Otomatik: bot tek kişilik masayla katılır; cihaz 1. turda anlatır, 2. turda kartı görmez (`06b-tabu-coop.yaml`). Elle: sesli oyun ve tahmin eden telefonun ekranı.
+
+1. B: **Mekandan ayrıl**, yeniden check-in, kişi sayısı **1** → **Masayı aç**.
+2. A yeni oda kurar, B katılır; **Sesli Tabu öner** → **Oynayalım**.
+3. A anlatır (1. tur): kart kapalı başlar; açınca **Doğru**, **Pas** ve **Tabu**'nun üçü de A'da. Üstte tek bir **"Ortak skor"** kutusu.
+4. B (tahmin eden): kart **yok**. Ekranda geri sayım, ortak skor ve "… size anlatıyor. Anlatanı dinleyin ve tahmin edin." Düğme yok.
+5. 2. tur: B anlatır; bu kez kartı ve üç düğmeyi B görür, A görmez.
+
+**Bak:** Tahmin eden telefonda kart hiçbir an görünmüyor (kart değişirken de). Skor iki masada aynı ve tek. Oyun sonunda "Sesli Tabu bitti. Ortak skor: …"; kazanan yok.
+
+**Hata olursa:** tahmin eden telefonda kart ya da yasaklı kelime gördüysen ekran görüntüsü al ve turu yaz; bu ❌'dır.
+
 ## S5. Odada engelleme ve engeli kaldırma [P1]
 
 Engelleme odayı bitirdiği için bu adım en sona yakın yapılır. F5'ten beri A ile B arkadaş değil; engelleme bir arkadaşlığı da düşürürdü.
@@ -532,6 +552,37 @@ Engelleme odayı bitirdiği için bu adım en sona yakın yapılır. F5'ten beri
 1. A: Mekan ekranında **Masanla oyna**. Oda ekranı açılır; niyet ya da katılım sorulmaz. Oyun seçenekleri doğrudan: **Sesli Tabu başlat** / **Sohbet kartları başlat**.
 2. B'nin lobisinde bu oda **görünmez**.
 3. A: Sesli Tabu → 1 tur oyna → **Oyunu bitir** → **Odayı bitir**: "Tanışalım mı?" sorulmadan Mekan ekranına döner.
+
+## M1. Mekan sohbet odası: anonim ve profilli (A ve B) [P0]
+
+> Otomatik: anonim ve profilli mesaj, botun profilli mesajı, profil, istek ve kabul (`08-venue-chat.yaml`). Elle: iki telefonla gerçek zamanlı akış.
+
+1. A: Mekan ekranında **Sohbet odası** → "<mekan> sohbet odası". Bir mesaj yaz (anonim): adının yerinde **masa adın**.
+2. A: **Profilimle yaz**'ı işaretle, bir mesaj daha yaz: bu kez **görünen adın** ve "profilli" etiketi; masa adın **görünmez**.
+3. B: aynı ekranda iki mesajı birkaç saniye içinde görür.
+4. B: A'nın profilli mesajındaki ada dokun → A'nın profili (ad, yaş, varsa fotoğraf). Profil kimliği ya da masa adı yok.
+5. B: **Arkadaşlık isteği gönder** → pencerede "İstek gönderirsen profilin ona görünür…" → **İsteği gönder**.
+6. A: Arkadaşlar → Geçmiş ve istekler → "<mekan> sohbet odasından **B'nin adı (yaş)** arkadaşın olmak istiyor", fotoğrafıyla. **Kabul et**.
+
+**Bak:**
+
+- Anonim mesajda ad yok, profilli mesajda masa adı yok.
+- A'nın anonim mesajına dokununca profil açılmaz; yalnızca **Şikayet et** ve **Engelle** menüsü.
+- B'nin "Gönderilen istekler"inde "A'nın adı kişisine istek gönderildi", kabulden sonra "… isteğini kabul etti".
+
+## M2. Mekan sohbetinde şikayet ve engel [P1]
+
+1. B: A'nın bir mesajına dokun → **Şikayet et** → bir sebep → "Şikayetin alındı."
+2. B: A'nın mesajına dokun → **Engelle** → onay. B artık A'nın mesajlarını görmez; A da B'ninkileri görmez.
+3. B: Ayarlar → Engellenenler: profilli mesajdan engellendiyse A'nın **görünen adı**, anonim mesajdan engellendiyse **masa adı**.
+4. Engeli kaldır; mesajlar yeniden iki yönde görünür.
+
+**Sonra (panelde):** `reports` → `target_type = 'venue_chat'`, `messages_snapshot` içinde son mesajlar.
+
+## M3. Mekandan çıkınca erişim biter [P1]
+
+1. A: **Mekandan ayrıl**. Mekan sekmesi Keşfet'e döner; sohbet odası açılmaz.
+2. A yeniden check-in yapınca odanın son 24 saatteki mesajlarını yeniden görür.
 
 ## V11. Kapanış [P1]
 
