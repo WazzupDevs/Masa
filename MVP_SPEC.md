@@ -170,7 +170,7 @@ Zamanlama: `normalize` ve `profanity.ts` ilk kez sohbette kullanıldığı için
 ├─ supabase/
 │  ├─ config.toml
 │  ├─ migrations/
-│  ├─ seed.sql               scripts/ tarafından üretilir
+│  ├─ seeds/content-<id>.sql scripts/ tarafından üretilir; içerik değişince adı değişir
 │  ├─ local/secrets.sql      yalnızca yerel dev sırları (Vault anahtarı); seed yolunda değil, `pnpm db:reset`
 │  │                         uygular ve yerel olmayan DB'yi reddeder
 │  ├─ tests/                 entegrasyon testleri (vitest, yerel stack'e karşı)

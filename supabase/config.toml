@@ -67,9 +67,12 @@ schema_paths = []
 enabled = true
 # Specifies an ordered list of seed files to load during db reset.
 # Supports glob patterns relative to supabase directory: "./seeds/*.sql"
-# seed.sql is generated from content/. Local-only dev secrets are NOT seeded here (a seed could
-# reach a hosted project); `pnpm db:reset` applies supabase/local/secrets.sql afterwards.
-sql_paths = ["./seed.sql"]
+# seeds/content-<id>.sql is generated from content/ by `pnpm seed`, one file, renamed whenever its
+# content changes: the CLI runs a seed path only once on a hosted project (`db push --include-seed`
+# then only updates its hash), so a new name is what makes a content change apply
+# (scripts/seed/build.ts). Local-only dev secrets are NOT seeded here (a seed could reach a hosted
+# project); `pnpm db:reset` applies supabase/local/secrets.sql afterwards.
+sql_paths = ["./seeds/*.sql"]
 
 [db.network_restrictions]
 # Enable management of network restrictions.
