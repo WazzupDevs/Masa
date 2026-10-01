@@ -16,7 +16,7 @@ type Props<T extends string> = {
   accessibilityLabel: string;
 };
 
-// A pill switch (Keşfet list/map, the design picker).
+// A pill switch on a quiet track, no outline (Keşfet list/map, the design picker).
 export function Segmented<T extends string>({
   options,
   value,
@@ -24,7 +24,6 @@ export function Segmented<T extends string>({
   accessibilityLabel,
 }: Props<T>) {
   const { colors, shape } = useTheme();
-  const outlined = shape.stroke.control > 1;
   return (
     <View
       accessibilityRole="tablist"
@@ -35,8 +34,6 @@ export function Segmented<T extends string>({
         gap: SPACING[0.5],
         borderRadius: shape.radius.pill,
         backgroundColor: colors.surface2,
-        borderWidth: outlined ? shape.stroke.control : 0,
-        borderColor: colors.border,
       }}
     >
       {options.map((o) => {

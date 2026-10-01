@@ -4,23 +4,28 @@ import { Pressable, View, type ViewStyle } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { SPACING } from '@/theme/tokens';
 
+import { usePressScale } from './motion';
 import { useQuiet } from './Quiet';
 
 type Props = {
   children: ReactNode;
-  // `note`: a quiet surface2 block (role hint, pending request, notices), no outline or shadow.
-  tone?: 'card' | 'note';
+  // `card`: soft, no outline. `feature`: the one featured card per screen, with the outline and
+  // the hard shadow. `note`: a quiet surface2 block (role hint, pending request, notices).
+  tone?: 'card' | 'feature' | 'note';
+  // Content that runs to the card's edges (a colour block on top); the card clips it.
+  flush?: boolean;
   onPress?: () => void;
   accessibilityLabel?: string;
   className?: string; // layout only (margins, gap, alignment)
   testID?: string;
 };
 
-// A card drawn from the theme's tokens: its outline (`stroke.card`) and shadow (`shadow.card`).
-// On trust screens (`Quiet`) a hairline in the divider colour and no shadow.
+// A card drawn from the theme's tokens. On trust screens (`Quiet`) a hairline in the divider colour
+// and no shadow.
 export function Card({
   children,
   tone = 'card',
+  flush,
   onPress,
   accessibilityLabel,
   className,
@@ -28,7 +33,9 @@ export function Card({
 }: Props) {
   const { colors, shape } = useTheme();
   const quiet = useQuiet();
+  const pressScale = usePressScale();
 
+  const feature = tone === 'feature' && !quiet;
   const style: ViewStyle =
     tone === 'note'
       ? {
@@ -39,11 +46,12 @@ export function Card({
         }
       : {
           backgroundColor: colors.surface,
-          borderRadius: shape.radius.lg,
-          padding: SPACING[4],
-          borderWidth: quiet ? shape.stroke.hairline : shape.stroke.card,
+          borderRadius: feature ? shape.radius.lg + SPACING[1] : shape.radius.lg,
+          padding: flush ? 0 : SPACING[4],
+          overflow: flush ? 'hidden' : undefined,
+          borderWidth: quiet ? shape.stroke.hairline : feature ? shape.stroke.feature : 0,
           borderColor: quiet ? colors.divider : colors.border,
-          boxShadow: quiet ? undefined : shape.shadow.card,
+          boxShadow: quiet ? undefined : feature ? shape.shadow.feature : shape.shadow.card,
         };
 
   if (onPress) {
@@ -55,9 +63,7 @@ export function Card({
           accessibilityLabel={accessibilityLabel}
           onPress={onPress}
         >
-          {({ pressed }) => (
-            <View style={[style, pressed ? { opacity: 0.85 } : null]}>{children}</View>
-          )}
+          {({ pressed }) => <View style={[style, pressScale(pressed)]}>{children}</View>}
         </Pressable>
       </View>
     );

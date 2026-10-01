@@ -1,19 +1,19 @@
 import { THEME } from './theme';
 
 // An anonymous table's avatar: the snail on a disc. Its colour comes from the table alias, so the
-// tables in a chat tell apart and one alias looks the same everywhere. Eight light palette colours
-// the ink-outlined snail reads on, in both schemes (the disc is an object, not a surface).
+// tables in a chat tell apart and one alias looks the same everywhere. Eight light colours the
+// ink-outlined snail reads on, in both schemes (the disc is an object, not a surface). Fixed values:
+// a palette change must not recolour every table.
 const L = THEME.palettes.light;
-const D = THEME.palettes.dark;
 export const AVATAR_COLORS = [
-  L.lively,
-  L.calm,
-  L.surface2,
-  D.danger,
-  D.success,
-  L.divider,
-  D.accent,
-  L.surface,
+  '#FFE3F1',
+  '#E4F4FF',
+  '#FFF0CC',
+  '#FF8B75',
+  '#7FE08F',
+  '#DDD5EA',
+  '#A98BFF',
+  '#FFFFFF',
 ] as const;
 
 // Sum of the alias's UTF-16 code units, mod the colour count (the canvas's rule).

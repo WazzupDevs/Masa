@@ -10,6 +10,7 @@ import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Choice } from '@/components/Choice';
+import { Rise } from '@/components/motion';
 import { EmptyState } from '@/components/EmptyState';
 import { Sheet } from '@/components/Sheet';
 import { Tag } from '@/components/Tag';
@@ -142,49 +143,54 @@ export function Lobby({ venueId, sessionId, since, mySpotId, venueHasSpots }: Pr
                   </Text>
                 </View>
               ) : null}
-              {group.rooms.map((room) => {
+              {group.rooms.map((room, i) => {
                 const waitedMin = Math.floor((now - Date.parse(room.waiting_since)) / 60_000);
                 const spotId = room.spot_id;
                 const intent = isIntent(room.intent) ? room.intent : null;
                 return (
-                  <Card key={room.room_id} className="gap-3">
-                    <View className="flex-row items-center gap-3">
-                      <Avatar kind="table" alias={room.alias} size="lg" />
-                      <View className="flex-1">
-                        <Text variant="title">{room.alias}</Text>
-                        <Text variant="fine">
-                          {`${tr.rooms.people(room.headcount)} · ${tr.rooms.waitingFor(waitedMin)}`}
-                        </Text>
+                  <Rise key={room.room_id} index={i}>
+                    <Card className="gap-3">
+                      <View className="flex-row items-center gap-3.5">
+                        <Avatar kind="table" alias={room.alias} size="xl" />
+                        <View className="flex-1 gap-0.5">
+                          <Text variant="heading" numberOfLines={1}>
+                            {room.alias}
+                          </Text>
+                          <Text variant="fine">
+                            {`${tr.rooms.people(room.headcount)} · ${tr.rooms.waitingFor(waitedMin)}`}
+                          </Text>
+                        </View>
+                        {intent ? <Tag variant={intent} label={tr.intents[intent]} /> : null}
                       </View>
-                      {intent ? <Tag variant={intent} label={tr.intents[intent]} /> : null}
-                    </View>
-                    {room.profiled ? (
-                      <View className="flex-row">
-                        <ProfiledTag />
-                      </View>
-                    ) : null}
-                    {group.mine ? (
-                      <Button
-                        label={tr.rooms.requestJoin}
-                        onPress={() => {
-                          setParticipation('anonymous');
-                          setAsking(room.room_id);
-                        }}
-                        disabled={status === 'pending' || request.isPending}
-                      />
-                    ) : spotId !== null ? (
-                      <Button
-                        variant="secondary"
-                        testID="spot-here"
-                        icon="location-outline"
-                        label={tr.rooms.spotHere}
-                        onPress={() => moveHere.mutate(spotId)}
-                        disabled={status === 'pending' || moveHere.isPending}
-                      />
-                    ) : (
-                      <Text variant="fine">{tr.rooms.otherSpot}</Text>
-                    )}
-                  </Card>
+                      {room.profiled ? (
+                        <View className="flex-row">
+                          <ProfiledTag />
+                        </View>
+                      ) : null}
+                      {group.mine ? (
+                        <Button
+                          variant="secondary"
+                          label={tr.rooms.requestJoin}
+                          onPress={() => {
+                            setParticipation('anonymous');
+                            setAsking(room.room_id);
+                          }}
+                          disabled={status === 'pending' || request.isPending}
+                        />
+                      ) : spotId !== null ? (
+                        <Button
+                          variant="secondary"
+                          testID="spot-here"
+                          icon="location-outline"
+                          label={tr.rooms.spotHere}
+                          onPress={() => moveHere.mutate(spotId)}
+                          disabled={status === 'pending' || moveHere.isPending}
+                        />
+                      ) : (
+                        <Text variant="fine">{tr.rooms.otherSpot}</Text>
+                      )}
+                    </Card>
+                  </Rise>
                 );
               })}
             </View>
