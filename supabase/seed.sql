@@ -195,16 +195,16 @@ on conflict (venue_id, ref) do update set
 
 -- content/venues-campus.json
 insert into public.venues (name, city, district, location, boundary, source, source_ref, is_active) values
-  ('Sakarya Üniversitesi Esentepe Kampüsü', 'Sakarya', 'Serdivan', extensions.st_pointonsurface(extensions.st_geomfromtext('POLYGON((30.327033 40.737752, 30.332967 40.737752, 30.332967 40.742248, 30.327033 40.742248, 30.327033 40.737752))', 4326))::extensions.geography, extensions.st_geomfromtext('POLYGON((30.327033 40.737752, 30.332967 40.737752, 30.332967 40.742248, 30.327033 40.742248, 30.327033 40.737752))', 4326)::extensions.geography, 'campus', 'sau-esentepe', false)
+  ('Sakarya Üniversitesi Esentepe Kampüsü', 'Sakarya', 'Serdivan', extensions.st_setsrid(extensions.st_makepoint(30.331469, 40.741282), 4326)::extensions.geography, extensions.st_geomfromtext('POLYGON((30.3238451 40.7431412, 30.3241722 40.7421589, 30.3262592 40.7399867, 30.3330836 40.736109, 30.3367493 40.7357258, 30.3374654 40.735712, 30.3388961 40.7357749, 30.3396406 40.7438018, 30.336763 40.7445781, 30.3340905 40.7449684, 30.3306718 40.7453079, 30.3238941 40.7452594, 30.323567 40.744136, 30.3238451 40.7431412))', 4326)::extensions.geography, 'campus', 'sau-esentepe', true)
 on conflict (source, source_ref) do update set
   name = excluded.name, city = excluded.city, district = excluded.district,
   location = excluded.location, boundary = excluded.boundary, is_active = excluded.is_active;
 insert into public.venue_spots (venue_id, ref, name, sort, is_active)
 select v.id, s.ref, s.name, s.sort, s.is_active
 from public.venues v cross join (values
-  ('ornek-1', 'Örnek nokta 1', 0, true),
-  ('ornek-2', 'Örnek nokta 2', 1, true),
-  ('ornek-3', 'Örnek nokta 3', 2, true)
+  ('ornek-1', 'Örnek nokta 1', 0, false),
+  ('ornek-2', 'Örnek nokta 2', 1, false),
+  ('ornek-3', 'Örnek nokta 3', 2, false)
 ) as s (ref, name, sort, is_active)
 where v.source = 'campus' and v.source_ref = 'sau-esentepe'
 on conflict (venue_id, ref) do update set
