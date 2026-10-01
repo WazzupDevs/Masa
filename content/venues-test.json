@@ -5,7 +5,11 @@
       "name": "Hush Coffee",
       "district": "Beylikdüzü",
       "lat": 40.98819357066424,
-      "lng": 28.668212457253617
+      "lng": 28.668212457253617,
+      "spots": [
+        { "ref": "ic-salon", "name": "İç salon" },
+        { "ref": "bahce", "name": "Bahçe" }
+      ]
     }
   ]
 }
