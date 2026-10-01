@@ -51,8 +51,12 @@ export function ListRow({
         ) : null}
         {below}
       </View>
-      {trailing ??
-        (onPress ? <Ionicons name="chevron-forward" size={ICON.md} color={colors.muted} /> : null)}
+      {trailing ? (
+        // Centred beside the text (a tag aligns itself to the top of a row otherwise).
+        <View className="justify-center">{trailing}</View>
+      ) : onPress ? (
+        <Ionicons name="chevron-forward" size={ICON.md} color={colors.muted} />
+      ) : null}
     </>
   );
   const style = card
