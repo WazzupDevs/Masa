@@ -1,5 +1,6 @@
 import { EVENT_WINDOW_DAYS, isActivityBucket } from '@shared/explore.ts';
 import type { LngLat } from '@shared/geo.ts';
+import { isVenueKind, type VenueKind } from '@shared/venueKind.ts';
 import { useQuery } from '@tanstack/react-query';
 
 import { supabase } from '@/lib/supabase';
@@ -10,6 +11,8 @@ export type ExploreVenue = {
   id: string;
   name: string;
   district: string;
+  // Cafe or campus (docs/SPEC_V3.md §18.1): the map pin and the list row.
+  kind: VenueKind;
   lat: number;
   lng: number;
   bucket: 'calm' | 'lively' | 'buzzing';
@@ -63,6 +66,7 @@ export function useExploreVenues() {
           id: v.venue_id,
           name: v.name,
           district: v.district,
+          kind: isVenueKind(v.kind) ? v.kind : 'cafe',
           lat: v.lat,
           lng: v.lng,
           bucket: isActivityBucket(v.bucket) ? v.bucket : 'calm',

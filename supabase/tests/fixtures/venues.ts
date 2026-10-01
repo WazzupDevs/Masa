@@ -96,6 +96,7 @@ export const FIXTURE_CAMPUS: CampusVenue = {
   name: 'Test Kampüsü',
   city: 'Sakarya',
   district: 'Test',
+  kind: 'campus',
   isActive: true,
   location: null,
   boundary: squareRing(CAMPUS_CENTER, CAMPUS_HALF_M),

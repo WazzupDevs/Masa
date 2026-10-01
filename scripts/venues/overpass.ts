@@ -82,6 +82,7 @@ export function toVenuesFile(
       lng,
       source: 'osm',
       sourceRef,
+      kind: 'cafe',
       amenity,
       isActive: !inactive.has(sourceRef),
     });

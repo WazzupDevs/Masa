@@ -4,6 +4,7 @@
     {
       "ref": "sau-esentepe",
       "name": "Sakarya Üniversitesi Esentepe Kampüsü",
+      "kind": "campus",
       "city": "Sakarya",
       "district": "Serdivan",
       "isActive": true,

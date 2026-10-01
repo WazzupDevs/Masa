@@ -360,9 +360,32 @@ describe('spots from the seed', () => {
     expect(insert.error?.code).toBe('42501');
     const { data: explore } = await client.rpc('explore_venues', {});
     const row = (explore ?? []).find((v) => v.venue_id === campus.venueId);
+    // The kind from the seed SQL (docs/SPEC_V3.md §18.1).
+    expect(row?.kind).toBe('campus');
     expect(row?.boundary).toEqual(
       FIXTURE_CAMPUS.boundary.map(([lng, lat]) => [expect.closeTo(lng, 6), expect.closeTo(lat, 6)]),
     );
+  });
+});
+
+describe('venue kind (docs/SPEC_V3.md §18.1)', () => {
+  // After migrations and the seed (pnpm db:reset, as db push --include-seed on a hosted project):
+  // campus rows and only they are 'campus', the seeded campus included.
+  it('is campus exactly for the venues of venues-campus.json', async () => {
+    const [mismatch] = await sql`
+      select count(*)::int as n from public.venues where (source = 'campus') <> (kind = 'campus')
+    `;
+    expect(mismatch?.n).toBe(0);
+    const [seeded] = await sql`
+      select kind from public.venues where source = 'campus' and source_ref = 'sau-esentepe'
+    `;
+    expect(seeded?.kind).toBe('campus');
+  });
+
+  it('refuses any other kind', async () => {
+    await expect(
+      sql`update public.venues set kind = 'bar' where source = 'campus' and source_ref = 'sau-esentepe'`,
+    ).rejects.toThrow(/check constraint/);
   });
 });
 

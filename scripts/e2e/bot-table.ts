@@ -139,16 +139,16 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
       `;
       const wkt = `POLYGON((${E2E_VENUE.boundary.map(([lng, lat]) => `${lng} ${lat}`).join(', ')}))`;
       const [venue] = await sql<{ id: string }[]>`
-        insert into public.venues (name, city, district, location, boundary, source, source_ref, is_active)
+        insert into public.venues (name, city, district, location, boundary, source, source_ref, kind, is_active)
         values (
           ${E2E_VENUE.name}, 'İstanbul', 'Test',
           extensions.st_setsrid(extensions.st_makepoint(${E2E_VENUE.at.lng}, ${E2E_VENUE.at.lat}), 4326)::extensions.geography,
           extensions.st_geomfromtext(${wkt}, 4326)::extensions.geography,
-          'e2e', ${E2E_VENUE.sourceRef}, true
+          'e2e', ${E2E_VENUE.sourceRef}, 'campus', true
         )
         on conflict (source, source_ref) do update
           set name = excluded.name, location = excluded.location, boundary = excluded.boundary,
-              is_active = true
+              kind = excluded.kind, is_active = true
         returning id
       `;
       const venueId = venue?.id ?? null;
@@ -162,13 +162,13 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
       }
       const second = E2E_SECOND_VENUE.at;
       await sql`
-        insert into public.venues (name, city, district, location, source, source_ref, is_active)
+        insert into public.venues (name, city, district, location, source, source_ref, kind, is_active)
         values (
           ${E2E_SECOND_VENUE.name}, 'İstanbul', 'Test',
           extensions.st_setsrid(extensions.st_makepoint(${second.lng}, ${second.lat}), 4326)::extensions.geography,
-          'e2e', ${E2E_SECOND_VENUE.sourceRef}, true
+          'e2e', ${E2E_SECOND_VENUE.sourceRef}, 'cafe', true
         )
-        on conflict (source, source_ref) do update set name = excluded.name, is_active = true
+        on conflict (source, source_ref) do update set name = excluded.name, kind = excluded.kind, is_active = true
       `;
       return { venueId, inside: E2E_VENUE.at, outside: OUTSIDE };
     } finally {

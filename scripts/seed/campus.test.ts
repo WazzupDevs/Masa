@@ -19,6 +19,7 @@ const campus = (overrides: Record<string, unknown> = {}) => ({
     {
       ref: 'kampus',
       name: 'Test Kampüsü',
+      kind: 'campus',
       city: 'Sakarya',
       district: 'Serdivan',
       boundary: RING,
@@ -70,6 +71,12 @@ describe('parseCampusVenues', () => {
     expect(parseCampusVenues(campus({ spots: undefined }))[0]?.spots).toEqual([]);
   });
 
+  it('needs kind campus (docs/SPEC_V3.md §18.1)', () => {
+    expect(parseCampusVenues(campus())[0]?.kind).toBe('campus');
+    expect(() => parseCampusVenues(campus({ kind: undefined }))).toThrow(/kind is required/);
+    expect(() => parseCampusVenues(campus({ kind: 'cafe' }))).toThrow(/kind must be campus/);
+  });
+
   it('needs unique venue refs', () => {
     const one = campus().venues[0];
     expect(() => parseCampusVenues({ venues: [one, one] })).toThrow(/duplicate/);
@@ -104,7 +111,7 @@ describe('campusSql', () => {
     const sql = campusSql(parseCampusVenues(campus({ isActive: false })));
     expect(sql).toContain('POLYGON((30 40, 30.01 40, 30.01 40.01, 30 40.01, 30 40))');
     expect(sql).toContain('extensions.st_pointonsurface(');
-    expect(sql).toContain("'campus', 'kampus', false)");
+    expect(sql).toContain("'campus', 'kampus', 'campus', false)");
     expect(sql).toContain("('kantin', 'Kantin', 0, true)");
     expect(sql).toContain("('kutuphane', 'Kütüphane''nin önü', 1, true)");
     expect(sql).toContain('on conflict (venue_id, ref) do update');

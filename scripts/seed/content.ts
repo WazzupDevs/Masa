@@ -7,6 +7,7 @@ import {
   validateRing,
 } from '../../supabase/functions/_shared/pure/geo.ts';
 import { SOHBET_THEMES, type SohbetTheme } from '../../supabase/functions/_shared/pure/sohbet.ts';
+import { isVenueKind, type VenueKind } from '../../supabase/functions/_shared/pure/venueKind.ts';
 
 export type VenueRecord = {
   name: string;
@@ -16,6 +17,8 @@ export type VenueRecord = {
   lng: number;
   source: string;
   sourceRef: string;
+  // Required in every venue file (pure/venueKind.ts); each file allows one kind.
+  kind: VenueKind;
   amenity: string;
   isActive: boolean;
 };
@@ -74,10 +77,18 @@ export function parseAliasWords(json: unknown): AliasWords {
   return { adjectives, nouns };
 }
 
+// venues-pilot.json and venues-test.json hold cafes; venues-campus.json campuses.
+function parseKind(value: unknown, allowed: VenueKind, where: string): VenueKind {
+  if (!isVenueKind(value)) throw new Error(`${where}.kind is required (cafe or campus)`);
+  if (value !== allowed) throw new Error(`${where}.kind must be ${allowed} in this file`);
+  return value;
+}
+
 function parseVenue(value: unknown, index: number): VenueRecord {
   const where = `venues[${index}]`;
   if (!isRecord(value)) throw new Error(`${where} must be an object`);
   const { name, city, district, lat, lng, source, sourceRef, amenity, isActive } = value;
+  parseKind(value.kind, 'cafe', where);
   for (const [field, v] of Object.entries({ name, city, district, source, sourceRef, amenity })) {
     if (typeof v !== 'string' || v.trim() === '') throw new Error(`${where}.${field} is required`);
   }
@@ -126,6 +137,7 @@ export function parseTestVenues(json: unknown): TestVenue[] {
         lng: value.lng,
         source: 'test',
         sourceRef: typeof ref === 'string' ? `test/${ref}` : ref,
+        kind: value.kind,
         amenity: 'cafe',
         isActive,
       },
@@ -177,6 +189,7 @@ export type CampusVenue = {
   name: string;
   city: string;
   district: string;
+  kind: 'campus';
   isActive: boolean;
   boundary: LngLat[];
   location: Point | null;
@@ -225,6 +238,7 @@ export function parseCampusVenues(json: unknown): CampusVenue[] {
         throw new Error(`${where}.${field} is required`);
     }
     if (typeof isActive !== 'boolean') throw new Error(`${where}.isActive must be a boolean`);
+    parseKind(value.kind, 'campus', where);
     if (!Array.isArray(boundary)) throw new Error(`${where}.boundary must be a list`);
     const problem = validateRing(boundary);
     if (problem) throw new Error(`${where}.boundary: ${problem}`);
@@ -250,6 +264,7 @@ export function parseCampusVenues(json: unknown): CampusVenue[] {
       name: name as string,
       city: city as string,
       district: district as string,
+      kind: 'campus',
       isActive,
       boundary: boundary as LngLat[],
       location: point,
