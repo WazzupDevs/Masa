@@ -7,7 +7,12 @@ import { Text } from '@/components/Text';
 import { tr } from '@/i18n/tr';
 
 // Photo, name with the age (never the birth date, rule 11), bio and badges; the same card for the own profile and for others (§5.2).
-export function ProfileCard({ profile }: { profile: ProfileView }) {
+// Also the venue chat sender's card (ChatProfileView), which has no public_id.
+export function ProfileCard({
+  profile,
+}: {
+  profile: Pick<ProfileView, 'photoUrl' | 'displayName' | 'age' | 'bio' | 'badges'>;
+}) {
   return (
     <View>
       <View className="items-center gap-1.5">

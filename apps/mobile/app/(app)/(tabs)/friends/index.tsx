@@ -10,7 +10,11 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { SnailLoader } from '@/components/Snail';
 import { Tag } from '@/components/Tag';
 import { Text } from '@/components/Text';
-import { useFriends, useIncomingFriendRequests } from '@/features/friends/queries';
+import {
+  useFriends,
+  useIncomingFriendRequests,
+  useVenueChatRequests,
+} from '@/features/friends/queries';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 
@@ -19,7 +23,8 @@ import { tr } from '@/i18n/tr';
 export default function FriendsScreen() {
   const friends = useFriends();
   const incoming = useIncomingFriendRequests();
-  const requestCount = incoming.data?.length ?? 0;
+  const chatIncoming = useVenueChatRequests();
+  const requestCount = (incoming.data?.length ?? 0) + (chatIncoming.data?.length ?? 0);
 
   return (
     <Screen edges={['top']}>

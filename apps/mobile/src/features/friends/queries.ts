@@ -11,6 +11,7 @@ export const friendKeys = {
   all: ['friends'] as const,
   list: ['friends', 'list'] as const,
   incoming: ['friends', 'incoming'] as const,
+  incomingChat: ['friends', 'incomingChat'] as const,
   sent: ['friends', 'sent'] as const,
   history: ['friends', 'history'] as const,
   dm: (threadId: string) => ['friends', 'dm', threadId] as const,
@@ -28,6 +29,27 @@ export function useIncomingFriendRequests() {
     queryKey: friendKeys.incoming,
     queryFn: async () => {
       const { data, error } = await supabase.rpc('my_incoming_requests');
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+// Requests from the venue chat (docs/SPEC_V3.md §7.5): the sender's name, age and photo, signed
+// by the function. Under friendKeys.all, so the inbox broadcast refreshes them too.
+export function useVenueChatRequests() {
+  return useQuery({
+    queryKey: friendKeys.incomingChat,
+    queryFn: async () => (await friendsApi.incoming()).requests,
+  });
+}
+
+// Requests sent from the venue chat: the name the other side showed; declined stays pending.
+export function useSentVenueChatRequests() {
+  return useQuery({
+    queryKey: [...friendKeys.sent, 'venueChat'] as const,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('my_sent_venue_chat_requests');
       if (error) throw error;
       return data;
     },

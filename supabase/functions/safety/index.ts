@@ -3,6 +3,8 @@
 // ended). Blocks: the other table of a room, a friend, or the account behind a history row.
 // History actions answer { ok: true } whatever they find, so they reveal nothing.
 import { requireUser, serviceClient } from '../_shared/auth.ts';
+import { inBackground } from '../_shared/background.ts';
+import { broadcast } from '../_shared/broadcast.ts';
 import { dbError } from '../_shared/db.ts';
 import { z } from '../_shared/deps.ts';
 import { handle } from '../_shared/http.ts';
@@ -11,6 +13,7 @@ import { photoCopyHex } from '../_shared/photos.ts';
 import type { SafetyRequest, SafetyResponse } from '../_shared/pure/api/chat.ts';
 import { REPORT_REASONS, type ReportReason } from '../_shared/pure/chat.ts';
 import { AppError } from '../_shared/pure/errors.ts';
+import { VENUE_CHAT, VENUE_CHAT_BROADCAST, venueChatChannel } from '../_shared/pure/venueChat.ts';
 
 const reason = z.enum(REPORT_REASONS);
 
@@ -34,6 +37,18 @@ const Report = z.discriminatedUnion('target', [
     historyId: z.uuid(),
     reason,
   }),
+  z.object({
+    action: z.literal('report'),
+    target: z.literal('venue_chat'),
+    messageId: z.uuid(),
+    reason,
+  }),
+  z.object({
+    action: z.literal('report'),
+    target: z.literal('friend_request'),
+    requestId: z.uuid(),
+    reason,
+  }),
 ]);
 
 const Body: z.ZodType<SafetyRequest> = z.union([
@@ -41,10 +56,47 @@ const Body: z.ZodType<SafetyRequest> = z.union([
   z.strictObject({ action: z.literal('block'), roomId: z.uuid() }),
   z.strictObject({ action: z.literal('block'), publicId: z.uuid(), report: reason.optional() }),
   z.strictObject({ action: z.literal('block'), historyId: z.uuid(), report: reason.optional() }),
+  z.strictObject({
+    action: z.literal('block'),
+    venueChatMessageId: z.uuid(),
+    report: reason.optional(),
+  }),
+  z.strictObject({
+    action: z.literal('block'),
+    friendRequestId: z.uuid(),
+    report: reason.optional(),
+  }),
   z.strictObject({ action: z.literal('unblock'), blockId: z.uuid() }),
 ]);
 
 const db = serviceClient();
+
+// A venue chat report; when it hides the message, everyone at the venue re-reads the chat.
+async function reportVenueChat(userId: string, messageId: string, why: ReportReason) {
+  const { data, error } = await db.rpc('safety_report_venue_chat', {
+    target_user_id: userId,
+    target_message_id: messageId,
+    new_reason: why,
+    snapshot_size: VENUE_CHAT.reportSnapshotSize,
+    hide_after: VENUE_CHAT.hideAfterReports,
+  });
+  if (error) throw dbError('safety_report_venue_chat', error);
+  if (data) {
+    const msg = await db.from('venue_chat_messages').select('venue_id').eq('id', messageId);
+    if (msg.error) throw dbError('venue_chat_messages', msg.error);
+    const venueId = msg.data[0]?.venue_id;
+    if (venueId) inBackground(broadcast(venueChatChannel(venueId), VENUE_CHAT_BROADCAST));
+  }
+}
+
+async function reportFriendRequest(userId: string, requestId: string, why: ReportReason) {
+  const { error } = await db.rpc('safety_report_friend_request', {
+    target_user_id: userId,
+    target_request_id: requestId,
+    new_reason: why,
+  });
+  if (error) throw dbError('safety_report_friend_request', error);
+}
 
 async function reportProfile(userId: string, publicId: string, why: ReportReason) {
   const view = await db.rpc('profile_view', { viewer: userId, target_public_id: publicId });
@@ -82,6 +134,10 @@ Deno.serve(
     if (body.action === 'report') {
       if (body.target === 'profile') {
         await reportProfile(user.id, body.publicId, body.reason);
+      } else if (body.target === 'venue_chat') {
+        await reportVenueChat(user.id, body.messageId, body.reason);
+      } else if (body.target === 'friend_request') {
+        await reportFriendRequest(user.id, body.requestId, body.reason);
       } else if (body.target === 'dm') {
         const { error } = await db.rpc('safety_report_dm', {
           target_user_id: user.id,
@@ -125,6 +181,28 @@ Deno.serve(
         report_reason: body.report,
       });
       if (error) throw dbError('safety_block_friend', error);
+      return { ok: true };
+    }
+
+    // Venue chat: answers { ok: true } whatever it finds (a message the caller cannot see writes
+    // nothing). The report, if any, comes first: it copies the chat before the block hides it.
+    if ('venueChatMessageId' in body) {
+      if (body.report) await reportVenueChat(user.id, body.venueChatMessageId, body.report);
+      const { error } = await db.rpc('safety_block_venue_chat', {
+        target_user_id: user.id,
+        target_message_id: body.venueChatMessageId,
+      });
+      if (error) throw dbError('safety_block_venue_chat', error);
+      return { ok: true };
+    }
+
+    if ('friendRequestId' in body) {
+      if (body.report) await reportFriendRequest(user.id, body.friendRequestId, body.report);
+      const { error } = await db.rpc('safety_block_friend_request', {
+        target_user_id: user.id,
+        target_request_id: body.friendRequestId,
+      });
+      if (error) throw dbError('safety_block_friend_request', error);
       return { ok: true };
     }
 

@@ -379,6 +379,36 @@ export const tr = {
     retry: 'Tekrar dene',
     discard: 'Sil',
   },
+  // Mekan sohbet odası (docs/SPEC_V3.md §7).
+  venueChat: {
+    open: 'Sohbet odası',
+    title: (venue: string) => `${venue} sohbet odası`,
+    hint: 'Mekanda masası olan herkes okur ve yazar. Mesajlar 24 saat sonra silinir.',
+    empty: 'Henüz mesaj yok. İlk mesajı sen yaz.',
+    placeholder: 'Mekana yaz…',
+    send: 'Gönder',
+    asProfile: 'Profilimle yaz',
+    asProfileOn: 'Adınla görünür; masa adın görünmez.',
+    asProfileOff: 'Masa adınla görünür.',
+    profiled: 'profilli',
+    you: 'Sen',
+    messageMenu: 'Mesaj',
+    seeProfile: 'Profili gör',
+    sendRequest: 'Arkadaşlık isteği gönder',
+    requestConfirmTitle: 'İstek gönderilsin mi?',
+    requestConfirmBody: 'İstek gönderirsen profilin ona görünür: adın, yaşın ve fotoğrafın.',
+    requestConfirm: 'İsteği gönder',
+    requestSent: 'İstek gönderildi.',
+    blockConfirmTitle: 'Bu kişiyi engellemek istiyor musun?',
+    blockConfirmBody:
+      'Birbirinizin mesajlarını artık görmezsiniz. Karşı tarafa bildirilmez. Engeli ayarlardan kaldırabilirsin.',
+    noTable: 'Sohbet odası yalnızca mekanda masan varken açılır.',
+    // A request from the venue chat (§7.5): the sender's name and age.
+    incoming: (venue: string, name: string, age: number | null) =>
+      `${venue} sohbet odasından ${age !== null ? `${name} (${age})` : name} arkadaşın olmak istiyor`,
+    sent: (name: string) => `${name} kişisine istek gönderildi`,
+    sentAccepted: (name: string) => `${name} isteğini kabul etti`,
+  },
   safety: {
     report: 'Şikayet et',
     reportTitle: 'Neden şikayet ediyorsun?',
@@ -464,6 +494,13 @@ export const tr = {
     voiceWinner: (alias: string) => `${alias} kazandı!`,
     voiceDraw: 'Berabere!',
     cardOnlyHere: 'Kartı yalnızca bu odadaki iki masa görür.',
+    // Cooperative mode (docs/SPEC_V3.md §6.3): one team, the guessing table never sees the card.
+    coopIntro: 'Masalardan biri tek kişi: iki masa tek takım, ortak skor süreye karşı.',
+    coopDescribe: "Sıra sizde: kartı diğer masaya anlatın. Doğru, Pas ve Tabu'ya siz basarsınız.",
+    coopGuess: (alias: string) => `${alias} size anlatıyor. Anlatanı dinleyin ve tahmin edin.`,
+    coopCardHidden: 'Kartı yalnızca anlatan masa görür.',
+    teamScore: 'Ortak skor',
+    lastGameTeam: (score: number) => `Sesli Tabu bitti. Ortak skor: ${score}`,
   },
   reveal: {
     question: 'Tanışalım mı?',

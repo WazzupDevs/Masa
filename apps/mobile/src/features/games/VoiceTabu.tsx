@@ -38,9 +38,12 @@ type Props = {
   aliases: Record<TableSide, string>;
 };
 
-// Two-table Tabu, face to face (docs/SPEC_V2.md §8.2). Team = table. Both phones hold the turn's
-// card list; a press moves this phone to the next card at once and is sent in order; the server
-// checks it and the room row brings the other phone along. The server's order wins.
+// Two-table Tabu, face to face (docs/SPEC_V2.md §8.2, docs/SPEC_V3.md §6). Refereed: team = table,
+// both phones hold the turn's card list and the other table judges. Cooperative (a one-person
+// table): one team score, only the describing phone holds the list and presses all three; the
+// guessing phone never asks for it. A press moves this phone to the next card at once and is sent
+// in order; the server checks it and the room row brings the other phone along. The server's order
+// wins.
 // A game starts only from an accepted proposal and, when it ends, the room returns to chat with the
 // result kept as lastGame (docs/SPEC_V3.md §5.3); this shows the running game only.
 export function VoiceTabu({ roomId, state, side, aliases }: Props) {
@@ -82,11 +85,18 @@ function Scores({
   side,
   describing,
 }: {
-  scores: Record<TableSide, number>;
+  scores: VoiceTabuState['scores'];
   aliases: Record<TableSide, string>;
   side: TableSide;
   describing?: TableSide;
 }) {
+  if ('team' in scores) {
+    return (
+      <View className="w-full flex-row gap-2.5">
+        <TeamScore name={tr.games.teamScore} note=" " score={scores.team} active />
+      </View>
+    );
+  }
   return (
     <View className="w-full flex-row gap-2.5">
       {(['owner', 'guest'] as const).map((t) => (
@@ -156,11 +166,14 @@ function Turn({
   const { pending, push, error } = usePressQueue(roomId);
   const view = optimisticView(server, pendingAfter(server, pending), role, now);
 
-  // The whole turn's list, fetched once when the turn starts.
+  // The whole turn's list, fetched once when the turn starts. A cooperative guessing table never
+  // asks: the server would refuse it (not_describer), and the card must not reach this phone.
+  const guessing = role === 'guesser';
   const cards = useQuery({
     queryKey: ['tabuTurnCards', roomId, server.gameNo, server.turnNo],
     queryFn: () => gamesApi.tabuTurnCards(roomId),
     staleTime: Infinity,
+    enabled: !guessing,
   });
   const card = cards.data?.turnNo === server.turnNo ? cards.data.cards[view.cardIndex] : undefined;
 
@@ -200,15 +213,29 @@ function Turn({
         describing={view.describingTable}
       />
       <RoleNote
-        icon={role === 'describer' ? 'megaphone-outline' : 'shield-checkmark-outline'}
+        icon={
+          role === 'describer'
+            ? 'megaphone-outline'
+            : role === 'guesser'
+              ? 'ear-outline'
+              : 'shield-checkmark-outline'
+        }
         text={
           role === 'describer'
-            ? tr.games.voiceDescribe
-            : tr.games.voiceJudge(aliases[view.describingTable])
+            ? server.mode === 'cooperative'
+              ? tr.games.coopDescribe
+              : tr.games.voiceDescribe
+            : role === 'guesser'
+              ? tr.games.coopGuess(aliases[view.describingTable])
+              : tr.games.voiceJudge(aliases[view.describingTable])
         }
       />
 
-      {covered ? (
+      {guessing ? (
+        <Text variant="fine" align="center" testID="tabu-guessing">
+          {tr.games.coopCardHidden}
+        </Text>
+      ) : covered ? (
         <Pressable
           accessibilityRole="button"
           onPress={() => setRevealedTurn(server.turnNo)}
@@ -241,6 +268,46 @@ function Turn({
         <Text variant="fine" align="center">
           {tr.games.turnOverWait}
         </Text>
+      ) : guessing ? null : server.mode === 'cooperative' ? (
+        <View className="flex-row gap-2.5">
+          <View className="flex-1">
+            <Button
+              variant="success"
+              testID="tabu-correct"
+              size="lg"
+              icon="checkmark"
+              label={tr.games.correct}
+              detail={tr.games.correctPoints}
+              onPress={() => press('correct')}
+              disabled={disabled}
+            />
+          </View>
+          <View className="flex-1">
+            <Button
+              variant="secondary"
+              testID="tabu-pass"
+              size="lg"
+              icon="play-skip-forward-outline"
+              label={tr.games.pass}
+              detail={tr.games.passDetail(passesLeft)}
+              accessibilityLabel={`${tr.games.pass}, ${tr.games.passesLeft(passesLeft)}`}
+              onPress={() => press('pass')}
+              disabled={disabled || passesLeft <= 0}
+            />
+          </View>
+          <View className="flex-1">
+            <Button
+              variant="danger"
+              testID="tabu-taboo"
+              size="lg"
+              icon="close"
+              label={tr.games.taboo}
+              detail={tr.games.tabooPoints}
+              onPress={() => press('taboo')}
+              disabled={disabled}
+            />
+          </View>
+        </View>
       ) : (
         <View className="flex-row gap-2.5">
           <View className="flex-1">
@@ -289,7 +356,7 @@ function Turn({
         </Text>
       ) : null}
       <Text variant="fine" align="center">
-        {tr.games.cardOnlyHere}
+        {server.mode === 'cooperative' ? tr.games.coopIntro : tr.games.cardOnlyHere}
       </Text>
     </View>
   );

@@ -21,8 +21,19 @@ import type {
   LeaveResponse,
   RerollAliasResponse,
 } from '@shared/api/checkin.ts';
-import type { DmOkResponse, FriendsListResponse, FriendsOkResponse } from '@shared/api/friends.ts';
-import type { ProfileRequest, ProfileUploadUrl, ProfileView } from '@shared/api/profile.ts';
+import type {
+  DmOkResponse,
+  FriendsIncomingResponse,
+  FriendsListResponse,
+  FriendsOkResponse,
+} from '@shared/api/friends.ts';
+import type {
+  ChatProfileView,
+  ProfileRequest,
+  ProfileUploadUrl,
+  ProfileView,
+} from '@shared/api/profile.ts';
+import type { VenueChatResponse } from '@shared/api/venueChat.ts';
 import type { ReportReason } from '@shared/chat.ts';
 import type { Concept } from '@shared/rooms.ts';
 import type { Mark } from '@shared/tabu.ts';
@@ -143,6 +154,33 @@ export const safetyApi = {
   blockHistory: (historyId: string, report?: ReportReason) =>
     invoke<SafetyResponse>('safety', { action: 'block', historyId, ...(report ? { report } : {}) }),
   block: (roomId: string) => invoke<SafetyResponse>('safety', { action: 'block', roomId }),
+  // Venue chat (docs/SPEC_V3.md §7.4, §7.5).
+  reportVenueChat: (messageId: string, reason: ReportReason) =>
+    invoke<SafetyResponse>('safety', {
+      action: 'report',
+      target: 'venue_chat',
+      messageId,
+      reason,
+    }),
+  blockVenueChat: (venueChatMessageId: string, report?: ReportReason) =>
+    invoke<SafetyResponse>('safety', {
+      action: 'block',
+      venueChatMessageId,
+      ...(report ? { report } : {}),
+    }),
+  reportFriendRequest: (requestId: string, reason: ReportReason) =>
+    invoke<SafetyResponse>('safety', {
+      action: 'report',
+      target: 'friend_request',
+      requestId,
+      reason,
+    }),
+  blockFriendRequest: (friendRequestId: string, report?: ReportReason) =>
+    invoke<SafetyResponse>('safety', {
+      action: 'block',
+      friendRequestId,
+      ...(report ? { report } : {}),
+    }),
   unblock: (blockId: string) => invoke<SafetyResponse>('safety', { action: 'unblock', blockId }),
 };
 
@@ -168,6 +206,8 @@ type ProfileUpdate = Omit<Extract<ProfileRequest, { action: 'update' }>, 'action
 
 export const profileApi = {
   get: (publicId: string) => invoke<ProfileView>('profile', { action: 'get', publicId }),
+  getFromVenueChat: (venueChatMessageId: string) =>
+    invoke<ChatProfileView>('profile', { action: 'get', venueChatMessageId }),
   update: (changes: ProfileUpdate) =>
     invoke<{ ok: true }>('profile', { action: 'update', ...changes }),
   photoUploadUrl: () => invoke<ProfileUploadUrl>('profile', { action: 'photo-upload-url' }),
@@ -179,6 +219,9 @@ export const friendsApi = {
   list: () => invoke<FriendsListResponse>('friends', { action: 'list' }),
   request: (historyId: string) =>
     invoke<FriendsOkResponse>('friends', { action: 'request', historyId }),
+  requestFromVenueChat: (venueChatMessageId: string) =>
+    invoke<FriendsOkResponse>('friends', { action: 'request', venueChatMessageId }),
+  incoming: () => invoke<FriendsIncomingResponse>('friends', { action: 'incoming' }),
   respond: (requestId: string, accept: boolean) =>
     invoke<FriendsOkResponse>('friends', { action: 'respond', requestId, accept }),
   addFromRoom: (historyId: string) =>
@@ -189,6 +232,11 @@ export const friendsApi = {
       publicId,
       ...(report ? { report } : {}),
     }),
+};
+
+export const venueChatApi = {
+  send: (venueId: string, body: string, profiled: boolean) =>
+    invoke<VenueChatResponse>('venue-chat', { action: 'send', venueId, body, profiled }),
 };
 
 export const dmApi = {

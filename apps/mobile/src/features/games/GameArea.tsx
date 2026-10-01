@@ -56,17 +56,19 @@ export function GameArea({
 
   const between = parseBetweenGames(gameState);
   const last = between.lastGame;
-  const lastScores = last?.scores;
-  // A finished two-table Tabu counts once, from the owner's phone (room-level events).
+  // A finished two-table Tabu counts once, from the owner's phone (room-level events): the owner
+  // table's score, or the team's in the cooperative mode.
+  const lastScore = last?.scores?.owner ?? last?.teamScore ?? null;
   useEffect(() => {
-    if (isOwner && lastScores) {
+    if (isOwner && lastScore !== null) {
       trackOnce(`game_completed:${roomId}:${between.gameNo}`, 'game_completed', {
         concept: 'tabu',
         mode: 'voice',
-        score: lastScores.owner,
+        score: lastScore,
+        tabu_mode: last?.teamScore !== null ? 'cooperative' : 'refereed',
       });
     }
-  }, [isOwner, lastScores, roomId, between.gameNo]);
+  }, [isOwner, lastScore, last?.teamScore, roomId, between.gameNo]);
 
   // A second table ends the local game (the room returns to chat), and so does Sohbet kartları.
   const showLocalTabu = !hasGuest && concept !== 'sohbet' && (concept === 'tabu' || localTabu);
@@ -113,6 +115,8 @@ export function GameArea({
         <Card tone="note" testID="last-game">
           {last.scores && hasGuest ? (
             <VoiceTabuResult scores={last.scores} side={side} aliases={aliases} />
+          ) : last.teamScore !== null ? (
+            <Text variant="fine">{tr.games.lastGameTeam(last.teamScore)}</Text>
           ) : (
             <Text variant="fine">{tr.games.lastGameOther(tr.concepts[last.concept])}</Text>
           )}
