@@ -12,7 +12,14 @@ import {
   parseTestVenues,
   parseVenuesFile,
 } from './seed/content.ts';
-import { aliasWordsSql, campusSql, cardsSql, profanitySql, venuesSql } from './seed/sections.ts';
+import {
+  aliasWordsSql,
+  campusSql,
+  cardsSql,
+  profanitySql,
+  testSpotsSql,
+  venuesSql,
+} from './seed/sections.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const outFile = resolve(root, 'supabase/seed.sql');
@@ -41,6 +48,7 @@ const sections = [
   aliasWordsSql(parseAliasWords(readJson('content/aliases-tr.json'))),
   venuesSql(venues),
   ...(testVenues.length > 0 ? [venuesSql(testVenues, testVenuesPath, null)] : []),
+  ...testSpotsSql(testVenues),
   campusSql(campus),
   profanitySql(parseProfanity(readJson('content/profanity-tr.json'))),
   cardsSql(

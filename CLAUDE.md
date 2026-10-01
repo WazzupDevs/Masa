@@ -218,7 +218,7 @@ Pilot listesinde olmayan bir yerde test için elle girilen mekan. Dosya boşsa (
    ```json
    { "venues": [{ "ref": "saha-1", "name": "Saha Testi", "lat": 41.00123, "lng": 28.64210 }] }
    ```
-   `ref` kalıcı kimliktir (değiştirme; aynı `ref` güncellenir). İsteğe bağlı: `city` (varsayılan İstanbul), `district` (varsayılan Test), `isActive`.
+   `ref` kalıcı kimliktir (değiştirme; aynı `ref` güncellenir). İsteğe bağlı: `city` (varsayılan İstanbul), `district` (varsayılan Test), `isActive`, `spots` (kampüsteki gibi noktalar, ör. `[{ "ref": "bahce", "name": "Bahçe" }]`; noktası olan mekanda check-in "Neredesin?" sorar, 300 m kuralı değişmez).
 2. `pnpm seed`, sonra `pnpm supabase db push --include-seed` (yerelde `pnpm db:reset`). `supabase/seed.sql` commit'lenir, yani koordinat git'e girer: ev adresi değil mekan koordinatı kullan.
 3. Check-in 300 m içinden çalışır. İki telefon da mekanın yakınında olmalı.
 4. Test bitince mekanı silmek yerine `"isActive": false` yapıp tekrar seed et (seed yalnızca ekler ya da günceller, silmez), ya da listeyi boşalt ve mekanı panelden pasif yap.
