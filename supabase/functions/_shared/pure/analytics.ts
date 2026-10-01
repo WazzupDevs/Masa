@@ -5,6 +5,7 @@ import type { FriendRequestSource, FriendshipSource } from './friends.ts';
 import type { Participation } from './profile.ts';
 import type { Concept, RoomIntentLabel } from './rooms.ts';
 import type { SohbetTheme } from './sohbet.ts';
+import type { TabuMode } from './tabu.ts';
 
 export type AnalyticsEventProps = {
   // Sent after the optional photo/bio step; nothing is sent for a sign-up under 18 (rule 11).
@@ -21,8 +22,9 @@ export type AnalyticsEventProps = {
   join_accepted: Record<string, never>;
   join_unavailable: Record<string, never>;
   room_two_tables: Record<string, never>;
-  // v2: + mode (docs/SPEC_V2.md §13); for voice Tabu the owner table's score.
-  game_completed: { concept: Concept; score: number; mode: GameMode };
+  // v2: + mode (docs/SPEC_V2.md §13); for voice Tabu the owner table's score (cooperative: the
+  // team's) and, v3, the Tabu mode (docs/SPEC_V3.md §15).
+  game_completed: { concept: Concept; score: number; mode: GameMode; tabu_mode?: TabuMode };
   reveal_mutual: Record<string, never>;
   reveal_none: Record<string, never>;
   report_submitted: Record<string, never>;
@@ -42,6 +44,9 @@ export type AnalyticsEventProps = {
   friend_add_pressed: Record<string, never>;
   friendship_created: { source: FriendshipSource };
   dm_sent: Record<string, never>;
+  // Venue chat (docs/SPEC_V3.md §15): never the venue, the text or the other side.
+  venue_chat_sent: { profiled: boolean };
+  venue_chat_reported: Record<string, never>;
 };
 
 export type AnalyticsEvent = keyof AnalyticsEventProps;
@@ -57,7 +62,7 @@ const ALLOWED: { [E in AnalyticsEvent]: readonly (keyof AnalyticsEventProps[E])[
   join_accepted: [],
   join_unavailable: [],
   room_two_tables: [],
-  game_completed: ['concept', 'score', 'mode'],
+  game_completed: ['concept', 'score', 'mode', 'tabu_mode'],
   reveal_mutual: [],
   reveal_none: [],
   report_submitted: [],
@@ -75,6 +80,8 @@ const ALLOWED: { [E in AnalyticsEvent]: readonly (keyof AnalyticsEventProps[E])[
   friend_add_pressed: [],
   friendship_created: ['source'],
   dm_sent: [],
+  venue_chat_sent: ['profiled'],
+  venue_chat_reported: [],
 };
 
 export const ANALYTICS_EVENTS = Object.keys(ALLOWED) as AnalyticsEvent[];

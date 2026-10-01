@@ -379,6 +379,36 @@ export const tr = {
     retry: 'Tekrar dene',
     discard: 'Sil',
   },
+  // Mekan sohbet odası (docs/SPEC_V3.md §7).
+  venueChat: {
+    open: 'Sohbet odası',
+    title: (venue: string) => `${venue} sohbet odası`,
+    hint: 'Mekanda masası olan herkes okur ve yazar. Mesajlar 24 saat sonra silinir.',
+    empty: 'Henüz mesaj yok. İlk mesajı sen yaz.',
+    placeholder: 'Mekana yaz…',
+    send: 'Gönder',
+    asProfile: 'Profilimle yaz',
+    asProfileOn: 'Adınla görünür; masa adın görünmez.',
+    asProfileOff: 'Masa adınla görünür.',
+    profiled: 'profilli',
+    you: 'Sen',
+    messageMenu: 'Mesaj',
+    seeProfile: 'Profili gör',
+    sendRequest: 'Arkadaşlık isteği gönder',
+    requestConfirmTitle: 'İstek gönderilsin mi?',
+    requestConfirmBody: 'İstek gönderirsen profilin ona görünür: adın, yaşın ve fotoğrafın.',
+    requestConfirm: 'İsteği gönder',
+    requestSent: 'İstek gönderildi.',
+    blockConfirmTitle: 'Bu kişiyi engellemek istiyor musun?',
+    blockConfirmBody:
+      'Birbirinizin mesajlarını artık görmezsiniz. Karşı tarafa bildirilmez. Engeli ayarlardan kaldırabilirsin.',
+    noTable: 'Sohbet odası yalnızca mekanda masan varken açılır.',
+    // A request from the venue chat (§7.5): the sender's name and age.
+    incoming: (venue: string, name: string, age: number | null) =>
+      `${venue} sohbet odasından ${age !== null ? `${name} (${age})` : name} arkadaşın olmak istiyor`,
+    sent: (name: string) => `${name} kişisine istek gönderildi`,
+    sentAccepted: (name: string) => `${name} isteğini kabul etti`,
+  },
   safety: {
     report: 'Şikayet et',
     reportTitle: 'Neden şikayet ediyorsun?',

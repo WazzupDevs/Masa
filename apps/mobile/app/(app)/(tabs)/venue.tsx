@@ -164,6 +164,13 @@ export default function VenueScreen() {
               {errorMessage(solo.error)}
             </Text>
           ) : null}
+          <Button
+            variant="ghost"
+            testID="venue-chat-open"
+            icon="chatbubbles-outline"
+            label={tr.venueChat.open}
+            onPress={() => router.push('/venue-chat')}
+          />
         </View>
       </Card>
 

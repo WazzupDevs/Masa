@@ -7,7 +7,12 @@ import { dbError } from '../_shared/db.ts';
 import { z } from '../_shared/deps.ts';
 import { handle } from '../_shared/http.ts';
 import { loadProfanity } from '../_shared/profanity.ts';
-import type { ProfileRequest, ProfileResponse, ProfileView } from '../_shared/pure/api/profile.ts';
+import type {
+  ChatProfileView,
+  ProfileRequest,
+  ProfileResponse,
+  ProfileView,
+} from '../_shared/pure/api/profile.ts';
 import { ageOn, istanbulToday, parseIsoDate } from '../_shared/pure/age.ts';
 import { earnedBadges } from '../_shared/pure/badges.ts';
 import { AppError } from '../_shared/pure/errors.ts';
@@ -21,8 +26,9 @@ import {
   PHOTO_URL_SECONDS,
 } from '../_shared/pure/profile.ts';
 
-const Body: z.ZodType<ProfileRequest> = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('get'), publicId: z.uuid() }),
+const Body: z.ZodType<ProfileRequest> = z.union([
+  z.strictObject({ action: z.literal('get'), publicId: z.uuid() }),
+  z.strictObject({ action: z.literal('get'), venueChatMessageId: z.uuid() }),
   z.object({
     action: z.literal('update'),
     displayName: z.string().max(200).optional(),
@@ -50,6 +56,54 @@ async function ownProfile(userId: string) {
 
 function requireName(displayName: string | null): void {
   if (!displayName) throw new AppError('display_name_required', 'Choose a display name first.');
+}
+
+async function ageAndBadges(userId: string) {
+  const [stats, birth] = await Promise.all([
+    db.rpc('user_stats', { target_user_id: userId }),
+    db.from('profiles').select('birth_date').eq('id', userId).single(),
+  ]);
+  if (stats.error) throw dbError('user_stats', stats.error);
+  if (birth.error) throw dbError('profiles', birth.error);
+  const counts = stats.data[0];
+  const born = birth.data.birth_date ? parseIsoDate(birth.data.birth_date) : null;
+  return {
+    age: born ? ageOn(born, istanbulToday(new Date())) : null,
+    badges: earnedBadges({
+      games: counts?.games ?? 0,
+      voiceTabuWins: counts?.voice_tabu_wins ?? 0,
+      distinctTables: counts?.distinct_tables ?? 0,
+    }),
+  };
+}
+
+// The sender of a profiled venue chat message, opened through the message (docs/SPEC_V3.md §7.5):
+// name, age, photo unless hidden, bio and badges. No public_id, no table alias.
+async function getChatProfile(viewer: string, messageId: string): Promise<ChatProfileView> {
+  const owner = await db.rpc('venue_chat_profile_owner', {
+    target_user_id: viewer,
+    target_message_id: messageId,
+  });
+  if (owner.error) throw dbError('venue_chat_profile_owner', owner.error);
+  if (!owner.data) throw new AppError('not_found', 'Profile not found.');
+  const { data, error } = await db
+    .from('profiles')
+    .select('display_name, bio, photo_path, photo_hidden_at')
+    .eq('id', owner.data)
+    .single();
+  if (error) throw dbError('profiles', error);
+  let photoUrl: string | null = null;
+  if (data.photo_path && !data.photo_hidden_at) {
+    const signed = await photos().createSignedUrl(data.photo_path, PHOTO_URL_SECONDS);
+    if (signed.error) throw new Error(`storage sign failed (${signed.error.message})`);
+    photoUrl = signed.data.signedUrl;
+  }
+  return {
+    displayName: data.display_name,
+    bio: data.bio,
+    photoUrl,
+    ...(await ageAndBadges(owner.data)),
+  };
 }
 
 async function getProfile(viewer: string, publicId: string): Promise<ProfileView> {
@@ -101,7 +155,9 @@ Deno.serve(
 
     switch (body.action) {
       case 'get':
-        return await getProfile(user.id, body.publicId);
+        return 'venueChatMessageId' in body
+          ? await getChatProfile(user.id, body.venueChatMessageId)
+          : await getProfile(user.id, body.publicId);
 
       case 'update': {
         const me = await ownProfile(user.id);

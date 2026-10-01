@@ -41,6 +41,8 @@ describe('analytics events', () => {
         'friend_add_pressed',
         'friendship_created',
         'dm_sent',
+        'venue_chat_sent',
+        'venue_chat_reported',
       ].sort(),
     );
   });

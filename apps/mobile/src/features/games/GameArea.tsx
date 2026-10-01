@@ -65,9 +65,10 @@ export function GameArea({
         concept: 'tabu',
         mode: 'voice',
         score: lastScore,
+        tabu_mode: last?.teamScore !== null ? 'cooperative' : 'refereed',
       });
     }
-  }, [isOwner, lastScore, roomId, between.gameNo]);
+  }, [isOwner, lastScore, last?.teamScore, roomId, between.gameNo]);
 
   // A second table ends the local game (the room returns to chat), and so does Sohbet kartları.
   const showLocalTabu = !hasGuest && concept !== 'sohbet' && (concept === 'tabu' || localTabu);

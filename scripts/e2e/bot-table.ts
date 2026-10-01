@@ -51,6 +51,8 @@ const BOT_PHONE = process.env.BOT_PHONE ?? '+905550000002';
 const BOT_OTP = process.env.BOT_OTP ?? '123456';
 const BOT_NAME = process.env.BOT_NAME ?? 'Bot Masa';
 const DEVICE_PHONE = process.env.DEVICE_PHONE ?? '+905550000001';
+// Local only: a second bot account for the venue chat flow (the first one is blocked by then).
+const SECOND_BOT_PHONE = '+905550000003';
 // A campus-like venue (docs/SPEC_V3.md §4): a 200 m square boundary around the anchor and two
 // spots. The device checks in at "Kantin"; the bot opens a room at "Kütüphane" for "Bu noktadayım".
 export const E2E_VENUE = {
@@ -133,7 +135,10 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
   async setup() {
     const sql = db();
     try {
-      await sql`delete from auth.users where phone in (${BOT_PHONE.slice(1)}, ${DEVICE_PHONE.slice(1)})`;
+      await sql`
+        delete from auth.users
+        where phone in (${BOT_PHONE.slice(1)}, ${DEVICE_PHONE.slice(1)}, ${SECOND_BOT_PHONE.slice(1)})
+      `;
       const wkt = `POLYGON((${E2E_VENUE.boundary.map(([lng, lat]) => `${lng} ${lat}`).join(', ')}))`;
       const [venue] = await sql<{ id: string }[]>`
         insert into public.venues (name, city, district, location, boundary, source, source_ref, is_active)
@@ -189,20 +194,25 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
     }
   },
 
-  async login() {
+  // Signs in as BOT_PHONE, or locally as the second bot (`{"second":true}`, name "Bot İki").
+  async login(args) {
+    const second = args.second === true;
+    if (second && !isLocal) throw new Error('the second bot is local only');
+    const phone = second ? SECOND_BOT_PHONE : BOT_PHONE;
+    const name = second ? 'Bot İki' : BOT_NAME;
     client = createClient(url, publishableKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    const sent = await client.auth.signInWithOtp({ phone: BOT_PHONE });
+    const sent = await client.auth.signInWithOtp({ phone });
     if (sent.error) throw sent.error;
-    const verified = await client.auth.verifyOtp({ phone: BOT_PHONE, token: BOT_OTP, type: 'sms' });
+    const verified = await client.auth.verifyOtp({ phone, token: BOT_OTP, type: 'sms' });
     if (verified.error) throw verified.error;
     // Sign-up = profile (docs/SPEC_V3.md §3): an adult birth date and the bot's name.
     await call('account', {
       action: 'complete-onboarding',
       termsVersion: CURRENT_TERMS_VERSION,
       kvkkVersion: CURRENT_KVKK_VERSION,
-      displayName: BOT_NAME,
+      displayName: name,
       birthDate: '1995-05-20',
     });
     return { ok: true };
@@ -393,6 +403,28 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
   async leave() {
     return call('checkin', { action: 'leave' });
   },
+
+  // Venue chat (docs/SPEC_V3.md §7): a message, anonymous unless `profiled`.
+  async 'venue-chat-send'(args) {
+    if (!venueId) throw new Error('check in first');
+    return call('venue-chat', {
+      action: 'send',
+      venueId,
+      body: String(args.body ?? 'Merhaba mekan!'),
+      profiled: args.profiled === true,
+    });
+  },
+
+  // Accepts the newest friend request from the venue chat.
+  async 'accept-friend'() {
+    const request = await retryUntil('a friend request from the venue chat', async () => {
+      const { requests } = (await call('friends', { action: 'incoming' })) as {
+        requests: { requestId: string }[];
+      };
+      return requests[0] ?? null;
+    });
+    return call('friends', { action: 'respond', requestId: request.requestId, accept: true });
+  },
 };
 
 // "Karşı masa": the other table for a one-phone P0 test on the dev project. Checks in at
@@ -401,7 +433,8 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
 // (BOT_ROLE=guest, default) asks to join each new room in the lobby; as a host (BOT_ROLE=host)
 // keeps an open room and accepts the first request. In the room the host proposes Sesli Tabu once
 // and either table accepts the other's proposal (docs/SPEC_V3.md §5.3); it presses Doğru on each card after a few seconds, ends turns and the answer window when their time
-// is up, says "Evet" to "Tanışalım mı?", adds the friend and answers every new DM. Only the public
+// is up, says "Evet" to "Tanışalım mı?", adds the friend, accepts requests from the venue chat and
+// answers every new DM. Only the public
 // API: the same calls the app makes.
 async function opponent() {
   const role = process.env.BOT_ROLE === 'host' ? 'host' : 'guest';
@@ -556,6 +589,16 @@ async function opponent() {
       if (historyId && !befriended.has(historyId)) {
         befriended.add(historyId);
         await quiet('add-friend', () => call('friends', { action: 'add-from-room', historyId }));
+      }
+      // Requests from the venue chat: accepted.
+      const { requests } = (await call('friends', { action: 'incoming' })) as {
+        requests: { requestId: string }[];
+      };
+      for (const { requestId } of requests) {
+        await quiet('accept-friend', () =>
+          call('friends', { action: 'respond', requestId, accept: true }),
+        );
+        say('accepted a friend request from the venue chat');
       }
     });
 

@@ -1,5 +1,6 @@
-// Friends (docs/SPEC_V2.md §6.2–§6.5). Requests and "Arkadaş ekle" start from the caller's own
-// history row (historyId), never from a profile id; they answer { ok: true } whatever happens on
+// Friends (docs/SPEC_V2.md §6.2–§6.5, docs/SPEC_V3.md §7.5). Requests and "Arkadaş ekle" start
+// from the caller's own history row (historyId) or a profiled venue chat message
+// (venueChatMessageId), never from a profile id; they answer { ok: true } whatever happens on
 // the other side (swallowed, blocked, declined earlier), except `already_friends`. A decline
 // sends nothing anywhere. Removal is silent for the other side.
 import { requireUser, serviceClient } from '../_shared/auth.ts';
@@ -9,19 +10,24 @@ import { handle } from '../_shared/http.ts';
 import { notifyInbox, pushIfAllowed, requireDisplayName } from '../_shared/inbox.ts';
 import type {
   Friend,
+  FriendsIncomingResponse,
   FriendsListResponse,
   FriendsOkResponse,
   FriendsRequest,
 } from '../_shared/pure/api/friends.ts';
+import { ageOn, istanbulToday, parseIsoDate } from '../_shared/pure/age.ts';
 import { REPORT_REASONS } from '../_shared/pure/chat.ts';
 import { AppError } from '../_shared/pure/errors.ts';
 import { PHOTO_BUCKET, PHOTO_URL_SECONDS } from '../_shared/pure/profile.ts';
 import { friendRequestPush } from '../_shared/pure/push.ts';
 import { BROADCAST } from '../_shared/pure/rooms.ts';
+import { VENUE_CHAT } from '../_shared/pure/venueChat.ts';
 
-const Body: z.ZodType<FriendsRequest> = z.discriminatedUnion('action', [
+const Body: z.ZodType<FriendsRequest> = z.union([
   z.object({ action: z.literal('list') }),
-  z.object({ action: z.literal('request'), historyId: z.uuid() }),
+  z.strictObject({ action: z.literal('request'), historyId: z.uuid() }),
+  z.strictObject({ action: z.literal('request'), venueChatMessageId: z.uuid() }),
+  z.object({ action: z.literal('incoming') }),
   z.object({ action: z.literal('respond'), requestId: z.uuid(), accept: z.boolean() }),
   z.object({ action: z.literal('add-from-room'), historyId: z.uuid() }),
   z.object({
@@ -44,6 +50,36 @@ function announce(userId: string, result: Outcome | undefined): void {
     notifyInbox([result.other_user_id], BROADCAST.friendRequest);
     pushIfAllowed(db, result.other_user_id, 'notify_friend_requests', friendRequestPush());
   }
+}
+
+async function signPhotos(paths: string[]): Promise<Map<string, string>> {
+  const urls = new Map<string, string>();
+  if (paths.length === 0) return urls;
+  const signed = await db.storage.from(PHOTO_BUCKET).createSignedUrls(paths, PHOTO_URL_SECONDS);
+  if (signed.error) throw new Error(`storage sign failed (${signed.error.message})`);
+  for (const s of signed.data) if (s.path && s.signedUrl) urls.set(s.path, s.signedUrl);
+  return urls;
+}
+
+// Requests from the venue chat: name, age and photo of the sender (S6); no public_id, no alias.
+async function incoming(userId: string): Promise<FriendsIncomingResponse> {
+  const { data, error } = await db.rpc('friends_incoming_venue_chat', { target_user_id: userId });
+  if (error) throw dbError('friends_incoming_venue_chat', error);
+  const urls = await signPhotos(data.map((r) => r.photo_path).filter((p): p is string => !!p));
+  const today = istanbulToday(new Date());
+  return {
+    requests: data.map((r) => {
+      const born = r.birth_date ? parseIsoDate(r.birth_date) : null;
+      return {
+        requestId: r.request_id,
+        venueName: r.venue_name,
+        displayName: r.display_name,
+        age: born ? ageOn(born, today) : null,
+        photoUrl: r.photo_path ? (urls.get(r.photo_path) ?? null) : null,
+        createdAt: r.created_at,
+      };
+    }),
+  };
 }
 
 async function list(userId: string): Promise<FriendsListResponse> {
@@ -69,7 +105,11 @@ async function list(userId: string): Promise<FriendsListResponse> {
 }
 
 Deno.serve(
-  handle(async (req, raw): Promise<FriendsListResponse | FriendsOkResponse> => {
+  handle(
+    async (
+      req,
+      raw,
+    ): Promise<FriendsListResponse | FriendsIncomingResponse | FriendsOkResponse> => {
     const body = Body.parse(raw);
     const user = await requireUser(req, db);
 
@@ -77,12 +117,22 @@ Deno.serve(
       case 'list':
         return await list(user.id);
 
+      case 'incoming':
+        return await incoming(user.id);
+
       case 'request': {
         await requireDisplayName(db, user.id);
-        const { data, error } = await db.rpc('friends_request', {
-          target_user_id: user.id,
-          target_history_id: body.historyId,
-        });
+        const { data, error } =
+          'venueChatMessageId' in body
+            ? await db.rpc('friends_request_venue_chat', {
+                target_user_id: user.id,
+                target_message_id: body.venueChatMessageId,
+                daily_max: VENUE_CHAT.dailyFriendRequests,
+              })
+            : await db.rpc('friends_request', {
+                target_user_id: user.id,
+                target_history_id: body.historyId,
+              });
         if (error) throw dbError('friends_request', error);
         const result = data[0];
         if (result?.outcome === 'already_friends') {
@@ -125,5 +175,6 @@ Deno.serve(
         return { ok: true };
       }
     }
-  }),
+    },
+  ),
 );

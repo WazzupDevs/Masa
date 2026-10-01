@@ -4,7 +4,12 @@ import { router, Tabs } from 'expo-router';
 
 import { TabBar, TabBarSpace } from '@/components/TabBar';
 import { useActiveTable } from '@/features/checkin/useActiveTable';
-import { useFriends, useIncomingFriendRequests, useInbox } from '@/features/friends/queries';
+import {
+  useFriends,
+  useIncomingFriendRequests,
+  useInbox,
+  useVenueChatRequests,
+} from '@/features/friends/queries';
 import { tr } from '@/i18n/tr';
 
 export { RouteError as ErrorBoundary } from '@/components/RouteError';
@@ -17,9 +22,12 @@ export default function TabsLayout() {
   const table = useActiveTable();
   useInbox();
   const incoming = useIncomingFriendRequests();
+  const chatIncoming = useVenueChatRequests();
   const friends = useFriends();
   const waiting =
-    (incoming.data?.length ?? 0) + (friends.data?.filter((f) => f.unread).length ?? 0);
+    (incoming.data?.length ?? 0) +
+    (chatIncoming.data?.length ?? 0) +
+    (friends.data?.filter((f) => f.unread).length ?? 0);
 
   return (
     <TabBarSpace>

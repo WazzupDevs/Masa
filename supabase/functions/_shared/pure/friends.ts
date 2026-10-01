@@ -42,7 +42,7 @@ export function historyAction(row: {
   return row.reveal_mutual ? 'add_friend' : 'send_request';
 }
 
-export const FRIEND_REQUEST_SOURCES = ['history', 'room_end'] as const;
+export const FRIEND_REQUEST_SOURCES = ['history', 'room_end', 'venue_chat'] as const;
 export type FriendRequestSource = (typeof FRIEND_REQUEST_SOURCES)[number];
 export const FRIENDSHIP_SOURCES = ['room_end_mutual', 'request'] as const;
 export type FriendshipSource = (typeof FRIENDSHIP_SOURCES)[number];

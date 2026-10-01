@@ -20,8 +20,11 @@ import {
   useIncomingFriendRequests,
   usePlayHistory,
   useSentFriendRequests,
+  useSentVenueChatRequests,
+  useVenueChatRequests,
 } from '@/features/friends/queries';
 import { useRetryAfterName } from '@/features/friends/useRetryAfterName';
+import { VenueChatRequests } from '@/features/venueChat/VenueChatRequests';
 import { errorMessage } from '@/i18n/errors';
 import { type HistoryConcept, tr } from '@/i18n/tr';
 import { track } from '@/lib/analytics';
@@ -37,7 +40,9 @@ const concept = (c: string): HistoryConcept =>
 export default function RequestsScreen() {
   const queryClient = useQueryClient();
   const incoming = useIncomingFriendRequests();
+  const chatIncoming = useVenueChatRequests();
   const sent = useSentFriendRequests();
+  const sentChat = useSentVenueChatRequests();
   const history = usePlayHistory();
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [reporting, setReporting] = useState<string | null>(null);
@@ -98,7 +103,10 @@ export default function RequestsScreen() {
       <ScreenHeader title={tr.friends.requestsAndHistory} onBack={() => router.back()} />
 
       <Section title={tr.friends.incomingTitle}>
-        {incoming.data?.length === 0 ? <Text tone="muted">{tr.friends.noIncoming}</Text> : null}
+        {incoming.data?.length === 0 && chatIncoming.data?.length === 0 ? (
+          <Text tone="muted">{tr.friends.noIncoming}</Text>
+        ) : null}
+        <VenueChatRequests requests={chatIncoming.data ?? []} />
         {/* A friend request is a trust moment: hairline card, the rule spelled out, one clear
             action. */}
         <Quiet value>
@@ -144,13 +152,20 @@ export default function RequestsScreen() {
         ) : null}
       </Section>
 
-      {sent.data && sent.data.length > 0 ? (
+      {(sent.data && sent.data.length > 0) || (sentChat.data && sentChat.data.length > 0) ? (
         <Section title={tr.friends.sentTitle}>
-          {sent.data.map((r) => (
+          {sent.data?.map((r) => (
             <Text key={r.history_id}>
               {r.status === 'accepted'
                 ? tr.friends.sentAccepted(r.other_alias)
                 : tr.friends.sent(r.other_alias)}
+            </Text>
+          ))}
+          {sentChat.data?.map((r) => (
+            <Text key={`${r.created_at}-${r.to_name}`}>
+              {r.status === 'accepted'
+                ? tr.venueChat.sentAccepted(r.to_name ?? '')
+                : tr.venueChat.sent(r.to_name ?? '')}
             </Text>
           ))}
         </Section>
