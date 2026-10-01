@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { parseAliasWords, parseTestVenues, parseVenuesFile } from './content.ts';
-import { aliasWordsSql, cardsSql, venuesSql } from './sections.ts';
+import { aliasWordsSql, cardsSql, testSpotsSql, venuesSql } from './sections.ts';
 
 const venue = {
   name: "Ayşe'nin Kafesi",
@@ -62,6 +62,7 @@ describe('parseTestVenues', () => {
         sourceRef: 'test/saha',
         amenity: 'cafe',
         isActive: true,
+        spots: [],
       },
     ]);
   });
@@ -104,5 +105,50 @@ describe('cardsSql', () => {
       "('sohbet', 'Seni ne mutlu eder?', null, null, 'derin', 'Seni ne mutlu eder?')",
     );
     expect(sql).toContain('on conflict (deck, source_key) do update');
+  });
+});
+
+describe('test venue spots', () => {
+  const withSpots = {
+    ref: 'saha',
+    name: 'Kafe',
+    lat: 41,
+    lng: 28.6,
+    spots: [
+      { ref: 'ic-salon', name: 'İç salon' },
+      { ref: 'bahce', name: 'Bahçe' },
+    ],
+  };
+
+  it('reads optional spots, none by default', () => {
+    const [venue] = parseTestVenues({ venues: [withSpots] });
+    expect(venue?.spots.map((s) => [s.ref, s.isActive])).toEqual([
+      ['ic-salon', true],
+      ['bahce', true],
+    ]);
+    expect(
+      parseTestVenues({ venues: [{ ref: 'a', name: 'K', lat: 41, lng: 28 }] })[0]?.spots,
+    ).toEqual([]);
+  });
+
+  it('refuses duplicate or malformed spot refs', () => {
+    const twice = { ref: 'bahce', name: 'Bahçe' };
+    expect(() => parseTestVenues({ venues: [{ ...withSpots, spots: [twice, twice] }] })).toThrow(
+      /duplicate/,
+    );
+    expect(() =>
+      parseTestVenues({ venues: [{ ...withSpots, spots: [{ ref: 'İç', name: 'İç' }] }] }),
+    ).toThrow();
+  });
+
+  it('upserts the spots of test venues that have them, by the test source reference', () => {
+    const sql = testSpotsSql(
+      parseTestVenues({ venues: [withSpots, { ref: 'bos', name: 'Boş', lat: 41, lng: 28 }] }),
+    );
+    expect(sql).toHaveLength(1);
+    expect(sql[0]).toContain("('ic-salon', 'İç salon', 0, true)");
+    expect(sql[0]).toContain("('bahce', 'Bahçe', 1, true)");
+    expect(sql[0]).toContain("where v.source = 'test' and v.source_ref = 'test/saha'");
+    expect(sql[0]).toContain('on conflict (venue_id, ref) do update');
   });
 });
