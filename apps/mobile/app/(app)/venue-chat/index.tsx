@@ -7,18 +7,24 @@ import {
   type VenueChatMessage,
 } from '@shared/venueChat.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Ionicons } from '@expo/vector-icons';
+import { toRuns } from '@shared/chatRuns.ts';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, View } from 'react-native';
 
-import { Button } from '@/components/Button';
+import { Avatar, AVATAR_SIZE } from '@/components/Avatar';
+import { Card } from '@/components/Card';
 import { ChatBubble } from '@/components/ChatBubble';
+import { ChatScreen, DayLine, dayLabel } from '@/components/ChatScreen';
+import { ChatTopBar } from '@/components/ChatTopBar';
+import { Composer } from '@/components/Composer';
 import { EmptyState } from '@/components/EmptyState';
-import { Input } from '@/components/Input';
 import { ListRow } from '@/components/ListRow';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Sheet } from '@/components/Sheet';
+import { Snail } from '@/components/Snail';
 import { Tag } from '@/components/Tag';
 import { Text } from '@/components/Text';
 import { Toggle } from '@/components/Toggle';
@@ -31,6 +37,7 @@ import { tr } from '@/i18n/tr';
 import { track } from '@/lib/analytics';
 import { safetyApi, venueChatApi } from '@/lib/api';
 import { useTheme } from '@/theme/ThemeProvider';
+import { ICON, SPACING } from '@/theme/tokens';
 
 // "Profilimle yaz" is remembered on this phone only (docs/SPEC_V3.md §7.3).
 const AS_PROFILE_KEY = 'venueChat.asProfile';
@@ -40,7 +47,7 @@ const AS_PROFILE_KEY = 'venueChat.asProfile';
 // profiled sender opens their profile through the message; any other sender offers report and
 // block.
 export default function VenueChatScreen() {
-  const { colors } = useTheme();
+  const { colors, shape } = useTheme();
   const queryClient = useQueryClient();
   const table = useActiveTable();
   const venueId = table.data?.venue_id;
@@ -111,65 +118,107 @@ export default function VenueChatScreen() {
     );
   }
 
+  const runs = toRuns(
+    messages.data ?? [],
+    (m) => (m.fromMe ? '' : `${m.profiled ? 'p' : 'a'}:${senderLabel(m)}`),
+    (m) => m.createdAt,
+  );
+
   return (
-    <Screen>
-      <ScreenHeader
-        title={tr.venueChat.title(venueName)}
-        subtitle={tr.venueChat.hint}
-        onBack={() => router.back()}
-      />
-      <View className="mt-4 gap-3" testID="venue-chat-messages">
-        {messages.isPending ? (
-          <ActivityIndicator color={colors.muted} />
-        ) : messages.data?.length === 0 ? (
-          <Text variant="fine">{tr.venueChat.empty}</Text>
-        ) : (
-          messages.data?.map((m) => (
+    <ChatScreen
+      testID="venue-chat-messages"
+      stickToEnd
+      top={
+        <ChatTopBar
+          onBack={() => router.back()}
+          title={tr.venueChat.title(venueName)}
+          subtitle={tr.venueChat.open}
+          leading={
+            <View
+              className="items-center justify-center"
+              style={{
+                width: AVATAR_SIZE.md,
+                height: AVATAR_SIZE.md,
+                borderRadius: shape.radius.pill,
+                backgroundColor: colors.signal,
+              }}
+            >
+              <Ionicons name="chatbubbles-outline" size={ICON.md} color={colors.onSignal} />
+            </View>
+          }
+        />
+      }
+      composer={
+        <Composer
+          inputTestID="venue-chat-input"
+          sendTestID="venue-chat-send"
+          sendLabel={tr.venueChat.send}
+          placeholder={tr.venueChat.placeholder}
+          value={draft}
+          onChangeText={setDraft}
+          maxLength={VENUE_CHAT.maxLength}
+          sendDisabled={!body}
+          sending={send.isPending}
+          onSend={() => body && send.mutate(body)}
+          counter={draft ? tr.chat.counter([...draft].length, VENUE_CHAT.maxLength) : undefined}
+          above={
+            <View>
+              <Toggle
+                compact
+                label={tr.venueChat.asProfile}
+                hint={asProfile ? tr.venueChat.asProfileOn : tr.venueChat.asProfileOff}
+                value={asProfile}
+                onChange={toggleProfile}
+              />
+              {send.isError ? (
+                <Text variant="fine" tone="danger">
+                  {errorMessage(send.error)}
+                </Text>
+              ) : null}
+            </View>
+          }
+        />
+      }
+    >
+      <Card tone="note">
+        <View className="flex-row items-center gap-3">
+          <Snail height={SPACING[9]} />
+          <Text variant="fine" tone="text" className="flex-1">
+            {tr.venueChat.hint}
+          </Text>
+        </View>
+      </Card>
+      {messages.isPending ? (
+        <ActivityIndicator color={colors.muted} />
+      ) : messages.data?.length === 0 ? (
+        <View className="flex-1 justify-center">
+          <EmptyState snail body={tr.venueChat.empty} />
+        </View>
+      ) : (
+        runs.map(({ item: m, first, last, day }) => (
+          <View key={m.id} className={first ? 'mt-1.5 gap-2' : 'gap-2'}>
+            {day ? <DayLine label={dayLabel(day)} /> : null}
             <ChatBubble
-              key={m.id}
               testID={m.fromMe ? 'venue-chat-mine' : 'venue-chat-theirs'}
               text={m.body}
               mine={m.fromMe}
+              first={first}
+              last={last}
+              time={tr.chat.time(m.createdAt)}
               name={m.fromMe ? tr.venueChat.you : senderLabel(m)}
+              avatar={
+                m.fromMe ? undefined : m.profiled ? (
+                  <Avatar kind="profile" name={senderLabel(m)} size="sm" />
+                ) : (
+                  <Avatar kind="table" alias={senderLabel(m)} size="sm" />
+                )
+              }
               tag={m.profiled ? <Tag label={tr.venueChat.profiled} variant="profiled" /> : null}
               onPressSender={m.fromMe ? undefined : () => openSender(m)}
             />
-          ))
-        )}
-      </View>
-
-      <View className="mt-auto gap-2 pt-6">
-        <Toggle
-          label={tr.venueChat.asProfile}
-          hint={asProfile ? tr.venueChat.asProfileOn : tr.venueChat.asProfileOff}
-          value={asProfile}
-          onChange={toggleProfile}
-        />
-        <View className="flex-row items-start gap-2">
-          <View className="flex-1">
-            <Input
-              testID="venue-chat-input"
-              accessibilityLabel={tr.venueChat.placeholder}
-              placeholder={tr.venueChat.placeholder}
-              value={draft}
-              onChangeText={setDraft}
-              maxLength={VENUE_CHAT.maxLength}
-              counter={tr.chat.counter([...draft].length, VENUE_CHAT.maxLength)}
-            />
           </View>
-          <Button
-            testID="venue-chat-send"
-            label={tr.venueChat.send}
-            disabled={!body || send.isPending}
-            onPress={() => body && send.mutate(body)}
-          />
-        </View>
-        {send.isError ? (
-          <Text variant="fine" tone="danger">
-            {errorMessage(send.error)}
-          </Text>
-        ) : null}
-      </View>
+        ))
+      )}
 
       <Sheet
         visible={menuFor !== null}
@@ -211,6 +260,6 @@ export default function VenueChatScreen() {
         onConfirm={(reason) => blocking && block.mutate({ id: blocking.id, reason })}
         onClose={() => setBlocking(null)}
       />
-    </Screen>
+    </ChatScreen>
   );
 }

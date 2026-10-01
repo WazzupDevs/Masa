@@ -1,15 +1,21 @@
 import { CONCEPTS, type Concept } from '@shared/rooms.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
+import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { ChatScreen } from '@/components/ChatScreen';
+import { ChatTopBar } from '@/components/ChatTopBar';
+import { IconButton } from '@/components/IconButton';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { Sheet } from '@/components/Sheet';
 import { Text } from '@/components/Text';
-import { ChatPanel } from '@/features/chat/ChatPanel';
-import { RoomSafety } from '@/features/chat/RoomSafety';
+import { RoomComposer, RoomMessages, useRoomChat } from '@/features/chat/ChatPanel';
+import { useRoomSafety } from '@/features/chat/RoomSafety';
 import { useOtherTableOnline } from '@/features/chat/usePresence';
 import { useActiveTable } from '@/features/checkin/useActiveTable';
 import { GameArea } from '@/features/games/GameArea';
@@ -23,6 +29,7 @@ import { tr } from '@/i18n/tr';
 import { trackOnce } from '@/lib/analytics';
 import { roomsApi } from '@/lib/api';
 import { useTheme } from '@/theme/ThemeProvider';
+import { SPACING } from '@/theme/tokens';
 
 export default function RoomScreen() {
   const { colors } = useTheme();
@@ -30,6 +37,7 @@ export default function RoomScreen() {
   const queryClient = useQueryClient();
   const table = useActiveTable();
   const room = useRoom(id);
+  const chat = useRoomChat(id);
 
   // "Odayı bitir" is the only way out (docs/SPEC_V3.md §5.5).
   const exit = useMutation({
@@ -95,12 +103,26 @@ export default function RoomScreen() {
   }
 
   return (
-    <Screen>
-      <ScreenHeader
-        eyebrow={tr.rooms.roomEyebrow(concept)}
-        title={r.guest_alias ? tr.rooms.withGuest(r.owner_alias, r.guest_alias) : r.owner_alias}
-      />
-
+    <ChatScreen
+      top={
+        <RoomTopBar
+          roomId={r.id}
+          title={r.guest_alias ? tr.rooms.withGuest(r.owner_alias, r.guest_alias) : r.owner_alias}
+          subtitle={tr.rooms.roomEyebrow(concept)}
+          aliases={r.guest_alias ? [r.owner_alias, r.guest_alias] : [r.owner_alias]}
+          guestSessionId={r.guest_session_id}
+          hasOtherTable={hasOtherTable}
+          onEnd={() => exit.mutate()}
+          ending={exit.isPending}
+        />
+      }
+      composer={<RoomComposer chat={chat} />}
+    >
+      {exit.isError ? (
+        <Text variant="fine" tone="danger">
+          {errorMessage(exit.error)}
+        </Text>
+      ) : null}
       <GameArea
         roomId={r.id}
         sessionId={sessionId}
@@ -111,70 +133,144 @@ export default function RoomScreen() {
         aliases={{ owner: r.owner_alias, guest: r.guest_alias ?? '' }}
       />
       {r.status === 'waiting' && r.visibility === 'open' ? (
-        <Card tone="note" className="mt-3">
+        <Card tone="note" className="mt-1">
           <Text variant="fine">{tr.rooms.waitingForGuest}</Text>
         </Card>
       ) : null}
-
       {hasOtherTable ? <OtherTableStatus roomId={r.id} isOwner={isOwner} /> : null}
-      {hasOtherTable ? (
-        <OtherTableProfile roomId={r.id} guestSessionId={r.guest_session_id} />
-      ) : null}
 
-      <ChatPanel roomId={r.id} sessionId={sessionId} />
-
-      <View className="mt-auto gap-3 pt-8">
-        <RoomSafety roomId={r.id} hasOtherTable={hasOtherTable} />
-        {exit.isError ? (
-          <Text variant="fine" tone="danger">
-            {errorMessage(exit.error)}
-          </Text>
-        ) : null}
-        <Button
-          variant="secondary"
-          testID="end-room"
-          label={tr.rooms.end}
-          onPress={() => exit.mutate()}
-          disabled={exit.isPending}
-        />
-        {hasOtherTable ? <Text variant="fine">{tr.rooms.endHint}</Text> : null}
-      </View>
+      <RoomMessages chat={chat} sessionId={sessionId} />
 
       {isOwner ? <IncomingRequest roomId={r.id} ownerSessionId={r.owner_session_id} /> : null}
-    </Screen>
+    </ChatScreen>
+  );
+}
+
+// The room's top bar (canvas: Aşama 4 · Yenileme): the tables' avatars and names, "Odayı bitir"
+// (the only way out, docs/SPEC_V3.md §5.5) and a menu with "Şikayet et" and "Engelle". The avatars
+// open the other table's profile only when it joined with its profile, and only while the room runs
+// (room_member_profile; docs/SPEC_V2.md §5.4).
+function RoomTopBar({
+  roomId,
+  title,
+  subtitle,
+  aliases,
+  guestSessionId,
+  hasOtherTable,
+  onEnd,
+  ending,
+}: {
+  roomId: string;
+  title: string;
+  subtitle: string;
+  aliases: readonly string[];
+  guestSessionId: string | null;
+  hasOtherTable: boolean;
+  onEnd: () => void;
+  ending: boolean;
+}) {
+  const [menu, setMenu] = useState(false);
+  const safety = useRoomSafety(roomId);
+  const member = useRoomMemberProfile(roomId, guestSessionId);
+  const publicId = member.data;
+  return (
+    <>
+      <ChatTopBar
+        title={title}
+        subtitle={subtitle}
+        leading={<TableFaces aliases={aliases} />}
+        onPressTitle={
+          publicId
+            ? () => router.push({ pathname: '/people/[publicId]', params: { publicId } })
+            : undefined
+        }
+        titleAccessibilityLabel={tr.rooms.viewProfile}
+        actions={
+          <>
+            <Button
+              variant="ghost"
+              flush
+              tight
+              testID="end-room"
+              label={tr.rooms.end}
+              onPress={onEnd}
+              disabled={ending}
+            />
+            <IconButton
+              icon="ellipsis-horizontal"
+              label={tr.friends.more}
+              onPress={() => setMenu(true)}
+            />
+          </>
+        }
+      />
+      <Sheet visible={menu} onClose={() => setMenu(false)} title={tr.friends.more}>
+        {hasOtherTable ? <Text variant="fine">{tr.rooms.endHint}</Text> : null}
+        <Button
+          variant="secondary"
+          label={tr.safety.report}
+          onPress={() => {
+            setMenu(false);
+            safety.startReport();
+          }}
+        />
+        {hasOtherTable ? (
+          <Button
+            variant="secondary"
+            label={tr.safety.block}
+            onPress={() => {
+              setMenu(false);
+              safety.confirmBlock();
+            }}
+          />
+        ) : null}
+      </Sheet>
+      {safety.blockError ? (
+        <View style={{ paddingHorizontal: SPACING[5], paddingTop: SPACING[2] }}>
+          <Text variant="fine" tone="danger">
+            {errorMessage(safety.blockError)}
+          </Text>
+        </View>
+      ) : null}
+      {safety.reportForm}
+    </>
+  );
+}
+
+// The tables in the room, the second a little over the first.
+function TableFaces({ aliases }: { aliases: readonly string[] }) {
+  const { colors, shape } = useTheme();
+  return (
+    <View className="flex-row">
+      {aliases.map((alias, i) => (
+        <View
+          key={alias}
+          style={
+            i > 0
+              ? {
+                  marginLeft: -SPACING[4],
+                  borderRadius: shape.radius.pill,
+                  borderWidth: shape.stroke.feature,
+                  borderColor: colors.canvas,
+                  margin: -shape.stroke.feature,
+                }
+              : undefined
+          }
+        >
+          <Avatar kind="table" alias={alias} size="md" />
+        </View>
+      ))}
+    </View>
   );
 }
 
 function OtherTableStatus({ roomId, isOwner }: { roomId: string; isOwner: boolean }) {
   const online = useOtherTableOnline(roomId, isOwner ? 'owner' : 'guest', true);
   return online ? null : (
-    <Card tone="note" className="mt-3">
+    <Card tone="note" className="mt-1">
       <Text variant="fine" tone="text" accessibilityLiveRegion="polite">
         {tr.safety.otherOffline}
       </Text>
     </Card>
-  );
-}
-
-// "Profili gör" only when the other table joined with its profile, and only while the room runs
-// (room_member_profile; docs/SPEC_V2.md §5.4).
-function OtherTableProfile({
-  roomId,
-  guestSessionId,
-}: {
-  roomId: string;
-  guestSessionId: string | null;
-}) {
-  const member = useRoomMemberProfile(roomId, guestSessionId);
-  const publicId = member.data;
-  if (!publicId) return null;
-  return (
-    <View className="mt-3">
-      <Button
-        variant="secondary"
-        label={tr.rooms.viewProfile}
-        onPress={() => router.push({ pathname: '/people/[publicId]', params: { publicId } })}
-      />
-    </View>
   );
 }

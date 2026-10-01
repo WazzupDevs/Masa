@@ -378,6 +378,13 @@ export const tr = {
     notSent: 'Gönderilemedi.',
     retry: 'Tekrar dene',
     discard: 'Sil',
+    // Chat screens: a day line over each day's first message, the time under a run (Aşama 4).
+    today: 'Bugün',
+    day: (iso: string) => dayMonth(iso),
+    time: (iso: string) => {
+      const d = new Date(iso);
+      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    },
   },
   // Mekan sohbet odası (docs/SPEC_V3.md §7).
   venueChat: {

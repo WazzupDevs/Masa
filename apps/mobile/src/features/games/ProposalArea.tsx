@@ -5,12 +5,14 @@ import {
   type ProposalView,
   proposalView,
 } from '@shared/rooms.ts';
+import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { usePressScale } from '@/components/motion';
 import { Text } from '@/components/Text';
 import { roomKeys, useGameProposal } from '@/features/rooms/queries';
 import { errorMessage } from '@/i18n/errors';
@@ -18,6 +20,8 @@ import { tr } from '@/i18n/tr';
 import { track } from '@/lib/analytics';
 import { roomsApi } from '@/lib/api';
 import { useNow } from '@/lib/useNow';
+import { useTheme } from '@/theme/ThemeProvider';
+import { ICON, SPACING, TOUCH } from '@/theme/tokens';
 
 // How long "Öneri kabul edilmedi" stays on the proposer's screen.
 const NOT_ACCEPTED_MS = 6000;
@@ -61,13 +65,16 @@ export function ProposalArea({ roomId, sessionId, gameRunning }: Props) {
   const error = propose.error ?? answer.error;
 
   return (
-    // Canvas: Oda · sohbet, the "Oyun öner" bar.
-    <Card tone="note" className="mt-4">
+    // Canvas (Aşama 4): the room's featured card, pinned over the chat.
+    <Card tone="feature" className="mt-1">
       {view.kind === 'theirs' ? (
         <View className="gap-3">
-          <Text variant="bodyStrong" accessibilityLiveRegion="polite">
-            {tr.games.proposalTheirs(tr.concepts[view.concept])}
-          </Text>
+          <View className="flex-row items-center gap-3">
+            <GameDisc concept={view.concept} />
+            <Text variant="bodyStrong" accessibilityLiveRegion="polite" className="flex-1">
+              {tr.games.proposalTheirs(tr.concepts[view.concept])}
+            </Text>
+          </View>
           <View className="flex-row gap-2.5">
             <View className="flex-1">
               <Button
@@ -80,7 +87,6 @@ export function ProposalArea({ roomId, sessionId, gameRunning }: Props) {
             </View>
             <View className="flex-1">
               <Button
-                variant="success"
                 testID="proposal-accept"
                 label={tr.games.acceptProposal}
                 onPress={() => answer.mutate({ accept: true, concept: view.concept })}
@@ -95,30 +101,26 @@ export function ProposalArea({ roomId, sessionId, gameRunning }: Props) {
         </Text>
       ) : (
         <View className="gap-3">
-          <Text variant="bodyStrong" accessibilityRole="header">
-            {tr.games.proposeTitle}
-          </Text>
-          {now < notAcceptedUntil ? (
-            <Text variant="fine" accessibilityLiveRegion="polite" testID="proposal-not-accepted">
-              {tr.games.notAccepted}
+          <View className="gap-0.5">
+            <Text variant="heading" accessibilityRole="header">
+              {tr.games.proposeTitle}
             </Text>
-          ) : (
-            <Text variant="fine">{tr.games.proposeHint}</Text>
-          )}
-          <View className="flex-row gap-2">
+            {now < notAcceptedUntil ? (
+              <Text variant="fine" accessibilityLiveRegion="polite" testID="proposal-not-accepted">
+                {tr.games.notAccepted}
+              </Text>
+            ) : (
+              <Text variant="fine">{tr.games.proposeHint}</Text>
+            )}
+          </View>
+          <View className="flex-row gap-2.5">
             {CONCEPTS.map((concept) => (
-              <View key={concept} className="flex-1">
-                <Button
-                  variant="secondary"
-                  testID={`propose-${concept}`}
-                  // Canvas: the bar is titled "Oyun öner"; each button names only the game, so
-                  // "Sohbet kartları" fits half a row. The reader still hears the whole action.
-                  label={tr.concepts[concept]}
-                  accessibilityLabel={tr.games.propose(tr.concepts[concept])}
-                  onPress={() => propose.mutate(concept)}
-                  disabled={propose.isPending}
-                />
-              </View>
+              <GameTile
+                key={concept}
+                concept={concept}
+                onPress={() => propose.mutate(concept)}
+                disabled={propose.isPending}
+              />
             ))}
           </View>
         </View>
@@ -129,5 +131,79 @@ export function ProposalArea({ roomId, sessionId, gameRunning }: Props) {
         </Text>
       ) : null}
     </Card>
+  );
+}
+
+// Each game's colour and icon: Sesli Tabu violet, Sohbet kartları the signal green.
+function useGameColors(concept: Concept) {
+  const { colors } = useTheme();
+  return concept === 'tabu'
+    ? { bg: colors.violet, fg: colors.onViolet, icon: 'mic-outline' as const }
+    : { bg: colors.signal, fg: colors.onSignal, icon: 'chatbubbles-outline' as const };
+}
+
+function GameDisc({ concept }: { concept: Concept }) {
+  const { shape } = useTheme();
+  const c = useGameColors(concept);
+  return (
+    <View
+      className="items-center justify-center"
+      style={{
+        width: TOUCH.button,
+        height: TOUCH.button,
+        borderRadius: shape.radius.pill,
+        backgroundColor: c.bg,
+      }}
+    >
+      <Ionicons name={c.icon} size={ICON.lg} color={c.fg} />
+    </View>
+  );
+}
+
+// A game to propose: a colour tile with its icon and name. Canvas: the bar is titled "Oyun öner";
+// each tile names only the game, the reader still hears the whole action.
+function GameTile({
+  concept,
+  onPress,
+  disabled,
+}: {
+  concept: Concept;
+  onPress: () => void;
+  disabled: boolean;
+}) {
+  const { shape } = useTheme();
+  const pressScale = usePressScale();
+  const c = useGameColors(concept);
+  return (
+    <Pressable
+      testID={`propose-${concept}`}
+      accessibilityRole="button"
+      accessibilityLabel={tr.games.propose(tr.concepts[concept])}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      className="flex-1"
+    >
+      {({ pressed }) => (
+        <View
+          className="gap-2.5"
+          style={[
+            {
+              minHeight: TOUCH.large + SPACING[6],
+              padding: SPACING[3] + SPACING[0.5],
+              borderRadius: shape.radius.lg,
+              backgroundColor: c.bg,
+              opacity: disabled ? 0.6 : 1,
+            },
+            pressScale(pressed),
+          ]}
+        >
+          <Ionicons name={c.icon} size={ICON.lg} color={c.fg} />
+          <Text variant="heading" color={c.fg} numberOfLines={2}>
+            {tr.concepts[concept]}
+          </Text>
+        </View>
+      )}
+    </Pressable>
   );
 }
