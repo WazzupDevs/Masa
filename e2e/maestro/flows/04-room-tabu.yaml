@@ -172,9 +172,11 @@ appId: app.kabuk.mobile
     timeout: 10000
 - tapOn:
     id: end-game
-- extendedWaitUntil:
-    visible:
+# The screen is still scrolled down to the button; the last game is at the top.
+- scrollUntilVisible:
+    element:
       id: last-game
+    direction: UP
     timeout: 15000
 - assertVisible:
     id: propose-sohbet

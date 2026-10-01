@@ -83,11 +83,16 @@ appId: app.kabuk.mobile
     visible: Takım . başlasın
     timeout: 15000
 - takeScreenshot: 29c-solo-tabu
+- scrollUntilVisible:
+    element:
+      id: end-game
+    timeout: 10000
 - tapOn:
     id: end-game
-- extendedWaitUntil:
-    visible:
+- scrollUntilVisible:
+    element:
       id: solo-sohbet
+    direction: UP
     timeout: 15000
 - scrollUntilVisible:
     element:
