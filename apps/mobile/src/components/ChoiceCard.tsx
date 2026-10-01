@@ -35,7 +35,7 @@ export function ChoiceCard({ label, hint, picture, selected, disabled, onPress, 
     >
       {({ pressed }) => (
         <View
-          className="flex-1 items-center gap-2.5"
+          className="items-center gap-2.5"
           style={[
             {
               paddingHorizontal: SPACING[3],
