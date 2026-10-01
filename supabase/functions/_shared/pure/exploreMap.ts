@@ -1,6 +1,8 @@
 // Keşfet map (docs/SPEC_V2.md §4): venues as GeoJSON points drawn by GL layers (clustered at low
 // zoom), and the opening camera that fits every venue between the header and the tab bar.
 
+import type { VenueKind } from './venueKind.ts';
+
 export type MapVenue = {
   id: string;
   name: string;
@@ -8,13 +10,21 @@ export type MapVenue = {
   lng: number;
   bucket: 'calm' | 'lively' | 'buzzing';
   hasEvent: boolean;
+  // The glyph inside the pin (cafe or campus).
+  kind: VenueKind;
 };
 
 export type VenuePoint = {
   type: 'Feature';
   id: string;
   geometry: { type: 'Point'; coordinates: [lng: number, lat: number] };
-  properties: { id: string; name: string; bucket: MapVenue['bucket']; event: boolean };
+  properties: {
+    id: string;
+    name: string;
+    bucket: MapVenue['bucket'];
+    event: boolean;
+    kind: VenueKind;
+  };
 };
 
 export type VenueCollection = { type: 'FeatureCollection'; features: VenuePoint[] };
@@ -40,7 +50,7 @@ export function venueCollection(venues: readonly MapVenue[]): VenueCollection {
       type: 'Feature',
       id: v.id,
       geometry: { type: 'Point', coordinates: [v.lng, v.lat] },
-      properties: { id: v.id, name: v.name, bucket: v.bucket, event: v.hasEvent },
+      properties: { id: v.id, name: v.name, bucket: v.bucket, event: v.hasEvent, kind: v.kind },
     })),
   };
 }

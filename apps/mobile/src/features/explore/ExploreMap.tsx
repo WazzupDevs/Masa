@@ -40,8 +40,8 @@ type Filter = NonNullable<SymbolLayer['filter']>;
 const IS_CLUSTER: Filter = ['has', 'point_count'];
 const IS_VENUE: Filter = ['!', ['has', 'point_count']];
 
-// The venue's kind glyph inside its circle (signed distance fields, coloured per bucket). The
-// feature's `kind` ('cafe' | 'campus') picks it; without one, the cafe.
+// The venue's kind glyph inside its circle (signed distance fields, coloured per bucket), picked by
+// the feature's `kind` ('cafe' | 'campus').
 const MAP_IMAGES = {
   'marker-cafe': { source: MARKER_IMAGES.cafe, sdf: true },
   'marker-campus': { source: MARKER_IMAGES.campus, sdf: true },
@@ -85,6 +85,7 @@ export function ExploreMap({
           lng: v.lng,
           bucket: v.bucket,
           hasEvent: v.event !== null,
+          kind: v.kind,
         })),
       ),
     [venues],
