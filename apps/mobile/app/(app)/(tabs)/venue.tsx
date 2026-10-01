@@ -160,11 +160,12 @@ export default function VenueScreen() {
       </Card>
       <View className="mt-4 flex-row gap-3">
         <View className="flex-1">
-          <Button label={tr.rooms.create} onPress={() => router.push('/room/new')} />
+          <Button tight label={tr.rooms.create} onPress={() => router.push('/room/new')} />
         </View>
         <View className="flex-1">
           <Button
             variant="secondary"
+            tight
             testID="play-with-table"
             label={tr.rooms.playWithTable}
             onPress={() => solo.mutate()}
