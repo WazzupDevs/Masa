@@ -43,7 +43,7 @@ export const THEME: ThemeDefinition = {
       canvas: '#0F0F11',
       surface: '#1B1B1F',
       surface2: '#26262C',
-      raised: '#26262C',
+      raised: '#34343C',
       text: '#F6F5F1',
       muted: '#AEADB6',
       accent: '#DCFF52',
