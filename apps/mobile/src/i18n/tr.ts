@@ -1,6 +1,8 @@
 import { APP_NAME } from '@shared/brand.ts';
 import { headcountLabel } from '@shared/checkin.ts';
+import type { InboxStamp } from '@shared/dmInbox.ts';
 import type { EventTime } from '@shared/explore.ts';
+import { TABU } from '@shared/tabu.ts';
 
 const MONTHS = [
   'Ocak',
@@ -50,6 +52,12 @@ const HISTORY_CONCEPTS: Record<HistoryConcept, string> = {
 };
 
 const WEEKDAYS = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+const WEEKDAYS_SHORT = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+
+function clock(iso: string): string {
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
 
 export const tr = {
   app: {
@@ -137,9 +145,57 @@ export const tr = {
   },
   tabs: {
     explore: 'Keşfet',
+    activities: 'Aktiviteler',
     venue: 'Mekan',
-    friends: 'Arkadaşlar',
+    messages: 'Mesajlar',
     profile: 'Profil',
+  },
+  // Mesajlar (docs/SPEC_V3.md §18.3).
+  messages: {
+    empty: 'Henüz mesajın yok.',
+    emptyHint: 'Arkadaş olduğun kişilerle burada yazışırsın.',
+    noMessage: 'Henüz mesaj yok',
+    yesterday: 'Dün',
+    stamp: (iso: string, stamp: InboxStamp) =>
+      stamp.kind === 'time'
+        ? clock(iso)
+        : stamp.kind === 'yesterday'
+          ? 'Dün'
+          : stamp.kind === 'weekday'
+            ? (WEEKDAYS_SHORT[stamp.weekday] ?? '')
+            : dayMonth(iso),
+    unread: (n: number) => `${n} okunmamış mesaj`,
+    row: (name: string, preview: string, unread: number) =>
+      unread > 0 ? `${name}, ${preview}, ${unread} okunmamış` : `${name}, ${preview}`,
+  },
+  // Aktiviteler: the game hub (docs/SPEC_V3.md §18.3). Same games and rules as the room.
+  activities: {
+    howTo: 'Nasıl oynanır',
+    createWith: 'Bu oyunla oda kur',
+    goToVenue: 'Oynamak için mekana gir',
+    recent: 'Son oyunların',
+    recentRow: (alias: string | null, iso: string) =>
+      alias ? `${alias} ile · ${dayMonth(iso)}` : dayMonth(iso),
+    score: (n: number) => `${n} puan`,
+    won: 'Kazandınız',
+    tabu: {
+      body: 'Masalar takım olur: anlatan masa kartı anlatır, diğer masa yasaklı kelimeleri dinler.',
+      steps: [
+        `İki masa yüz yüze oynar, sırayla anlatır. Her tur ${TABU.turnSeconds} saniye, oyun ${TABU.totalTurns} tur.`,
+        'Anlatan masa karttaki kelimeyi yasaklı kelimeleri söylemeden anlatır; kendi masası tahmin eder.',
+        `Doğru: kelime bilindi, iki masa da basabilir. Pas: kart geçilir, yalnızca anlatan masa basar, turda en çok ${TABU.maxPasses}. Tabu: yasaklı kelime söylendi, yalnızca dinleyen masa basar.`,
+        'Masalardan biri tek kişiyse iş birliği modu: tek takım, süreye karşı; üç düğmeye yalnızca anlatan masa basar.',
+        'Kendi masanla oynarken masanızı iki takıma ayırın; anlatan telefonu tutar, takımı tahmin eder.',
+      ],
+    },
+    sohbet: {
+      body: 'Sırayla kart çekin, soruyu masanızda konuşun.',
+      steps: [
+        'Bir tema seçin: Isınma, Film, dizi, müzik, Hiç … yaptın mı? ya da Derin.',
+        'Sırayla kart çekin; karttaki soruyu masanızda konuşun.',
+        'Başka bir masayla oynarken iki masa aynı kartı görür; sohbet oda sohbetinde de sürer.',
+      ],
+    },
   },
   explore: {
     backToVenue: 'Mekan ekranına dön',
@@ -175,8 +231,9 @@ export const tr = {
     comingSoon: 'Yeni mekanlar yakında.',
   },
   friends: {
-    empty: 'Henüz arkadaşın yok. Birlikte oynadığın masaları "Geçmiş ve istekler"de bulabilirsin.',
+    empty: "Henüz arkadaşın yok. Birlikte oynadığın masaları Bildirimler'de bulabilirsin.",
     requestsAndHistory: 'Geçmiş ve istekler',
+    message: (name: string) => `${name} ile mesajlaş`,
     newRequests: (n: number) => `${n} yeni arkadaşlık isteği`,
     unread: 'Yeni mesaj',
     noMessagesYet: 'Henüz mesaj yok. İlk mesajı sen yaz.',
@@ -223,6 +280,8 @@ export const tr = {
   notifications: {
     title: 'Bildirimler',
     withCount: (n: number) => `Bildirimler, ${n} yeni`,
+    empty: 'Yeni bildirim yok.',
+    emptyHint: 'Başka bir masayla en az 3 dakika oynadığınızda burada görünür.',
   },
   dm: {
     placeholder: 'Mesaj yaz…',

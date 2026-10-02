@@ -95,7 +95,7 @@ appId: app.kabuk.mobile
     timeout: 10000
 - tapOn: Geri
 - tapOn:
-    id: tab-friends
+    id: tab-messages
 - extendedWaitUntil:
     visible: Bot İki
     timeout: 20000

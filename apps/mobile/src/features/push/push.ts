@@ -1,5 +1,8 @@
+import { pushRoute } from '@shared/navigation.ts';
 import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
+import { router } from 'expo-router';
+import { useEffect } from 'react';
 import { Platform } from 'react-native';
 
 import { callAccount } from '@/lib/api';
@@ -57,4 +60,36 @@ export async function unregisterPush(): Promise<void> {
   } catch {
     // The session may already be gone.
   }
+}
+
+// A tapped push opens its screen (docs/SPEC_V3.md §18.3): Mesajlar for a DM, Bildirimler for a
+// friend request. The payload carries only that target (pure/navigation.ts → pushRoute); an old or
+// unknown payload opens nothing and never throws. Each response is handled once, also the one that
+// started the app.
+let handled: string | null = null;
+
+function open(response: Notifications.NotificationResponse): void {
+  const id = response.notification.request.identifier;
+  if (id === handled) return;
+  handled = id;
+  const route = pushRoute(response.notification.request.content.data);
+  if (route) router.navigate(route);
+}
+
+export function usePushNavigation(): void {
+  useEffect(() => {
+    void Notifications.getLastNotificationResponseAsync()
+      .then((last) => {
+        if (last) open(last);
+      })
+      .catch(() => undefined);
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      try {
+        open(response);
+      } catch {
+        // A bad payload must never take the app down.
+      }
+    });
+    return () => sub.remove();
+  }, []);
 }

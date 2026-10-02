@@ -85,7 +85,7 @@ export function ChatBubble({
     time && last && !state ? (
       <View className="flex-row items-center gap-1" style={{ paddingHorizontal: SPACING[1.5] }}>
         <Text variant="fine">{time}</Text>
-        {mine && delivery ? <Ticks delivery={delivery} /> : null}
+        {mine && delivery ? <DeliveryTicks delivery={delivery} /> : null}
       </View>
     ) : null;
 
@@ -175,10 +175,11 @@ export function ChatBubble({
   );
 }
 
-function Ticks({ delivery }: { delivery: Delivery }) {
+// Also on a Mesajlar row, before the preview of the viewer's own last message.
+export function DeliveryTicks({ delivery }: { delivery: Delivery }) {
   const { colors } = useTheme();
   return (
-    <View accessible accessibilityLabel={tr.dm.delivery[delivery]}>
+    <View accessible accessibilityLabel={tr.dm.delivery[delivery]} testID={`tick-${delivery}`}>
       <Ionicons
         name={delivery === 'sent' ? 'checkmark' : 'checkmark-done'}
         size={ICON.sm}
@@ -192,7 +193,7 @@ const DOT = SPACING[2];
 const TYPING_MS = 400;
 
 // The other side is typing: three dots in a left bubble, rising in turn; still under reduce motion.
-export function TypingBubble({ avatar }: { avatar?: ReactNode }) {
+export function TypingBubble({ avatar, testID }: { avatar?: ReactNode; testID?: string }) {
   const { colors, shape } = useTheme();
   const reduce = useReduceMotion();
   const [dots] = useState(() => [0, 1, 2].map(() => new Animated.Value(0)));
@@ -224,6 +225,7 @@ export function TypingBubble({ avatar }: { avatar?: ReactNode }) {
       accessible
       accessibilityLiveRegion="polite"
       accessibilityLabel={tr.dm.typing}
+      testID={testID}
     >
       {avatar}
       <View

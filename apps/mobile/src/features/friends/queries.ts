@@ -1,10 +1,12 @@
+import { totalUnread } from '@shared/dmInbox.ts';
 import { BROADCAST, inboxChannel } from '@shared/rooms.ts';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+import { AppState } from 'react-native';
 
 import { useSessionStore } from '@/features/auth/session';
 import { useBroadcast } from '@/features/rooms/useBroadcast';
-import { friendsApi } from '@/lib/api';
+import { dmApi, friendsApi } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 
 export const friendKeys = {
@@ -14,6 +16,7 @@ export const friendKeys = {
   incomingChat: ['friends', 'incomingChat'] as const,
   sent: ['friends', 'sent'] as const,
   history: ['friends', 'history'] as const,
+  inbox: ['friends', 'inbox'] as const,
   dm: (threadId: string) => ['friends', 'dm', threadId] as const,
 };
 
@@ -85,7 +88,29 @@ export function usePlayHistory() {
   });
 }
 
-// Newest first, 50 at a time (dm_messages_page).
+// Mesajlar (docs/SPEC_V3.md §18.3): every friend, newest conversation first. Under friendKeys.all,
+// so the inbox broadcast refreshes it.
+export function useDmInbox() {
+  return useQuery({
+    queryKey: friendKeys.inbox,
+    queryFn: async () => (await dmApi.inbox()).threads,
+  });
+}
+
+// The Mesajlar tab's badge.
+export function useUnreadTotal(): number {
+  const inbox = useDmInbox();
+  return totalUnread(inbox.data ?? []);
+}
+
+// The requests waiting for the caller (the bell's badge): from play history and the venue chat.
+export function useRequestCount(): number {
+  const incoming = useIncomingFriendRequests();
+  const chatIncoming = useVenueChatRequests();
+  return (incoming.data?.length ?? 0) + (chatIncoming.data?.length ?? 0);
+}
+
+// Newest first, 50 at a time (dm_messages_page), with the status of the caller's own messages.
 export function useDmMessages(threadId: string) {
   return useQuery({
     queryKey: friendKeys.dm(threadId),
@@ -99,17 +124,50 @@ export function useDmMessages(threadId: string) {
   });
 }
 
+// Ticks (docs/SPEC_V3.md §18.2): while the app is open, the messages it has been told about count
+// as delivered. Called on mount, when the app comes to the foreground and on an inbox DM
+// broadcast, at most once per DELIVERED_DEBOUNCE_MS. With the app closed nothing is delivered.
+const DELIVERED_DEBOUNCE_MS = 1000;
+
+function useMarkDelivered(): () => void {
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mark = useCallback(() => {
+    if (timer.current) return;
+    timer.current = setTimeout(() => {
+      timer.current = null;
+      void dmApi.delivered().catch(() => undefined);
+    }, DELIVERED_DEBOUNCE_MS);
+  }, []);
+  useEffect(() => {
+    mark();
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') mark();
+    });
+    return () => {
+      sub.remove();
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = null;
+    };
+  }, [mark]);
+  return mark;
+}
+
 // The account's inbox channel: requests, friendships and DMs refetch when told to. Mounted once,
-// in the tab layout, so the Arkadaşlar badge stays current.
+// in the tab layout, so the Mesajlar and bell badges stay current.
 export function useInbox(): void {
   const queryClient = useQueryClient();
   const userId = useSessionStore((s) => s.session?.user.id);
+  const markDelivered = useMarkDelivered();
   const refetch = useCallback(
     () => void queryClient.invalidateQueries({ queryKey: friendKeys.all }),
     [queryClient],
   );
+  const onDm = useCallback(() => {
+    refetch();
+    markDelivered();
+  }, [refetch, markDelivered]);
   const topic = userId ? inboxChannel(userId) : null;
   useBroadcast(topic, BROADCAST.friendRequest, refetch);
   useBroadcast(topic, BROADCAST.friendshipChanged, refetch);
-  useBroadcast(topic, BROADCAST.dm, refetch);
+  useBroadcast(topic, BROADCAST.dm, onDm);
 }

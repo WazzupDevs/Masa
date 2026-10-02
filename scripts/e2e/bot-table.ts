@@ -23,6 +23,7 @@ import {
   CURRENT_TERMS_VERSION,
 } from '../../supabase/functions/_shared/pure/consent.ts';
 import { isDevProjectUrl, isLocalUrl } from '../../supabase/functions/_shared/pure/devProject.ts';
+import { dmTypingChannel, TYPING_EVENT } from '../../supabase/functions/_shared/pure/rooms.ts';
 import type { VoiceTabuState } from '../../supabase/functions/_shared/pure/tabu.ts';
 import { ANCHOR, offset, squareRing } from '../../supabase/tests/fixtures/venues.ts';
 
@@ -390,6 +391,21 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
     return call('dm', { action: 'send', threadId: thread, body: String(args.body ?? 'Merhaba!') });
   },
 
+  // The device's messages so far count as read (its ticks turn to "Okundu", docs/SPEC_V3.md §18.2).
+  async 'dm-read'() {
+    const threadId = await firstThread();
+    return call('dm', { action: 'read', threadId });
+  },
+
+  // "yazıyor" on the device: `typing` on dm_typing:{thread} every 1.5 s for `seconds` (default 8),
+  // in the background so the flow can look for the dots meanwhile.
+  async 'dm-typing'(args) {
+    const threadId = await firstThread();
+    const until = Date.now() + Number(args.seconds ?? 8) * 1000;
+    void typeFor(threadId, until);
+    return { ok: true };
+  },
+
   // The newest message of the conversation, so a flow can check what the device sent.
   async 'dm-last'() {
     const list = (await call('friends', { action: 'list' })) as {
@@ -623,6 +639,9 @@ async function opponent() {
         const last = rows[0];
         if (!last || last.from_me || answered.has(last.id)) continue;
         answered.add(last.id);
+        // Read (the device's ticks turn to read), type a moment, then answer (§18.3).
+        await call('dm', { action: 'read', threadId });
+        await typeFor(threadId, Date.now() + 3000);
         await call('dm', { action: 'send', threadId, body: `Aldım: ${last.body}` });
         say('answered a DM');
       }
@@ -631,6 +650,39 @@ async function opponent() {
     await new Promise((resolve) => setTimeout(resolve, 2_000));
   }
 }
+async function firstThread(): Promise<string> {
+  return retryUntil('a friend with a conversation', async () => {
+    const list = (await call('friends', { action: 'list' })) as {
+      friends: { threadId: string | null }[];
+    };
+    return list.friends[0]?.threadId ?? null;
+  });
+}
+
+// The typing channel is the one channel where a client sends (rule 9); only the two members join.
+async function typeFor(threadId: string, until: number): Promise<void> {
+  const channel = me().channel(dmTypingChannel(threadId), { config: { private: true } });
+  const status = await new Promise<string>((resolve) => {
+    const timer = setTimeout(() => resolve('TIMED_OUT'), 8000);
+    channel.subscribe((s) => {
+      if (s === 'SUBSCRIBED' || s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') {
+        clearTimeout(timer);
+        resolve(s);
+      }
+    });
+  });
+  if (status !== 'SUBSCRIBED') {
+    console.log(`bot-table: typing channel ${status}`);
+    await me().removeChannel(channel);
+    return;
+  }
+  while (Date.now() < until) {
+    await channel.send({ type: 'broadcast', event: TYPING_EVENT, payload: {} });
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+  }
+  await me().removeChannel(channel);
+}
+
 async function run(action: string, args: Json): Promise<Json> {
   const fn = actions[action];
   if (!fn) throw new Error(`unknown action ${action}; one of ${Object.keys(actions).join(', ')}`);

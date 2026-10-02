@@ -34,10 +34,11 @@ import { friendsApi, safetyApi } from '@/lib/api';
 const concept = (c: string): HistoryConcept =>
   c === 'tabu' ? 'tabu' : c === 'sohbet' ? 'sohbet' : 'chat';
 
-// Gelen istekler, gönderilen istekler and the play history (docs/SPEC_V2.md §6.1, §6.2). Every
-// action on another table goes through the caller's own history row; nothing here carries a
-// profile id. The screen says "masa", not "kişi".
-export default function RequestsScreen() {
+// Bildirimler (docs/SPEC_V3.md §18.3: the bell on the tab screens): gelen istekler, gönderilen
+// istekler and the play history (docs/SPEC_V2.md §6.1, §6.2); the former "Geçmiş ve istekler",
+// with no table of its own. Every action on another table goes through the caller's own history
+// row; nothing here carries a profile id. The screen says "masa", not "kişi".
+export default function NotificationsScreen() {
   const queryClient = useQueryClient();
   const incoming = useIncomingFriendRequests();
   const chatIncoming = useVenueChatRequests();
@@ -98,9 +99,26 @@ export default function RequestsScreen() {
     onSettled: refresh,
   });
 
+  const loaded = [incoming, chatIncoming, sent, sentChat, history].every((q) => q.isSuccess);
+  const nothing =
+    loaded &&
+    [incoming.data, chatIncoming.data, sent.data, sentChat.data, history.data].every(
+      (rows) => (rows?.length ?? 0) === 0,
+    );
+  if (nothing) {
+    return (
+      <Screen>
+        <ScreenHeader title={tr.notifications.title} onBack={() => router.back()} />
+        <View className="flex-1 justify-center">
+          <EmptyState snail title={tr.notifications.empty} body={tr.notifications.emptyHint} />
+        </View>
+      </Screen>
+    );
+  }
+
   return (
     <Screen>
-      <ScreenHeader title={tr.friends.requestsAndHistory} onBack={() => router.back()} />
+      <ScreenHeader title={tr.notifications.title} onBack={() => router.back()} />
 
       <Section title={tr.friends.incomingTitle}>
         {incoming.data?.length === 0 && chatIncoming.data?.length === 0 ? (

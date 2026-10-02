@@ -1,33 +1,22 @@
-import { Ionicons } from '@expo/vector-icons';
 import { venueTabTarget } from '@shared/navigation.ts';
 import { router, Tabs } from 'expo-router';
 
 import { TabBar, TabBarSpace } from '@/components/TabBar';
 import { useActiveTable } from '@/features/checkin/useActiveTable';
-import {
-  useFriends,
-  useIncomingFriendRequests,
-  useInbox,
-  useVenueChatRequests,
-} from '@/features/friends/queries';
+import { useInbox, useUnreadTotal } from '@/features/friends/queries';
 import { tr } from '@/i18n/tr';
 
 export { RouteError as ErrorBoundary } from '@/components/RouteError';
 
 export const unstable_settings = { initialRouteName: 'explore' };
 
-// Keşfet · Mekan · Arkadaşlar · Profil. Rooms, check-in and legal texts are full screen outside
-// the tabs, so the tab bar is hidden there.
+// Keşfet · Aktiviteler · Mekan · Mesajlar · Profil (docs/SPEC_V3.md §18.3). TabBar draws each
+// tab's icon from the route name. Rooms, check-in, Bildirimler and legal texts are full screen
+// outside the tabs, so the tab bar is hidden there; a DM hides it itself.
 export default function TabsLayout() {
   const table = useActiveTable();
   useInbox();
-  const incoming = useIncomingFriendRequests();
-  const chatIncoming = useVenueChatRequests();
-  const friends = useFriends();
-  const waiting =
-    (incoming.data?.length ?? 0) +
-    (chatIncoming.data?.length ?? 0) +
-    (friends.data?.filter((f) => f.unread).length ?? 0);
+  const unread = useUnreadTotal();
 
   return (
     <TabBarSpace>
@@ -38,13 +27,11 @@ export default function TabsLayout() {
         <Tabs.Screen name="index" options={{ href: null }} />
         <Tabs.Screen
           name="explore"
-          options={{
-            title: tr.tabs.explore,
-            tabBarButtonTestID: 'tab-explore',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="compass-outline" color={color} size={size} />
-            ),
-          }}
+          options={{ title: tr.tabs.explore, tabBarButtonTestID: 'tab-explore' }}
+        />
+        <Tabs.Screen
+          name="activities"
+          options={{ title: tr.tabs.activities, tabBarButtonTestID: 'tab-activities' }}
         />
         <Tabs.Screen
           name="venue"
@@ -65,25 +52,16 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
-          name="friends"
+          name="messages"
           options={{
-            title: tr.tabs.friends,
-            tabBarButtonTestID: 'tab-friends',
-            tabBarBadge: waiting > 0 ? waiting : undefined,
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="people-outline" color={color} size={size} />
-            ),
+            title: tr.tabs.messages,
+            tabBarButtonTestID: 'tab-messages',
+            tabBarBadge: unread > 0 ? unread : undefined,
           }}
         />
         <Tabs.Screen
           name="profile"
-          options={{
-            title: tr.tabs.profile,
-            tabBarButtonTestID: 'tab-profile',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="person-outline" color={color} size={size} />
-            ),
-          }}
+          options={{ title: tr.tabs.profile, tabBarButtonTestID: 'tab-profile' }}
         />
       </Tabs>
     </TabBarSpace>
