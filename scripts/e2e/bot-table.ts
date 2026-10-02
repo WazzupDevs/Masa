@@ -388,6 +388,8 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
       };
       return list.friends[0]?.threadId ?? null;
     });
+    // A person stops typing when they send: a running `dm-typing` ends first, so no dots follow.
+    await stopTyping();
     return call('dm', { action: 'send', threadId: thread, body: String(args.body ?? 'Merhaba!') });
   },
 
@@ -402,7 +404,8 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
   async 'dm-typing'(args) {
     const threadId = await firstThread();
     const until = Date.now() + Number(args.seconds ?? 8) * 1000;
-    void typeFor(threadId, until);
+    await stopTyping();
+    typing = typeFor(threadId, until);
     return { ok: true };
   },
 
@@ -659,6 +662,18 @@ async function firstThread(): Promise<string> {
   });
 }
 
+// The background `dm-typing` loop, so `dm-send` can end it before the message goes.
+let typing: Promise<void> | null = null;
+let typingStopped = false;
+
+async function stopTyping(): Promise<void> {
+  if (!typing) return;
+  typingStopped = true;
+  await typing;
+  typing = null;
+  typingStopped = false;
+}
+
 // The typing channel is the one channel where a client sends (rule 9); only the two members join.
 async function typeFor(threadId: string, until: number): Promise<void> {
   const channel = me().channel(dmTypingChannel(threadId), { config: { private: true } });
@@ -676,7 +691,7 @@ async function typeFor(threadId: string, until: number): Promise<void> {
     await me().removeChannel(channel);
     return;
   }
-  while (Date.now() < until) {
+  while (Date.now() < until && !typingStopped) {
     await channel.send({ type: 'broadcast', event: TYPING_EVENT, payload: {} });
     await new Promise((resolve) => setTimeout(resolve, 1500));
   }
