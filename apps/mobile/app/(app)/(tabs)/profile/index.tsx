@@ -12,6 +12,7 @@ import { SnailLoader } from '@/components/Snail';
 import { Text } from '@/components/Text';
 import { useProfile } from '@/features/account/useProfile';
 import { useFriends } from '@/features/friends/queries';
+import { NotificationsBell } from '@/features/notifications/Bell';
 import { Badges, OwnProfileHead } from '@/features/profile/ProfileCard';
 import { useProfileView } from '@/features/profile/queries';
 import { errorMessage } from '@/i18n/errors';
@@ -35,6 +36,7 @@ export default function ProfileScreen() {
     <Screen>
       <ScreenHeader
         title={tr.tabs.profile}
+        trailing={<NotificationsBell />}
         action={{
           icon: 'settings-outline',
           label: tr.settings.title,
@@ -66,7 +68,7 @@ export default function ProfileScreen() {
                   accessibilityLabel={
                     friendCount !== undefined ? tr.profile.friendsCount(friendCount) : undefined
                   }
-                  onPress={() => router.navigate('/friends')}
+                  onPress={() => router.push('/profile/friends')}
                 />
               </View>
               <View className="flex-1">

@@ -813,7 +813,7 @@ Onaylandı; CLAUDE.md'ye işlendi. Kurallar, ilgili adım uygulanana kadar o ad�
 - **S11 — Hız sınırları:** Kabul (§7.4, §7.5).
 - **S12 — Gizlenen mesaj:** Kabul, kalıcı gizli.
 - **S13 — Masa adları:** Sıfat + isim; isimler hayvanla sınırlı değil (yiyecek, bitki, nesne, doğa); kampüse özel tema yok. Liste adım 3'ün PR'ında verilir (§5.6).
-- **S14 — Netgsm:** Adım 1 Netgsm'i beklemez. Netgsm hazır olana kadar dev projesi Twilio Verify ile çalışır (§2.3).
+- **S14 — Netgsm:** Adım 1 Netgsm'i beklemez. Netgsm hazır olana kadar dev projesi Twilio Verify ile çalışır (§2.3). _Adım 6 düzeltmesi:_ dev projesinde Twilio yok, giriş yalnızca test numaralarıyla; gerçek SMS yalnızca pilot projesinde Netgsm kancasıyla (§18.3a).
 
 **Proje sahibinin ek düzeltmeleri (onayla birlikte):**
 
@@ -890,6 +890,18 @@ Tasarımın "Aşama 5" PR'ı main'e girmeden başlamaz: `TabBar.tsx`, `profile/i
 9. **E2E:**
    - Sekme `testID`'leri ve `05-reveal-friend-dm` dahil etkilenen akışlar güncellenir.
    - Yeni akış: DM'de karşı taraf (bot) yazar; yazıyor görünür, mesaj gelir, kendi mesajımın tiki okunduya döner.
+
+### 18.3a Uygulamada netleşenler (PR 3 notu)
+
+- **Bildirim düğmesi** her sekmenin kök ekranında, Profil dahil (tuvalin Profil çiziminde yok; proje sahibinin kuralı "sekmelerin kök ekranları"). Keşfet'te başlık haritanın üstünde durduğu için düğme iki görünümde de sağ üstte.
+- **Son oyunların:** kayıt yoksa bölüm hiç görünmez (tuvalin "mekanda değil" çiziminde boş metin var; proje sahibinin kuralı geçerli). Satırda karşı masanın adı kendi oyun geçmişinden, puan kendi puanın; kazanılan oyun vurgulu. Karşı masanın puanı okunabilir değil (`game_results` yalnızca kendi satırı), gösterilmez.
+- **"Bu oyunla oda kur":** Sesli Tabu kartı "Oyun", Sohbet kartları kartı "Sohbet" niyetiyle açar.
+- **Arkadaşlar listesi:** satır kişinin profilini, satırdaki mesaj düğmesi DM'i açar.
+- **DM gönderme** oda sohbeti gibi iyimser: mesaj hemen bekleme hâliyle görünür, sunucunun kopyası gelince yerini alır; başarısızsa "Tekrar dene" ve "Sil".
+- **Push:** `PushMessage.target` (`messages` ya da `notifications`) push verisine yalnızca hedef olarak girer; kimlik, gönderen, içerik yok. Uygulama dokunulan push'u `pure/navigation.ts` → `pushRoute` ile açar; adım 6'dan önceki push'lar (veri yok) ve eski `/friends…` yolları hiçbir şeyi bozmaz. Hedefin gitmesi `dm` ve `friends` fonksiyonlarının yeniden deploy'unu ister.
+- **Rotalar:** `/friends` kalktı. Mesajlar `/messages` (DM `/messages/[threadId]`), arkadaş listesi `/profile/friends`, Bildirimler `/notifications` (sekmelerin dışında, sekme çubuğu yok).
+- **Analitik:** yeni olay yok; Aktiviteler'den başlayan oda ve oyunlar mevcut olaylarla (`room_created`, oyun olayları) sayılır.
+- **Dev projesinde SMS yok** (proje sahibi düzeltmesi): giriş yalnızca panele girilen test numaralarıyla; Twilio kutularında sahte değerler. Gerçek SMS yalnızca pilot projesinde Netgsm kancasıyla (§2.3). S14'teki "dev projesi Twilio Verify ile çalışır" bununla değişir.
 
 ### 18.4 Kabul
 

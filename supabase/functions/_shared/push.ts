@@ -9,7 +9,13 @@ export async function sendPush(token: string | null, message: PushMessage): Prom
   const res = await fetch(EXPO_PUSH_URL, {
     method: 'POST',
     headers: { 'content-type': 'application/json', accept: 'application/json' },
-    body: JSON.stringify({ to: token, title: message.title, body: message.body, sound: 'default' }),
+    body: JSON.stringify({
+      to: token,
+      title: message.title,
+      body: message.body,
+      sound: 'default',
+      ...(message.target ? { data: { target: message.target } } : {}),
+    }),
     signal: AbortSignal.timeout(5000),
   });
   if (!res.ok) throw new Error(`push failed (${res.status})`);

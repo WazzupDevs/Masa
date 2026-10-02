@@ -1,7 +1,7 @@
 import { PARTICIPATIONS, type Participation } from '@shared/profile.ts';
-import { type Intent, INTENTS } from '@shared/rooms.ts';
+import { type Intent, INTENTS, isIntent } from '@shared/rooms.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -25,13 +25,17 @@ import { roomsApi } from '@/lib/api';
 type IntentChoice = Intent | 'none';
 
 // "Oda kur" (docs/SPEC_V3.md §5.1): always open to the venue, no game chosen; an optional intent
-// label and, for this room, anonymous or with the profile (§5.4; anonymous by default).
+// label and, for this room, anonymous or with the profile (§5.4; anonymous by default). From
+// Aktiviteler ("Bu oyunla oda kur", §18.3) the intent arrives preselected.
 export default function NewRoomScreen() {
+  const params = useLocalSearchParams<{ intent?: string }>();
   const queryClient = useQueryClient();
   const profile = useProfile();
   const hasName = !!profile.data?.display_name;
   const table = useActiveTable();
-  const [intent, setIntent] = useState<Intent | null>(null);
+  const [intent, setIntent] = useState<Intent | null>(() =>
+    isIntent(params.intent) ? params.intent : null,
+  );
   const [participation, setParticipation] = useState<Participation>('anonymous');
 
   const create = useMutation({

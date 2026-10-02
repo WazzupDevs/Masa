@@ -23,6 +23,7 @@ import type {
   RerollAliasResponse,
 } from '@shared/api/checkin.ts';
 import type {
+  DmInboxResponse,
   DmOkResponse,
   FriendsIncomingResponse,
   FriendsListResponse,
@@ -249,4 +250,8 @@ export const dmApi = {
   send: (threadId: string, body: string) =>
     invoke<DmOkResponse>('dm', { action: 'send', threadId, body }),
   read: (threadId: string) => invoke<DmOkResponse>('dm', { action: 'read', threadId }),
+  // Mesajlar (docs/SPEC_V3.md §18.2): one row per friend, photos signed by the function.
+  inbox: () => invoke<DmInboxResponse>('dm', { action: 'inbox' }),
+  // The app is open: messages so far count as delivered, in every conversation.
+  delivered: () => invoke<DmOkResponse>('dm', { action: 'delivered' }),
 };

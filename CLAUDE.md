@@ -51,7 +51,7 @@ Node 22, pnpm 10, Docker (yerel Supabase için). Supabase CLI ve Deno root devDe
   node --experimental-strip-types scripts/e2e/bot-table.ts opponent
   ```
   `$env:` değişkenleri o PowerShell penceresi kapanana kadar kalır; test bitince pencereyi kapat ya da `Remove-Item Env:BOT_OTP, Env:SUPABASE_PUBLISHABLE_KEY` ile sil.
-  `BOT_ROLE=guest` (varsayılan): sen oda kurarsın, bot istek gönderir. `BOT_ROLE=host`: bot açık bir oda kurar, senin isteğini kabul eder ve Sesli Tabu önerir. İki rolde de senin önerini kabul eder. Odada her karta birkaç saniye sonra Doğru basar (iş birliği modunda yalnızca kendisi anlatırken), süresi dolan turu ve tanışma penceresini kapatır, "Tanışalım mı?"ya Evet der, "Arkadaş ekle"ye basar, mekan sohbetinden gelen arkadaşlık isteklerini kabul eder ve her yeni DM'e `Aldım: …` diye cevap verir. Ne yaptığını terminale yazar; Ctrl+C ile durur. Mekan adı Keşfet'teki adla birebir aynı (ya da mekan id'si); bot mekanın kendi noktasından check-in yapar. Noktası olan mekanda (kampüs) bot `BOT_SPOT` noktasına (ref ya da ad; yoksa ilk nokta) oturur; yalnızca aynı noktadaki masalar birlikte oynar. İsteğe bağlı: `BOT_NAME` (varsayılan `Bot Masa`). Kod ve anahtar yalnızca kabukta verilir, hiçbir dosyaya yazılmaz.
+  `BOT_ROLE=guest` (varsayılan): sen oda kurarsın, bot istek gönderir. `BOT_ROLE=host`: bot açık bir oda kurar, senin isteğini kabul eder ve Sesli Tabu önerir. İki rolde de senin önerini kabul eder. Odada her karta birkaç saniye sonra Doğru basar (iş birliği modunda yalnızca kendisi anlatırken), süresi dolan turu ve tanışma penceresini kapatır, "Tanışalım mı?"ya Evet der, "Arkadaş ekle"ye basar, mekan sohbetinden gelen arkadaşlık isteklerini kabul eder ve her yeni DM'i okur, birkaç saniye "yazıyor" gösterir ve `Aldım: …` diye cevap verir. Ne yaptığını terminale yazar; Ctrl+C ile durur. Mekan adı Keşfet'teki adla birebir aynı (ya da mekan id'si); bot mekanın kendi noktasından check-in yapar. Noktası olan mekanda (kampüs) bot `BOT_SPOT` noktasına (ref ya da ad; yoksa ilk nokta) oturur; yalnızca aynı noktadaki masalar birlikte oynar. İsteğe bağlı: `BOT_NAME` (varsayılan `Bot Masa`). Kod ve anahtar yalnızca kabukta verilir, hiçbir dosyaya yazılmaz.
 - SMS hook testi (Send SMS Hook, `docs/SPEC_V3.md` §2): imzalı çağrılar normal `test:integration` içinde (`smsHook.test.ts`; yerel stack'e özgü imza sırrı ve hiçbir şey göndermeyen `local` sağlayıcısıyla). Test numaralarının kancaya hiç gitmediğini görmek için `config.toml`'daki `[auth.hook.send_sms]` bloğunu aç, `pnpm supabase stop` + `start`, sonra `SMS_HOOK_ENABLED=1 pnpm vitest run -c vitest.integration.config.ts supabase/tests/smsHookEnabled.test.ts`; bitince bloğu yeniden yorum yap ve stop + start.
 - `CHECKIN_SKIP_LOCATION=1` (fonksiyon sırrı, yalnızca dev projesi): check-in sınır ve 300 m kontrolünü atlar, uygulama sınır dışında ya da konumsuz (bina içi) da devam eder; koordinat yine saklanmaz, her check-in'de uyarı loglanır. Sır yalnızca yerel stack'te ve dev projesinde (`_shared/pure/devProject.ts`) etkilidir, başka projede yok sayılır ve hata loglanır; pilot projesinde tanımlanmaz (`pnpm supabase secrets list`). Kapatmak: `pnpm supabase secrets unset CHECKIN_SKIP_LOCATION`. Testi CI'da ayrı bir `functions serve` ile koşar (`supabase/tests/checkinSkipLocation.test.ts`).
 - Zorunlu güncelleme kapısı testi (kapı kapalıyken): `echo MIN_APP_BUILD=5 > /tmp/gate.env && pnpm supabase functions serve --env-file /tmp/gate.env`, sonra `GATE_MIN_APP_BUILD=5 pnpm vitest run -c vitest.integration.config.ts supabase/tests/updateGate.test.ts`. Normal `test:integration` kapı açıkken çalışır.
@@ -70,11 +70,9 @@ Node 22, pnpm 10, Docker (yerel Supabase için). Supabase CLI ve Deno root devDe
    Anahtar asla değişmez (rotasyon yok; değişirse `banned_phones` geçersiz olur). `supabase/local/secrets.sql`'i barındırılan projede asla çalıştırma.
 4. `pnpm supabase db push --include-seed` — migration'lar + `supabase/seeds/*.sql` (takma ad kelimeleri, mekanlar; tekrar çalıştırılabilir). Yerel sırlar seed yolunda değildir, buradan barındırılan projeye gidemez.
 5. `pnpm supabase functions deploy` — tüm fonksiyonlar. `verify_jwt = false` ayarı `config.toml`'dan gelir; token'ı fonksiyon kendisi doğrular.
-6. **Twilio:**
-   - Verify servisi oluştur; Account SID, Auth Token ve Verify Service SID'i al.
-   - **Verify → Settings → Geo permissions: yalnızca Türkiye** açık (SMS pumping dolandırıcılığına karşı). Fraud Guard açık kalsın.
+6. **SMS: dev projesinde yok.** Twilio hesabı açılmaz. Telefonla giriş yalnızca panele girilen test numaralarıyla çalışır (7. adım ve aşağıda "Barındırılan projede SMS'siz giriş"). Phone sağlayıcısını açmak için panel sağlayıcı alanlarını ister: Twilio Verify seçili kalır, kutularda sahte değerler durur; hiçbir SMS gönderilmez. Gerçek SMS yalnızca pilot (üretim) projesinde Netgsm kancasıyla gider (aşağıda "Üretim Supabase projesi").
 7. **Supabase paneli → Authentication:**
-   - Sign In / Providers → **Email: kapalı**. **Phone: açık**, SMS sağlayıcı **Twilio Verify** (6. adımdaki değerler), telefonla kayıt açık.
+   - Sign In / Providers → **Email: kapalı**. **Phone: açık**, SMS sağlayıcı **Twilio Verify** (kutularda sahte değerler, 6. adım), telefonla kayıt açık.
    - Phone → test numaraları: `905550000001=123456` (yalnızca dev projesinde; pilot projesinde olmaz).
    - Rate Limits: saatlik SMS **100**; aynı numaraya tekrar gönderim aralığı **60 sn**.
    - Hooks → **Before User Created** → Postgres → şema `private`, fonksiyon `before_user_created`.
@@ -97,7 +95,7 @@ Pilot ve Play kullanıcıları için ayrı proje. Kurulum dev projesiyle aynı s
 | --- | --- | --- |
 | Test numaraları | `905550000001=123456` ve saha testi numaraları | **Yalnızca tek, kalıcı inceleme hesabı:** bir numara, tahmin edilemez 6 haneli kod. Kod yalnızca Play Console → Uygulama erişimi'nde durur (aşağıda "İnceleme hesabı") |
 | E2E botu (#19) | `scripts/e2e/bot-table.ts` bu projeyi kabul eder | **Reddedilir:** bot yalnızca yerel stack'i ve dev projesinin adresini kabul eder; üretim adresi listeye eklenmez |
-| SMS | Twilio Verify (test numaraları SMS'siz) | **Twilio canlı:** ayrı bir Verify servisi, Geo permissions yalnızca Türkiye, Fraud Guard açık, saatlik SMS sınırı 100, aynı numaraya 60 sn |
+| SMS | **Yok:** yalnızca test numaraları; Twilio kutularında sahte değerler | **Netgsm, Send SMS Hook** (`docs/SPEC_V3.md` §2.3): `SMS_PROVIDER` ve Netgsm sırları, panelde kanca açık; Twilio kutularında sahte değerler; saatlik SMS sınırı 100, aynı numaraya 60 sn |
 | Vault anahtarı (`phone_hash_key`) | Dev anahtarı | **Yeni ve farklı** anahtar (`openssl rand -hex 32`), parola yöneticisinde; asla değişmez |
 | `MIN_APP_BUILD` | Ayarsız (kapı açık) | İlk production AAB yüklendikten sonra o build'in versionCode'u; eski ya da preview build'ler (aynı sayaç, küçük numara) kapıda kalır. Yeni sürümle birlikte artırılır |
 | Plan | Free (yedek yok, duraklatılabilir) | **Pro** (günlük yedek 7 gün, duraklatma yok) |
@@ -110,7 +108,7 @@ Sıra:
 1. Yeni proje (Frankfurt `eu-central-1`) ve **Pro plana al** (panel → Organization → Billing). Gerekçe: Free planda otomatik yedek yok ve düşük aktivitede proje haftalık duraklatılır (https://supabase.com/docs/guides/platform/free-project-pausing); Pro'da günlük yedekler 7 gün saklanır (https://supabase.com/docs/guides/platform/backups) ve hesap silme sayfası bu süreyi söyler. Dev projesi Free kalır.
 2. `pnpm supabase link --project-ref <üretim ref>`. Dev ve üretim arasında geçerken her komuttan önce `pnpm supabase migration list`'in hangi projeye bağlı olduğunu kontrol et; bitince dev'e geri bağla.
 3. Vault anahtarı (yukarıdaki tabloya göre yeni), sonra `db push --include-seed` (seed notu tabloda) ve 14 fonksiyonun deploy'u ("main'den dev projesine yayın" adım 5).
-4. Panel → Authentication: Email kapalı, Phone açık, Twilio Verify (üretim servisi), test numarası yok, Rate Limits, Hooks → Before User Created → `private.before_user_created`.
+4. Panel → Authentication: Email kapalı, Phone açık (Twilio kutularında sahte değerler; SMS'i Netgsm kancası gönderir, `docs/SPEC_V3.md` §2.3), test numarası yalnızca inceleme hesabı, Rate Limits, Hooks → Before User Created → `private.before_user_created` ve Send SMS Hook.
 5. Panel → Realtime → Settings → Allow public access **kapalı**.
 6. `pnpm supabase secrets set POSTHOG_PERSONAL_API_KEY=… POSTHOG_PROJECT_ID=…`. `MIN_APP_BUILD` ilk production AAB'den sonra.
 7. EAS `production` ortam değişkenleri (tabloda), sonra `eas build --profile production`.
@@ -134,7 +132,7 @@ Tek seferlik kurulum (yukarıda) yapılmış bir projeye main'in güncel hâlini
 7. Sırlar, yalnızca gerektiğinde (`pnpm supabase secrets list` ile bak):
    - `MIN_APP_BUILD`: yalnızca eski build'leri kapatırken (bkz. "Build numarası").
    - `POSTHOG_PERSONAL_API_KEY`, `POSTHOG_PROJECT_ID`, isteğe bağlı `POSTHOG_HOST`: hesap silmede PostHog kişi silme; yoksa atlanır.
-   - `SMS_PROVIDER`, `NETGSM_USERCODE`, `NETGSM_PASSWORD`, `NETGSM_HEADER`, `SEND_SMS_HOOK_SECRETS`: yalnızca yerli SMS sağlayıcısına geçerken (Send SMS Hook; panel adımları sırasıyla `docs/SPEC_V3.md` §2.3). Kanca kapalıyken yerleşik Twilio Verify çalışır; geri dönmek için panelde kancayı kapatmak yeter.
+   - `SMS_PROVIDER`, `NETGSM_USERCODE`, `NETGSM_PASSWORD`, `NETGSM_HEADER`, `SEND_SMS_HOOK_SECRETS`: yalnızca pilot (üretim) projesinde, Netgsm kancası için (Send SMS Hook; panel adımları sırasıyla `docs/SPEC_V3.md` §2.3). Dev projesinde tanımlanmaz ve kanca kapalıdır: orada SMS yoktur, giriş test numaralarıyladır.
 8. Panel: Realtime → Settings → **Allow public access kapalı** (değişmedi, kontrol et). Bu sürüm yeni bir panel ayarı istemez.
 9. Sonra istemci: native değişiklik varsa yeni `eas build`, yoksa `eas update` (bkz. "Neyi ne zaman yayınlamalı").
 - Asla: `supabase config push`, `supabase/local/secrets.sql`'i barındırılan projede çalıştırmak, secret key'i bir dosyaya yazmak.
@@ -203,14 +201,14 @@ Dev client olmadan, tek başına çalışan bir Android APK'sı. Arkadaşa link 
 7. Push bu APK'da çalışmaz (Firebase yok, bkz. "Push"). Uygulama bunu sessizce atlar; bildirim izni sorulursa cevap önemsizdir.
 
 ### Barındırılan projede SMS'siz giriş (test numaraları)
-Saha testinde gerçek numaralarla, SMS gönderilmeden, sabit kodla giriş yapılabilir. Twilio'ya ve SMS kotasına dokunmaz.
+Dev projesinde girişin tek yolu budur (orada SMS yok): gerçek ya da uydurma numaralarla, SMS gönderilmeden, sabit kodla giriş yapılır.
 1. Supabase paneli → **Authentication → Sign In / Providers → Phone**.
 2. **Test Phone Numbers and OTPs** alanına numara=kod çiftlerini virgülle yaz. Numara `+` olmadan, ülke koduyla: `905321234567=482915,905339876543=730264`.
 3. **Test OTPs Valid Until:** testten sonraki güne bir tarih ver; o tarihten sonra bu çiftler çalışmaz.
 4. Kaydet. Uygulamada numarayı her zamanki gibi gir (`5xx xxx xx xx`), SMS gelmez; kodu elle gir.
 - Kodu `123456` gibi tahmin edilebilir seçme: numarayı ve kodu bilen herkes o hesaba girebilir. Test bitince çiftleri sil.
 - Test numarası ban kontrolünden ve 18+/onay akışından muaf değildir. Hesap silme ve `pnpm admin:ban` aynı şekilde çalışır.
-- Phone sağlayıcısı açık olmalı. Twilio henüz kurulmadıysa panel sağlayıcı alanlarını doldurmanı isteyebilir; test numaralarına SMS gönderilmez.
+- Phone sağlayıcısı açık olmalı. Panel sağlayıcı alanlarını ister: Twilio kutularına sahte değerler yazılır (dev projesinde Twilio yok); test numaralarına SMS gönderilmez.
 - Gerçek numara şart değil: dev projesindeki `905550000001=123456` gibi uydurma numaralar da aynı yolla çalışır.
 
 ### Saha testi mekanı (`content/venues-test.json`)

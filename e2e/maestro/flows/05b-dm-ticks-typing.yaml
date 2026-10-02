@@ -1,0 +1,62 @@
+# F3b (docs/SPEC_V3.md §18.3): ticks and "yazıyor" in a DM. The device writes, the bot reads (the
+# tick turns to read), the bot types (the dots show) and answers (the dots go).
+appId: app.kabuk.mobile
+---
+- tapOn:
+    id: inbox-Bot Masa
+- extendedWaitUntil:
+    visible: Selam cihaz
+    timeout: 15000
+- tapOn:
+    id: dm-input
+- inputText: Okudun mu?
+- hideKeyboard
+- tapOn:
+    id: dm-send
+- extendedWaitUntil:
+    visible: Okudun mu\?
+    timeout: 10000
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: dm-last
+      EXPECT_DM: Okudun mu?
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: dm-read
+- extendedWaitUntil:
+    visible:
+      id: tick-read
+    timeout: 15000
+- takeScreenshot: 27b-dm-read
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: dm-typing
+      BODY: '{"seconds":10}'
+- extendedWaitUntil:
+    visible:
+      id: dm-typing
+    timeout: 10000
+- takeScreenshot: 27c-dm-typing
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: dm-send
+      BODY: '{"body":"Okudum"}'
+- extendedWaitUntil:
+    visible: Okudum
+    timeout: 20000
+- extendedWaitUntil:
+    notVisible:
+      id: dm-typing
+    timeout: 10000
+- takeScreenshot: 27d-dm-answer
+- tapOn:
+    id: chat-back
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: tab-messages
+    timeout: 10000

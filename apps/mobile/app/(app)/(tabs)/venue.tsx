@@ -17,6 +17,7 @@ import { useActiveTable } from '@/features/checkin/useActiveTable';
 import { Lobby } from '@/features/rooms/Lobby';
 import { useCurrentRoom } from '@/features/rooms/queries';
 import { useCreateSolo } from '@/features/rooms/useCreateSolo';
+import { NotificationsBell } from '@/features/notifications/Bell';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { sessionDurationMinutes } from '@shared/analytics.ts';
@@ -103,6 +104,7 @@ export default function VenueScreen() {
         eyebrow={tr.venue.here}
         eyebrowIcon="location-outline"
         title={table.data.venue?.name ?? ''}
+        trailing={<NotificationsBell />}
       />
       <Card tone="feature" className="mt-3">
         <View className="flex-row items-center gap-3.5">

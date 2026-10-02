@@ -27,10 +27,12 @@ describe('push texts', () => {
   });
 
   it('say nothing about who wrote or asked, and nothing of the message', () => {
-    expect(dmPush()).toEqual({ title: 'Kabuk', body: 'Yeni bir mesajın var' });
+    // Only the screen a tap opens (docs/SPEC_V3.md §18.3), no id.
+    expect(dmPush()).toEqual({ title: 'Kabuk', body: 'Yeni bir mesajın var', target: 'messages' });
     expect(friendRequestPush()).toEqual({
       title: 'Kabuk',
       body: 'Yeni bir arkadaşlık isteğin var',
+      target: 'notifications',
     });
   });
 });

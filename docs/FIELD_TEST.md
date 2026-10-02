@@ -330,7 +330,7 @@ Oda en az 3 dakika iki masalı kaldığı için (T1–T5) sonuç ekranında **Ar
 **Bak:**
 
 - 2. adımda B'nin ekranında **hiçbir şey değişmez**: A'nın bastığına dair yazı, işaret ya da bildirim yok (kural 5).
-- İkisi de bastıktan sonra **Mekana dön** → Arkadaşlar sekmesi: iki telefonda da karşı tarafın **görünen adı** (V5'te girilen; masa takma adı değil) ve "… beri arkadaşsınız".
+- İkisi de bastıktan sonra **Mekana dön** → Mesajlar sekmesi: iki telefonda da karşı tarafın **görünen adı** (V5'te girilen; masa takma adı değil) ve "… beri arkadaşsınız".
 
 **Hata olursa:** B'de A'nın bastığını belli eden bir şey gördüysen ekran görüntüsü al; bu ❌'dır. Düğme hiç görünmediyse oyunun kaç dakika sürdüğünü yaz.
 
@@ -471,7 +471,7 @@ Reddedilen masa o odayı lobide bir daha görmez; bu yüzden iki deneme için A 
 ## F5. Arkadaşlıktan çıkarma (A çıkarır) [P1]
 
 1. A: B ile konuşma → **Diğer** → **Arkadaşlıktan çıkar** → "Konuşmanız silinir. Karşı tarafa bildirilmez." → **Çıkar**.
-2. B: Arkadaşlar → **Geçmiş ve istekler** → "Oyun geçmişi"nde A'nın masasının satırı (T1–T5'teki oyun) → **İstek gönder**.
+2. B: sağ üstteki zil → **Bildirimler** → "Oyun geçmişi"nde A'nın masasının satırı (T1–T5'teki oyun) → **İstek gönder**.
 
 **Bak:**
 
@@ -484,13 +484,13 @@ Reddedilen masa o odayı lobide bir daha görmez; bu yüzden iki deneme için A 
 
 Çıkaran taraf isterse yeniden istek gönderebilir.
 
-1. B uygulamayı arka plana alsın. A: Geçmiş ve istekler → B'nin masasının satırı → **İstek gönder**.
-2. B: uygulamayı aç → Arkadaşlar → **Geçmiş ve istekler** → "Gelen istekler".
+1. B uygulamayı arka plana alsın. A: zil → Bildirimler → B'nin masasının satırı → **İstek gönder**.
+2. B: uygulamayı aç → sağ üstteki zil → **Bildirimler** → "Gelen istekler".
 3. B: **Reddet**.
 
 **Bak:**
 
-- 1'de (FCM'li build) B'de bildirim: **"Kabuk"**, **"Yeni bir arkadaşlık isteğin var"**; ad ya da içerik yok. Arkadaşlar sekmesinde "1 yeni arkadaşlık isteği".
+- 1'de (FCM'li build) B'de bildirim: **"Kabuk"**, **"Yeni bir arkadaşlık isteğin var"**; ad ya da içerik yok. Zilde "1" rozeti.
 - 2'de istek oyun bağlamıyla görünür: "… Sesli Tabu oynadığınız … masası arkadaşın olmak istiyor". A'nın görünen adı ya da fotoğrafı **yok**.
 - 3'ten sonra A'da satır "… masasına istek gönderildi" olarak **kalır**; red A'ya hiçbir yerde görünmez ve bildirim gitmez.
 
@@ -500,7 +500,7 @@ Reddedilen masa o odayı lobide bir daha görmez; bu yüzden iki deneme için A 
 
 > Otomatik: geçmişten engelleme ve arkadaşlığın düşmesi (`07-history-block.yaml`). Elle: lobide görünmezlik, engeli kaldırma.
 
-1. B: Geçmiş ve istekler → A'nın masasının satırı → **Diğer** → **Engelle**. Pencerede "Birbirinizi lobide, isteklerde ve arkadaş listesinde bir daha görmezsiniz. Karşı tarafa bildirilmez." yazar. **Şikayet de et**'i işaretle → **Engelle**.
+1. B: zil → Bildirimler → A'nın masasının satırı → **Diğer** → **Engelle**. Pencerede "Birbirinizi lobide, isteklerde ve arkadaş listesinde bir daha görmezsiniz. Karşı tarafa bildirilmez." yazar. **Şikayet de et**'i işaretle → **Engelle**.
 2. A mekanda açık bir oda kursun; B lobisine baksın. Sonra B açık oda kursun; A lobisine baksın.
 3. B: Profil → dişli → Ayarlar → Engellenenler: A'nın masa takma adı ve tarih → **Engeli kaldır**. 2. adımı tekrarla.
 

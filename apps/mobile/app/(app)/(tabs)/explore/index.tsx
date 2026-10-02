@@ -18,6 +18,7 @@ import { Snail } from '@/components/Snail';
 import { Text } from '@/components/Text';
 import { useCheckinDraft } from '@/features/checkin/draft';
 import { useActiveTable } from '@/features/checkin/useActiveTable';
+import { NotificationsBell } from '@/features/notifications/Bell';
 import { ExploreMap } from '@/features/explore/ExploreMap';
 import { type ExploreVenue, useExploreVenues } from '@/features/explore/useExploreVenues';
 import { BucketBadge, EventRow, EventTag, VenueTile } from '@/features/explore/VenueTags';
@@ -83,17 +84,20 @@ export default function ExploreScreen() {
           <ScreenHeader
             title={tr.tabs.explore}
             trailing={
-              layout === 'single' ? undefined : (
-                <Segmented
-                  accessibilityLabel={tr.explore.viewSwitch}
-                  value={view}
-                  onChange={setView}
-                  options={[
-                    { value: 'list', label: tr.explore.views.list, icon: 'list' },
-                    { value: 'map', label: tr.explore.views.map, icon: 'map-outline' },
-                  ]}
-                />
-              )
+              <View className="flex-row items-center gap-2">
+                {layout === 'single' ? null : (
+                  <Segmented
+                    accessibilityLabel={tr.explore.viewSwitch}
+                    value={view}
+                    onChange={setView}
+                    options={[
+                      { value: 'list', label: tr.explore.views.list, icon: 'list' },
+                      { value: 'map', label: tr.explore.views.map, icon: 'map-outline' },
+                    ]}
+                  />
+                )}
+                <NotificationsBell />
+              </View>
             }
           />
           {active ? (

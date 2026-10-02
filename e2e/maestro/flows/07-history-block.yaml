@@ -1,9 +1,11 @@
 # F7: block the bot table from the play history; the friendship ends with it.
 appId: app.kabuk.mobile
 ---
+# Bildirimler opens from the bell on a tab screen (docs/SPEC_V3.md §18.3).
 - tapOn:
-    id: tab-friends
-- tapOn: Geçmiş ve istekler
+    id: tab-messages
+- tapOn:
+    id: bell
 - extendedWaitUntil:
     visible: .*masasıyla Sesli Tabu.*
     timeout: 15000
@@ -28,6 +30,6 @@ appId: app.kabuk.mobile
     timeout: 10000
 - tapOn: Geri
 - extendedWaitUntil:
-    visible: Henüz arkadaşın yok.*
+    visible: Henüz mesajın yok.
     timeout: 15000
-- takeScreenshot: 33-friends-after-block
+- takeScreenshot: 33-messages-after-block
