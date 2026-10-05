@@ -715,15 +715,16 @@ Her adımın sonunda: `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm format:c
 
 ## 14. Uygulama sırası ve yayın türü
 
-| Adım                      | Kapsam | Sunucu                                                                                       | İstemci                                                              | Yayın                                                        |
-| ------------------------- | ------ | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------ |
-| 1. Giriş + kayıt = profil | 1 + 2  | `…_profile_signup.sql`, `sms`, `account`, `profile`, kapı; yasal ve mağaza metinleri         | Onboarding profil ekranı, 18 altı ekranı, Ayarlar → Hesap            | Deploy → **OTA**; hook paneli Netgsm hazır olunca (§2.3)     |
-| 2. Kampüs pilotu          | 3      | `…_campus.sql`, `checkin`, içerik (`venues-campus.json`, diğerleri kapalı), seed doğrulaması | Nokta seçimi, lobi gruplama, Keşfet tek mekan görünümü               | `db push --include-seed` + deploy → **OTA**                  |
-| 3. Oda akışı              | 4      | `…_room_flow.sql`, `rooms`, `safety`, `checkin`, `tabu`/`sohbet` başlatma, yeni masa adları  | Oda kur, oda ekranı (sohbet + öneri), tek çıkış, adı yeniden çek     | Seed + deploy → **OTA**                                      |
-| 4. Tabu modları           | 5      | `…_tabu_modes.sql`, `tabu`                                                                   | İş birliği ekranları                                                 | Deploy → **OTA**                                             |
-| 5. Mekan sohbet odası     | 6      | `…_venue_chat.sql`, `venue-chat`, `safety`, `friends`, `profile`                             | Mekan sohbeti ekranı, profil kartı, istek                            | Deploy → **OTA**; sonra `…_drop_participation.sql`           |
-| 6. Test geri bildirimi    | §18    | `…_venue_kind.sql`; `…_dm_status.sql`, `dm` (`inbox`, `delivered`), `dm_typing` politikası   | Sekmeler, bildirim düğmesi, Mesajlar, Aktiviteler, DM tik ve yazıyor | `db push --include-seed` + deploy → **OTA** (native yok)     |
-| Pilot build'i             | —      | —                                                                                            | Tasarım oturumunun simgesi ve ekranları                              | `version` artışı → **tek** production build, `MIN_APP_BUILD` |
+| Adım                      | Kapsam | Sunucu                                                                                       | İstemci                                                                                                      | Yayın                                                        |
+| ------------------------- | ------ | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| 1. Giriş + kayıt = profil | 1 + 2  | `…_profile_signup.sql`, `sms`, `account`, `profile`, kapı; yasal ve mağaza metinleri         | Onboarding profil ekranı, 18 altı ekranı, Ayarlar → Hesap                                                    | Deploy → **OTA**; hook paneli Netgsm hazır olunca (§2.3)     |
+| 2. Kampüs pilotu          | 3      | `…_campus.sql`, `checkin`, içerik (`venues-campus.json`, diğerleri kapalı), seed doğrulaması | Nokta seçimi, lobi gruplama, Keşfet tek mekan görünümü                                                       | `db push --include-seed` + deploy → **OTA**                  |
+| 3. Oda akışı              | 4      | `…_room_flow.sql`, `rooms`, `safety`, `checkin`, `tabu`/`sohbet` başlatma, yeni masa adları  | Oda kur, oda ekranı (sohbet + öneri), tek çıkış, adı yeniden çek                                             | Seed + deploy → **OTA**                                      |
+| 4. Tabu modları           | 5      | `…_tabu_modes.sql`, `tabu`                                                                   | İş birliği ekranları                                                                                         | Deploy → **OTA**                                             |
+| 5. Mekan sohbet odası     | 6      | `…_venue_chat.sql`, `venue-chat`, `safety`, `friends`, `profile`                             | Mekan sohbeti ekranı, profil kartı, istek                                                                    | Deploy → **OTA**; sonra `…_drop_participation.sql`           |
+| 6. Test geri bildirimi    | §18    | `…_venue_kind.sql`; `…_dm_status.sql`, `dm` (`inbox`, `delivered`), `dm_typing` politikası   | Sekmeler, bildirim düğmesi, Mesajlar, Aktiviteler, DM tik ve yazıyor                                         | `db push --include-seed` + deploy → **OTA** (native yok)     |
+| 7. Oyunlar (A)            | §19    | `…_tabu_ready.sql`, `tabu` (`begin-turn`)                                                    | Hazır ekranı, onay, rövanş, tam ekran, tanıtım (Aşama 6'dan sonra)                                           | Sunucu + **OTA birlikte** (§19.1; native yok)                |
+| Pilot build'i             | —      | —                                                                                            | Tasarım oturumunun simgesi ve ekranları; ses ve dokunsal geri bildirim (`expo-audio`, `expo-haptics`, §19.2) | `version` artışı → **tek** production build, `MIN_APP_BUILD` |
 
 - Her adım ayrı PR'dır ve `e2e` etiketi taşır. Birleştirmeyi proje sahibi yapar.
 - Her PR'da sunucu önce yayına girer (CLAUDE.md "Neyi ne zaman yayınlamalı").
@@ -912,3 +913,85 @@ Tasarımın "Aşama 5" PR'ı main'e girmeden başlamaz: `TabBar.tsx`, `profile/i
   - `dm_typing`: üye abone olur ve yayın yapar; üye olmayan, arkadaşlıktan çıkarılan ve engellenen yapamaz.
 - **PR 3:** E2E açık ve koyu yeşil; yeni DM akışı dahil.
 - Her PR'da typecheck, lint, birim ve entegrasyon testleri temizdir. CI, entegrasyon ve iki E2E yeşilse PR birleştirilir. Deploy proje sahibindedir.
+
+---
+
+## 19. Adım 7: Oyunlar
+
+Proje sahibi kararı. İki iş:
+
+- **A:** Mevcut oyunların kullanılabilirliği. Hemen yapılır.
+- **B:** Dört yeni oyunun spec'i. Ayrı PR'dır ve yalnızca belgedir; onay gelmeden yeni oyun kodu yazılmaz.
+
+Görsel bileşenler tasarım oturumunun başlığında "Aşama 6" geçen PR'ında gelir; ekranlar tuvaldeki "Aşama 6 · Oyunlar" sayfasına göre kurulur. Önceki adımdaki gibi:
+
+- Sunucu işi hemen yapılır.
+- `VoiceTabu.tsx`, `LocalTabu.tsx`, `GameArea.tsx`, `SohbetCard.tsx` ve `room/[id].tsx` dosyalarına Aşama 6 PR'ı main'e girmeden dokunulmaz.
+
+**Yeni native modül yok:** her şey OTA ile gider.
+
+### 19.1 PR A1: Sunucu
+
+**Tur hazır durumu (Sesli Tabu, iki mod da).** Bugün `tabu_end_turn` sonraki turu hemen açıyor ve 60 sn hemen başlıyor; öneri kabul edilince ilk tur da öyle. Yeni akış:
+
+- Tur hazır durumunda açılır. `game_state` şunları taşır:
+  - `turnPhase: 'ready'`;
+  - `readyEndsAt`: şimdi + 15 sn (`TABU.readySeconds` = `private.tabu_ready_seconds()`);
+  - ikinci turdan itibaren `lastTurn`: bir önceki turun numarası, anlatan masası, o turdaki puanı ve Doğru, Tabu, Pas sayıları (`pure/tabu.ts` → `summarizeTurn`).
+- Hazır turda `turnEndsAt` yoktur.
+- Yeni `tabu/begin-turn` eylemi süreyi başlatır:
+  - Anlatan masa her an çağırabilir.
+  - `readyEndsAt` geçtiyse herhangi bir masa çağırabilir; süreyi sunucu denetler (`end-turn` gibi).
+  - Başka her durumda oda olduğu gibi kalır, hata yoktur: tur zaten başlamışsa, diğer masa `readyEndsAt`'ten önce çağırırsa ya da oyun yoksa.
+- Başlayınca `turnPhase: 'running'` ve `turnEndsAt` yazılır, `readyEndsAt` silinir.
+- `begin-turn` idempotenttir ve `IDEMPOTENT_CALLS`'ta yer alır. İki kez gönderilince aynı yanıtı ve aynı saati verir; iki telefon aynı anda basınca tur bir kez başlar (`games.test`, `rooms.test` → `locks`).
+- Hazır turda hiçbir kart sunucudan çıkmaz: `tabu/turn-cards` ve `tabu/mark` yeni hata kodu `turn_not_started` (409) döner. `end-turn` hazır turu bitirmez.
+
+**Kart israfı.** Bugün tura dağıtılan 40 kartın hepsi `room_used_cards`'a giriyor, oysa turda 10-15 kart oynanıyor; bir oyun 547 kartın 240'ını harcıyordu. Yeni kural:
+
+- Tur listesi odada kullanılmamış kartlardan çekilir ve dağıtım hiçbir kartı kullanılmış saymaz.
+- Kart gösterildiğinde kullanılmış sayılır: ilk kart tur başlayınca, sonraki her biri bir işaretle.
+- Tur bitince listenin gösterilmeyen kartları serbest kalır.
+- Kullanılmamış kart listeye yetmezse önce kalanlar alınır, sonra odanın Tabu kartları baştan başlar. Listede tekrar olmaz.
+- Tek masalı oyunun destesi `room_used_cards` kullanmadığı için değişmez.
+
+**`game_abandoned`.** Olay iki durumda gönderilir: iki masalı Sesli Tabu "Oyunu bitir" ile yarıda kalırsa ya da oyun sürerken masa ayrılırsa. Özellikler `concept`, `turn_no`, `total_turns`; katalog `analytics.ts`'tedir. Özellik adları katalogdaki diğerleri gibi snake_case'tir.
+
+- **"Oyunu bitir":** `lastGame` artık `abandoned: true`, `turnNo` ve `totalTurns` taşır (`parseBetweenGames` → `abandoned`); iki telefon da olayı buradan gönderir.
+- **Masa ayrılınca:** oda `ending`'e geçerken `game_state` oyunun hâlini taşır; telefonlar bundan gönderir.
+- Olayı gönderen kod A2'dedir, çünkü olay `GameArea.tsx`'ten gider.
+- Sohbet kartlarının bitişi yoktur; olay göndermez.
+- Tek masalı Tabu telefonda oynar; olayı A2'de kendi turundan gönderir.
+
+**Yayın ve uyumluluk.** Hazır durum, telefondaki 0.3.0'ın bugünkü JS'iyle oynanamaz: o istemcide Başla düğmesi yoktur ve `turnEndsAt` olmayan durumu çizmez. Bu yüzden:
+
+- A1'in sunucu yayını (`db push` + `tabu` deploy'u) A2'nin OTA'sıyla birlikte yapılır: önce sunucu, hemen ardından OTA.
+- A1 main'e girerken E2E yeşildir: hazır turu E2E botu başlatır (`begin-turn`, cihazın turunda `force` ile `readyEndsAt` geçmiş sayılır). A2'de bunu cihazdaki Başla düğmesi yapar.
+
+### 19.2 PR A2: İstemci (tasarımın Aşama 6 PR'ı main'e girdikten sonra)
+
+Tasarımın bileşenleriyle:
+
+1. **Hazır ekranı:** tur özeti. Anlatan masada "Başla", diğer masada "X hazırlanıyor" ve geri sayım. Geri sayım biterse telefon `begin-turn` çağırır.
+2. **"Oyunu bitir" onay penceresi:** iki masanın da oyununun biteceğini söyler.
+3. **Rövanş:** oyun bitince aynı oyunla öneri (mevcut öneri akışı).
+4. **Tam ekran oyun:** tur sürerken sohbet küçük bir düğmeye iner (tasarımın düzeni).
+5. **Son 10 sn, süre bitti kaplaması ve skor hareketi** (tasarımın bileşenleri).
+6. **İlk oyunda kısa tanıtım:** cihazdaki ilk oyunda gösterilir, gösterildiği cihazda hatırlanır.
+7. **Ekran açık tutma:** `expo-keep-awake`'in native modülü 0.3.0 build'inde (expo'nun bağımlılığı olarak) varsa doğrudan bağımlılık olarak eklenir; gerekçe, oyun sırasında ekranın kararmaması. Oyun ve Sohbet kartları ekranında kullanılır; native modül yoksa sessizce hiçbir şey yapmaz. Build'de yoksa pilot build'e kalır.
+8. **Titreşim:** React Native'in `Vibration` API'siyle son 5 sn'de ve süre bitince kısa titreşim. `VIBRATE` izni 0.3.0'ın manifestinde yoksa pilot build'e kalır.
+9. **Ses ve dokunsal geri bildirim** (`expo-audio`, `expo-haptics`) yeni native modüldür; şimdi eklenmez. **Pilot build maddesi.**
+10. **E2E:** Tabu akışları hazır durumuna göre güncellenir. Cihazın turunda cihaz Başla'ya basar (botun `force`'u kalkar); bot anlatan masayken kendi turunu başlatır.
+11. **`game_abandoned`** gönderimi (§19.1).
+
+### 19.3 Kabul (A)
+
+- **A1:** Entegrasyon testleri şunları gösterir:
+  - Her tur hazır açılır.
+  - `begin-turn` kurallara uyar ve idempotenttir (iki mod).
+  - `lastTurn`, `summarizeTurn` ile aynıdır.
+  - Yalnızca gösterilen kartlar kullanılmış sayılır ve deste azalınca baştan başlar.
+  - "Oyunu bitir" nerede kalındığını tutar.
+  - Kilit testi geçer.
+- **A1:** E2E açık ve koyu yeşil (bot hazır turu başlatır).
+- **A2:** E2E açık ve koyu yeşil, cihaz Başla'ya basar.

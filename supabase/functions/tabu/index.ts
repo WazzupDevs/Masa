@@ -3,7 +3,7 @@
 // rooms/answer-game, in the mode the server sets from the headcounts. Refereed: both tables get the
 // turn's card list. Cooperative: only the describing table does (`not_describer` for the other).
 // Every press names its card index, the server checks it and publishes the room row, and a second
-// press on the same card is ignored.
+// press on the same card is ignored. Each turn opens ready; begin-turn starts its clock.
 import { requireUser, serviceClient } from '../_shared/auth.ts';
 import { dbError } from '../_shared/db.ts';
 import { z } from '../_shared/deps.ts';
@@ -27,6 +27,7 @@ const Body: z.ZodType<TabuRequest> = z.discriminatedUnion('action', [
     result: z.enum(MARK_RESULTS),
   }),
   z.object({ action: z.literal('end-turn'), roomId: z.uuid() }),
+  z.object({ action: z.literal('begin-turn'), roomId: z.uuid() }),
 ]);
 
 const db = serviceClient();
@@ -67,10 +68,19 @@ Deno.serve(
         return { ok: true };
       }
 
-      // After the last turn the game is finished; the room stays open (MVP_SPEC §4.6).
+      // After the last turn the game is finished; the room stays open (MVP_SPEC §4.6). Otherwise
+      // the next turn opens ready (docs/SPEC_V3.md §19.1).
       case 'end-turn': {
         const { error } = await db.rpc('tabu_end_turn', target);
         if (error) throw dbError('tabu_end_turn', error);
+        return { ok: true };
+      }
+
+      // The ready turn's clock starts: the describing table at any time, either table after
+      // readyEndsAt. Anything else leaves the room as it is.
+      case 'begin-turn': {
+        const { error } = await db.rpc('tabu_begin_turn', target);
+        if (error) throw dbError('tabu_begin_turn', error);
         return { ok: true };
       }
     }

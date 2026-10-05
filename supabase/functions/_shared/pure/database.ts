@@ -977,10 +977,11 @@ export type Database = {
           card_ids: string[];
           card_index: number;
           describer_session_id: string;
-          ends_at: string;
+          ends_at: string | null;
           game_no: number;
           id: string;
           passes_used: number;
+          ready_ends_at: string | null;
           room_id: string;
           score: number;
           started_at: string;
@@ -991,10 +992,11 @@ export type Database = {
           card_ids?: string[];
           card_index?: number;
           describer_session_id: string;
-          ends_at: string;
+          ends_at?: string | null;
           game_no: number;
           id?: string;
           passes_used?: number;
+          ready_ends_at?: string | null;
           room_id: string;
           score?: number;
           started_at?: string;
@@ -1005,10 +1007,11 @@ export type Database = {
           card_ids?: string[];
           card_index?: number;
           describer_session_id?: string;
-          ends_at?: string;
+          ends_at?: string | null;
           game_no?: number;
           id?: string;
           passes_used?: number;
+          ready_ends_at?: string | null;
           room_id?: string;
           score?: number;
           started_at?: string;
@@ -2058,6 +2061,41 @@ export type Database = {
         SetofOptions: {
           from: '*';
           to: 'table_sessions';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      tabu_begin_turn: {
+        Args: { target_room_id: string; target_user_id: string };
+        Returns: {
+          closed_at: string | null;
+          concept: string | null;
+          created_at: string;
+          game_state: Json;
+          guest_alias: string | null;
+          guest_headcount: number | null;
+          guest_joined_at: string | null;
+          guest_profiled: boolean;
+          guest_session_id: string | null;
+          id: string;
+          intent: string | null;
+          last_activity_at: string;
+          owner_alias: string;
+          owner_headcount: number;
+          owner_profiled: boolean;
+          owner_session_id: string;
+          reveal_ends_at: string | null;
+          reveal_result: string | null;
+          reveal_token: Json | null;
+          spot_id: string | null;
+          status: string;
+          venue_id: string;
+          visibility: string;
+          waiting_since: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'rooms';
           isOneToOne: true;
           isSetofReturn: false;
         };

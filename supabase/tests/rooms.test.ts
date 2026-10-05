@@ -546,6 +546,61 @@ describe('locks', () => {
       await Promise.all([leaving.end(), accepting.end()]);
     }
   });
+
+  // tabu/begin-turn (docs/SPEC_V3.md §19.1) holds the caller's session and the room, then the turn,
+  // and writes an event that references the describing table's session. When the other table
+  // describes and is leaving, its session is held only for no key update: the start goes through.
+  // Both phones starting at once start the turn once.
+  it('starts a ready Tabu turn while the describing table holds its session, and once from both phones', async () => {
+    const [owner, guest] = await threeTables();
+    const roomId = await createRoom(owner);
+    await requestJoin(guest, roomId);
+    const [requestId] = await pendingRequestIds(owner, roomId);
+    await rooms(owner, { action: 'respond', requestId, accept: true });
+    await rooms(guest, { action: 'propose-game', roomId, concept: 'tabu' });
+    expect((await rooms(owner, { action: 'answer-game', roomId, accept: true })).status).toBe(200);
+    const [ownerId, guestId] = await Promise.all([userIdOf(owner), userIdOf(guest)]);
+    const nextReadyTurn = async () => {
+      await sql`update public.tabu_turns set ends_at = now() - interval '1 second' where room_id = ${roomId}`;
+      await invoke(owner, 'tabu', { action: 'end-turn', roomId });
+      await sql`
+        update public.tabu_turns set ready_ends_at = now() - interval '1 second'
+        where room_id = ${roomId} and ends_at is null
+      `;
+    };
+    await invoke(owner, 'tabu', { action: 'begin-turn', roomId });
+
+    // Turn 2: the guest's table describes and is leaving; the owner's table starts the turn.
+    await nextReadyTurn();
+    const starting = postgres(dbUrl, { max: 1, onnotice: () => {} });
+    try {
+      await sql.begin(async (tx) => {
+        await tx`select id from private.active_session_for_update(${guestId})`;
+        const started = await starting.begin(async (stx) => {
+          await stx`set local lock_timeout = '2s'`;
+          return stx`
+            select (public.tabu_begin_turn(${ownerId}, ${roomId})).game_state ->> 'turnPhase' as phase
+          `;
+        });
+        expect(started).toEqual([{ phase: 'running' }]);
+      });
+    } finally {
+      await starting.end();
+    }
+
+    // Turn 3: both phones press at once.
+    await nextReadyTurn();
+    const both = await Promise.all(
+      [owner, guest].map((c) => invoke(c, 'tabu', { action: 'begin-turn', roomId })),
+    );
+    expect(both).toEqual([
+      { status: 200, body: { ok: true } },
+      { status: 200, body: { ok: true } },
+    ]);
+    expect(
+      await sql`select 1 from public.game_events where room_id = ${roomId} and type = 'turn_started'`,
+    ).toHaveLength(3);
+  });
 });
 
 describe('scheduled jobs', () => {

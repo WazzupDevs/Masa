@@ -8,7 +8,10 @@ export type TabuRequest =
   | { action: 'turn-cards'; roomId: string }
   // A press on card `cardIndex` of turn `turnNo`; a second press on the same card is ignored.
   | { action: 'mark'; roomId: string; turnNo: number; cardIndex: number; result: MarkResult }
-  | { action: 'end-turn'; roomId: string };
+  | { action: 'end-turn'; roomId: string }
+  // Starts the ready turn's clock: the describing table, or either table after readyEndsAt
+  // (docs/SPEC_V3.md §19.1). Idempotent.
+  | { action: 'begin-turn'; roomId: string };
 
 export type TabuStartResponse = { mode: 'local'; deck: TabuCard[] };
 export type TabuTurnCardsResponse = { turnNo: number; cards: TabuCard[] };

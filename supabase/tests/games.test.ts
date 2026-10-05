@@ -1,7 +1,7 @@
 import postgres from 'postgres';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { tabuMode } from '../functions/_shared/pure/tabu.ts';
+import { summarizeTurn, TABU, tabuMode } from '../functions/_shared/pure/tabu.ts';
 import { normalize } from '../functions/_shared/pure/trText.ts';
 import { deleteFixtureVenues, insertFixtureVenues } from './fixtures/venues.ts';
 import { checkInAt, errorBody, onboarded, PHONES } from './helpers.ts';
@@ -100,6 +100,20 @@ async function readableBy(guest: Client, roomId: string): Promise<string> {
   );
   // Random ids are not data either; a 4-hex chunk could read as the card "Dede".
   return normalize(JSON.stringify(values).replace(UUID, ' '));
+}
+
+// tabu/begin-turn (docs/SPEC_V3.md §19.1).
+const begin = (client: Client, roomId: string) =>
+  invoke(client, 'tabu', { action: 'begin-turn', roomId });
+
+// Starts the ready turn from whichever table, as when readyEndsAt has passed.
+async function beginNow(client: Client, roomId: string) {
+  await sql`
+    update public.tabu_turns set ready_ends_at = now() - interval '1 second'
+    where room_id = ${roomId} and ends_at is null
+  `;
+  const begun = await begin(client, roomId);
+  expect(begun, JSON.stringify(begun.body)).toEqual({ status: 200, body: { ok: true } });
 }
 
 async function expireTurn(roomId: string) {
@@ -266,6 +280,7 @@ describe('tabu, two tables face to face (docs/SPEC_V2.md §8.2)', () => {
   async function started() {
     const r = await room(true);
     await play(r.guest, r.owner, r.roomId, 'tabu');
+    await begin(r.owner, r.roomId);
     return r;
   }
 
@@ -321,10 +336,11 @@ describe('tabu, two tables face to face (docs/SPEC_V2.md §8.2)', () => {
         'mode',
         'passesUsed',
         'phase',
+        'readyEndsAt',
         'scores',
         'totalTurns',
-        'turnEndsAt',
         'turnNo',
+        'turnPhase',
         'turnSeconds',
       ].sort(),
     );
@@ -433,11 +449,15 @@ describe('tabu, two tables face to face (docs/SPEC_V2.md §8.2)', () => {
       describingTable: 'guest',
       cardIndex: 0,
       passesUsed: 0,
+      turnPhase: 'ready',
     });
+    expect(await begin(guest, roomId)).toEqual(OK);
     const second = await turnCards(owner, roomId);
     expect(second.body.turnNo).toBe(2);
-    const firstWords = new Set(first.body.cards.map((c) => c.word));
-    expect(second.body.cards.some((c) => firstWords.has(c.word))).toBe(false);
+    // Only turn 1's shown card (the first) is used; the cards it never showed may come again
+    // (docs/SPEC_V3.md §19.1).
+    const shownWord = first.body.cards[0]?.word;
+    expect(second.body.cards.some((c) => c.word === shownWord)).toBe(false);
     // Roles swap: the owner table judges now.
     expect(await mark(owner, roomId, 2, 0, 'taboo')).toEqual(OK);
     expect(await mark(guest, roomId, 2, 1, 'pass')).toEqual(OK);
@@ -448,6 +468,7 @@ describe('tabu, two tables face to face (docs/SPEC_V2.md §8.2)', () => {
     const { owner, guest, roomId } = await started();
     await mark(guest, roomId, 1, 0, 'correct');
     for (let turn = 1; turn <= 6; turn++) {
+      await beginNow(owner, roomId);
       await expireTurn(roomId);
       await tabu(owner, { action: 'end-turn', roomId });
     }
@@ -477,7 +498,11 @@ describe('tabu, two tables face to face (docs/SPEC_V2.md §8.2)', () => {
       body: { ok: true },
     });
     expect(await conceptOf(roomId)).toBeNull();
-    expect(await gameState(roomId)).toEqual({ gameNo: 1, lastGame: { concept: 'tabu' } });
+    // Where the game stopped stays for game_abandoned (docs/SPEC_V3.md §19.1).
+    expect(await gameState(roomId)).toEqual({
+      gameNo: 1,
+      lastGame: { concept: 'tabu', abandoned: true, turnNo: 1, totalTurns: 6 },
+    });
     expect(await sql`select 1 from public.game_results`).toHaveLength(0);
     // Idempotent.
     expect((await rooms(guest, { action: 'end-game', roomId })).status).toBe(200);
@@ -485,7 +510,13 @@ describe('tabu, two tables face to face (docs/SPEC_V2.md §8.2)', () => {
 
   it('keeps the game functions server-side only, and the written flow is gone', async () => {
     const { owner, roomId } = await started();
-    for (const fn of ['tabu_mark', 'tabu_turn_cards', 'tabu_local_deck', 'tabu_end_turn']) {
+    for (const fn of [
+      'tabu_mark',
+      'tabu_turn_cards',
+      'tabu_local_deck',
+      'tabu_end_turn',
+      'tabu_begin_turn',
+    ]) {
       const { error } = await owner.rpc(
         fn as never,
         {
@@ -503,6 +534,214 @@ describe('tabu, two tables face to face (docs/SPEC_V2.md §8.2)', () => {
       where proname in ('tabu_add_clue', 'tabu_guess', 'tabu_pass', 'tabu_current_card', 'tabu_start')
     `;
     expect(gone).toEqual([]);
+  });
+});
+
+describe('tabu, ready turns (docs/SPEC_V3.md §19.1)', () => {
+  const OK = { status: 200, body: { ok: true } };
+  const mark = (
+    client: Client,
+    roomId: string,
+    turnNo: number,
+    cardIndex: number,
+    result: string,
+  ) => tabu(client, { action: 'mark', roomId, turnNo, cardIndex, result });
+
+  async function currentTurn(roomId: string) {
+    const [row] = await sql`
+      select t.ends_at, t.ready_ends_at, t.card_ids from public.tabu_turns t
+      join public.rooms r on r.id = t.room_id
+      where t.room_id = ${roomId}
+        and t.game_no = (r.game_state ->> 'gameNo')::int
+        and t.turn_no = (r.game_state ->> 'turnNo')::int
+    `;
+    return row as { ends_at: Date | null; ready_ends_at: Date; card_ids: string[] };
+  }
+
+  async function usedCards(roomId: string): Promise<string[]> {
+    const rows = await sql`select card_id from public.room_used_cards where room_id = ${roomId}`;
+    return rows.map((r) => String(r.card_id)).sort();
+  }
+
+  it('waits as long in SQL as pure/tabu.ts says', async () => {
+    const [row] = await sql`select private.tabu_ready_seconds() as s`;
+    expect(row?.s).toBe(TABU.readySeconds);
+  });
+
+  it('opens every turn ready: no clock, no card, readyEndsAt in 15 seconds', async () => {
+    const { owner, guest, roomId } = await room(true);
+    const before = Date.now();
+    await play(guest, owner, roomId, 'tabu');
+    const state = await gameState(roomId);
+    expect(state).toMatchObject({ turnPhase: 'ready', turnNo: 1, describingTable: 'owner' });
+    expect(state).not.toHaveProperty('turnEndsAt');
+    expect(state).not.toHaveProperty('lastTurn');
+    const readyEndsAt = Date.parse(String(state.readyEndsAt));
+    expect(readyEndsAt - before).toBeGreaterThan((TABU.readySeconds - 2) * 1000);
+    expect(readyEndsAt - before).toBeLessThan((TABU.readySeconds + 2) * 1000);
+
+    for (const table of [owner, guest]) {
+      expect(await tabu(table, { action: 'turn-cards', roomId })).toEqual({
+        status: 409,
+        body: errorBody('turn_not_started'),
+      });
+    }
+    expect(await mark(owner, roomId, 1, 0, 'correct')).toEqual({
+      status: 409,
+      body: errorBody('turn_not_started'),
+    });
+    // A ready turn has not ended.
+    expect(await tabu(guest, { action: 'end-turn', roomId })).toEqual(OK);
+    expect(await gameState(roomId)).toEqual(state);
+    // Nothing is used before a card is shown.
+    expect(await usedCards(roomId)).toEqual([]);
+  });
+
+  it('starts the clock once, from the describing table or from either table after readyEndsAt', async () => {
+    const { owner, guest, roomId } = await room(true);
+    await play(guest, owner, roomId, 'tabu');
+    const ready = await gameState(roomId);
+    // The judging table before readyEndsAt: nothing happens.
+    expect(await begin(guest, roomId)).toEqual(OK);
+    expect(await gameState(roomId)).toEqual(ready);
+
+    // The describing table starts it; sent again (the app retries after a 5xx, pure/apiRetry.ts)
+    // and from the other phone, the same answer and the same clock.
+    const before = Date.now();
+    expect(await begin(owner, roomId)).toEqual(OK);
+    const running = await gameState(roomId);
+    expect(running).toMatchObject({ turnPhase: 'running', turnNo: 1 });
+    expect(running).not.toHaveProperty('readyEndsAt');
+    const ends = Date.parse(String(running.turnEndsAt));
+    expect(ends - before).toBeGreaterThan((TABU.turnSeconds - 2) * 1000);
+    expect(ends - before).toBeLessThan((TABU.turnSeconds + 2) * 1000);
+    expect(await begin(owner, roomId)).toEqual(OK);
+    expect(await begin(guest, roomId)).toEqual(OK);
+    expect(await gameState(roomId)).toEqual(running);
+    expect(
+      await sql`select 1 from public.game_events where room_id = ${roomId} and type = 'turn_started'`,
+    ).toHaveLength(1);
+
+    // Turn 2: the guest table describes. The owner table waits for readyEndsAt, then may start.
+    await expireTurn(roomId);
+    await tabu(owner, { action: 'end-turn', roomId });
+    expect(await gameState(roomId)).toMatchObject({
+      turnPhase: 'ready',
+      turnNo: 2,
+      describingTable: 'guest',
+    });
+    expect(await begin(owner, roomId)).toEqual(OK);
+    expect(await gameState(roomId)).toMatchObject({ turnPhase: 'ready' });
+    await sql`
+      update public.tabu_turns set ready_ends_at = now() - interval '1 second'
+      where room_id = ${roomId} and ends_at is null
+    `;
+    expect(await begin(owner, roomId)).toEqual(OK);
+    expect(await gameState(roomId)).toMatchObject({ turnPhase: 'running', turnNo: 2 });
+    expect((await tabu(guest, { action: 'turn-cards', roomId })).status).toBe(200);
+
+    // No game: nothing to start, no error.
+    await rooms(owner, { action: 'end-game', roomId });
+    expect(await begin(owner, roomId)).toEqual(OK);
+  });
+
+  it('keeps the same rules in the cooperative mode: the describer, or anyone after readyEndsAt', async () => {
+    const { owner, guest, roomId } = await room(true, { owner: 1, guest: 3 });
+    await play(owner, guest, roomId, 'tabu');
+    expect(await gameState(roomId)).toMatchObject({ mode: 'cooperative', turnPhase: 'ready' });
+    expect(await begin(guest, roomId)).toEqual(OK);
+    expect(await gameState(roomId)).toMatchObject({ turnPhase: 'ready' });
+    expect(await begin(owner, roomId)).toEqual(OK);
+    expect(await gameState(roomId)).toMatchObject({ turnPhase: 'running' });
+  });
+
+  it('shows the previous turn on the ready screen: its score and how its cards closed', async () => {
+    const { owner, guest, roomId } = await room(true);
+    await play(guest, owner, roomId, 'tabu');
+    await begin(owner, roomId);
+    const results = ['correct', 'correct', 'taboo', 'pass', 'correct'] as const;
+    for (const [i, result] of results.entries()) {
+      expect(await mark(result === 'taboo' ? guest : owner, roomId, 1, i, result)).toEqual(OK);
+    }
+    await expireTurn(roomId);
+    await tabu(guest, { action: 'end-turn', roomId });
+    const state = await gameState(roomId);
+    expect(state.lastTurn).toEqual(summarizeTurn(1, 'owner', results));
+    expect(state.lastTurn).toEqual({
+      turnNo: 1,
+      describingTable: 'owner',
+      score: 2,
+      correct: 3,
+      taboo: 1,
+      pass: 1,
+    });
+    expect(state.scores).toEqual({ owner: 2, guest: 0 });
+  });
+
+  it('counts only the cards shown as used; the rest of a list stays free', async () => {
+    const { owner, guest, roomId } = await room(true);
+    await play(guest, owner, roomId, 'tabu');
+    const first = await currentTurn(roomId);
+    expect(first.card_ids).toHaveLength(TABU.cardsPerTurn);
+    await begin(owner, roomId);
+    // The first card is shown when the turn begins.
+    expect(await usedCards(roomId)).toEqual([first.card_ids[0]].sort());
+    for (let i = 0; i < 3; i++) await mark(owner, roomId, 1, i, 'correct');
+    // Three closed, the fourth shown now.
+    const shown = first.card_ids.slice(0, 4).sort();
+    expect(await usedCards(roomId)).toEqual(shown);
+    // A mark the server ignores shows nothing new.
+    await mark(owner, roomId, 1, 1, 'correct');
+    expect(await usedCards(roomId)).toEqual(shown);
+
+    await expireTurn(roomId);
+    await tabu(owner, { action: 'end-turn', roomId });
+    const second = await currentTurn(roomId);
+    // The next list never repeats a shown card; dealing it marks nothing.
+    expect(second.card_ids.filter((id) => shown.includes(id))).toEqual([]);
+    expect(await usedCards(roomId)).toEqual(shown);
+    // The 36 cards dealt but never shown are free again: the next list may hold them.
+    const unshown = first.card_ids.slice(4);
+    const [free] = await sql`
+      select count(*)::int as n from public.cards c
+      where c.id = any(${unshown}::uuid[])
+        and not exists (
+          select 1 from public.room_used_cards u where u.room_id = ${roomId} and u.card_id = c.id
+        )
+    `;
+    expect(free?.n).toBe(unshown.length);
+  });
+
+  it('starts over when fewer unused cards are left than a list needs, without a repeat in the list', async () => {
+    const { owner, guest, roomId } = await room(true);
+    await play(guest, owner, roomId, 'tabu');
+    await begin(owner, roomId);
+    // All but 5 cards of the deck are used in this room.
+    await sql`
+      insert into public.room_used_cards (room_id, card_id)
+      select ${roomId}, c.id from public.cards c
+      where c.deck = 'tabu' and c.is_active
+      order by c.id offset 5
+      on conflict do nothing
+    `;
+    const left = (
+      await sql`
+        select c.id from public.cards c
+        where c.deck = 'tabu' and c.is_active
+          and not exists (
+            select 1 from public.room_used_cards u where u.room_id = ${roomId} and u.card_id = c.id
+          )
+      `
+    ).map((r) => String(r.id));
+    expect(left.length).toBeLessThan(TABU.cardsPerTurn);
+    await expireTurn(roomId);
+    await tabu(owner, { action: 'end-turn', roomId });
+    const next = await currentTurn(roomId);
+    expect(next.card_ids).toHaveLength(TABU.cardsPerTurn);
+    expect(new Set(next.card_ids).size).toBe(TABU.cardsPerTurn);
+    // The cards left come first in the list, then the deck starts over.
+    expect(next.card_ids.slice(0, left.length).sort()).toEqual(left.sort());
+    expect(await usedCards(roomId)).toEqual([]);
   });
 });
 
@@ -534,6 +773,7 @@ describe('tabu modes (docs/SPEC_V3.md §6.1)', () => {
     });
     // The headcounts change under a running game (they cannot from the app): the mode stays.
     await sql`update public.rooms set guest_headcount = 3 where id = ${coop.roomId}`;
+    await beginNow(coop.owner, coop.roomId);
     await expireTurn(coop.roomId);
     await tabu(coop.owner, { action: 'end-turn', roomId: coop.roomId });
     expect(await gameState(coop.roomId)).toMatchObject({ mode: 'cooperative', turnNo: 2 });
@@ -574,6 +814,7 @@ describe('tabu, cooperative mode (docs/SPEC_V3.md §6.3)', () => {
   async function started() {
     const r = await room(true, { owner: 1, guest: 3 });
     await play(r.guest, r.owner, r.roomId, 'tabu');
+    await begin(r.owner, r.roomId);
     return r;
   }
   const mark = (client: Client, roomId: string, cardIndex: number, result: string, turnNo = 1) =>
@@ -606,6 +847,7 @@ describe('tabu, cooperative mode (docs/SPEC_V3.md §6.3)', () => {
       .toBeGreaterThan(0);
 
     await play(guest, owner, roomId, 'tabu');
+    await begin(owner, roomId);
     expect(await turnCards(guest, roomId)).toEqual({
       status: 403,
       body: errorBody('not_describer'),
@@ -675,6 +917,7 @@ describe('tabu, cooperative mode (docs/SPEC_V3.md §6.3)', () => {
     await expireTurn(roomId);
     await tabu(owner, { action: 'end-turn', roomId });
     expect(await gameState(roomId)).toMatchObject({ turnNo: 2, describingTable: 'guest' });
+    await begin(guest, roomId);
     expect((await turnCards(owner, roomId)).status).toBe(403);
     expect((await turnCards(guest, roomId)).body.cards).toHaveLength(40);
     expect(await mark(owner, roomId, 0, 'correct', 2)).toEqual({
@@ -689,6 +932,7 @@ describe('tabu, cooperative mode (docs/SPEC_V3.md §6.3)', () => {
     const { owner, roomId } = await started();
     await mark(owner, roomId, 0, 'correct');
     for (let turn = 1; turn <= 6; turn++) {
+      await beginNow(owner, roomId);
       await expireTurn(roomId);
       await tabu(owner, { action: 'end-turn', roomId });
     }

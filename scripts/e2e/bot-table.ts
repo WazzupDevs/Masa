@@ -24,7 +24,7 @@ import {
 } from '../../supabase/functions/_shared/pure/consent.ts';
 import { isDevProjectUrl, isLocalUrl } from '../../supabase/functions/_shared/pure/devProject.ts';
 import { dmTypingChannel, TYPING_EVENT } from '../../supabase/functions/_shared/pure/rooms.ts';
-import type { VoiceTabuState } from '../../supabase/functions/_shared/pure/tabu.ts';
+import { parseReadyTurn, type VoiceTabuState } from '../../supabase/functions/_shared/pure/tabu.ts';
 import { ANCHOR, offset, squareRing } from '../../supabase/tests/fixtures/venues.ts';
 
 // The local stack's fixed publishable key (the same in every `supabase start`).
@@ -317,6 +317,25 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
     });
   },
 
+  // Starts the ready turn (docs/SPEC_V3.md §19.1): the bot's own turn at once. `force` (local only)
+  // first moves readyEndsAt into the past, so the bot starts the device's turn too, as either
+  // table may then.
+  async 'begin-turn'(args) {
+    const room = await myRoom();
+    if (args.force === true) {
+      const sql = db();
+      try {
+        await sql`
+          update public.tabu_turns set ready_ends_at = now() - interval '1 second'
+          where room_id = ${room.id} and ends_at is null
+        `;
+      } finally {
+        await sql.end();
+      }
+    }
+    return call('tabu', { action: 'begin-turn', roomId: room.id });
+  },
+
   // Local only: ends the current turn now instead of in 60 seconds.
   async 'expire-turn'() {
     const room = await myRoom();
@@ -562,13 +581,29 @@ async function opponent() {
           return;
         }
         if (!state?.mode || state.phase !== 'playing') return;
+        const mySide = isOwner ? 'owner' : 'guest';
+        // A ready turn (docs/SPEC_V3.md §19.1): the bot starts its own after a few seconds, and the
+        // other table's once readyEndsAt has passed.
+        const ready = parseReadyTurn(state);
+        if (ready) {
+          const key = `${room.id}/${state.gameNo}/${state.turnNo}`;
+          const seen = firstSeen.get(key) ?? Date.now();
+          firstSeen.set(key, seen);
+          const mine = state.describingTable === mySide;
+          if ((mine && Date.now() - seen > 3_000) || Date.now() >= Date.parse(ready.readyEndsAt)) {
+            await quiet('begin-turn', () =>
+              call('tabu', { action: 'begin-turn', roomId: room.id }),
+            );
+            if (mine) say(`started turn ${state.turnNo}`);
+          }
+          return;
+        }
         if (Date.now() >= Date.parse(state.turnEndsAt ?? '')) {
           await quiet('end-turn', () => call('tabu', { action: 'end-turn', roomId: room.id }));
           return;
         }
         // Cooperative (docs/SPEC_V3.md §6.3): only the describing table presses; the bot waits
         // while the other table describes to it.
-        const mySide = isOwner ? 'owner' : 'guest';
         if (state.mode === 'cooperative' && state.describingTable !== mySide) return;
         // One Doğru per card, after the card has been on the table for a few seconds.
         const card = `${room.id}/${state.gameNo}/${state.turnNo}/${state.cardIndex}`;
