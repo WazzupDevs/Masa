@@ -8,6 +8,17 @@ import { Text } from '@/components/Text';
 import { FirstGameIntro } from '@/features/games/FirstGameIntro';
 import { ClockPill, TeamScore } from '@/features/games/GameBits';
 import { RematchButton } from '@/features/games/RematchButton';
+import {
+  ClueOrder,
+  GuessOptions,
+  GuessWaiting,
+  HoldCard,
+  ImposterReveal,
+  PassPhone,
+  SeatCardFace,
+  SeatList,
+  VoteGrid,
+} from '@/features/games/sahtekar/Sahtekar';
 import { TimeUpOverlay } from '@/features/games/TimeUpOverlay';
 import { tabuStats, TurnReady } from '@/features/games/TurnReady';
 import { tr } from '@/i18n/tr';
@@ -136,6 +147,126 @@ function GamesSet() {
   );
 }
 
+function SahtekarSet() {
+  const [vote, setVote] = useState<string | null>('B2');
+  const [guess, setGuess] = useState<string | null>('Poğaça');
+  const [held, setHeld] = useState(false);
+  const seats = (
+    <View className="gap-3">
+      <SeatList
+        title="Yaratıcı Lokma · bu telefon"
+        seats={[
+          { seat: 'A1', viewed: true },
+          { seat: 'A2', viewed: false },
+          { seat: 'A3', viewed: false },
+        ]}
+        current="A2"
+      />
+      <SeatList
+        title="Sakin Martı · kendi telefonunda"
+        seats={[
+          { seat: 'B1', viewed: true },
+          { seat: 'B2', viewed: false },
+        ]}
+      />
+    </View>
+  );
+  return (
+    <View className="gap-4">
+      <PreviewBlock title="PassPhone · SeatList">
+        <View style={{ height: STAGE + SPACING[16] }}>
+          <PassPhone seat="A2" seats={seats} onReady={() => undefined} />
+        </View>
+      </PreviewBlock>
+      <PreviewBlock title="HoldCard (basılı tut)">
+        <View style={{ height: STAGE }}>
+          <HoldCard
+            seat="A2"
+            card={held ? { category: 'Yiyecek', word: 'Simit' } : null}
+            onHoldStart={() => setHeld(true)}
+            onHoldEnd={() => setHeld(false)}
+            onDone={() => undefined}
+          />
+        </View>
+      </PreviewBlock>
+      <PreviewBlock title="SeatCardFace · kelime">
+        <View style={{ height: STAGE - SPACING[16] }} testID="preview-card-word">
+          <SeatCardFace card={{ category: 'Yiyecek', word: 'Simit' }} />
+        </View>
+      </PreviewBlock>
+      <PreviewBlock title="SeatCardFace · sahtekar">
+        <View style={{ height: STAGE - SPACING[16] }} testID="preview-card-imposter">
+          <SeatCardFace card={{ category: 'Yiyecek', imposter: true }} />
+        </View>
+      </PreviewBlock>
+      <PreviewBlock title="ClueOrder">
+        <View style={{ height: STAGE }}>
+          <ClueOrder
+            round={1}
+            totalRounds={2}
+            order={['A1', 'B1', 'A2', 'B2', 'A3']}
+            currentIndex={2}
+            secondsLeft={9}
+            canSay
+            onSaid={() => undefined}
+          />
+        </View>
+      </PreviewBlock>
+      <PreviewBlock title="VoteGrid">
+        <View style={{ height: STAGE }}>
+          <VoteGrid
+            voter="A2"
+            seats={['A1', 'A2', 'A3', 'B1', 'B2']}
+            selected={vote}
+            onSelect={setVote}
+            onSubmit={() => undefined}
+            secondsLeft={41}
+            votesCast={2}
+            totalVoters={5}
+          />
+        </View>
+      </PreviewBlock>
+      <PreviewBlock title="GuessOptions">
+        <View style={{ height: STAGE }}>
+          <GuessOptions
+            seat="B2"
+            category="Yiyecek"
+            options={['Simit', 'Poğaça', 'Börek', 'Gözleme', 'Açma', 'Pide']}
+            selected={guess}
+            onSelect={setGuess}
+            onSubmit={() => undefined}
+            secondsLeft={24}
+          />
+        </View>
+      </PreviewBlock>
+      <PreviewBlock title="GuessWaiting">
+        <View style={{ height: STAGE - SPACING[16] }}>
+          <GuessWaiting seat="B2" secondsLeft={24} />
+        </View>
+      </PreviewBlock>
+      <PreviewBlock title="ImposterReveal">
+        <View style={{ height: STAGE + SPACING[16] }}>
+          <ImposterReveal
+            imposter="B2"
+            word="Simit"
+            guess="Poğaça"
+            outcome="tables"
+            votes={[
+              { voter: 'A1', target: 'B2' },
+              { voter: 'A2', target: 'A1' },
+              { voter: 'A3', target: 'B2' },
+              { voter: 'B1', target: 'B2' },
+              { voter: 'B2', target: 'A2' },
+            ]}
+            brand="Kabuk · Sahtekar"
+          />
+        </View>
+      </PreviewBlock>
+    </View>
+  );
+}
+
 export const PREVIEW_SETS: PreviewSet[] = [
   { key: 'games', label: 'Oyun', render: () => <GamesSet /> },
+  { key: 'sahtekar', label: 'Sahtekar', render: () => <SahtekarSet /> },
 ];

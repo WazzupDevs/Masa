@@ -56,6 +56,67 @@ appId: app.kabuk.mobile
 - takeScreenshot: 04c-preview-intro
 - tapOn:
     id: intro-skip
+# Aşama 7 · Sahtekar
+- back
+- extendedWaitUntil:
+    visible:
+      id: preview-open
+    timeout: 10000
+- tapOn:
+    id: preview-open
+- extendedWaitUntil:
+    visible:
+      id: preview-set-sahtekar
+    timeout: 10000
+- tapOn:
+    id: preview-set-sahtekar
+- extendedWaitUntil:
+    visible:
+      id: sahtekar-pass
+    timeout: 10000
+- takeScreenshot: 04d-sahtekar-pass
+- scrollUntilVisible:
+    element:
+      id: preview-card-word
+    centerElement: true
+    timeout: 10000
+- takeScreenshot: 04d-sahtekar-word
+- scrollUntilVisible:
+    element:
+      id: preview-card-imposter
+    centerElement: true
+    timeout: 10000
+- takeScreenshot: 04d-sahtekar-imposter
+- scrollUntilVisible:
+    element:
+      id: sahtekar-clues
+    centerElement: true
+    timeout: 10000
+- takeScreenshot: 04d-sahtekar-clues
+- scrollUntilVisible:
+    element:
+      id: sahtekar-vote
+    centerElement: true
+    timeout: 10000
+- takeScreenshot: 04d-sahtekar-vote
+- scrollUntilVisible:
+    element:
+      id: sahtekar-guess
+    centerElement: true
+    timeout: 10000
+- takeScreenshot: 04d-sahtekar-guess
+- scrollUntilVisible:
+    element:
+      id: sahtekar-guess-wait
+    centerElement: true
+    timeout: 10000
+- takeScreenshot: 04d-sahtekar-guess-wait
+- scrollUntilVisible:
+    element:
+      id: sahtekar-reveal
+    centerElement: true
+    timeout: 10000
+- takeScreenshot: 04d-sahtekar-reveal
 # The preview and Ayarlar are scrolled down; the system back key leaves both without scrolling up.
 - back
 - extendedWaitUntil:
