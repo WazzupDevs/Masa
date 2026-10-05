@@ -662,6 +662,8 @@ export const tr = {
     hint: 'Yalnızca test sürümünde görünür. Seçimin bu cihazda saklanır.',
     schemeLabel: 'Görünüm',
     schemes: { light: 'Açık', dark: 'Koyu', system: 'Sistem' },
+    previewTitle: 'Bileşen önizleme',
+    previewOpen: 'Bileşen önizlemesini aç',
   },
   settings: {
     title: 'Ayarlar',

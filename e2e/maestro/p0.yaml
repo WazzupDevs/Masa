@@ -7,6 +7,7 @@ name: P0 kritik yol
 ---
 - runFlow: flows/01-login.yaml
 - runFlow: flows/01b-design.yaml
+- runFlow: flows/01c-preview.yaml
 - runFlow: flows/02-checkin.yaml
 - runFlow: flows/03-name.yaml
 - runFlow: flows/04-room-tabu.yaml
