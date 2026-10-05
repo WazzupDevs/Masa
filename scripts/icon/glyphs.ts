@@ -164,6 +164,46 @@ export const BADGE_GLYPHS: Record<BadgeGlyph, string> = {
       .join(''),
 };
 
+// ------------------------------------------------------------------ game glyphs (solid)
+// The games' icons (Aktiviteler cards, "Oyun öner"): the two games already in the app and the four
+// new ones (canvas: Aşama 6 · Oyunlar). Solid, details cut out like the active tab icons.
+export type GameGlyph = 'tabu' | 'sohbet' | 'impostor' | 'letters' | 'song' | 'needle';
+export const GAME_GLYPHS: Record<GameGlyph, { solid: string; cut?: string }> = {
+  // Sesli Tabu: the microphone with a spark (the badge's drawing).
+  tabu: { solid: BADGE_GLYPHS.voice_tabu_five_wins },
+  // Sohbet kartları: two cards, a speech bubble cut into the front one.
+  sohbet: {
+    solid:
+      '<path d="M 7.4 6.2 L 5.4 6.7 C 4.4 7 3.8 8 4.1 9 L 6.4 18 C 6.7 19 7.7 19.6 8.7 19.3 L 10.3 18.9" fill="none"/>' +
+      '<rect x="9.6" y="3.6" width="10.6" height="15.4" rx="2.4" stroke="none"/>',
+    cut: '<path d="M 12.4 8.6 H 17.4 C 17.9 8.6 18.2 8.9 18.2 9.4 V 12.2 C 18.2 12.7 17.9 13 17.4 13 H 14.4 L 12.6 14.6 V 13 H 12.4 C 11.9 13 11.6 12.7 11.6 12.2 V 9.4 C 11.6 8.9 11.9 8.6 12.4 8.6 Z" stroke="none"/>',
+  },
+  // Sahtekar: a half mask with two eye holes.
+  impostor: {
+    solid:
+      '<path d="M 2.4 9.2 C 2.4 7.3 3.8 6.2 5.8 6.2 H 18.2 C 20.2 6.2 21.6 7.3 21.6 9.2 C 21.6 13.6 19.2 16.6 16.4 16.6 C 14.4 16.6 13.2 15.2 12 13.8 C 10.8 15.2 9.6 16.6 7.6 16.6 C 4.8 16.6 2.4 13.6 2.4 9.2 Z" stroke="none"/>',
+    cut: '<ellipse cx="7.6" cy="10.6" rx="2.3" ry="1.6" stroke="none"/><ellipse cx="16.4" cy="10.6" rx="2.3" ry="1.6" stroke="none"/>',
+  },
+  // Harf Kapmaca: a letter tile.
+  letters: {
+    solid: '<rect x="3.4" y="3.4" width="17.2" height="17.2" rx="4.6" stroke="none"/>',
+    cut: '<path d="M 8.4 16.6 L 12 7.2 L 15.6 16.6 M 9.7 13.4 H 14.3" fill="none" stroke-width="2.2"/>',
+  },
+  // Şarkıda Geçsin: two beamed notes.
+  song: {
+    solid:
+      '<ellipse cx="7" cy="17.4" rx="3.2" ry="2.6" stroke="none"/><ellipse cx="17" cy="15.4" rx="3.2" ry="2.6" stroke="none"/>' +
+      '<path d="M 9.6 17.2 V 6 L 19.6 3.8 V 15.2" fill="none" stroke-width="2"/><path d="M 9.6 6 L 19.6 3.8 V 7.4 L 9.6 9.6 Z" stroke="none"/>',
+  },
+  // İbre: a half dial with its needle.
+  needle: {
+    solid:
+      '<path d="M 3.2 17.6 C 3.2 12.7 7.1 8.8 12 8.8 C 16.9 8.8 20.8 12.7 20.8 17.6" fill="none" stroke-width="2.4"/>' +
+      '<path d="M 12 17.6 L 16.2 10.4" fill="none" stroke-width="2.2"/><circle cx="12" cy="17.6" r="2.4" stroke="none"/>' +
+      '<path d="M 6.2 6.6 L 7.2 8 M 12 4.4 V 6.2 M 17.8 6.6 L 16.8 8" fill="none" stroke-width="1.6"/>',
+  },
+};
+
 // A small padlock for locked badges.
 export const LOCK =
   '<rect x="5.5" y="10.5" width="13" height="10" rx="2.6" stroke="none"/>' +
