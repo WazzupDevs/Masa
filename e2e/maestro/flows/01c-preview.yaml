@@ -160,6 +160,45 @@ appId: app.kabuk.mobile
     centerElement: true
     timeout: 30000
 - takeScreenshot: 04e-say-song-object
+# Aşama 7 · İbre
+- back
+- extendedWaitUntil:
+    visible:
+      id: preview-open
+    timeout: 10000
+- tapOn:
+    id: preview-open
+- extendedWaitUntil:
+    visible:
+      id: preview-set-ibre
+    timeout: 10000
+- tapOn:
+    id: preview-set-ibre
+- extendedWaitUntil:
+    visible:
+      id: ibre-hold
+    timeout: 10000
+- takeScreenshot: 04f-ibre-hold
+- scrollUntilVisible:
+    element:
+      id: preview-needle
+    centerElement: true
+    timeout: 30000
+- tapOn:
+    id: ibre-plus
+- takeScreenshot: 04f-ibre-needle
+- scrollUntilVisible:
+    element:
+      id: preview-side
+    centerElement: true
+    timeout: 30000
+- takeScreenshot: 04f-ibre-side
+- scrollUntilVisible:
+    element:
+      id: ibre-reveal
+    centerElement: true
+    timeout: 30000
+- takeScreenshot: 04f-ibre-reveal
 # The preview and Ayarlar are scrolled down; the system back key leaves both without scrolling up.
 - back
 - extendedWaitUntil:
