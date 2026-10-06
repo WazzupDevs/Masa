@@ -339,6 +339,16 @@ function SaySet() {
 
 const DIAL = 320;
 
+// The dials take a width; in the preview it is the block's own (a phone at 320 dp leaves less).
+function FitWidth({ children }: { children: (width: number) => ReactNode }) {
+  const [width, setWidth] = useState(0);
+  return (
+    <View onLayout={(e) => setWidth(Math.min(DIAL, Math.floor(e.nativeEvent.layout.width)))}>
+      {width > 0 ? children(width) : null}
+    </View>
+  );
+}
+
 function IbreSet() {
   const [held, setHeld] = useState(false);
   const [needle, setNeedle] = useState(41);
@@ -346,44 +356,66 @@ function IbreSet() {
   return (
     <View className="gap-4">
       <PreviewBlock title="TargetHold (basılı tut)">
-        <TargetHold
-          width={DIAL}
-          left="Ucuz"
-          right="Pahalı"
-          target={held ? 34 : null}
-          onHoldStart={() => setHeld(true)}
-          onHoldEnd={() => setHeld(false)}
-        />
+        <FitWidth>
+          {(w) => (
+            <TargetHold
+              width={w}
+              left="Ucuz"
+              right="Pahalı"
+              target={held ? 34 : null}
+              onHoldStart={() => setHeld(true)}
+              onHoldEnd={() => setHeld(false)}
+            />
+          )}
+        </FitWidth>
       </PreviewBlock>
       <PreviewBlock title="NeedleDial · sürükle, − / +">
         <View testID="preview-needle">
-          <NeedleDial width={DIAL} left="Ucuz" right="Pahalı" value={needle} onChange={setNeedle} />
+          <FitWidth>
+            {(w) => (
+              <NeedleDial
+                width={w}
+                left="Ucuz"
+                right="Pahalı"
+                value={needle}
+                onChange={setNeedle}
+              />
+            )}
+          </FitWidth>
         </View>
       </PreviewBlock>
       <PreviewBlock title="SideChoice">
         <View className="gap-3" testID="preview-side">
-          <NeedleDial
-            width={DIAL}
-            left="Ucuz"
-            right="Pahalı"
-            value={41}
-            onChange={() => undefined}
-            disabled
-          />
+          <FitWidth>
+            {(w) => (
+              <NeedleDial
+                width={w}
+                left="Ucuz"
+                right="Pahalı"
+                value={41}
+                onChange={() => undefined}
+                disabled
+              />
+            )}
+          </FitWidth>
           <SideChoice selected={side} onSelect={setSide} />
         </View>
       </PreviewBlock>
       <PreviewBlock title="NeedleReveal">
-        <NeedleReveal
-          width={DIAL}
-          left="Ucuz"
-          right="Pahalı"
-          target={34}
-          needle={41}
-          points={3}
-          detail='Hedef 34 · ibre 41 · Sakin Martı "Daha sol" dedi: +1'
-          brand="Kabuk · İbre"
-        />
+        <FitWidth>
+          {(w) => (
+            <NeedleReveal
+              width={w}
+              left="Ucuz"
+              right="Pahalı"
+              target={34}
+              needle={41}
+              points={3}
+              detail='Hedef 34 · ibre 41 · Sakin Martı "Daha sol" dedi: +1'
+              brand="Kabuk · İbre"
+            />
+          )}
+        </FitWidth>
       </PreviewBlock>
     </View>
   );
