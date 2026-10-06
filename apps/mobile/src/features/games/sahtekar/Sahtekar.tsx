@@ -174,9 +174,7 @@ export function SeatCardFace({ card, loading }: { card: SeatCard | null; loading
       ) : 'imposter' in card ? (
         <View className="items-center gap-3" testID="sahtekar-card-imposter">
           <GameIcon name="impostor" color={fg} size={SPACING[16] + SPACING[8]} />
-          <Text variant="hero" color={fg} align="center">
-            {tr.sahtekar.youAreImposter}
-          </Text>
+          <HeroText color={fg}>{tr.sahtekar.youAreImposter}</HeroText>
           <Text variant="title" color={fg} align="center">
             {tr.sahtekar.category(card.category)}
           </Text>
@@ -189,9 +187,7 @@ export function SeatCardFace({ card, loading }: { card: SeatCard | null; loading
           <Text variant="overline" color={fg}>
             {tr.sahtekar.category(card.category)}
           </Text>
-          <Text variant="hero" color={fg} align="center">
-            {card.word}
-          </Text>
+          <HeroText color={fg}>{card.word}</HeroText>
           <Text variant="bodyStrong" color={fg}>
             {tr.sahtekar.notImposter}
           </Text>
@@ -332,47 +328,50 @@ export function VoteGrid({
         </Text>
       </View>
       <Text variant="fine">{tr.sahtekar.voteHint}</Text>
-      <View className="flex-row flex-wrap gap-2.5">
+      <View
+        className="flex-row flex-wrap"
+        style={{ marginHorizontal: -SPACING[1], rowGap: SPACING[2.5] }}
+      >
         {seats.map((seat) => {
           const self = seat === voter;
           const on = seat === selected;
           return (
-            <Pressable
-              key={seat}
-              testID={`sahtekar-vote-${seat}`}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: on, disabled: self }}
-              accessibilityLabel={self ? tr.sahtekar.selfVote(seat) : seat}
-              disabled={self}
-              onPress={() => onSelect(seat)}
-              className="items-center justify-center gap-1"
-              style={{
-                width: '31%',
-                paddingVertical: SPACING[3],
-                borderRadius: shape.radius.lg,
-                backgroundColor: on ? colors.accent : colors.surface,
-                borderWidth: on
-                  ? Math.max(shape.stroke.control, 2)
-                  : self
-                    ? shape.stroke.hairline * 2
-                    : 0,
-                borderStyle: self ? 'dashed' : 'solid',
-                borderColor: on ? colors.border : colors.divider,
-                boxShadow: on
-                  ? (shape.shadow.primaryButton ?? undefined)
-                  : self
-                    ? undefined
-                    : shape.shadow.card,
-                opacity: self ? 0.45 : 1,
-              }}
-            >
-              <SeatBadge seat={seat} size={SPACING[14]} />
-              {self ? (
-                <Text variant="caption" tone="muted">
-                  {tr.sahtekar.you}
-                </Text>
-              ) : null}
-            </Pressable>
+            <View key={seat} style={{ width: '33.333%', paddingHorizontal: SPACING[1] }}>
+              <Pressable
+                testID={`sahtekar-vote-${seat}`}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: on, disabled: self }}
+                accessibilityLabel={self ? tr.sahtekar.selfVote(seat) : seat}
+                disabled={self}
+                onPress={() => onSelect(seat)}
+                className="items-center justify-center gap-1"
+                style={{
+                  paddingVertical: SPACING[3],
+                  borderRadius: shape.radius.lg,
+                  backgroundColor: on ? colors.accent : colors.surface,
+                  borderWidth: on
+                    ? Math.max(shape.stroke.control, 2)
+                    : self
+                      ? shape.stroke.hairline * 2
+                      : 0,
+                  borderStyle: self ? 'dashed' : 'solid',
+                  borderColor: on ? colors.border : colors.divider,
+                  boxShadow: on
+                    ? (shape.shadow.primaryButton ?? undefined)
+                    : self
+                      ? undefined
+                      : shape.shadow.card,
+                  opacity: self ? 0.45 : 1,
+                }}
+              >
+                <SeatBadge seat={seat} size={SPACING[14]} />
+                {self ? (
+                  <Text variant="caption" tone="muted">
+                    {tr.sahtekar.you}
+                  </Text>
+                ) : null}
+              </Pressable>
+            </View>
           );
         })}
       </View>
@@ -537,9 +536,9 @@ export function ImposterReveal({
       >
         <Text variant="hero">{imposter}</Text>
       </View>
-      <Text variant="hero" color={fg} align="center">
+      <HeroText color={fg}>
         {outcome === 'tables' ? tr.sahtekar.tablesWon : tr.sahtekar.imposterWon}
-      </Text>
+      </HeroText>
       <Text variant="title" color={fg} align="center">
         {guess ? tr.sahtekar.wordAndGuess(word, guess) : tr.sahtekar.word(word)}
       </Text>
@@ -568,5 +567,22 @@ export function ImposterReveal({
         </Text>
       ) : null}
     </View>
+  );
+}
+
+// The hero size breaks a long word ("Sahtekarsın") mid-way on a narrow card; it shrinks instead,
+// one line at most per word.
+function HeroText({ children, color }: { children: string; color: string }) {
+  const words = children.trim().split(/\s+/).length;
+  return (
+    <Text
+      variant="hero"
+      color={color}
+      align="center"
+      numberOfLines={Math.min(3, words)}
+      adjustsFontSizeToFit
+    >
+      {children}
+    </Text>
   );
 }
