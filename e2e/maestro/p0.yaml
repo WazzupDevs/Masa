@@ -16,5 +16,7 @@ name: P0 kritik yol
 - runFlow: flows/06-white-screen.yaml
 - runFlow: flows/06b-tabu-coop.yaml
 - runFlow: flows/09-sahtekar.yaml
+- runFlow: flows/10-harf.yaml
+- runFlow: flows/11-sarki.yaml
 - runFlow: flows/07-history-block.yaml
 - runFlow: flows/08-venue-chat.yaml

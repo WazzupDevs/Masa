@@ -22,10 +22,16 @@ import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { useNow } from '@/lib/useNow';
 
-type Game = 'tabu' | 'sohbet' | 'sahtekar';
+type Game = 'tabu' | 'sohbet' | 'sahtekar' | 'harf' | 'sarki';
 
 // The intent "Bu oyunla oda kur" opens the room form with (the room still starts without a game).
-const INTENT_OF: Record<Game, Intent> = { tabu: 'game', sohbet: 'chat', sahtekar: 'game' };
+const INTENT_OF: Record<Game, Intent> = {
+  tabu: 'game',
+  sohbet: 'chat',
+  sahtekar: 'game',
+  harf: 'game',
+  sarki: 'game',
+};
 
 // Aktiviteler, the game hub (docs/SPEC_V3.md §18.3; canvas: Aşama 5 · Geri bildirim): one card per
 // game with a short line and how it is played. At the venue: "Masanla oyna" (the one-table room
@@ -39,7 +45,7 @@ export default function ActivitiesScreen() {
   const recent = useRecentGames();
   const [howTo, setHowTo] = useState<Game | null>(null);
 
-  const games: Game[] = ['tabu', 'sahtekar', 'sohbet'];
+  const games: Game[] = ['tabu', 'sahtekar', 'harf', 'sarki', 'sohbet'];
 
   return (
     <Screen edges={['top']}>

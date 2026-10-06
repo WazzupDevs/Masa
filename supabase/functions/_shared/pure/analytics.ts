@@ -33,6 +33,10 @@ export type AnalyticsEventProps = {
     // Sahtekar (docs/SPEC_V3.md §20.2): who won and how many played; never the seat or the word.
     outcome?: 'imposter' | 'tables';
     players?: number;
+    // Harf Kapmaca and Şarkıda Geçsin (§20.3–20.4): objections used in the game, rounds lost on
+    // the clock (Harf only in the spec; Şarkı sends it too). Never the category or the word.
+    objections?: number;
+    rounds_lost_by_timeout?: number;
   };
   // v3 step 7 (docs/SPEC_V3.md §19.1): a Tabu game stopped before its last turn, by "Oyunu bitir"
   // or a table leaving. The turn it stopped in and the game's length; nothing else.
@@ -74,7 +78,16 @@ const ALLOWED: { [E in AnalyticsEvent]: readonly (keyof AnalyticsEventProps[E])[
   join_accepted: [],
   join_unavailable: [],
   room_two_tables: [],
-  game_completed: ['concept', 'score', 'mode', 'tabu_mode', 'outcome', 'players'],
+  game_completed: [
+    'concept',
+    'score',
+    'mode',
+    'tabu_mode',
+    'outcome',
+    'players',
+    'objections',
+    'rounds_lost_by_timeout',
+  ],
   game_abandoned: ['concept', 'turn_no', 'total_turns'],
   reveal_mutual: [],
   reveal_none: [],

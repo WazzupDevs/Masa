@@ -1,0 +1,117 @@
+# Şarkıda Geçsin (docs/SPEC_V3.md §20.4): this phone starts and sings (Söyledik); the bot table lets
+# it pass, sings back and this phone objects (its objections drop to 2). The last two words show a
+# 5-second clock; they run out and the result shows.
+appId: app.kabuk.mobile
+---
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: leave
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: checkin
+      BODY: '{"spot":"kutuphane","headcount":2}'
+- tapOn:
+    id: tab-venue
+- extendedWaitUntil:
+    visible: Oda kur
+    timeout: 15000
+- tapOn: Oda kur
+- extendedWaitUntil:
+    visible:
+      id: intent-none
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: Odayı kur
+    timeout: 10000
+- tapOn: Odayı kur
+- extendedWaitUntil:
+    visible:
+      id: solo-tabu
+    timeout: 15000
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: request-join
+- extendedWaitUntil:
+    visible: Katılma isteği
+    timeout: 20000
+- tapOn:
+    id: join-accept
+- extendedWaitUntil:
+    visible:
+      id: propose-sarki
+    timeout: 15000
+- tapOn:
+    id: propose-sarki
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: answer-game
+- extendedWaitUntil:
+    visible:
+      id: turn-start
+    timeout: 20000
+- tapOn:
+    id: turn-start
+- extendedWaitUntil:
+    visible:
+      id: say-said
+    timeout: 15000
+- takeScreenshot: 50-sarki-said
+- tapOn:
+    id: say-said
+# The bot table lets it pass, then sings; this phone objects.
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: say-claim
+- extendedWaitUntil:
+    visible:
+      id: say-object
+    timeout: 15000
+- tapOn:
+    id: say-object
+- extendedWaitUntil:
+    visible: siz · 2 hak
+    timeout: 15000
+- takeScreenshot: 51-sarki-objected
+# The last two words: 5 seconds a line.
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: say-expire
+      BODY: '{"toRound":7}'
+- extendedWaitUntil:
+    visible: '0:0[0-5]'
+    timeout: 10000
+- takeScreenshot: 52-sarki-short
+# Words 7 and 8 run out on the clock (either phone advances): the game ends.
+- extendedWaitUntil:
+    visible:
+      id: last-game
+    timeout: 40000
+- takeScreenshot: 53-sarki-result
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: end-room
+- extendedWaitUntil:
+    visible: Tanışalım mı\?
+    timeout: 20000
+- tapOn:
+    id: reveal-no
+- extendedWaitUntil:
+    visible: Güzel oyundu.*
+    timeout: 15000
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: reveal
+      BODY: '{"yes":false}'
+- tapOn: Mekana dön
+- extendedWaitUntil:
+    visible: Oda kur
+    timeout: 15000

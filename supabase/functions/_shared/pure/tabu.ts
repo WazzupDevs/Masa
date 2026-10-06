@@ -3,6 +3,7 @@
 import type { SohbetState, SohbetTheme } from './sohbet.ts';
 import { SOHBET_THEMES } from './sohbet.ts';
 import { parseSahtekarLastGame, type SahtekarLastGame } from './sahtekar.ts';
+import { SAY_CONFIG } from './sayChallenge.ts';
 
 export const TABU = {
   turnSeconds: 60,
@@ -359,7 +360,7 @@ export function parseGameState(value: unknown): GameState | null {
 // result (docs/SPEC_V3.md §5.1): the concept, and for two-table Tabu both scores (refereed) or the
 // team's score (cooperative).
 export type LastGame = {
-  concept: 'tabu' | 'sohbet' | 'sahtekar';
+  concept: 'tabu' | 'sohbet' | 'sahtekar' | 'harf' | 'sarki';
   scores: Record<TableSide, number> | null;
   teamScore: number | null;
   // A two-table Tabu game ended with "Oyunu bitir" before its last turn (docs/SPEC_V3.md §19.1):
@@ -367,6 +368,8 @@ export type LastGame = {
   abandoned: { turnNo: number; totalTurns: number } | null;
   // A Sahtekar game: the counts for the rematch and the reveal (docs/SPEC_V3.md §20.2).
   sahtekar: SahtekarLastGame | null;
+  // Harf Kapmaca and Şarkıda Geçsin (§20.3–20.4): objections used and rounds lost on the clock.
+  say: { objections: number; timeouts: number } | null;
 };
 export type BetweenGames = { gameNo: number; lastGame: LastGame | null };
 
@@ -376,7 +379,7 @@ export function parseBetweenGames(value: unknown): BetweenGames {
   const last = state.lastGame;
   if (
     !isRecord(last) ||
-    (last.concept !== 'tabu' && last.concept !== 'sohbet' && last.concept !== 'sahtekar')
+    !['tabu', 'sohbet', 'sahtekar', 'harf', 'sarki'].includes(String(last.concept))
   ) {
     return { gameNo, lastGame: null };
   }
@@ -384,7 +387,7 @@ export function parseBetweenGames(value: unknown): BetweenGames {
   return {
     gameNo,
     lastGame: {
-      concept: last.concept,
+      concept: last.concept as LastGame['concept'],
       scores:
         isRecord(scores) && num(scores.owner) && num(scores.guest)
           ? { owner: scores.owner, guest: scores.guest }
@@ -395,6 +398,20 @@ export function parseBetweenGames(value: unknown): BetweenGames {
           ? { turnNo: last.turnNo, totalTurns: last.totalTurns }
           : null,
       sahtekar: parseSahtekarLastGame(last),
+      say:
+        (last.concept === 'harf' || last.concept === 'sarki') &&
+        isRecord(last.objectionsLeft) &&
+        num(last.objectionsLeft.owner) &&
+        num(last.objectionsLeft.guest) &&
+        num(last.timeouts)
+          ? {
+              objections:
+                2 * SAY_CONFIG[last.concept].objections -
+                last.objectionsLeft.owner -
+                last.objectionsLeft.guest,
+              timeouts: last.timeouts,
+            }
+          : null,
     },
   };
 }

@@ -1327,6 +1327,15 @@ Tasarımın bileşenleriyle:
 - **İdempotentlik:** `harf/begin`, `harf/advance`, `sarki/begin`, `sarki/advance` `IDEMPOTENT_CALLS`'ta.
 - **İçerik:** `content/harf-categories.json` (173 kategori) ve `content/sarki-words.json` (498 kelime) proje sahibinin incelemesine taslaktır.
 
+### 20.4b Uygulamada netleşenler (7.2 ekranlar)
+
+- **Öneri ve Aktiviteler:** Harf Kapmaca ve Şarkıda Geçsin `CONCEPTS`'te; öneri kutucukları tasarımın ikonlarıyla (harfler, şarkı) ve beş oyun olduğu için iki satıra sarılır. Aktiviteler'de iki kart ("Nasıl oynanır" adımları), "Son oyunların"da skorlarıyla.
+- **İki masalı ekran** (`SayGame`): hazır durumda istem ve `TurnReady` (önceki turun sonucu özet olarak: "İtiraz! … +1"); oyunda tur, saat, iki masanın skoru ve kalan itiraz hakkı (skor çubuğunun altında "siz · 3 hak", karşı masada "2 hak"), istem, Harf'te harf tahtası (sıra sizdeyken dokunulur), Şarkı'da "Söyledik". Karşı masanın iddiasından sonra itiraz penceresi ve "İtiraz". Biten turun sonucu bir an görünür. Süre dolunca iki telefon da bir kez `advance` ya da `begin` çağırır.
+- **Tek masalı oyun** (`LocalSay`): "Masanla oyna"da iki düğme (en az 2 kişi), Takım A ve B tek telefonda; itirazı diğer takım aynı telefonda basar. İstemler `start`'tan bir kerede gelir.
+- **Bitiş:** oda sohbete döner; son oyun kartı iki masanın skorunu gösterir, altında "Rövanş".
+- **Analitik:** iki masalı oyunu sahip masanın telefonu `lastGame`'den bir kez gönderir (`score` sahip masanın, `objections` kullanılan itiraz, `rounds_lost_by_timeout`); bunun için sunucu `timeouts` sayar. "Oyunu bitir" `game_abandoned` (tur ve toplam tur) gönderir.
+- **Bot ve E2E:** `say-begin`, `say-claim`, `say-object`, `say-expire` (yerelde `toRound` ve `lastRound`); karşı masa modu kendi turunda bir harf ya da dize söyler, itiraz etmez. Akışlar `10-harf.yaml` ve `11-sarki.yaml` (09'dan sonra).
+
 ### 20.5 İbre
 
 **Kurallar.**
