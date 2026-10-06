@@ -25,6 +25,9 @@ export type AnalyticsEventProps = {
   // v2: + mode (docs/SPEC_V2.md §13); for voice Tabu the owner table's score (cooperative: the
   // team's) and, v3, the Tabu mode (docs/SPEC_V3.md §15).
   game_completed: { concept: Concept; score: number; mode: GameMode; tabu_mode?: TabuMode };
+  // v3 step 7 (docs/SPEC_V3.md §19.1): a Tabu game stopped before its last turn, by "Oyunu bitir"
+  // or a table leaving. The turn it stopped in and the game's length; nothing else.
+  game_abandoned: { concept: Concept; turn_no: number; total_turns: number };
   reveal_mutual: Record<string, never>;
   reveal_none: Record<string, never>;
   report_submitted: Record<string, never>;
@@ -63,6 +66,7 @@ const ALLOWED: { [E in AnalyticsEvent]: readonly (keyof AnalyticsEventProps[E])[
   join_unavailable: [],
   room_two_tables: [],
   game_completed: ['concept', 'score', 'mode', 'tabu_mode'],
+  game_abandoned: ['concept', 'turn_no', 'total_turns'],
   reveal_mutual: [],
   reveal_none: [],
   report_submitted: [],

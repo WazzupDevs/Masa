@@ -23,6 +23,7 @@ describe('analytics events', () => {
         'join_accepted',
         'join_unavailable',
         'room_two_tables',
+        'game_abandoned',
         'game_completed',
         'reveal_mutual',
         'reveal_none',

@@ -10,6 +10,9 @@ export const TABU = {
   // Cards dealt to a turn at once (both tables get the list at the start of the turn). A fast
   // table closes a card every ~2 seconds, so 40 cover a 60 second turn.
   cardsPerTurn: 40,
+  // Two-table turns open ready (docs/SPEC_V3.md §19.1): the describing table presses Başla; after
+  // this many seconds either table may start the clock. private.tabu_ready_seconds() in SQL.
+  readySeconds: 15,
   // One-table game (§5.1): teams A and B, 3 rounds each.
   localRoundsPerTeam: 3,
   localDeckSize: 120,
@@ -171,6 +174,68 @@ export function roleOf(state: VoiceTabuState, side: TableSide): TableRole {
   return state.mode === 'cooperative' ? 'guesser' : 'judge';
 }
 
+// Ready turns (docs/SPEC_V3.md §19.1). game_state.turnPhase is 'ready' until tabu/begin-turn
+// starts the clock; a state without it (a game started before §19.1) is running.
+export type TurnPhase = 'ready' | 'running';
+
+// The previous turn on the ready screen: its score and how its cards closed.
+export type TurnSummary = {
+  turnNo: number;
+  describingTable: TableSide;
+  score: number;
+  correct: number;
+  taboo: number;
+  pass: number;
+};
+
+export function summarizeTurn(
+  turnNo: number,
+  describingTable: TableSide,
+  results: readonly MarkResult[],
+): TurnSummary {
+  const count = (r: MarkResult) => results.filter((x) => x === r).length;
+  return {
+    turnNo,
+    describingTable,
+    score: results.reduce((sum, r) => sum + MARK_POINTS[r], 0),
+    correct: count('correct'),
+    taboo: count('taboo'),
+    pass: count('pass'),
+  };
+}
+
+export type ReadyTurn = { readyEndsAt: string; lastTurn: TurnSummary | null };
+
+// The ready part of a two-table Tabu game_state, or null when the turn runs.
+export function parseReadyTurn(value: unknown): ReadyTurn | null {
+  if (!isRecord(value) || value.concept !== 'tabu' || value.turnPhase !== 'ready') return null;
+  if (!str(value.readyEndsAt)) return null;
+  const last = value.lastTurn;
+  const lastTurn: TurnSummary | null =
+    isRecord(last) &&
+    num(last.turnNo) &&
+    (last.describingTable === 'owner' || last.describingTable === 'guest') &&
+    num(last.score) &&
+    num(last.correct) &&
+    num(last.taboo) &&
+    num(last.pass)
+      ? {
+          turnNo: last.turnNo,
+          describingTable: last.describingTable,
+          score: last.score,
+          correct: last.correct,
+          taboo: last.taboo,
+          pass: last.pass,
+        }
+      : null;
+  return { readyEndsAt: value.readyEndsAt, lastTurn };
+}
+
+// Who may start a ready turn: the describing table at once, either table once readyEndsAt passed.
+export function mayBeginTurn(role: TableRole, readyEndsAt: string, now: number): boolean {
+  return role === 'describer' || now >= Date.parse(readyEndsAt);
+}
+
 export function voiceWinner(scores: Record<TableSide, number>): TableSide | 'draw' {
   if (scores.owner === scores.guest) return 'draw';
   return scores.owner > scores.guest ? 'owner' : 'guest';
@@ -263,6 +328,9 @@ export type LastGame = {
   concept: 'tabu' | 'sohbet';
   scores: Record<TableSide, number> | null;
   teamScore: number | null;
+  // A two-table Tabu game ended with "Oyunu bitir" before its last turn (docs/SPEC_V3.md §19.1):
+  // the turn it stopped in, for game_abandoned.
+  abandoned: { turnNo: number; totalTurns: number } | null;
 };
 export type BetweenGames = { gameNo: number; lastGame: LastGame | null };
 
@@ -283,6 +351,10 @@ export function parseBetweenGames(value: unknown): BetweenGames {
           ? { owner: scores.owner, guest: scores.guest }
           : null,
       teamScore: isRecord(scores) && num(scores.team) ? scores.team : null,
+      abandoned:
+        last.abandoned === true && num(last.turnNo) && num(last.totalTurns)
+          ? { turnNo: last.turnNo, totalTurns: last.totalTurns }
+          : null,
     },
   };
 }

@@ -35,6 +35,7 @@ export type ErrorCode =
   | 'no_game'
   | 'not_describer'
   | 'turn_over'
+  | 'turn_not_started'
   | 'no_passes_left'
   | 'too_soon'
   | 'no_cards'
@@ -104,6 +105,7 @@ export const DOMAIN_ERROR_CODES: readonly ErrorCode[] = [
   'no_game',
   'not_describer',
   'turn_over',
+  'turn_not_started',
   'no_passes_left',
   'too_soon',
   'no_cards',

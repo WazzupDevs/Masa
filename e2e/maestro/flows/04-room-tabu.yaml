@@ -113,6 +113,13 @@ appId: app.kabuk.mobile
 - takeScreenshot: 16b-proposal
 - tapOn:
     id: proposal-accept
+# Turn 1 opens ready (docs/SPEC_V3.md §19.1). Until the app has its Başla button (step 7, A2) the
+# bot table starts this phone's turn, as either table may once readyEndsAt has passed.
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: begin-turn
+      BODY: '{"force":true}'
 # Turn 1: the owner table (this phone) describes; its card starts covered.
 - extendedWaitUntil:
     visible: Kartı görmek için dokun
@@ -160,6 +167,11 @@ appId: app.kabuk.mobile
     file: ../scripts/bot.js
     env:
       ACTION: expire-turn
+# Turn 2 opens ready; the bot table describes and starts it.
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: begin-turn
 # The screen is scrolled down to the buttons; the turn counter is at the top.
 - scrollUntilVisible:
     element:

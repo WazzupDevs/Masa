@@ -804,6 +804,7 @@ export const tr = {
     no_game: 'Şu an oyun yok.',
     not_describer: 'Bu turda anlatan siz değilsiniz.',
     turn_over: 'Tur bitti.',
+    turn_not_started: 'Tur henüz başlamadı.',
     no_passes_left: 'Pas hakkınız kalmadı.',
     too_soon: 'Biraz bekle.',
     no_cards: 'Kart kalmadı.',

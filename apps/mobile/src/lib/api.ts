@@ -200,6 +200,8 @@ export const gamesApi = {
   tabuMark: (roomId: string, mark: Mark) =>
     invoke<GameOkResponse>('tabu', { action: 'mark', roomId, ...mark }),
   tabuEndTurn: (roomId: string) => invoke<GameOkResponse>('tabu', { action: 'end-turn', roomId }),
+  tabuBeginTurn: (roomId: string) =>
+    invoke<GameOkResponse>('tabu', { action: 'begin-turn', roomId }),
   sohbetNext: (roomId: string) => invoke<GameOkResponse>('sohbet', { action: 'next-card', roomId }),
 };
 

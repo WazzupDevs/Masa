@@ -6,12 +6,15 @@ import {
   isVoiceTabu,
   type Mark,
   MARK_POINTS,
+  mayBeginTurn,
   mayMark,
   optimisticView,
   parseBetweenGames,
   parseGameState,
+  parseReadyTurn,
   pendingAfter,
   roleOf,
+  summarizeTurn,
   TABU,
   tabuMode,
   type CooperativeTabuState,
@@ -270,11 +273,16 @@ describe('parseBetweenGames', () => {
       }),
     ).toEqual({
       gameNo: 2,
-      lastGame: { concept: 'tabu', scores: { owner: 4, guest: 3 }, teamScore: null },
+      lastGame: {
+        concept: 'tabu',
+        scores: { owner: 4, guest: 3 },
+        teamScore: null,
+        abandoned: null,
+      },
     });
     expect(parseBetweenGames({ gameNo: 1, lastGame: { concept: 'sohbet' } })).toEqual({
       gameNo: 1,
-      lastGame: { concept: 'sohbet', scores: null, teamScore: null },
+      lastGame: { concept: 'sohbet', scores: null, teamScore: null, abandoned: null },
     });
   });
 
@@ -287,12 +295,87 @@ describe('parseBetweenGames', () => {
     });
     expect(
       parseBetweenGames({ lastGame: { concept: 'tabu', scores: { owner: '4' } } }).lastGame,
-    ).toEqual({ concept: 'tabu', scores: null, teamScore: null });
+    ).toEqual({ concept: 'tabu', scores: null, teamScore: null, abandoned: null });
     expect(
       parseBetweenGames({ gameNo: 1, lastGame: { concept: 'tabu', scores: { team: 7 } } }),
     ).toEqual({
       gameNo: 1,
-      lastGame: { concept: 'tabu', scores: null, teamScore: 7 },
+      lastGame: { concept: 'tabu', scores: null, teamScore: 7, abandoned: null },
     });
+  });
+
+  it('reads where an abandoned game stopped', () => {
+    expect(
+      parseBetweenGames({
+        gameNo: 1,
+        lastGame: { concept: 'tabu', abandoned: true, turnNo: 3, totalTurns: 6 },
+      }).lastGame,
+    ).toEqual({
+      concept: 'tabu',
+      scores: null,
+      teamScore: null,
+      abandoned: { turnNo: 3, totalTurns: 6 },
+    });
+    expect(
+      parseBetweenGames({ lastGame: { concept: 'tabu', abandoned: true, turnNo: '3' } }).lastGame
+        ?.abandoned,
+    ).toBeNull();
+  });
+});
+
+describe('ready turns (docs/SPEC_V3.md §19.1)', () => {
+  it('waits 15 seconds before either table may start the clock', () => {
+    expect(TABU.readySeconds).toBe(15);
+  });
+
+  it('sums a turn the way the server does: Doğru +1, Tabu −1, Pas 0', () => {
+    expect(
+      summarizeTurn(2, 'guest', ['correct', 'correct', 'taboo', 'pass', 'correct', 'pass']),
+    ).toEqual({ turnNo: 2, describingTable: 'guest', score: 2, correct: 3, taboo: 1, pass: 2 });
+    expect(summarizeTurn(1, 'owner', [])).toEqual({
+      turnNo: 1,
+      describingTable: 'owner',
+      score: 0,
+      correct: 0,
+      taboo: 0,
+      pass: 0,
+    });
+  });
+
+  it('lets the describer start at once and the other table only after readyEndsAt', () => {
+    const ends = '2026-10-05T12:00:15Z';
+    const before = Date.parse('2026-10-05T12:00:10Z');
+    const after = Date.parse('2026-10-05T12:00:15Z');
+    expect(mayBeginTurn('describer', ends, before)).toBe(true);
+    expect(mayBeginTurn('judge', ends, before)).toBe(false);
+    expect(mayBeginTurn('guesser', ends, before)).toBe(false);
+    expect(mayBeginTurn('judge', ends, after)).toBe(true);
+    expect(mayBeginTurn('guesser', ends, after)).toBe(true);
+  });
+
+  it('reads the ready part of the state, with the last turn when there is one', () => {
+    const base = { concept: 'tabu', turnPhase: 'ready', readyEndsAt: '2026-10-05T12:00:15Z' };
+    expect(parseReadyTurn(base)).toEqual({ readyEndsAt: base.readyEndsAt, lastTurn: null });
+    const lastTurn = {
+      turnNo: 1,
+      describingTable: 'owner',
+      score: 3,
+      correct: 4,
+      taboo: 1,
+      pass: 2,
+    };
+    expect(parseReadyTurn({ ...base, lastTurn })).toEqual({
+      readyEndsAt: base.readyEndsAt,
+      lastTurn,
+    });
+    expect(parseReadyTurn({ ...base, lastTurn: { ...lastTurn, score: '3' } })?.lastTurn).toBeNull();
+  });
+
+  it('is null for a running turn, a game from before §19.1, or anything else', () => {
+    expect(parseReadyTurn({ concept: 'tabu', turnPhase: 'running' })).toBeNull();
+    expect(parseReadyTurn({ concept: 'tabu', turnEndsAt: '2026-10-05T12:01:00Z' })).toBeNull();
+    expect(parseReadyTurn({ concept: 'tabu', turnPhase: 'ready' })).toBeNull();
+    expect(parseReadyTurn({ concept: 'sohbet', turnPhase: 'ready', readyEndsAt: 'x' })).toBeNull();
+    expect(parseReadyTurn(null)).toBeNull();
   });
 });
