@@ -113,7 +113,7 @@ export function ProposalArea({ roomId, sessionId, gameRunning }: Props) {
               <Text variant="fine">{tr.games.proposeHint}</Text>
             )}
           </View>
-          <View className="flex-row gap-2.5">
+          <View className="flex-row flex-wrap gap-2.5">
             {CONCEPTS.map((concept) => (
               <GameTile
                 key={concept}
@@ -135,7 +135,13 @@ export function ProposalArea({ roomId, sessionId, gameRunning }: Props) {
 }
 
 // Each game's icon and colour pair (canvas: Aşama 6 · Oyunlar → Oyun ikonları).
-const GLYPH: Record<Concept, GameGlyph> = { tabu: 'tabu', sohbet: 'sohbet', sahtekar: 'impostor' };
+const GLYPH: Record<Concept, GameGlyph> = {
+  tabu: 'tabu',
+  sohbet: 'sohbet',
+  sahtekar: 'impostor',
+  harf: 'letters',
+  sarki: 'song',
+};
 
 function useGameColors(concept: Concept) {
   const { colors } = useTheme();
@@ -169,7 +175,7 @@ function GameTile({
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
-      className="flex-1"
+      style={{ flexBasis: '30%', flexGrow: 1 }}
     >
       {({ pressed }) => (
         <View

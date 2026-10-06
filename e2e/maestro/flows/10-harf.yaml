@@ -1,0 +1,138 @@
+# Harf Kapmaca (docs/SPEC_V3.md §20.3): this phone starts round 1 and takes a letter; the bot table
+# objects (the point goes to it, its objections drop to 2); round 2 the bot takes a letter and this
+# phone lets it pass; the bot runs the clock out on the last round and the result shows.
+appId: app.kabuk.mobile
+---
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: leave
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: checkin
+      BODY: '{"spot":"kutuphane","headcount":2}'
+- tapOn:
+    id: tab-venue
+- extendedWaitUntil:
+    visible: Oda kur
+    timeout: 15000
+- tapOn: Oda kur
+- extendedWaitUntil:
+    visible:
+      id: intent-none
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: Odayı kur
+    timeout: 10000
+- tapOn: Odayı kur
+- extendedWaitUntil:
+    visible:
+      id: solo-tabu
+    timeout: 15000
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: request-join
+- extendedWaitUntil:
+    visible: Katılma isteği
+    timeout: 20000
+- tapOn:
+    id: join-accept
+- extendedWaitUntil:
+    visible:
+      id: propose-harf
+    timeout: 15000
+- tapOn:
+    id: propose-harf
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: answer-game
+# Round 1: this phone's table starts and takes A.
+- extendedWaitUntil:
+    visible:
+      id: turn-start
+    timeout: 20000
+- takeScreenshot: 46-harf-ready
+- tapOn:
+    id: turn-start
+- extendedWaitUntil:
+    visible:
+      id: letter-board
+    timeout: 15000
+- tapOn:
+    id: letter-A
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: say-object
+# Round 2 opens ready with the bot table's point: "İtiraz! … +1".
+- extendedWaitUntil:
+    visible: İtiraz!.*
+    timeout: 15000
+- takeScreenshot: 47-harf-objected
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: say-begin
+# The clocks are held (say-hold) wherever the emulator's slow screen reads would race them.
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: say-hold
+- extendedWaitUntil:
+    visible:
+      id: say-round
+    timeout: 15000
+# The bot table has 2 objections left.
+- extendedWaitUntil:
+    visible: 2 hak
+    timeout: 20000
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: say-claim
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: say-hold
+# İtiraz sits under the letter board, below the fold on a small screen.
+- scrollUntilVisible:
+    element:
+      id: say-object
+    timeout: 15000
+- takeScreenshot: 48-harf-window
+# This phone lets it pass; the bot runs the game to its end.
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: say-expire
+      BODY: '{"lastRound":true}'
+- extendedWaitUntil:
+    visible:
+      id: last-game
+    timeout: 20000
+- takeScreenshot: 49-harf-result
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: end-room
+- extendedWaitUntil:
+    visible: Tanışalım mı\?
+    timeout: 20000
+- tapOn:
+    id: reveal-no
+- extendedWaitUntil:
+    visible: Güzel oyundu.*
+    timeout: 15000
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: reveal
+      BODY: '{"yes":false}'
+- tapOn: Mekana dön
+- extendedWaitUntil:
+    visible: Oda kur
+    timeout: 15000

@@ -25,6 +25,10 @@ import {
 import { isDevProjectUrl, isLocalUrl } from '../../supabase/functions/_shared/pure/devProject.ts';
 import { dmTypingChannel, TYPING_EVENT } from '../../supabase/functions/_shared/pure/rooms.ts';
 import { ownSeats, parseSahtekarState } from '../../supabase/functions/_shared/pure/sahtekar.ts';
+import {
+  parseSayState,
+  type SayState,
+} from '../../supabase/functions/_shared/pure/sayChallenge.ts';
 import { parseReadyTurn, type VoiceTabuState } from '../../supabase/functions/_shared/pure/tabu.ts';
 import { ANCHOR, offset, squareRing } from '../../supabase/tests/fixtures/venues.ts';
 
@@ -128,6 +132,81 @@ async function myRoom(): Promise<{ id: string; game_state: Json; status: string 
   const room = data?.[0];
   if (!room) throw new Error('the bot is in no open room');
   return room as { id: string; game_state: Json; status: string };
+}
+
+// The bot's open room with a Harf or Şarkı game, its side and the parsed state.
+async function sayRoom(): Promise<{
+  id: string;
+  kind: 'harf' | 'sarki';
+  side: 'owner' | 'guest';
+  state: SayState;
+}> {
+  const sessionId = await mySessionId();
+  return retryUntil('a Harf or Şarkı game', async () => {
+    const { data } = await me()
+      .from('rooms')
+      .select('id, game_state, owner_session_id')
+      .neq('status', 'closed')
+      .order('created_at', { ascending: false })
+      .limit(1);
+    const room = data?.[0];
+    const state = room ? parseSayState(room.game_state) : null;
+    if (!room || !state) return null;
+    return {
+      id: room.id as string,
+      kind: state.kind,
+      side: room.owner_session_id === sessionId ? 'owner' : 'guest',
+      state,
+    };
+  });
+}
+
+// One step of the bot table's part in Harf Kapmaca or Şarkıda Geçsin (opponent mode): Başla on
+// its own ready round after a few seconds, a random open letter (or a line) on its own turn after
+// a few seconds, advance when a clock ran out. It never objects.
+async function sayStep(
+  room: { id: string; game_state: Json; owner_session_id?: string | null },
+  sessionId: string | undefined,
+  seen: Map<string, number>,
+): Promise<string | null> {
+  const state = parseSayState(room.game_state);
+  if (!state) return null;
+  const side = room.owner_session_id === sessionId ? 'owner' : 'guest';
+  const key = `${room.id}/${state.roundNo}/${state.step}/${state.turnPhase}`;
+  const since = seen.get(key) ?? Date.now();
+  seen.set(key, since);
+  if (state.turnPhase === 'ready') {
+    if (
+      (state.turnTable === side && Date.now() - since > 3_000) ||
+      Date.now() >= (state.readyEndsAt ?? 0)
+    ) {
+      await call(state.kind, { action: 'begin', roomId: room.id });
+      return 'began';
+    }
+    return null;
+  }
+  if (Date.now() >= (state.endsAt ?? Number.POSITIVE_INFINITY)) {
+    await call(state.kind, { action: 'advance', roomId: room.id });
+    return 'advanced';
+  }
+  if (state.turnTable === side && Date.now() - since > 2_500) {
+    const open = state.letters.filter((l) => !l.closed);
+    const letter = open[Math.floor(Math.random() * open.length)]?.letter;
+    await call(
+      state.kind,
+      state.kind === 'harf'
+        ? {
+            action: 'claim',
+            roomId: room.id,
+            round: state.roundNo,
+            step: state.step,
+            letter: letter ?? 'A',
+          }
+        : { action: 'said', roomId: room.id, round: state.roundNo, step: state.step },
+    );
+    return state.kind === 'harf' ? `took ${letter}` : 'sang a line';
+  }
+  return null;
 }
 
 async function mySessionId(): Promise<string | undefined> {
@@ -380,6 +459,114 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
       accept: args.accept !== false,
       ...(typeof args.players === 'number' ? { players: args.players } : {}),
     });
+  },
+
+  // Harf Kapmaca and Şarkıda Geçsin (docs/SPEC_V3.md §20.3–20.4). `say-begin`: Başla on the bot's
+  // ready round; `force` (local only) first moves readyEndsAt into the past, so the bot starts the
+  // device's round too.
+  async 'say-begin'(args) {
+    const room = await retryUntil('a ready round', async () => {
+      const r = await sayRoom();
+      return r.state.turnPhase === 'ready' ? r : null;
+    });
+    if (args.force === true) {
+      if (!isLocal) throw new Error('force is local only');
+      const sql = db();
+      try {
+        await sql`
+          update public.rooms
+          set game_state = jsonb_set(game_state, '{readyEndsAt}', to_jsonb(now() - interval '1 second'))
+          where id = ${room.id}
+        `;
+      } finally {
+        await sql.end();
+      }
+    }
+    return call(room.kind, { action: 'begin', roomId: room.id });
+  },
+
+  // A letter (`letter`, or the first open one) or a line on the bot's own turn.
+  async 'say-claim'(args) {
+    const room = await retryUntil('the bot table’s turn', async () => {
+      const r = await sayRoom();
+      return r.state.turnPhase === 'running' && r.state.turnTable === r.side ? r : null;
+    });
+    const { state } = room;
+    const letter =
+      typeof args.letter === 'string'
+        ? args.letter
+        : (state.letters.find((l) => !l.closed)?.letter ?? 'A');
+    return call(
+      room.kind,
+      room.kind === 'harf'
+        ? { action: 'claim', roomId: room.id, round: state.roundNo, step: state.step, letter }
+        : { action: 'said', roomId: room.id, round: state.roundNo, step: state.step },
+    );
+  },
+
+  // İtiraz on the other table's last claim, inside its window.
+  async 'say-object'() {
+    const room = await retryUntil('a claim to object to', async () => {
+      const r = await sayRoom();
+      const claim = r.state.lastClaim;
+      return claim && claim.table !== r.side && Date.now() < (r.state.objectionEndsAt ?? 0)
+        ? r
+        : null;
+    });
+    return call(room.kind, {
+      action: 'object',
+      roomId: room.id,
+      round: room.state.roundNo,
+      step: room.state.lastClaim?.step,
+    });
+  },
+
+  // Local only: pushes the running clocks (the turn and the objection window) 60 seconds forward,
+  // so a slow emulator step (a tap, a screen read) cannot race a 3- or 10-second clock.
+  async 'say-hold'() {
+    if (!isLocal) throw new Error('say-hold is local only');
+    const room = await sayRoom();
+    const sql = db();
+    try {
+      await sql`
+        update public.rooms
+        set game_state = game_state
+          || case when game_state ->> 'endsAt' is not null
+               then jsonb_build_object('endsAt', (game_state ->> 'endsAt')::timestamptz + interval '60 seconds')
+               else '{}'::jsonb end
+          || case when game_state ->> 'objectionEndsAt' is not null
+               then jsonb_build_object('objectionEndsAt', (game_state ->> 'objectionEndsAt')::timestamptz + interval '60 seconds')
+               else '{}'::jsonb end
+        where id = ${room.id}
+      `;
+    } finally {
+      await sql.end();
+    }
+    return { ok: true };
+  },
+
+  // Local only: runs the clock out now and moves the game on. `toRound` first jumps so the advance
+  // opens that round; `lastRound` jumps to the last round, so the advance ends the game.
+  async 'say-expire'(args) {
+    if (!isLocal) throw new Error('say-expire is local only');
+    const room = await sayRoom();
+    const sql = db();
+    try {
+      await sql`
+        update public.rooms
+        set game_state = game_state
+          || jsonb_build_object('endsAt', now() - interval '1 second', 'turnPhase', 'running')
+          || case when ${args.lastRound === true}::boolean
+               then jsonb_build_object('roundNo', game_state -> 'totalRounds')
+               when ${typeof args.toRound === 'number'}::boolean
+               then jsonb_build_object('roundNo', ${Number(args.toRound ?? 1) - 1}::int)
+               else '{}'::jsonb end
+        where id = ${room.id}
+      `;
+    } finally {
+      await sql.end();
+    }
+    return call(room.kind, { action: 'advance', roomId: room.id });
   },
 
   // Plays the bot table's part of the Sahtekar game now starting in its room, in the background
@@ -728,6 +915,11 @@ async function opponent() {
         if (room.concept === 'sahtekar') {
           const did = await sahtekarStep(room, sessionId, sahtekarBot);
           if (did) say(`Sahtekar: ${did}`);
+          return;
+        }
+        if (room.concept === 'harf' || room.concept === 'sarki') {
+          const did = await sayStep(room, sessionId, firstSeen);
+          if (did) say(`${room.concept}: ${did}`);
           return;
         }
         if (!state?.mode || state.phase !== 'playing') return;

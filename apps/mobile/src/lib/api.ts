@@ -9,6 +9,7 @@ import type {
   SahtekarOptionsResponse,
   SahtekarStartResponse,
   SahtekarViewResponse,
+  SayStartResponse,
 } from '@shared/api/games.ts';
 import type {
   CreateRoomRequest,
@@ -41,6 +42,7 @@ import type {
 import type { VenueChatResponse } from '@shared/api/venueChat.ts';
 import type { ReportReason } from '@shared/chat.ts';
 import type { Concept } from '@shared/rooms.ts';
+import type { SayKind } from '@shared/sayChallenge.ts';
 import type { Mark } from '@shared/tabu.ts';
 import { callName, RETRY_DELAY_MS, retriesAfter } from '@shared/apiRetry.ts';
 import { type ErrorCode, isApiErrorBody } from '@shared/errors.ts';
@@ -233,6 +235,23 @@ export const gamesApi = {
     invoke<GameOkResponse>('sahtekar', { action: 'guess', roomId, option }),
   sahtekarAdvance: (roomId: string) =>
     invoke<GameOkResponse>('sahtekar', { action: 'advance', roomId }),
+  // Harf Kapmaca and Şarkıda Geçsin (docs/SPEC_V3.md §20.3–20.4): the same actions; Harf claims
+  // a letter, Şarkı sings a line.
+  sayStart: (kind: SayKind, roomId: string) =>
+    invoke<SayStartResponse>(kind, { action: 'start', roomId }),
+  sayBegin: (kind: SayKind, roomId: string) =>
+    invoke<GameOkResponse>(kind, { action: 'begin', roomId }),
+  sayClaim: (kind: SayKind, roomId: string, round: number, step: number, letter: string | null) =>
+    invoke<GameOkResponse>(
+      kind,
+      kind === 'harf'
+        ? { action: 'claim', roomId, round, step, letter }
+        : { action: 'said', roomId, round, step },
+    ),
+  sayObject: (kind: SayKind, roomId: string, round: number, step: number) =>
+    invoke<GameOkResponse>(kind, { action: 'object', roomId, round, step }),
+  sayAdvance: (kind: SayKind, roomId: string) =>
+    invoke<GameOkResponse>(kind, { action: 'advance', roomId }),
 };
 
 export const revealApi = {
