@@ -1,5 +1,6 @@
 import type { Concept } from '@shared/rooms.ts';
 import { parseSahtekarState, SAHTEKAR } from '@shared/sahtekar.ts';
+import { parseSayState, SAY_CONFIG } from '@shared/sayChallenge.ts';
 import { parseBetweenGames, parseGameState, type TableSide } from '@shared/tabu.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
@@ -20,6 +21,8 @@ import { RematchButton } from './RematchButton';
 import { LocalSahtekar } from './sahtekar/LocalSahtekar';
 import { ImposterReveal } from './sahtekar/Sahtekar';
 import { SahtekarGame } from './sahtekar/SahtekarGame';
+import { LocalSay } from './say/LocalSay';
+import { SayGame } from './say/SayGame';
 import { SohbetCard } from './SohbetCard';
 import { VoiceTabu, VoiceTabuResult } from './VoiceTabu';
 
@@ -40,7 +43,7 @@ type Props = {
   onLocalGame: (game: LocalGame | null) => void;
 };
 
-export type LocalGame = 'tabu' | 'sahtekar';
+export type LocalGame = 'tabu' | 'sahtekar' | 'harf' | 'sarki';
 
 // Whether a game is running: the room screen shows it full screen (canvas: Aşama 6 · Oyunlar).
 export function isGameRunning(
@@ -92,7 +95,8 @@ export function GameArea({
   const last = between.lastGame;
   // A finished two-table Tabu counts once, from the owner's phone (room-level events): the owner
   // table's score, or the team's in the cooperative mode.
-  const lastScore = last?.scores?.owner ?? last?.teamScore ?? null;
+  const lastScore =
+    last?.concept === 'tabu' ? (last.scores?.owner ?? last.teamScore ?? null) : null;
   useEffect(() => {
     if (isOwner && lastScore !== null) {
       trackOnce(`game_completed:${roomId}:${between.gameNo}`, 'game_completed', {
@@ -105,16 +109,35 @@ export function GameArea({
   }, [isOwner, lastScore, last?.teamScore, roomId, between.gameNo]);
   // A Tabu game stopped with "Oyunu bitir" before its last turn (docs/SPEC_V3.md §19.1): each
   // phone counts it once for its own user.
+  // Harf Kapmaca and Şarkıda Geçsin too (their round and rounds).
   const abandoned = last?.abandoned ?? null;
+  const abandonedConcept = last?.concept ?? 'tabu';
   useEffect(() => {
     if (abandoned) {
       trackOnce(`game_abandoned:${roomId}:${between.gameNo}`, 'game_abandoned', {
-        concept: 'tabu',
+        concept: abandonedConcept,
         turn_no: abandoned.turnNo,
         total_turns: abandoned.totalTurns,
       });
     }
-  }, [abandoned, roomId, between.gameNo]);
+  }, [abandoned, abandonedConcept, roomId, between.gameNo]);
+
+  // A finished two-table Harf Kapmaca or Şarkıda Geçsin counts once, from the owner's phone: the
+  // owner table's score, objections used and rounds lost on the clock (never the prompts).
+  const sayLast = last?.say ?? null;
+  const sayConcept = last?.concept === 'harf' || last?.concept === 'sarki' ? last.concept : null;
+  const sayScore = sayConcept && !last?.abandoned ? (last?.scores?.owner ?? null) : null;
+  useEffect(() => {
+    if (isOwner && sayConcept && sayScore !== null && sayLast) {
+      trackOnce(`game_completed:${roomId}:${between.gameNo}`, 'game_completed', {
+        concept: sayConcept,
+        mode: 'voice',
+        score: sayScore,
+        objections: sayLast.objections,
+        rounds_lost_by_timeout: sayLast.timeouts,
+      });
+    }
+  }, [isOwner, sayConcept, sayScore, sayLast, roomId, between.gameNo]);
 
   // A finished two-table Sahtekar counts once, from the owner's phone: who won and how many played
   // (never the seat or the word).
@@ -136,7 +159,10 @@ export function GameArea({
 
   // "Rövanş" after a finished two-table game: the same game proposed again (§19.2); it starts when
   // the other table accepts. Sahtekar keeps this table's count from the last game (§20.1).
-  const rematchConcept = last?.concept === 'sahtekar' ? 'sahtekar' : 'tabu';
+  const rematchConcept =
+    last?.concept === 'sahtekar' || last?.concept === 'harf' || last?.concept === 'sarki'
+      ? last.concept
+      : 'tabu';
   const rematchPlayers = sahtekarLast?.players?.[side];
   const rematch = useMutation({
     mutationFn: () => roomsApi.proposeGame(roomId, rematchConcept, rematchPlayers),
@@ -145,14 +171,13 @@ export function GameArea({
   });
   const canRematch =
     hasGuest &&
-    ((last?.concept === 'tabu' && !last.abandoned) || (last?.concept === 'sahtekar' && !!revealed));
+    ((last?.concept === 'tabu' && !last.abandoned) ||
+      (last?.concept === 'sahtekar' && !!revealed) ||
+      (!!sayConcept && !last?.abandoned));
 
   // The one-table game on this phone. A second table ends it (the room returns to chat), and so
   // does Sohbet kartları.
-  const local: LocalGame | null =
-    hasGuest || concept === 'sohbet'
-      ? null
-      : (localGame ?? (concept === 'tabu' || concept === 'sahtekar' ? concept : null));
+  const local: LocalGame | null = hasGuest || concept === 'sohbet' ? null : (localGame ?? concept);
   const state = parseGameState(gameState);
 
   const game =
@@ -160,6 +185,16 @@ export function GameArea({
       <LocalTabu roomId={roomId} />
     ) : local === 'sahtekar' ? (
       <LocalSahtekar roomId={roomId} players={headcount} />
+    ) : local === 'harf' || local === 'sarki' ? (
+      <LocalSay roomId={roomId} kind={local} />
+    ) : concept === 'harf' || concept === 'sarki' ? (
+      <SayGame
+        roomId={roomId}
+        kind={concept}
+        state={parseSayState(gameState)}
+        side={side}
+        aliases={aliases}
+      />
     ) : concept === 'sahtekar' ? (
       <SahtekarGame roomId={roomId} state={parseSahtekarState(gameState)} side={side} />
     ) : concept === 'sohbet' ? (
@@ -238,6 +273,19 @@ export function GameArea({
             />
             {headcount < SAHTEKAR.minPlayers ? (
               <Text variant="fine">{tr.sahtekar.needsThree}</Text>
+            ) : null}
+            {(['harf', 'sarki'] as const).map((kind) => (
+              <Button
+                key={kind}
+                variant="secondary"
+                testID={`solo-${kind}`}
+                label={tr.games.start(tr.concepts[kind])}
+                onPress={() => setLocalGame(kind)}
+                disabled={headcount < SAY_CONFIG[kind].minLocalPlayers}
+              />
+            ))}
+            {headcount < SAY_CONFIG.harf.minLocalPlayers ? (
+              <Text variant="fine">{tr.say.needsTwo}</Text>
             ) : null}
             <Button
               variant="secondary"

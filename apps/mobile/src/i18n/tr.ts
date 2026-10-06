@@ -4,6 +4,7 @@ import type { InboxStamp } from '@shared/dmInbox.ts';
 import type { EventTime } from '@shared/explore.ts';
 import { TABU } from '@shared/tabu.ts';
 import { SAHTEKAR } from '@shared/sahtekar.ts';
+import { SAY_CONFIG } from '@shared/sayChallenge.ts';
 
 const MONTHS = [
   'Ocak',
@@ -45,13 +46,23 @@ function dayMonthAt(iso: string): string {
 }
 
 // play_history.concept: the last game played in the room, or 'chat' (docs/SPEC_V3.md §5.5).
-export type HistoryConcept = 'tabu' | 'sohbet' | 'sahtekar' | 'chat';
+export type HistoryConcept = 'tabu' | 'sohbet' | 'sahtekar' | 'harf' | 'sarki' | 'chat';
 const HISTORY_CONCEPTS: Record<HistoryConcept, string> = {
   tabu: 'Sesli Tabu',
   sohbet: 'Sohbet kartları',
   sahtekar: 'Sahtekar',
+  harf: 'Harf Kapmaca',
+  sarki: 'Şarkıda Geçsin',
   chat: 'Sohbet',
 };
+
+// The voice games' names in "… · yüz yüze".
+const VOICE_NAMES = {
+  tabu: 'Sesli Tabu',
+  sahtekar: 'Sahtekar',
+  harf: 'Harf Kapmaca',
+  sarki: 'Şarkıda Geçsin',
+} as const;
 
 const WEEKDAYS = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
 const WEEKDAYS_SHORT = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
@@ -215,6 +226,26 @@ export const tr = {
         `İki tur boyunca sırayla tek kelimelik ipucu verin; her ipucu ${SAHTEKAR.clueSeconds} saniye.`,
         'Sonra herkes gizlice sahtekar sandığı kişiye oy verir; kendine oy verilmez.',
         'Sahtekar yakalanırsa kelimeyi altı seçenek arasından tahmin eder. Bilirse ya da yakalanmazsa sahtekar kazanır.',
+      ],
+    },
+    harf: {
+      body: 'Kategoriye uyan bir kelime söyle, baş harfini kap. Diğer masa itiraz edebilir.',
+      steps: [
+        `Masalar sırayla oynar; her sıra ${SAY_CONFIG.harf.turnSeconds} saniye.`,
+        'Kategoriye uyan, tahtada açık bir harfle başlayan bir kelime söyle ve o harfe dokun.',
+        `Diğer masa ${SAY_CONFIG.harf.objectionSeconds} saniye içinde itiraz edebilir; itiraz alan ya da süresi dolan masa turu kaybeder, rakip 1 puan alır. Her masanın ${SAY_CONFIG.harf.objections} itiraz hakkı var.`,
+        `Bütün harfler kapanırsa tur son harfi kapatanın. ${SAY_CONFIG.harf.totalRounds} kategori oynanır.`,
+        'Kendi masanla oynarken iki takıma ayrılın; telefon ortada durur.',
+      ],
+    },
+    sarki: {
+      body: 'Kelimenin geçtiği bir şarkıdan bir dize söyleyin. Söyleyemeyen kaybeder.',
+      steps: [
+        `Masalar sırayla, ${SAY_CONFIG.sarki.turnSeconds} saniye içinde kelimenin geçtiği bir dize söyler ve "Söyledik"e basar.`,
+        `Diğer masa ${SAY_CONFIG.sarki.objectionSeconds} saniye içinde itiraz edebilir; itiraz alan ya da söyleyemeyen masanın rakibi 1 puan alır. Her masanın ${SAY_CONFIG.sarki.objections} itiraz hakkı var.`,
+        `Bir kelimede en çok ${SAY_CONFIG.sarki.maxSteps} dize; sekizinci de geçerse kelime puansız biter.`,
+        `${SAY_CONFIG.sarki.totalRounds} kelime oynanır; son iki kelimede süre ${SAY_CONFIG.sarki.shortSeconds} saniye.`,
+        'Uygulama müzik çalmaz, şarkı göstermez; dizeyi siz söylersiniz.',
       ],
     },
     sohbet: {
@@ -407,15 +438,17 @@ export const tr = {
     continue: 'Devam',
   },
   // The games (docs/SPEC_V3.md §5.1). "Sohbet" alone is the intent label, never a game.
-  concepts: { tabu: 'Sesli Tabu', sohbet: 'Sohbet kartları', sahtekar: 'Sahtekar' },
+  concepts: {
+    tabu: 'Sesli Tabu',
+    sohbet: 'Sohbet kartları',
+    sahtekar: 'Sahtekar',
+    harf: 'Harf Kapmaca',
+    sarki: 'Şarkıda Geçsin',
+  },
   // How a game is shown with its type (docs/SPEC_V2.md §8.1): only voice games are marked, since
   // they need the tables to come together.
-  conceptWithMode: (concept: 'tabu' | 'sohbet' | 'sahtekar') =>
-    concept === 'tabu'
-      ? 'Sesli Tabu · yüz yüze'
-      : concept === 'sahtekar'
-        ? 'Sahtekar · yüz yüze'
-        : 'Sohbet kartları',
+  conceptWithMode: (concept: 'tabu' | 'sohbet' | 'sahtekar' | 'harf' | 'sarki') =>
+    concept === 'sohbet' ? 'Sohbet kartları' : `${VOICE_NAMES[concept]} · yüz yüze`,
   // The room's optional intent label (§5.2).
   intents: { game: 'Oyun', chat: 'Sohbet' },
   voiceNote:
@@ -448,14 +481,12 @@ export const tr = {
     createConfirm: 'Odayı kur',
     // The room's eyebrow: the running game, else the chat; voice games say they are played face to
     // face (docs/SPEC_V2.md §8.1).
-    roomEyebrow: (concept: 'tabu' | 'sohbet' | 'sahtekar' | null) =>
-      concept === 'tabu'
-        ? 'Sesli Tabu · yüz yüze'
-        : concept === 'sahtekar'
-          ? 'Sahtekar · yüz yüze'
-          : concept === 'sohbet'
-            ? 'Sohbet kartları'
-            : 'Oda',
+    roomEyebrow: (concept: 'tabu' | 'sohbet' | 'sahtekar' | 'harf' | 'sarki' | null) =>
+      concept === null
+        ? 'Oda'
+        : concept === 'sohbet'
+          ? 'Sohbet kartları'
+          : `${VOICE_NAMES[concept]} · yüz yüze`,
     withGuest: (owner: string, guest: string) => `${owner} ve ${guest}`,
     waitingForGuest: 'Başka bir masa katılmak isteyebilir. Bu arada kendi masanla oynayabilirsin.',
     end: 'Odayı bitir',
@@ -674,6 +705,23 @@ export const tr = {
     window: (s: number) => `İtiraz penceresi · ${s} sn`,
     windowLabel: (s: number) => `İtiraz için ${s} saniye`,
     sayLine: 'Geçtiği bir şarkıdan bir dize söyleyin',
+    // The game screens (docs/SPEC_V3.md §20.3–20.4).
+    round: (n: number, total: number) => `Tur ${n} / ${total}`,
+    yourTurn: 'Sıra sizde',
+    theirTurn: (alias: string) => `Sıra ${alias} masasında`,
+    teamTurn: (team: string) => `Sıra Takım ${team}'de`,
+    team: (team: string) => `Takım ${team}`,
+    roundWon: (alias: string, reason: 'objection' | 'timeout' | 'board' | 'lines') =>
+      reason === 'objection'
+        ? `İtiraz! ${alias} +1`
+        : reason === 'board'
+          ? `Tahta doldu. ${alias} +1`
+          : `Süre doldu. ${alias} +1`,
+    roundEnd: { objection: 'İtiraz!', timeout: 'Süre doldu, tur bitti.', board: 'Tahta doldu.' },
+    roundNoPoint: 'Sekiz dize söylendi; puan yok.',
+    readyHint: (s: number) => `Başlayınca her sıra ${s} saniye. İstem ekranda.`,
+    readyWaitingHint: 'Onlar başlayınca ya da süre dolunca tur başlar.',
+    needsTwo: 'Bu oyun için masada en az 2 kişi olmalı.',
     pickLetter: 'Kelimeyi söyle, baş harfine dokun.',
   },
   // İbre (docs/SPEC_V3.md §20.5): a two-ended scale, values 0–100.
