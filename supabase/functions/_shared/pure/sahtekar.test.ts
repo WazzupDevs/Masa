@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  afterViewing,
   cardOf,
   clueOrder,
   isPlayerCount,
   type LocalSahtekar,
   mayVote,
   newLocalGame,
+  playersOf,
+  redealLocal,
   reduceLocal,
   SAHTEKAR,
   seatsOf,
@@ -82,6 +85,33 @@ describe('the vote', () => {
   });
 });
 
+describe('after the viewing', () => {
+  const seats = ['A1', 'A2', 'B1', 'B2'];
+
+  it('goes to the clues with every seat when all looked', () => {
+    expect(afterViewing(seats, ['B2', 'A1', 'B1', 'A2'], 'B1')).toEqual({ next: 'clues', seats });
+  });
+
+  it('drops the seats that did not look, keeping seat order', () => {
+    expect(afterViewing([...seats, 'A3'], ['B2', 'A1', 'A2', 'B1'], 'A1')).toEqual({
+      next: 'clues',
+      seats,
+    });
+    expect(playersOf(['A1', 'A2', 'B1'])).toEqual({ owner: 2, guest: 1 });
+  });
+
+  it('deals again when the impostor did not look, and stops under 3 seats', () => {
+    expect(afterViewing(seats, ['A1', 'A2', 'B1'], 'B2')).toEqual({
+      next: 'redeal',
+      seats: ['A1', 'A2', 'B1'],
+    });
+    expect(afterViewing(seats, ['A1', 'B1'], 'A1')).toEqual({
+      next: 'not_enough_players',
+      seats: ['A1', 'B1'],
+    });
+  });
+});
+
 describe('one-table game', () => {
   const t0 = Date.parse('2026-10-06T12:00:00Z');
   const start = (imposterIndex = 1) => newLocalGame(deck, 3, t0, () => (imposterIndex + 0.5) / 3);
@@ -116,20 +146,71 @@ describe('one-table game', () => {
     });
   });
 
-  it('skips a seat that did not look in 2 minutes: no clue, no vote', () => {
+  it('drops a seat that did not look in 2 minutes and goes on when the impostor looked', () => {
+    // 4 players, the impostor is A2; A4 never looks.
+    let game = play(
+      newLocalGame(deck, 4, t0, () => 0.3),
+      [{ type: 'view', seat: 'A1' }, t0],
+      [{ type: 'view', seat: 'A2' }, t0],
+      [{ type: 'view', seat: 'A3' }, t0],
+    );
+    expect(game.imposter).toBe('A2');
+    game = reduceLocal(game, { type: 'tick' }, t0 + SAHTEKAR.viewSeconds * 1000 - 1);
+    expect(game.phase).toBe('viewing');
+    game = reduceLocal(game, { type: 'tick' }, t0 + SAHTEKAR.viewSeconds * 1000);
+    expect(game).toMatchObject({ phase: 'clues', seats: ['A1', 'A2', 'A3'] });
+    expect(game.order).toEqual(['A1', 'A2', 'A3', 'A1', 'A2', 'A3']);
+    // A4 is out: no vote from it, none for it.
+    const voting = { ...game, phase: 'voting' as const };
+    expect(reduceLocal(voting, { type: 'vote', voter: 'A4', target: 'A1' }, t0).votes).toEqual({});
+    expect(reduceLocal(voting, { type: 'vote', voter: 'A1', target: 'A4' }, t0).votes).toEqual({});
+  });
+
+  it('deals again to the seats left when the impostor did not look; everyone looks again', () => {
+    // 4 players, the impostor is A4 and never looks.
+    let game = play(
+      newLocalGame(deck, 4, t0, () => 0.9),
+      [{ type: 'view', seat: 'A1' }, t0],
+      [{ type: 'view', seat: 'A2' }, t0],
+      [{ type: 'view', seat: 'A3' }, t0],
+    );
+    expect(game.imposter).toBe('A4');
+    game = reduceLocal(game, { type: 'tick' }, t0 + SAHTEKAR.viewSeconds * 1000);
+    expect(game).toMatchObject({ phase: 'redeal', seats: ['A1', 'A2', 'A3'], viewed: [] });
+    // The clock does nothing while the screen fetches the new deck.
+    expect(reduceLocal(game, { type: 'tick' }, t0 + 999_999)).toBe(game);
+    const t1 = t0 + 200_000;
+    const next = { category: 'Spor', word: 'Kürek', options: ['Kürek', 'Tenis', 'Koşu'] };
+    game = redealLocal(game, next, t1, () => 0.5);
+    expect(game).toMatchObject({
+      phase: 'viewing',
+      seats: ['A1', 'A2', 'A3'],
+      imposter: 'A2',
+      category: 'Spor',
+      word: 'Kürek',
+      viewed: [],
+      endsAt: t1 + SAHTEKAR.viewSeconds * 1000,
+    });
+    expect(cardOf(game, 'A1').word).toBe('Kürek');
+    game = play(
+      game,
+      [{ type: 'view', seat: 'A1' }, t1],
+      [{ type: 'view', seat: 'A2' }, t1],
+      [{ type: 'view', seat: 'A3' }, t1],
+    );
+    expect(game.phase).toBe('clues');
+    // Only a game waiting for a deck takes one.
+    expect(redealLocal(game, deck, t1)).toBe(game);
+  });
+
+  it('ends without a winner when fewer than 3 seats looked', () => {
     let game = play(
       start(1),
       [{ type: 'view', seat: 'A1' }, t0],
       [{ type: 'view', seat: 'A2' }, t0],
     );
-    game = reduceLocal(game, { type: 'tick' }, t0 + SAHTEKAR.viewSeconds * 1000 - 1);
-    expect(game.phase).toBe('viewing');
     game = reduceLocal(game, { type: 'tick' }, t0 + SAHTEKAR.viewSeconds * 1000);
-    expect(game.order).toEqual(['A1', 'A2', 'A1', 'A2']);
-    expect(
-      reduceLocal({ ...game, phase: 'voting' }, { type: 'vote', voter: 'A3', target: 'A1' }, t0)
-        .votes,
-    ).toEqual({});
+    expect(game).toMatchObject({ phase: 'done', winner: null, endedBy: 'not_enough_players' });
   });
 
   it('moves on with Söyledi or after 15 seconds, then votes for 90 seconds', () => {

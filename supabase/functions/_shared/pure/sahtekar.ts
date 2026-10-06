@@ -93,13 +93,41 @@ export function mayVote(
   return voters.includes(voter) && seats.includes(target) && voter !== target && !(voter in votes);
 }
 
+// When the viewing ends (every seat looked, or the 2 minutes are up). A seat that did not look
+// leaves the game and its table's count drops. If the impostor left, the remaining seats get a new
+// impostor and a new word and look again; fewer than 3 left ends the game (not_enough_players).
+export type AfterViewing =
+  | { next: 'clues'; seats: Seat[] }
+  | { next: 'redeal'; seats: Seat[] }
+  | { next: 'not_enough_players'; seats: Seat[] };
+
+export function afterViewing(
+  seats: readonly Seat[],
+  viewed: readonly Seat[],
+  imposter: Seat,
+): AfterViewing {
+  const kept = seats.filter((s) => viewed.includes(s));
+  if (kept.length < SAHTEKAR.minPlayers) return { next: 'not_enough_players', seats: kept };
+  return { next: kept.includes(imposter) ? 'clues' : 'redeal', seats: kept };
+}
+
+// The tables' counts for a list of seats.
+export function playersOf(seats: readonly Seat[]): Players {
+  return {
+    owner: seats.filter((s) => tableOfSeat(s) === 'owner').length,
+    guest: seats.filter((s) => tableOfSeat(s) === 'guest').length,
+  };
+}
+
 // ---------------------------------------------------------------------------------------------
 // One-table game (§20.2): the phone runs the same rules for the seats of one table (A1…An, at
 // least 3). The deck comes from sahtekar/start.
 
 export type SahtekarDeck = { category: string; word: string; options: string[] };
 
-export type LocalPhase = 'viewing' | 'clues' | 'voting' | 'guess' | 'done';
+// 'redeal': the impostor did not look in time; the screen asks sahtekar/start for a new deck and
+// calls redealLocal.
+export type LocalPhase = 'viewing' | 'redeal' | 'clues' | 'voting' | 'guess' | 'done';
 
 export type LocalSahtekar = {
   phase: LocalPhase;
@@ -116,6 +144,8 @@ export type LocalSahtekar = {
   accused: Seat | null;
   guess: string | null;
   winner: Winner | null;
+  // Set when fewer than 3 seats looked: the game ended without a winner.
+  endedBy: 'not_enough_players' | null;
 };
 
 export type LocalAction =
@@ -151,6 +181,28 @@ export function newLocalGame(
     accused: null,
     guess: null,
     winner: null,
+    endedBy: null,
+  };
+}
+
+// A new deck for the seats that are left (phase 'redeal'): a new impostor among them, and every
+// seat looks again.
+export function redealLocal(
+  game: LocalSahtekar,
+  deck: SahtekarDeck,
+  now: number,
+  random: () => number = Math.random,
+): LocalSahtekar {
+  if (game.phase !== 'redeal') return game;
+  return {
+    ...game,
+    phase: 'viewing',
+    imposter: game.seats[Math.floor(random() * game.seats.length)] as Seat,
+    category: deck.category,
+    word: deck.word,
+    options: deck.options,
+    viewed: [],
+    endsAt: now + SAHTEKAR.viewSeconds * 1000,
   };
 }
 
@@ -164,10 +216,21 @@ export function cardOf(
     : { category: game.category, word: game.word, imposter: false };
 }
 
-function toClues(game: LocalSahtekar, now: number): LocalSahtekar {
-  const order = clueOrder(game.seats.filter((s) => game.viewed.includes(s)));
-  if (order.length === 0) return toVoting({ ...game, order }, now);
-  return { ...game, phase: 'clues', order, step: 0, endsAt: now + SAHTEKAR.clueSeconds * 1000 };
+function endViewing(game: LocalSahtekar, now: number): LocalSahtekar {
+  const after = afterViewing(game.seats, game.viewed, game.imposter);
+  if (after.next === 'not_enough_players') {
+    return { ...game, phase: 'done', seats: after.seats, endedBy: 'not_enough_players' };
+  }
+  if (after.next === 'redeal') return { ...game, phase: 'redeal', seats: after.seats, viewed: [] };
+  const order = clueOrder(after.seats);
+  return {
+    ...game,
+    phase: 'clues',
+    seats: after.seats,
+    order,
+    step: 0,
+    endsAt: now + SAHTEKAR.clueSeconds * 1000,
+  };
 }
 
 function toVoting(game: LocalSahtekar, now: number): LocalSahtekar {
@@ -196,7 +259,7 @@ export function reduceLocal(game: LocalSahtekar, action: LocalAction, now: numbe
         : [...game.viewed, action.seat];
       // The last seat to see its card starts the clues, as on the server.
       const next = { ...game, viewed };
-      return allViewed(next) ? toClues(next, now) : next;
+      return allViewed(next) ? endViewing(next, now) : next;
     }
     case 'said': {
       if (game.phase !== 'clues' || action.step !== game.step) return game;
@@ -221,8 +284,8 @@ export function reduceLocal(game: LocalSahtekar, action: LocalAction, now: numbe
       };
     }
     case 'tick': {
-      if (game.phase === 'done' || now < game.endsAt) return game;
-      if (game.phase === 'viewing') return toClues(game, now);
+      if (game.phase === 'done' || game.phase === 'redeal' || now < game.endsAt) return game;
+      if (game.phase === 'viewing') return endViewing(game, now);
       if (game.phase === 'clues') return reduceLocal(game, { type: 'said', step: game.step }, now);
       if (game.phase === 'voting') return count(game, now);
       return { ...game, phase: 'done', winner: winnerOf(game.imposter, game.accused, false) };

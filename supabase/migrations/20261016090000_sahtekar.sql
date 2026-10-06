@@ -237,7 +237,7 @@ begin
       game_state = jsonb_build_object(
         'concept', 'sahtekar', 'phase', 'viewing', 'gameNo', next_game,
         'players', jsonb_build_object('owner', owner_players, 'guest', guest_players),
-        'seats', to_jsonb(seats), 'category', deal -> 'category',
+        'seats', to_jsonb(seats), 'category', deal -> 'category', 'dealNo', 1,
         'viewed', '[]'::jsonb, 'order', '[]'::jsonb, 'step', 0, 'voters', '[]'::jsonb,
         'votesCast', 0, 'endsAt', now() + private.sahtekar_seconds('viewSeconds')
       )
@@ -291,6 +291,74 @@ begin
       game_state = r.game_state || jsonb_build_object(
         'phase', 'clues', 'order', to_jsonb(ord), 'step', 0,
         'endsAt', now() + private.sahtekar_seconds('clueSeconds')
+      )
+  where id = r.id
+  returning * into r;
+  return r;
+end;
+$$;
+
+-- The viewing ends (every seat looked, or the 2 minutes are up). A seat that did not look leaves
+-- the game and its table's count drops. If the impostor left, the remaining seats get a new impostor
+-- and a new word and look again (dealNo + 1). Fewer than 3 left: the game ends without results,
+-- lastGame.endedBy = 'not_enough_players' (pure/sahtekar.ts -> afterViewing).
+create function private.sahtekar_end_viewing(r public.rooms)
+returns public.rooms
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  kept text[];
+  s public.game_secrets;
+  deal jsonb;
+  players jsonb;
+begin
+  select coalesce(array_agg(x.s order by x.o), '{}') into kept
+  from jsonb_array_elements_text(r.game_state -> 'seats') with ordinality as x(s, o)
+  where r.game_state -> 'viewed' ? x.s;
+  if coalesce(array_length(kept, 1), 0) = jsonb_array_length(r.game_state -> 'seats') then
+    return private.sahtekar_to_clues(r);
+  end if;
+
+  if coalesce(array_length(kept, 1), 0) < (private.sahtekar_config() ->> 'minPlayers')::integer then
+    update public.rooms
+    set concept = null, last_activity_at = now(),
+        game_state = private.between_games(game_state, jsonb_build_object(
+          'concept', 'sahtekar', 'players', game_state -> 'players',
+          'endedBy', 'not_enough_players'
+        ))
+    where id = r.id
+    returning * into r;
+    return r;
+  end if;
+
+  players := jsonb_build_object(
+    'owner', (select count(*) from unnest(kept) k where left(k, 1) = 'A'),
+    'guest', (select count(*) from unnest(kept) k where left(k, 1) = 'B')
+  );
+  s := private.sahtekar_secret(r);
+  if (s.secret ->> 'imposter') = any (kept) then
+    r.game_state := r.game_state || jsonb_build_object(
+      'seats', to_jsonb(kept), 'viewed', to_jsonb(kept), 'players', players
+    );
+    return private.sahtekar_to_clues(r);
+  end if;
+
+  deal := private.sahtekar_deal(r.id);
+  update public.game_secrets
+  set secret = secret || jsonb_build_object(
+    'imposter', kept[1 + floor(random() * array_length(kept, 1))::integer],
+    'word', deal -> 'word', 'cardId', deal -> 'cardId', 'options', deal -> 'options',
+    'votes', '{}'::jsonb
+  )
+  where room_id = s.room_id and game_no = s.game_no;
+  update public.rooms
+  set last_activity_at = now(),
+      game_state = game_state || jsonb_build_object(
+        'seats', to_jsonb(kept), 'players', players, 'category', deal -> 'category',
+        'dealNo', coalesce((game_state ->> 'dealNo')::integer, 1) + 1, 'viewed', '[]'::jsonb,
+        'endsAt', now() + private.sahtekar_seconds('viewSeconds')
       )
   where id = r.id
   returning * into r;
@@ -390,6 +458,7 @@ $$;
 
 revoke all on function private.sahtekar_to_voting(public.rooms) from public, anon, authenticated;
 revoke all on function private.sahtekar_to_clues(public.rooms) from public, anon, authenticated;
+revoke all on function private.sahtekar_end_viewing(public.rooms) from public, anon, authenticated;
 revoke all on function private.sahtekar_finish(public.rooms, public.game_secrets, text, text)
   from public, anon, authenticated;
 revoke all on function private.sahtekar_count(public.rooms, public.game_secrets)
@@ -464,7 +533,7 @@ begin
     where id = r.id
     returning * into r;
     if jsonb_array_length(r.game_state -> 'viewed') = jsonb_array_length(r.game_state -> 'seats') then
-      perform private.sahtekar_to_clues(r);
+      perform private.sahtekar_end_viewing(r);
     end if;
   end if;
 
@@ -622,7 +691,7 @@ begin
   end if;
   phase := r.game_state ->> 'phase';
   if phase = 'viewing' then
-    return private.sahtekar_to_clues(r);
+    return private.sahtekar_end_viewing(r);
   elsif phase = 'clues' then
     return private.sahtekar_next_step(r);
   elsif phase = 'voting' then

@@ -100,6 +100,15 @@ async function viewAll(t: { owner: Client; guest: Client; roomId: string }, seat
   }
 }
 
+// Makes `seat` the impostor (the server picks at random).
+async function setImposter(roomId: string, seat: string) {
+  await sql`
+    update public.game_secrets s set secret = jsonb_set(s.secret, '{imposter}', to_jsonb(${seat}::text))
+    from public.rooms r
+    where r.id = s.room_id and s.room_id = ${roomId} and s.game_no = (r.game_state ->> 'gameNo')::int
+  `;
+}
+
 async function expire(roomId: string) {
   await sql`
     update public.rooms
@@ -275,8 +284,9 @@ describe('sahtekar, seeing the word', () => {
     });
   });
 
-  it('skips a seat that did not look in 2 minutes: no clue, no vote', async () => {
+  it('drops a seat that did not look in 2 minutes, and its table counts one less', async () => {
     const t = await started(2, 2);
+    await setImposter(t.roomId, 'B1');
     await viewAll(t, ['A1', 'B1', 'B2']);
     expect(await sahtekar(t.guest, { action: 'advance', roomId: t.roomId })).toEqual(OK);
     expect((await state(t.roomId)).phase).toBe('viewing');
@@ -287,14 +297,86 @@ describe('sahtekar, seeing the word', () => {
     expect(await state(t.roomId)).toMatchObject({
       phase: 'clues',
       step: 0,
+      dealNo: 1,
+      seats: ['A1', 'B1', 'B2'],
+      players: { owner: 1, guest: 2 },
       viewed: ['A1', 'B1', 'B2'],
       order: clueOrder(['A1', 'B1', 'B2']),
     });
     await throughClues(t);
     expect(await state(t.roomId)).toMatchObject({ phase: 'voting', voters: ['A1', 'B1', 'B2'] });
+    // A2 is out of the game: no vote from it, none for it.
     expect(
       await sahtekar(t.owner, { action: 'vote', roomId: t.roomId, voter: 'A2', target: 'B1' }),
     ).toEqual({ status: 403, body: errorBody('not_your_seat') });
+    expect(
+      await sahtekar(t.guest, { action: 'vote', roomId: t.roomId, voter: 'B1', target: 'A2' }),
+    ).toEqual({ status: 400, body: errorBody('bad_request') });
+  });
+
+  it('deals a new impostor and a new word to the seats left when the impostor did not look', async () => {
+    const t = await started(2, 2);
+    await setImposter(t.roomId, 'A2');
+    const first = await secret(t.roomId);
+    await viewAll(t, ['A1', 'B1', 'B2']);
+    await expire(t.roomId);
+    const before = Date.now();
+    expect(await sahtekar(t.owner, { action: 'advance', roomId: t.roomId })).toEqual(OK);
+    const s = await state(t.roomId);
+    expect(s).toMatchObject({
+      phase: 'viewing',
+      dealNo: 2,
+      seats: ['A1', 'B1', 'B2'],
+      players: { owner: 1, guest: 2 },
+      viewed: [],
+    });
+    expect(Date.parse(String(s.endsAt)) - before).toBeGreaterThan(
+      (SAHTEKAR.viewSeconds - 2) * 1000,
+    );
+    const second = await secret(t.roomId);
+    expect(['A1', 'B1', 'B2']).toContain(second.imposter);
+    expect(second.word).not.toBe(first.word);
+    expect(second.options).toContain(second.word);
+    expect(second.votes).toEqual({});
+    // Both words count as shown.
+    const used = await sql`
+      select c.word from public.room_used_cards u join public.cards c on c.id = u.card_id
+      where u.room_id = ${t.roomId}
+    `;
+    expect(used.map((r) => r.word).sort()).toEqual([first.word, second.word].sort());
+    // Everyone looks again; the seat that left may not.
+    expect(await sahtekar(t.owner, { action: 'view', roomId: t.roomId, seat: 'A2' })).toEqual({
+      status: 403,
+      body: errorBody('not_your_seat'),
+    });
+    const card = await sahtekar(tableOf(t, 'B1'), { action: 'view', roomId: t.roomId, seat: 'B1' });
+    expect(card.body).toMatchObject({ category: s.category });
+    await viewAll(t, ['A1', 'B2']);
+    expect(await state(t.roomId)).toMatchObject({
+      phase: 'clues',
+      order: clueOrder(['A1', 'B1', 'B2']),
+    });
+  });
+
+  it('ends the game without results when fewer than 3 seats looked', async () => {
+    const t = await started(2, 1);
+    await viewAll(t, ['A1', 'A2']);
+    await expire(t.roomId);
+    expect(await sahtekar(t.guest, { action: 'advance', roomId: t.roomId })).toEqual(OK);
+    expect(await state(t.roomId)).toEqual({
+      concept: null,
+      gameNo: 1,
+      lastGame: {
+        concept: 'sahtekar',
+        players: { owner: 2, guest: 1 },
+        endedBy: 'not_enough_players',
+      },
+    });
+    expect(await sql`select 1 from public.game_results where room_id = ${t.roomId}`).toHaveLength(
+      0,
+    );
+    // Nothing left to move on.
+    expect(await sahtekar(t.owner, { action: 'advance', roomId: t.roomId })).toEqual(OK);
   });
 });
 

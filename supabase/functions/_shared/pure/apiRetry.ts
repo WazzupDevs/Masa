@@ -49,8 +49,8 @@ export const IDEMPOTENT_CALLS = [
   // games.test "tabu, ready turns (docs/SPEC_V3.md §19.1)": "starts the clock once, from the
   // describing table or from either table after readyEndsAt"
   'tabu/begin-turn',
-  // sahtekar.test "sahtekar, seeing the word": "skips a seat that did not look in 2 minutes: no
-  // clue, no vote"
+  // sahtekar.test "sahtekar, seeing the word": "drops a seat that did not look in 2 minutes, and
+  // its table counts one less"
   'sahtekar/advance',
   // reveal.test "reveal/finalize and cleanup": "does nothing before the window ends, then closes
   // with "none" for both"
