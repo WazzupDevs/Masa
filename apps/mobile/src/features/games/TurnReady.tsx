@@ -95,8 +95,9 @@ export function TurnReady({
               accessibilityState={{ disabled: !!starting }}
               disabled={starting}
               onPress={onStart}
-              className="items-center justify-center"
               style={({ pressed }) => ({
+                alignItems: 'center',
+                justifyContent: 'center',
                 width: START,
                 height: START,
                 borderRadius: shape.radius.pill,

@@ -192,8 +192,9 @@ function RoundButton({
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
-      className="items-center justify-center"
       style={({ pressed }) => ({
+        alignItems: 'center',
+        justifyContent: 'center',
         width: TOUCH.min,
         height: TOUCH.min,
         borderRadius: shape.radius.pill,

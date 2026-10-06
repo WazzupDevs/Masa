@@ -48,9 +48,7 @@ export function FirstGameIntro({ visible, onClose }: Props) {
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <SafeAreaView testID="first-game-intro" style={{ flex: 1, backgroundColor: colors.canvas }}>
-        <ScrollView
-          contentContainerStyle={{ flexGrow: 1, padding: shape.screenPadding, gap: SPACING[4] }}
-        >
+        <ScrollView contentContainerStyle={{ padding: shape.screenPadding, gap: SPACING[4] }}>
           <View className="flex-row items-center justify-between">
             <Text variant="overline" tone="muted">
               {tr.games.introEyebrow}
@@ -99,10 +97,11 @@ export function FirstGameIntro({ visible, onClose }: Props) {
               </View>
             </Card>
           ))}
-          <View className="mt-auto pt-4">
-            <Button testID="intro-done" label={tr.games.introDone} onPress={onClose} />
-          </View>
         </ScrollView>
+        {/* Pinned under the steps: reachable on short screens without scrolling. */}
+        <View style={{ padding: shape.screenPadding, paddingTop: SPACING[3] }}>
+          <Button testID="intro-done" label={tr.games.introDone} onPress={onClose} />
+        </View>
       </SafeAreaView>
     </Modal>
   );
