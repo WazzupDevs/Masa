@@ -984,6 +984,22 @@ Tasarımın bileşenleriyle:
 10. **E2E:** Tabu akışları hazır durumuna göre güncellenir. Cihazın turunda cihaz Başla'ya basar (botun `force`'u kalkar); bot anlatan masayken kendi turunu başlatır.
 11. **`game_abandoned`** gönderimi (§19.1).
 
+### 19.2a Uygulamada netleşenler (A2)
+
+- **Tasarımın Aşama 6 PR'ı** (#57) tam ekran oyunu (`GameStage`: sohbet düğmesi ve paneli), "Oyunu bitir" onayını, son 10 sn saatini ve skor hareketini zaten getirdi. A2 bunların üstüne hazır ekranını, süre bitti kaplamasını, titreşimi, rövanşı, ilk oyun tanıtımını, ekranı açık tutmayı ve `game_abandoned`'ı bağlar.
+- **Hazır ekranı:** `TurnReady` her iki modda da. Geri sayım biterse iki telefon da `begin-turn` çağırır (sunucu süreyi denetler, ikinci çağrı bir şey değiştirmez). Özetteki puan, anlatan masanın (iş birliğinde takımın) o turdaki puanıdır.
+- **Süre bitti:** tur saati telefonda sıfıra inince `TimeUpOverlay` 1,5 sn görünür. Altında "X bu turda +n": n, anlatan tarafın bu telefonun turu ilk gördüğü andan beri kazandığı puandır. Tek masalı Tabu'da da aynı.
+- **Titreşim:** son 5 sn'nin her saniyesinde kısa (40 ms), sıfırda uzun (400 ms). React Native `Vibration`; `VIBRATE` 0.3.0 manifest'inde var (Expo'nun varsayılan izni). Kurallar `pure/tabu.ts` → `turnCue`.
+- **Ekranı açık tutma:** `expo-keep-awake` 57.0.2 doğrudan bağımlılık oldu. Bu, 0.3.0 build'ine Expo'nun bağımlılığı olarak giren sürümün aynısı; native kod değişmez, OTA ile gider. Oyun sürdüğü sürece (Sohbet kartları dahil) açık; native modül yoksa hiçbir şey yapmaz.
+- **İlk oyun tanıtımı:** tasarımın tanıtımı iki masalı Sesli Tabu'yu anlatır. Bu yüzden cihazdaki ilk iki masalı Sesli Tabu oyununda görünür, cihazın kendi deposunda hatırlanır. Tek masalı Tabu'da görünmez.
+- **Rövanş:** yalnızca bitmiş (yarıda kalmamış) iki masalı Sesli Tabu'nun sonucunun altında. Aynı oyunu önerir (`rooms/propose-game`); diğer masa kabul edince başlar.
+- **`game_abandoned`:**
+  - "Oyunu bitir" ile yarıda kalan iki masalı oyun `lastGame`'den sayılır, iki telefon da kendi kullanıcısı için bir kez gönderir.
+  - Masa ayrılınca oda `ending`'e geçer; oyun hâlâ sürüyorsa telefon olayı `game_state`'ten gönderir.
+  - Tek masalı Tabu, "Oyunu bitir" anındaki kendi turundan gönderir (6 turdan kaçıncısı).
+  - Aynı oyun iki kez sayılmaz (`trackOnce`, oda ve oyun numarasıyla).
+- **E2E:** 04'te tanıtım bir kez çıkar ve kapatılır. Cihaz kendi turunu "Başla" (`turn-start`) ile başlatır. Botun turunda cihaz geri sayımı (`turn-countdown`) görür, bot kendi turunu başlatır. Botun `force` seçeneği kaldı ama akışlar artık onu kullanmıyor.
+
 ### 19.3 Kabul (A)
 
 - **A1:** Entegrasyon testleri şunları gösterir:

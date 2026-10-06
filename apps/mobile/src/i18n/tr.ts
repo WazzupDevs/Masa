@@ -635,6 +635,12 @@ export const tr = {
       },
     ],
     introDone: 'Anladım, başlayalım',
+    // Step 7 A2 (docs/SPEC_V3.md §19.2): the ready screen's summary and the time-up line.
+    turnSummaryTitle: (alias: string) => `${alias} anlattı`,
+    signedPoints: (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0'),
+    turnPointsLine: (alias: string, n: number) =>
+      `${alias} bu turda ${n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0'}`,
+    gameBrand: (game: string) => `${APP_NAME} · ${game}`,
   },
   // Harf Kapmaca and Şarkıda Geçsin (docs/SPEC_V3.md §20.3–20.4): say, then the other table may
   // object within 3 seconds; three objections per table.

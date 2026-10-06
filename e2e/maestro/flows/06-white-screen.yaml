@@ -42,12 +42,13 @@ appId: app.kabuk.mobile
     file: ../scripts/bot.js
     env:
       ACTION: answer-game
-# Turn 1 opens ready (docs/SPEC_V3.md §19.1); the bot table starts this phone's turn.
-- runScript:
-    file: ../scripts/bot.js
-    env:
-      ACTION: begin-turn
-      BODY: '{"force":true}'
+# Turn 1 opens ready (docs/SPEC_V3.md §19.1): this phone describes and starts it with Başla.
+- extendedWaitUntil:
+    visible:
+      id: turn-start
+    timeout: 20000
+- tapOn:
+    id: turn-start
 - extendedWaitUntil:
     visible: Kartı görmek için dokun
     timeout: 20000

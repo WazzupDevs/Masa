@@ -1,7 +1,7 @@
 import { initialLocalTabu, localTabuReducer } from '@shared/localTabu.ts';
 import { TABU } from '@shared/tabu.ts';
 import { useMutation } from '@tanstack/react-query';
-import { useEffect, useReducer } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -15,7 +15,9 @@ import { useNow } from '@/lib/useNow';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { ClockPill, TeamScore } from './GameBits';
+import { useGameSignals } from './gameSignals';
 import { TabuCardView } from './TabuCardView';
+import { useTurnFeedback } from './useTurnFeedback';
 
 // One-table Tabu (MVP_SPEC §5.1): the server only hands out the deck; the game runs here. If
 // another table joins, the room switches to the two-table game and this unmounts.
@@ -41,6 +43,27 @@ export function LocalTabu({ roomId }: { roomId: string }) {
   }, [timeUp]);
   const finished = state.phase === 'finished';
   const { A, B } = state.scores;
+
+  // How far the game got, for game_abandoned if "Oyunu bitir" stops it (docs/SPEC_V3.md §19.1):
+  // teams A and B take turns, 3 rounds each.
+  const totalTurns = TABU.localRoundsPerTeam * 2;
+  const turnNo = (state.round - 1) * 2 + (state.team === 'B' ? 2 : 1);
+  const setLocal = useGameSignals((s) => s.setLocal);
+  useEffect(() => {
+    setLocal({ turnNo, totalTurns, finished });
+  }, [setLocal, turnNo, totalTurns, finished]);
+  useEffect(() => () => setLocal(null), [setLocal]);
+
+  // The last 5 seconds and the end of a turn: vibration and "Süre bitti!" (§19.2).
+  const teamScore = state.team === 'A' ? A : B;
+  const turnKey = `local:${roomId}:${turnNo}`;
+  const [turnStart, setTurnStart] = useState({ key: turnKey, score: teamScore });
+  if (turnStart.key !== turnKey) setTurnStart({ key: turnKey, score: teamScore });
+  useTurnFeedback(
+    turnKey,
+    state.phase === 'playing' ? secondsLeft : -1,
+    tr.games.turnPointsLine(tr.games.team(state.team), teamScore - turnStart.score),
+  );
   useEffect(() => {
     if (finished) track('game_completed', { concept: 'tabu', mode: 'voice', score: A + B });
   }, [finished, A, B]);
