@@ -143,6 +143,7 @@ export type TypeVariant =
   | 'word' // the Tabu card word
   | 'forbidden' // the Tabu card's forbidden words
   | 'score' // a Tabu team score
+  | 'hero' // shareable moments: "Süre bitti!", a reveal (read in a screen recording)
   | 'mark' // a large number or mark: headcount choice
   | 'body'
   | 'bodyStrong'
@@ -236,6 +237,7 @@ export function baseTypography(overrides: Partial<Typography> = {}): Typography 
     word: { font: 'display', size: 38, lineHeight: 42, letterSpacing: 0.8 },
     forbidden: { font: 'semibold', size: 18, lineHeight: 24 },
     score: { font: 'display', size: 30, lineHeight: 34 },
+    hero: { font: 'display', size: 54, lineHeight: 58, letterSpacing: -1 },
     mark: { font: 'display', size: 20, lineHeight: 24 },
     body: { font: 'regular', size: 16, lineHeight: 23 },
     bodyStrong: { font: 'semibold', size: 16, lineHeight: 23 },

@@ -124,6 +124,16 @@ appId: app.kabuk.mobile
       id: tabu-card
     timeout: 20000
 - takeScreenshot: 18-card-open
+# The game is full screen; the room chat opens from its button as a panel and closes again.
+- tapOn:
+    id: game-chat
+- extendedWaitUntil:
+    visible:
+      id: game-chat-panel
+    timeout: 10000
+- takeScreenshot: 18b-game-chat
+- tapOn:
+    id: chat-back
 # The buttons are under the card; with a two-line room title they are below the fold.
 - scrollUntilVisible:
     element:
@@ -172,6 +182,14 @@ appId: app.kabuk.mobile
     timeout: 10000
 - tapOn:
     id: end-game
+- extendedWaitUntil:
+    visible:
+      id: end-game-confirm
+    timeout: 10000
+- takeScreenshot: 20a-end-confirm
+# "Oyunu bitir" asks first (canvas: Aşama 6 · Oyunlar).
+- tapOn:
+    id: end-game-confirm
 # The screen is still scrolled down to the button; the last game is at the top.
 - scrollUntilVisible:
     element:

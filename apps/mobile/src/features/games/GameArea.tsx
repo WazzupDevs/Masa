@@ -1,7 +1,7 @@
 import type { Concept } from '@shared/rooms.ts';
 import { parseBetweenGames, parseGameState, type TableSide } from '@shared/tabu.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -27,11 +27,33 @@ type Props = {
   hasGuest: boolean;
   isOwner: boolean;
   aliases: Record<TableSide, string>;
+  // One-table Tabu runs on this phone (LocalTabu); the room screen keeps the flag so it can lay
+  // the running game out full screen.
+  localTabu: boolean;
+  onLocalTabu: (on: boolean) => void;
 };
+
+// Whether a game is running: the room screen shows it full screen (canvas: Aşama 6 · Oyunlar).
+export function isGameRunning(concept: Concept | null, hasGuest: boolean, localTabu: boolean) {
+  return concept !== null || (!hasGuest && localTabu);
+}
+
+// "Oyunu bitir" (after the confirmation in GameStage): the room returns to chat.
+export function useEndGame(roomId: string, onEnded: () => void) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => {
+      onEnded();
+      return roomsApi.endGame(roomId);
+    },
+    onSettled: () => void queryClient.invalidateQueries({ queryKey: roomKeys.room(roomId) }),
+  });
+}
 
 // The top of the room screen. Between games: the last result, then "Oyun öner" in a two-table room
 // (a game starts only when the other table accepts, §5.3) or the games themselves in a one-table
-// room. During a game: the game and "Oyunu bitir".
+// room. During a game: the game only; the room screen puts it on the full-screen stage with
+// "Oyunu bitir".
 export function GameArea({
   roomId,
   sessionId,
@@ -40,15 +62,13 @@ export function GameArea({
   hasGuest,
   isOwner,
   aliases,
+  localTabu,
+  onLocalTabu: setLocalTabu,
 }: Props) {
   const queryClient = useQueryClient();
   const side: TableSide = isOwner ? 'owner' : 'guest';
-  // One-table Tabu runs on this phone; it starts here and keeps its place when the room's concept
-  // turns to 'tabu', so the deck is not dealt twice.
-  const [localTabu, setLocalTabu] = useState(false);
 
   const refresh = () => void queryClient.invalidateQueries({ queryKey: roomKeys.room(roomId) });
-  const endGame = useMutation({ mutationFn: () => roomsApi.endGame(roomId), onSettled: refresh });
   const startSohbet = useMutation({
     mutationFn: () => gamesApi.sohbetNext(roomId),
     onSettled: refresh,
@@ -86,28 +106,7 @@ export function GameArea({
     <VoiceTabu roomId={roomId} state={state} side={side} aliases={aliases} />
   ) : null;
 
-  if (game) {
-    return (
-      <View className="mt-4 gap-3">
-        {game}
-        {endGame.isError ? (
-          <Text variant="fine" tone="danger">
-            {errorMessage(endGame.error)}
-          </Text>
-        ) : null}
-        <Button
-          variant="ghost"
-          testID="end-game"
-          label={tr.games.endGame}
-          onPress={() => {
-            setLocalTabu(false);
-            endGame.mutate();
-          }}
-          disabled={endGame.isPending}
-        />
-      </View>
-    );
-  }
+  if (game) return <View className="gap-3">{game}</View>;
 
   return (
     <View className="mt-4 gap-3">

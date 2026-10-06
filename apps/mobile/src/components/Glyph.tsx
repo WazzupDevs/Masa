@@ -1,6 +1,7 @@
-import { Image, type ImageSourcePropType } from 'react-native';
+import { Image, type ImageSourcePropType, View } from 'react-native';
 
-import { ICON } from '@/theme/tokens';
+import { useTheme } from '@/theme/ThemeProvider';
+import { ICON, type PaletteKey } from '@/theme/tokens';
 
 // The app's own icon family (canvas: Aşama 5 · Geri bildirim → İkonlar A): drawn in
 // scripts/icon/glyphs.ts, rasterised white by `pnpm icons` (1×/2×/3×) and tinted here, since
@@ -57,3 +58,64 @@ export const MARKER_IMAGES = {
 };
 
 export const FADE_IMAGE: ImageSourcePropType = require('../../assets/glyph/fade.png');
+
+// The games' icons (canvas: Aşama 6 · Oyunlar → Oyun ikonları): Aktiviteler cards and "Oyun öner".
+// Each game has its own colour pair from the palette.
+export type GameGlyph = 'tabu' | 'sohbet' | 'impostor' | 'letters' | 'song' | 'needle';
+
+const GAME: Record<GameGlyph, ImageSourcePropType> = {
+  tabu: require('../../assets/glyph/game-tabu.png'),
+  sohbet: require('../../assets/glyph/game-sohbet.png'),
+  impostor: require('../../assets/glyph/game-impostor.png'),
+  letters: require('../../assets/glyph/game-letters.png'),
+  song: require('../../assets/glyph/game-song.png'),
+  needle: require('../../assets/glyph/game-needle.png'),
+};
+
+export const GAME_TONES: Record<GameGlyph, readonly [PaletteKey, PaletteKey]> = {
+  tabu: ['violet', 'onViolet'],
+  sohbet: ['signal', 'onSignal'],
+  impostor: ['lively', 'onLively'],
+  letters: ['calm', 'onCalm'],
+  song: ['buzz', 'onBuzz'],
+  needle: ['event', 'onEvent'],
+};
+
+export function GameIcon({
+  name,
+  color,
+  size = ICON.lg,
+}: {
+  name: GameGlyph;
+  color: string;
+  size?: number;
+}) {
+  return (
+    <Image
+      source={GAME[name]}
+      accessible={false}
+      style={{ width: size, height: size, tintColor: color }}
+      resizeMode="contain"
+    />
+  );
+}
+
+// The game's icon on its colour disc. Decorative.
+export function GameDisc({ name, size = 56 }: { name: GameGlyph; size?: number }) {
+  const { colors, shape } = useTheme();
+  const [bg, fg] = GAME_TONES[name];
+  return (
+    <View
+      accessible={false}
+      className="items-center justify-center"
+      style={{
+        width: size,
+        height: size,
+        borderRadius: shape.radius.pill,
+        backgroundColor: colors[bg],
+      }}
+    >
+      <GameIcon name={name} color={colors[fg]} size={Math.round(size * 0.56)} />
+    </View>
+  );
+}

@@ -2,7 +2,7 @@ import { CONCEPTS, type Concept } from '@shared/rooms.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
@@ -18,7 +18,8 @@ import { RoomComposer, RoomMessages, useRoomChat } from '@/features/chat/ChatPan
 import { useRoomSafety } from '@/features/chat/RoomSafety';
 import { useOtherTableOnline } from '@/features/chat/usePresence';
 import { useActiveTable } from '@/features/checkin/useActiveTable';
-import { GameArea } from '@/features/games/GameArea';
+import { GameArea, isGameRunning, useEndGame } from '@/features/games/GameArea';
+import { GameStage } from '@/features/games/GameStage';
 import { useRoomMemberProfile } from '@/features/profile/queries';
 import { RevealPrompt } from '@/features/reveal/RevealPrompt';
 import { RevealResult } from '@/features/reveal/RevealResult';
@@ -38,6 +39,34 @@ export default function RoomScreen() {
   const table = useActiveTable();
   const room = useRoom(id);
   const chat = useRoomChat(id);
+  // One-table Tabu runs on this phone; it starts in GameArea and keeps its place when the room's
+  // concept turns to 'tabu', so the deck is not dealt twice.
+  const [localTabu, setLocalTabu] = useState(false);
+  const endGame = useEndGame(id, () => setLocalTabu(false));
+  const [chatOpen, setChatOpen] = useState(false);
+  // Messages from the other table seen so far; the rest count as unread on the game's chat button.
+  const [seen, setSeen] = useState<ReadonlySet<string> | null>(null);
+  const roomConcept = room.data?.concept;
+  const gameRunning =
+    !!room.data &&
+    isGameRunning(
+      (CONCEPTS as readonly unknown[]).includes(roomConcept) ? (roomConcept as Concept) : null,
+      room.data.guest_session_id !== null,
+      localTabu,
+    );
+  const ownSession = table.data?.id;
+  const loaded = chat.messages.data;
+  // Each game counts unread messages from its own start: what came before (chat between games)
+  // is seen. The chat panel closes when the game ends. Adjusted while rendering (React's "storing
+  // information from previous renders"), not in an effect.
+  const [wasRunning, setWasRunning] = useState(gameRunning);
+  if (wasRunning !== gameRunning) {
+    setWasRunning(gameRunning);
+    setSeen(null);
+    setChatOpen(false);
+  } else if (gameRunning && seen === null && loaded) {
+    setSeen(new Set(loaded.filter((m) => m.session_id !== ownSession).map((m) => m.id)));
+  }
 
   // "Odayı bitir" is the only way out (docs/SPEC_V3.md §5.5).
   const exit = useMutation({
@@ -85,6 +114,34 @@ export default function RoomScreen() {
   // Room-level events come from one table only, so each room counts once.
   if (!isOwner) trackOnce(`join_accepted:${r.id}`, 'join_accepted', {});
 
+  const title = r.guest_alias ? tr.rooms.withGuest(r.owner_alias, r.guest_alias) : r.owner_alias;
+  const topBar = (onClose?: () => void) => (
+    <RoomTopBar
+      roomId={r.id}
+      title={title}
+      subtitle={tr.rooms.roomEyebrow(concept)}
+      aliases={r.guest_alias ? [r.owner_alias, r.guest_alias] : [r.owner_alias]}
+      guestSessionId={r.guest_session_id}
+      hasOtherTable={hasOtherTable}
+      onEnd={() => exit.mutate()}
+      ending={exit.isPending}
+      onClose={onClose}
+    />
+  );
+  const gameArea = (
+    <GameArea
+      roomId={r.id}
+      sessionId={sessionId}
+      concept={concept}
+      gameState={r.game_state}
+      hasGuest={hasOtherTable}
+      isOwner={isOwner}
+      aliases={{ owner: r.owner_alias, guest: r.guest_alias ?? '' }}
+      localTabu={localTabu}
+      onLocalTabu={setLocalTabu}
+    />
+  );
+
   if (r.status === 'ending' && r.reveal_ends_at) {
     return (
       <Screen>
@@ -102,36 +159,58 @@ export default function RoomScreen() {
     );
   }
 
+  // A running game takes the whole screen; the chat folds into a button (canvas: Aşama 6 · Oyunlar).
+  if (isGameRunning(concept, hasOtherTable, localTabu)) {
+    const others = (chat.messages.data ?? []).filter((m) => m.session_id !== sessionId);
+    const unread = chatOpen || !seen ? 0 : others.filter((m) => !seen.has(m.id)).length;
+    const toggleChat = (open: boolean) => {
+      setChatOpen(open);
+      setSeen(new Set(others.map((m) => m.id)));
+    };
+    return (
+      <GameStage
+        title={concept ? tr.concepts[concept] : tr.concepts.tabu}
+        unread={unread}
+        chatOpen={chatOpen}
+        onChat={toggleChat}
+        onEndGame={() => endGame.mutate()}
+        ending={endGame.isPending}
+        endError={endGame.error}
+        solo={!hasOtherTable}
+        chat={
+          <>
+            {topBar(() => toggleChat(false))}
+            <ScrollView
+              className="flex-1"
+              contentContainerStyle={{ padding: SPACING[4], gap: SPACING[2] }}
+              keyboardShouldPersistTaps="handled"
+            >
+              <RoomMessages chat={chat} sessionId={sessionId} />
+            </ScrollView>
+            <RoomComposer chat={chat} />
+          </>
+        }
+      >
+        {exit.isError ? (
+          <Text variant="fine" tone="danger">
+            {errorMessage(exit.error)}
+          </Text>
+        ) : null}
+        {gameArea}
+        {hasOtherTable ? <OtherTableStatus roomId={r.id} isOwner={isOwner} /> : null}
+        {isOwner ? <IncomingRequest roomId={r.id} ownerSessionId={r.owner_session_id} /> : null}
+      </GameStage>
+    );
+  }
+
   return (
-    <ChatScreen
-      top={
-        <RoomTopBar
-          roomId={r.id}
-          title={r.guest_alias ? tr.rooms.withGuest(r.owner_alias, r.guest_alias) : r.owner_alias}
-          subtitle={tr.rooms.roomEyebrow(concept)}
-          aliases={r.guest_alias ? [r.owner_alias, r.guest_alias] : [r.owner_alias]}
-          guestSessionId={r.guest_session_id}
-          hasOtherTable={hasOtherTable}
-          onEnd={() => exit.mutate()}
-          ending={exit.isPending}
-        />
-      }
-      composer={<RoomComposer chat={chat} />}
-    >
+    <ChatScreen top={topBar()} composer={<RoomComposer chat={chat} />}>
       {exit.isError ? (
         <Text variant="fine" tone="danger">
           {errorMessage(exit.error)}
         </Text>
       ) : null}
-      <GameArea
-        roomId={r.id}
-        sessionId={sessionId}
-        concept={concept}
-        gameState={r.game_state}
-        hasGuest={hasOtherTable}
-        isOwner={isOwner}
-        aliases={{ owner: r.owner_alias, guest: r.guest_alias ?? '' }}
-      />
+      <View className="mt-4">{gameArea}</View>
       {r.status === 'waiting' && r.visibility === 'open' ? (
         <Card tone="note" className="mt-1">
           <Text variant="fine">{tr.rooms.waitingForGuest}</Text>
@@ -159,6 +238,7 @@ function RoomTopBar({
   hasOtherTable,
   onEnd,
   ending,
+  onClose,
 }: {
   roomId: string;
   title: string;
@@ -168,6 +248,8 @@ function RoomTopBar({
   hasOtherTable: boolean;
   onEnd: () => void;
   ending: boolean;
+  // In the game's chat panel: the back arrow closes the panel.
+  onClose?: () => void;
 }) {
   const [menu, setMenu] = useState(false);
   const safety = useRoomSafety(roomId);
@@ -176,6 +258,7 @@ function RoomTopBar({
   return (
     <>
       <ChatTopBar
+        onBack={onClose}
         title={title}
         subtitle={subtitle}
         leading={<TableFaces aliases={aliases} />}
