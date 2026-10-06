@@ -4,7 +4,9 @@ import type {
   CampusSpot,
   CampusVenue,
   ProfanityList,
+  HarfCategory,
   SahtekarCategory,
+  SarkiWord,
   SohbetCard,
   TabuCard,
   TestVenue,
@@ -77,6 +79,8 @@ export function cardsSql(
   tabu: readonly TabuCard[],
   sohbet: readonly SohbetCard[],
   sahtekar: readonly SahtekarCategory[] = [],
+  harf: readonly HarfCategory[] = [],
+  sarki: readonly SarkiWord[] = [],
 ): string {
   const tabuRows = tabu.map(
     (c) =>
@@ -93,11 +97,26 @@ export function cardsSql(
         `('sahtekar', ${sqlLiteral(`${c.key}/${w}`)}, ${sqlLiteral(w)}, null, ${sqlLiteral(c.key)}, ${sqlLiteral(c.name)})`,
     ),
   );
+  // Harf Kapmaca: one row per category (theme = key, prompt = name); Şarkıda Geçsin: one per word.
+  const harfRows = harf.map(
+    (c) =>
+      `('harf', ${sqlLiteral(c.key)}, null, null, ${sqlLiteral(c.key)}, ${sqlLiteral(c.name)})`,
+  );
+  const sarkiRows = sarki.map(
+    (w) => `('sarki', ${sqlLiteral(w.key)}, ${sqlLiteral(w.word)}, null, null, null)`,
+  );
+  const sources = [
+    'content/tabu-cards.json',
+    'content/sohbet-cards.json',
+    ...(sahtekar.length > 0 ? ['content/sahtekar-words.json'] : []),
+    ...(harf.length > 0 ? ['content/harf-categories.json'] : []),
+    ...(sarki.length > 0 ? ['content/sarki-words.json'] : []),
+  ];
   return [
-    `-- content/tabu-cards.json, content/sohbet-cards.json${sahtekar.length > 0 ? ', content/sahtekar-words.json' : ''}`,
+    `-- ${sources.join(', ')}`,
     'update public.cards set is_active = false;',
     'insert into public.cards (deck, source_key, word, forbidden, theme, prompt) values',
-    `  ${[...tabuRows, ...sohbetRows, ...sahtekarRows].join(',\n  ')}`,
+    `  ${[...tabuRows, ...sohbetRows, ...sahtekarRows, ...harfRows, ...sarkiRows].join(',\n  ')}`,
     'on conflict (deck, source_key) do update set',
     '  word = excluded.word, forbidden = excluded.forbidden, theme = excluded.theme,',
     '  prompt = excluded.prompt, is_active = true;',

@@ -333,3 +333,76 @@ export function parseSahtekarWords(json: unknown, profanity: ProfanityList): Sah
   }
   return categories;
 }
+
+// content/harf-categories.json (docs/SPEC_V3.md §20.3): Harf Kapmaca's categories. At least 150, no
+// key or name twice (normalized) and nothing on the profanity list. Whether a category plays with
+// most of the board is the owner's call when sampling; the seed cannot check it.
+export const HARF_MIN_CATEGORIES = 150;
+const SAY_KEY = /^[a-z][a-z0-9_]*$/;
+
+export type HarfCategory = { key: string; name: string };
+
+export function parseHarfCategories(json: unknown, profanity: ProfanityList): HarfCategory[] {
+  if (!isRecord(json) || !Array.isArray(json.categories)) {
+    throw new Error('harf-categories.json needs categories');
+  }
+  const terms = prepareTerms(profanity.terms, profanity.wholeWords);
+  const keys = new Set<string>();
+  const names = new Set<string>();
+  const categories = json.categories.map((category, i) => {
+    const at = `harf categories[${i}]`;
+    if (!isRecord(category)) throw new Error(`${at} must be an object`);
+    const { key, name } = category;
+    if (typeof key !== 'string' || !SAY_KEY.test(key)) throw new Error(`${at}.key is invalid`);
+    if (typeof name !== 'string' || name.trim() === '') throw new Error(`${at}.name is required`);
+    if (keys.has(key)) throw new Error(`${at}: key "${key}" twice`);
+    if (names.has(normalize(name))) throw new Error(`${at}: name "${name}" twice`);
+    if (containsProfanity(name, terms))
+      throw new Error(`${at}: "${name}" is on the profanity list`);
+    keys.add(key);
+    names.add(normalize(name));
+    return { key, name: name.trim() };
+  });
+  if (categories.length < HARF_MIN_CATEGORIES) {
+    throw new Error(
+      `harf-categories.json: ${categories.length} categories, at least ${HARF_MIN_CATEGORIES}`,
+    );
+  }
+  return categories;
+}
+
+// content/sarki-words.json (docs/SPEC_V3.md §20.4): words often heard in Turkish songs. At least 400,
+// one word each (no song title, artist or lyric), no key or word twice (normalized), nothing on the
+// profanity list.
+export const SARKI_MIN_WORDS = 400;
+
+export type SarkiWord = { key: string; word: string };
+
+export function parseSarkiWords(json: unknown, profanity: ProfanityList): SarkiWord[] {
+  if (!isRecord(json) || !Array.isArray(json.words)) {
+    throw new Error('sarki-words.json needs words');
+  }
+  const terms = prepareTerms(profanity.terms, profanity.wholeWords);
+  const keys = new Set<string>();
+  const seen = new Set<string>();
+  const words = json.words.map((entry, i) => {
+    const at = `sarki words[${i}]`;
+    if (!isRecord(entry)) throw new Error(`${at} must be an object`);
+    const { key, word } = entry;
+    if (typeof key !== 'string' || !SAY_KEY.test(key)) throw new Error(`${at}.key is invalid`);
+    if (typeof word !== 'string' || !/^\S+$/u.test(word.trim())) {
+      throw new Error(`${at}.word must be one word`);
+    }
+    if (keys.has(key)) throw new Error(`${at}: key "${key}" twice`);
+    if (seen.has(normalize(word))) throw new Error(`${at}: "${word}" twice`);
+    if (containsProfanity(word, terms))
+      throw new Error(`${at}: "${word}" is on the profanity list`);
+    keys.add(key);
+    seen.add(normalize(word));
+    return { key, word: word.trim() };
+  });
+  if (words.length < SARKI_MIN_WORDS) {
+    throw new Error(`sarki-words.json: ${words.length} words, at least ${SARKI_MIN_WORDS}`);
+  }
+  return words;
+}

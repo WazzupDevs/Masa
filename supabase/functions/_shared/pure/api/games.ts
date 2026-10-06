@@ -42,3 +42,18 @@ export type SahtekarViewResponse = {
   imposter: boolean;
 };
 export type SahtekarOptionsResponse = { options: string[] };
+
+// `harf` and `sarki` (docs/SPEC_V3.md §20.3–20.4): the same engine. A two-table game starts from
+// rooms/answer-game; begin and advance are idempotent.
+export type SayRequest =
+  // One-table room: one prompt per round; the phone runs the game for Takım A and B.
+  | { action: 'start'; roomId: string }
+  | { action: 'begin'; roomId: string }
+  // Söyledik on step `step` of round `round`; Harf Kapmaca names the letter.
+  | { action: 'claim'; roomId: string; round: number; step: number; letter: string }
+  | { action: 'said'; roomId: string; round: number; step: number }
+  | { action: 'object'; roomId: string; round: number; step: number }
+  | { action: 'advance'; roomId: string };
+export type HarfRequest = Exclude<SayRequest, { action: 'said' }>;
+export type SarkiRequest = Exclude<SayRequest, { action: 'claim' }>;
+export type SayStartResponse = { prompts: string[] };

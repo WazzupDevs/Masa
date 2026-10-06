@@ -1,0 +1,1996 @@
+{
+  "words": [
+    {
+      "key": "ask",
+      "word": "aşk"
+    },
+    {
+      "key": "sevda",
+      "word": "sevda"
+    },
+    {
+      "key": "sevgi",
+      "word": "sevgi"
+    },
+    {
+      "key": "sevgili",
+      "word": "sevgili"
+    },
+    {
+      "key": "yar",
+      "word": "yâr"
+    },
+    {
+      "key": "gonul",
+      "word": "gönül"
+    },
+    {
+      "key": "kalp",
+      "word": "kalp"
+    },
+    {
+      "key": "yurek",
+      "word": "yürek"
+    },
+    {
+      "key": "can",
+      "word": "can"
+    },
+    {
+      "key": "canim",
+      "word": "canım"
+    },
+    {
+      "key": "cananim",
+      "word": "cananım"
+    },
+    {
+      "key": "hayat",
+      "word": "hayat"
+    },
+    {
+      "key": "omur",
+      "word": "ömür"
+    },
+    {
+      "key": "dunya",
+      "word": "dünya"
+    },
+    {
+      "key": "gece",
+      "word": "gece"
+    },
+    {
+      "key": "gunduz",
+      "word": "gündüz"
+    },
+    {
+      "key": "sabah",
+      "word": "sabah"
+    },
+    {
+      "key": "aksam",
+      "word": "akşam"
+    },
+    {
+      "key": "safak",
+      "word": "şafak"
+    },
+    {
+      "key": "sabaha",
+      "word": "sabaha"
+    },
+    {
+      "key": "yarin",
+      "word": "yarın"
+    },
+    {
+      "key": "dun",
+      "word": "dün"
+    },
+    {
+      "key": "bugun",
+      "word": "bugün"
+    },
+    {
+      "key": "zaman",
+      "word": "zaman"
+    },
+    {
+      "key": "yil",
+      "word": "yıl"
+    },
+    {
+      "key": "yillar",
+      "word": "yıllar"
+    },
+    {
+      "key": "mevsim",
+      "word": "mevsim"
+    },
+    {
+      "key": "bahar",
+      "word": "bahar"
+    },
+    {
+      "key": "yaz",
+      "word": "yaz"
+    },
+    {
+      "key": "kis",
+      "word": "kış"
+    },
+    {
+      "key": "guz",
+      "word": "güz"
+    },
+    {
+      "key": "sonbahar",
+      "word": "sonbahar"
+    },
+    {
+      "key": "yol",
+      "word": "yol"
+    },
+    {
+      "key": "yollar",
+      "word": "yollar"
+    },
+    {
+      "key": "yolcu",
+      "word": "yolcu"
+    },
+    {
+      "key": "gurbet",
+      "word": "gurbet"
+    },
+    {
+      "key": "sila",
+      "word": "sıla"
+    },
+    {
+      "key": "memleket",
+      "word": "memleket"
+    },
+    {
+      "key": "koy",
+      "word": "köy"
+    },
+    {
+      "key": "sehir",
+      "word": "şehir"
+    },
+    {
+      "key": "istanbul",
+      "word": "İstanbul"
+    },
+    {
+      "key": "ankara",
+      "word": "Ankara"
+    },
+    {
+      "key": "izmir",
+      "word": "İzmir"
+    },
+    {
+      "key": "karadeniz",
+      "word": "Karadeniz"
+    },
+    {
+      "key": "bogaz",
+      "word": "Boğaz"
+    },
+    {
+      "key": "vapur",
+      "word": "vapur"
+    },
+    {
+      "key": "tren",
+      "word": "tren"
+    },
+    {
+      "key": "deniz",
+      "word": "deniz"
+    },
+    {
+      "key": "dalga",
+      "word": "dalga"
+    },
+    {
+      "key": "kumsal",
+      "word": "kumsal"
+    },
+    {
+      "key": "sahil",
+      "word": "sahil"
+    },
+    {
+      "key": "ada",
+      "word": "ada"
+    },
+    {
+      "key": "liman",
+      "word": "liman"
+    },
+    {
+      "key": "marti",
+      "word": "martı"
+    },
+    {
+      "key": "gemi",
+      "word": "gemi"
+    },
+    {
+      "key": "kaptan",
+      "word": "kaptan"
+    },
+    {
+      "key": "ruzgar",
+      "word": "rüzgâr"
+    },
+    {
+      "key": "firtina",
+      "word": "fırtına"
+    },
+    {
+      "key": "yagmur",
+      "word": "yağmur"
+    },
+    {
+      "key": "kar",
+      "word": "kar"
+    },
+    {
+      "key": "dolu",
+      "word": "dolu"
+    },
+    {
+      "key": "bulut",
+      "word": "bulut"
+    },
+    {
+      "key": "gokyuzu",
+      "word": "gökyüzü"
+    },
+    {
+      "key": "gok",
+      "word": "gök"
+    },
+    {
+      "key": "gunes",
+      "word": "güneş"
+    },
+    {
+      "key": "ay",
+      "word": "ay"
+    },
+    {
+      "key": "yildiz",
+      "word": "yıldız"
+    },
+    {
+      "key": "yildizlar",
+      "word": "yıldızlar"
+    },
+    {
+      "key": "isik",
+      "word": "ışık"
+    },
+    {
+      "key": "karanlik",
+      "word": "karanlık"
+    },
+    {
+      "key": "golge",
+      "word": "gölge"
+    },
+    {
+      "key": "ates",
+      "word": "ateş"
+    },
+    {
+      "key": "alev",
+      "word": "alev"
+    },
+    {
+      "key": "duman",
+      "word": "duman"
+    },
+    {
+      "key": "kul",
+      "word": "kül"
+    },
+    {
+      "key": "toprak",
+      "word": "toprak"
+    },
+    {
+      "key": "dag",
+      "word": "dağ"
+    },
+    {
+      "key": "daglar",
+      "word": "dağlar"
+    },
+    {
+      "key": "tas",
+      "word": "taş"
+    },
+    {
+      "key": "kaya",
+      "word": "kaya"
+    },
+    {
+      "key": "nehir",
+      "word": "nehir"
+    },
+    {
+      "key": "irmak",
+      "word": "ırmak"
+    },
+    {
+      "key": "cay",
+      "word": "çay"
+    },
+    {
+      "key": "pinar",
+      "word": "pınar"
+    },
+    {
+      "key": "dere",
+      "word": "dere"
+    },
+    {
+      "key": "su",
+      "word": "su"
+    },
+    {
+      "key": "gol",
+      "word": "göl"
+    },
+    {
+      "key": "orman",
+      "word": "orman"
+    },
+    {
+      "key": "agac",
+      "word": "ağaç"
+    },
+    {
+      "key": "dal",
+      "word": "dal"
+    },
+    {
+      "key": "yaprak",
+      "word": "yaprak"
+    },
+    {
+      "key": "cicek",
+      "word": "çiçek"
+    },
+    {
+      "key": "gul",
+      "word": "gül"
+    },
+    {
+      "key": "lale",
+      "word": "lale"
+    },
+    {
+      "key": "menekse",
+      "word": "menekşe"
+    },
+    {
+      "key": "papatya",
+      "word": "papatya"
+    },
+    {
+      "key": "bulbul",
+      "word": "bülbül"
+    },
+    {
+      "key": "kus",
+      "word": "kuş"
+    },
+    {
+      "key": "kelebek",
+      "word": "kelebek"
+    },
+    {
+      "key": "ceylan",
+      "word": "ceylan"
+    },
+    {
+      "key": "kartal",
+      "word": "kartal"
+    },
+    {
+      "key": "turna",
+      "word": "turna"
+    },
+    {
+      "key": "leylek",
+      "word": "leylek"
+    },
+    {
+      "key": "kara",
+      "word": "kara"
+    },
+    {
+      "key": "beyaz",
+      "word": "beyaz"
+    },
+    {
+      "key": "kirmizi",
+      "word": "kırmızı"
+    },
+    {
+      "key": "mavi",
+      "word": "mavi"
+    },
+    {
+      "key": "yesil",
+      "word": "yeşil"
+    },
+    {
+      "key": "sari",
+      "word": "sarı"
+    },
+    {
+      "key": "mor",
+      "word": "mor"
+    },
+    {
+      "key": "siyah",
+      "word": "siyah"
+    },
+    {
+      "key": "altin",
+      "word": "altın"
+    },
+    {
+      "key": "gumus",
+      "word": "gümüş"
+    },
+    {
+      "key": "goz",
+      "word": "göz"
+    },
+    {
+      "key": "gozler",
+      "word": "gözler"
+    },
+    {
+      "key": "gozyasi",
+      "word": "gözyaşı"
+    },
+    {
+      "key": "bakis",
+      "word": "bakış"
+    },
+    {
+      "key": "gulus",
+      "word": "gülüş"
+    },
+    {
+      "key": "gulusun",
+      "word": "gülüşün"
+    },
+    {
+      "key": "yuz",
+      "word": "yüz"
+    },
+    {
+      "key": "dudak",
+      "word": "dudak"
+    },
+    {
+      "key": "sac",
+      "word": "saç"
+    },
+    {
+      "key": "el",
+      "word": "el"
+    },
+    {
+      "key": "eller",
+      "word": "eller"
+    },
+    {
+      "key": "ten",
+      "word": "ten"
+    },
+    {
+      "key": "kucak",
+      "word": "kucak"
+    },
+    {
+      "key": "omuz",
+      "word": "omuz"
+    },
+    {
+      "key": "nefes",
+      "word": "nefes"
+    },
+    {
+      "key": "ses",
+      "word": "ses"
+    },
+    {
+      "key": "sarki",
+      "word": "şarkı"
+    },
+    {
+      "key": "turku",
+      "word": "türkü"
+    },
+    {
+      "key": "melodi",
+      "word": "melodi"
+    },
+    {
+      "key": "nota",
+      "word": "nota"
+    },
+    {
+      "key": "gitar",
+      "word": "gitar"
+    },
+    {
+      "key": "baglama",
+      "word": "bağlama"
+    },
+    {
+      "key": "saz",
+      "word": "saz"
+    },
+    {
+      "key": "keman",
+      "word": "keman"
+    },
+    {
+      "key": "piyano",
+      "word": "piyano"
+    },
+    {
+      "key": "davul",
+      "word": "davul"
+    },
+    {
+      "key": "zurna",
+      "word": "zurna"
+    },
+    {
+      "key": "ney",
+      "word": "ney"
+    },
+    {
+      "key": "dans",
+      "word": "dans"
+    },
+    {
+      "key": "halay",
+      "word": "halay"
+    },
+    {
+      "key": "oyun",
+      "word": "oyun"
+    },
+    {
+      "key": "sahne",
+      "word": "sahne"
+    },
+    {
+      "key": "ayrilik",
+      "word": "ayrılık"
+    },
+    {
+      "key": "hasret",
+      "word": "hasret"
+    },
+    {
+      "key": "ozlem",
+      "word": "özlem"
+    },
+    {
+      "key": "vuslat",
+      "word": "vuslat"
+    },
+    {
+      "key": "kavusmak",
+      "word": "kavuşmak"
+    },
+    {
+      "key": "huzun",
+      "word": "hüzün"
+    },
+    {
+      "key": "keder",
+      "word": "keder"
+    },
+    {
+      "key": "dert",
+      "word": "dert"
+    },
+    {
+      "key": "gam",
+      "word": "gam"
+    },
+    {
+      "key": "elem",
+      "word": "elem"
+    },
+    {
+      "key": "aci",
+      "word": "acı"
+    },
+    {
+      "key": "yara",
+      "word": "yara"
+    },
+    {
+      "key": "yalniz",
+      "word": "yalnız"
+    },
+    {
+      "key": "yalnizlik",
+      "word": "yalnızlık"
+    },
+    {
+      "key": "sessizlik",
+      "word": "sessizlik"
+    },
+    {
+      "key": "mutluluk",
+      "word": "mutluluk"
+    },
+    {
+      "key": "huzur",
+      "word": "huzur"
+    },
+    {
+      "key": "umut",
+      "word": "umut"
+    },
+    {
+      "key": "hayal",
+      "word": "hayal"
+    },
+    {
+      "key": "ruya",
+      "word": "rüya"
+    },
+    {
+      "key": "dus",
+      "word": "düş"
+    },
+    {
+      "key": "masal",
+      "word": "masal"
+    },
+    {
+      "key": "efsane",
+      "word": "efsane"
+    },
+    {
+      "key": "sir",
+      "word": "sır"
+    },
+    {
+      "key": "yalan",
+      "word": "yalan"
+    },
+    {
+      "key": "gercek",
+      "word": "gerçek"
+    },
+    {
+      "key": "dogru",
+      "word": "doğru"
+    },
+    {
+      "key": "hata",
+      "word": "hata"
+    },
+    {
+      "key": "gunah",
+      "word": "günah"
+    },
+    {
+      "key": "sevap",
+      "word": "sevap"
+    },
+    {
+      "key": "kader",
+      "word": "kader"
+    },
+    {
+      "key": "sans",
+      "word": "şans"
+    },
+    {
+      "key": "talih",
+      "word": "talih"
+    },
+    {
+      "key": "felek",
+      "word": "felek"
+    },
+    {
+      "key": "olum",
+      "word": "ölüm"
+    },
+    {
+      "key": "yasam",
+      "word": "yaşam"
+    },
+    {
+      "key": "yasamak",
+      "word": "yaşamak"
+    },
+    {
+      "key": "sevmek",
+      "word": "sevmek"
+    },
+    {
+      "key": "gitmek",
+      "word": "gitmek"
+    },
+    {
+      "key": "gelmek",
+      "word": "gelmek"
+    },
+    {
+      "key": "donmek",
+      "word": "dönmek"
+    },
+    {
+      "key": "beklemek",
+      "word": "beklemek"
+    },
+    {
+      "key": "aglamak",
+      "word": "ağlamak"
+    },
+    {
+      "key": "gulmek",
+      "word": "gülmek"
+    },
+    {
+      "key": "unutmak",
+      "word": "unutmak"
+    },
+    {
+      "key": "hatirlamak",
+      "word": "hatırlamak"
+    },
+    {
+      "key": "sarilmak",
+      "word": "sarılmak"
+    },
+    {
+      "key": "dokunmak",
+      "word": "dokunmak"
+    },
+    {
+      "key": "opmek",
+      "word": "öpmek"
+    },
+    {
+      "key": "kacmak",
+      "word": "kaçmak"
+    },
+    {
+      "key": "kosmak",
+      "word": "koşmak"
+    },
+    {
+      "key": "ucmak",
+      "word": "uçmak"
+    },
+    {
+      "key": "dusmek",
+      "word": "düşmek"
+    },
+    {
+      "key": "kalkmak",
+      "word": "kalkmak"
+    },
+    {
+      "key": "yurumek",
+      "word": "yürümek"
+    },
+    {
+      "key": "soz",
+      "word": "söz"
+    },
+    {
+      "key": "yemin",
+      "word": "yemin"
+    },
+    {
+      "key": "vefa",
+      "word": "vefa"
+    },
+    {
+      "key": "sadakat",
+      "word": "sadakat"
+    },
+    {
+      "key": "ihanet",
+      "word": "ihanet"
+    },
+    {
+      "key": "kiskanclik",
+      "word": "kıskançlık"
+    },
+    {
+      "key": "ofke",
+      "word": "öfke"
+    },
+    {
+      "key": "baris",
+      "word": "barış"
+    },
+    {
+      "key": "savas",
+      "word": "savaş"
+    },
+    {
+      "key": "zafer",
+      "word": "zafer"
+    },
+    {
+      "key": "bayrak",
+      "word": "bayrak"
+    },
+    {
+      "key": "vatan",
+      "word": "vatan"
+    },
+    {
+      "key": "asker",
+      "word": "asker"
+    },
+    {
+      "key": "anne",
+      "word": "anne"
+    },
+    {
+      "key": "baba",
+      "word": "baba"
+    },
+    {
+      "key": "kardes",
+      "word": "kardeş"
+    },
+    {
+      "key": "abla",
+      "word": "abla"
+    },
+    {
+      "key": "agabey",
+      "word": "ağabey"
+    },
+    {
+      "key": "cocuk",
+      "word": "çocuk"
+    },
+    {
+      "key": "bebek",
+      "word": "bebek"
+    },
+    {
+      "key": "ogul",
+      "word": "oğul"
+    },
+    {
+      "key": "kiz",
+      "word": "kız"
+    },
+    {
+      "key": "dede",
+      "word": "dede"
+    },
+    {
+      "key": "nine",
+      "word": "nine"
+    },
+    {
+      "key": "aile",
+      "word": "aile"
+    },
+    {
+      "key": "ev",
+      "word": "ev"
+    },
+    {
+      "key": "yuva",
+      "word": "yuva"
+    },
+    {
+      "key": "kapi",
+      "word": "kapı"
+    },
+    {
+      "key": "pencere",
+      "word": "pencere"
+    },
+    {
+      "key": "oda",
+      "word": "oda"
+    },
+    {
+      "key": "yatak",
+      "word": "yatak"
+    },
+    {
+      "key": "masa",
+      "word": "masa"
+    },
+    {
+      "key": "sofra",
+      "word": "sofra"
+    },
+    {
+      "key": "raki",
+      "word": "rakı"
+    },
+    {
+      "key": "sarap",
+      "word": "şarap"
+    },
+    {
+      "key": "kadeh",
+      "word": "kadeh"
+    },
+    {
+      "key": "meyhane",
+      "word": "meyhane"
+    },
+    {
+      "key": "bar",
+      "word": "bar"
+    },
+    {
+      "key": "kahve",
+      "word": "kahve"
+    },
+    {
+      "key": "sigara",
+      "word": "sigara"
+    },
+    {
+      "key": "mektup",
+      "word": "mektup"
+    },
+    {
+      "key": "telefon",
+      "word": "telefon"
+    },
+    {
+      "key": "fotograf",
+      "word": "fotoğraf"
+    },
+    {
+      "key": "resim",
+      "word": "resim"
+    },
+    {
+      "key": "kitap",
+      "word": "kitap"
+    },
+    {
+      "key": "siir",
+      "word": "şiir"
+    },
+    {
+      "key": "misra",
+      "word": "mısra"
+    },
+    {
+      "key": "kalem",
+      "word": "kalem"
+    },
+    {
+      "key": "kagit",
+      "word": "kâğıt"
+    },
+    {
+      "key": "defter",
+      "word": "defter"
+    },
+    {
+      "key": "harf",
+      "word": "harf"
+    },
+    {
+      "key": "isim",
+      "word": "isim"
+    },
+    {
+      "key": "adin",
+      "word": "adın"
+    },
+    {
+      "key": "soyadi",
+      "word": "soyadı"
+    },
+    {
+      "key": "imza",
+      "word": "imza"
+    },
+    {
+      "key": "deli",
+      "word": "deli"
+    },
+    {
+      "key": "divane",
+      "word": "divane"
+    },
+    {
+      "key": "mecnun",
+      "word": "mecnun"
+    },
+    {
+      "key": "leyla",
+      "word": "leyla"
+    },
+    {
+      "key": "asik",
+      "word": "aşık"
+    },
+    {
+      "key": "masuk",
+      "word": "maşuk"
+    },
+    {
+      "key": "dilber",
+      "word": "dilber"
+    },
+    {
+      "key": "guzel",
+      "word": "güzel"
+    },
+    {
+      "key": "yakisikli",
+      "word": "yakışıklı"
+    },
+    {
+      "key": "esmer",
+      "word": "esmer"
+    },
+    {
+      "key": "sarisin",
+      "word": "sarışın"
+    },
+    {
+      "key": "kumral",
+      "word": "kumral"
+    },
+    {
+      "key": "sevdali",
+      "word": "sevdalı"
+    },
+    {
+      "key": "yarali",
+      "word": "yaralı"
+    },
+    {
+      "key": "yorgun",
+      "word": "yorgun"
+    },
+    {
+      "key": "sarhos",
+      "word": "sarhoş"
+    },
+    {
+      "key": "mest",
+      "word": "mest"
+    },
+    {
+      "key": "mahzun",
+      "word": "mahzun"
+    },
+    {
+      "key": "garip",
+      "word": "garip"
+    },
+    {
+      "key": "kimsesiz",
+      "word": "kimsesiz"
+    },
+    {
+      "key": "oksuz",
+      "word": "öksüz"
+    },
+    {
+      "key": "yetim",
+      "word": "yetim"
+    },
+    {
+      "key": "fakir",
+      "word": "fakir"
+    },
+    {
+      "key": "zengin",
+      "word": "zengin"
+    },
+    {
+      "key": "para",
+      "word": "para"
+    },
+    {
+      "key": "pul",
+      "word": "pul"
+    },
+    {
+      "key": "elmas",
+      "word": "elmas"
+    },
+    {
+      "key": "yuzuk",
+      "word": "yüzük"
+    },
+    {
+      "key": "kupe",
+      "word": "küpe"
+    },
+    {
+      "key": "gerdanlik",
+      "word": "gerdanlık"
+    },
+    {
+      "key": "gelinlik",
+      "word": "gelinlik"
+    },
+    {
+      "key": "dugun",
+      "word": "düğün"
+    },
+    {
+      "key": "nisan",
+      "word": "nişan"
+    },
+    {
+      "key": "kina",
+      "word": "kına"
+    },
+    {
+      "key": "davet",
+      "word": "davet"
+    },
+    {
+      "key": "bayram",
+      "word": "bayram"
+    },
+    {
+      "key": "okul",
+      "word": "okul"
+    },
+    {
+      "key": "ders",
+      "word": "ders"
+    },
+    {
+      "key": "ogretmen",
+      "word": "öğretmen"
+    },
+    {
+      "key": "sinav",
+      "word": "sınav"
+    },
+    {
+      "key": "diploma",
+      "word": "diploma"
+    },
+    {
+      "key": "is",
+      "word": "iş"
+    },
+    {
+      "key": "patron",
+      "word": "patron"
+    },
+    {
+      "key": "maas",
+      "word": "maaş"
+    },
+    {
+      "key": "mesai",
+      "word": "mesai"
+    },
+    {
+      "key": "pazar",
+      "word": "pazar"
+    },
+    {
+      "key": "cuma",
+      "word": "cuma"
+    },
+    {
+      "key": "cumartesi",
+      "word": "cumartesi"
+    },
+    {
+      "key": "pazartesi",
+      "word": "pazartesi"
+    },
+    {
+      "key": "ocak",
+      "word": "ocak"
+    },
+    {
+      "key": "subat",
+      "word": "şubat"
+    },
+    {
+      "key": "mart",
+      "word": "mart"
+    },
+    {
+      "key": "mayis",
+      "word": "mayıs"
+    },
+    {
+      "key": "haziran",
+      "word": "haziran"
+    },
+    {
+      "key": "temmuz",
+      "word": "temmuz"
+    },
+    {
+      "key": "agustos",
+      "word": "ağustos"
+    },
+    {
+      "key": "eylul",
+      "word": "eylül"
+    },
+    {
+      "key": "ekim",
+      "word": "ekim"
+    },
+    {
+      "key": "kasim",
+      "word": "kasım"
+    },
+    {
+      "key": "aralik",
+      "word": "aralık"
+    },
+    {
+      "key": "bir",
+      "word": "bir"
+    },
+    {
+      "key": "iki",
+      "word": "iki"
+    },
+    {
+      "key": "uc",
+      "word": "üç"
+    },
+    {
+      "key": "dort",
+      "word": "dört"
+    },
+    {
+      "key": "bes",
+      "word": "beş"
+    },
+    {
+      "key": "on",
+      "word": "on"
+    },
+    {
+      "key": "bin",
+      "word": "bin"
+    },
+    {
+      "key": "milyon",
+      "word": "milyon"
+    },
+    {
+      "key": "ilk",
+      "word": "ilk"
+    },
+    {
+      "key": "son",
+      "word": "son"
+    },
+    {
+      "key": "sonsuz",
+      "word": "sonsuz"
+    },
+    {
+      "key": "sonsuza",
+      "word": "sonsuza"
+    },
+    {
+      "key": "ebedi",
+      "word": "ebedi"
+    },
+    {
+      "key": "daima",
+      "word": "daima"
+    },
+    {
+      "key": "hep",
+      "word": "hep"
+    },
+    {
+      "key": "asla",
+      "word": "asla"
+    },
+    {
+      "key": "hic",
+      "word": "hiç"
+    },
+    {
+      "key": "belki",
+      "word": "belki"
+    },
+    {
+      "key": "keske",
+      "word": "keşke"
+    },
+    {
+      "key": "eger",
+      "word": "eğer"
+    },
+    {
+      "key": "simdi",
+      "word": "şimdi"
+    },
+    {
+      "key": "artik",
+      "word": "artık"
+    },
+    {
+      "key": "hala",
+      "word": "hâlâ"
+    },
+    {
+      "key": "yine",
+      "word": "yine"
+    },
+    {
+      "key": "bazen",
+      "word": "bazen"
+    },
+    {
+      "key": "her",
+      "word": "her"
+    },
+    {
+      "key": "herkes",
+      "word": "herkes"
+    },
+    {
+      "key": "kimse",
+      "word": "kimse"
+    },
+    {
+      "key": "kimin",
+      "word": "kimin"
+    },
+    {
+      "key": "neden",
+      "word": "neden"
+    },
+    {
+      "key": "nicin",
+      "word": "niçin"
+    },
+    {
+      "key": "nasil",
+      "word": "nasıl"
+    },
+    {
+      "key": "nerede",
+      "word": "nerede"
+    },
+    {
+      "key": "ben",
+      "word": "ben"
+    },
+    {
+      "key": "sen",
+      "word": "sen"
+    },
+    {
+      "key": "o",
+      "word": "o"
+    },
+    {
+      "key": "biz",
+      "word": "biz"
+    },
+    {
+      "key": "siz",
+      "word": "siz"
+    },
+    {
+      "key": "onlar",
+      "word": "onlar"
+    },
+    {
+      "key": "bana",
+      "word": "bana"
+    },
+    {
+      "key": "sana",
+      "word": "sana"
+    },
+    {
+      "key": "beni",
+      "word": "beni"
+    },
+    {
+      "key": "seni",
+      "word": "seni"
+    },
+    {
+      "key": "benim",
+      "word": "benim"
+    },
+    {
+      "key": "senin",
+      "word": "senin"
+    },
+    {
+      "key": "bizim",
+      "word": "bizim"
+    },
+    {
+      "key": "kendim",
+      "word": "kendim"
+    },
+    {
+      "key": "uzak",
+      "word": "uzak"
+    },
+    {
+      "key": "yakin",
+      "word": "yakın"
+    },
+    {
+      "key": "derin",
+      "word": "derin"
+    },
+    {
+      "key": "yuksek",
+      "word": "yüksek"
+    },
+    {
+      "key": "alcak",
+      "word": "alçak"
+    },
+    {
+      "key": "buyuk",
+      "word": "büyük"
+    },
+    {
+      "key": "kucuk",
+      "word": "küçük"
+    },
+    {
+      "key": "eski",
+      "word": "eski"
+    },
+    {
+      "key": "yeni",
+      "word": "yeni"
+    },
+    {
+      "key": "genc",
+      "word": "genç"
+    },
+    {
+      "key": "yasli",
+      "word": "yaşlı"
+    },
+    {
+      "key": "sicak",
+      "word": "sıcak"
+    },
+    {
+      "key": "soguk",
+      "word": "soğuk"
+    },
+    {
+      "key": "serin",
+      "word": "serin"
+    },
+    {
+      "key": "ilik",
+      "word": "ılık"
+    },
+    {
+      "key": "tatli",
+      "word": "tatlı"
+    },
+    {
+      "key": "eksi",
+      "word": "ekşi"
+    },
+    {
+      "key": "tuzlu",
+      "word": "tuzlu"
+    },
+    {
+      "key": "kalbim",
+      "word": "kalbim"
+    },
+    {
+      "key": "kalbin",
+      "word": "kalbin"
+    },
+    {
+      "key": "gozlerim",
+      "word": "gözlerim"
+    },
+    {
+      "key": "gozlerin",
+      "word": "gözlerin"
+    },
+    {
+      "key": "ellerim",
+      "word": "ellerim"
+    },
+    {
+      "key": "ellerin",
+      "word": "ellerin"
+    },
+    {
+      "key": "saclarin",
+      "word": "saçların"
+    },
+    {
+      "key": "yuzun",
+      "word": "yüzün"
+    },
+    {
+      "key": "sesin",
+      "word": "sesin"
+    },
+    {
+      "key": "bekle",
+      "word": "bekle"
+    },
+    {
+      "key": "gel",
+      "word": "gel"
+    },
+    {
+      "key": "git",
+      "word": "git"
+    },
+    {
+      "key": "don",
+      "word": "dön"
+    },
+    {
+      "key": "kal",
+      "word": "kal"
+    },
+    {
+      "key": "sus",
+      "word": "sus"
+    },
+    {
+      "key": "soyle",
+      "word": "söyle"
+    },
+    {
+      "key": "bak",
+      "word": "bak"
+    },
+    {
+      "key": "gor",
+      "word": "gör"
+    },
+    {
+      "key": "duy",
+      "word": "duy"
+    },
+    {
+      "key": "anla",
+      "word": "anla"
+    },
+    {
+      "key": "sev",
+      "word": "sev"
+    },
+    {
+      "key": "unut",
+      "word": "unut"
+    },
+    {
+      "key": "cennet",
+      "word": "cennet"
+    },
+    {
+      "key": "cehennem",
+      "word": "cehennem"
+    },
+    {
+      "key": "melek",
+      "word": "melek"
+    },
+    {
+      "key": "seytan",
+      "word": "şeytan"
+    },
+    {
+      "key": "dua",
+      "word": "dua"
+    },
+    {
+      "key": "namaz",
+      "word": "namaz"
+    },
+    {
+      "key": "cami",
+      "word": "cami"
+    },
+    {
+      "key": "kilise",
+      "word": "kilise"
+    },
+    {
+      "key": "allah",
+      "word": "Allah"
+    },
+    {
+      "key": "tanri",
+      "word": "tanrı"
+    },
+    {
+      "key": "hasta",
+      "word": "hasta"
+    },
+    {
+      "key": "doktor",
+      "word": "doktor"
+    },
+    {
+      "key": "ilac",
+      "word": "ilaç"
+    },
+    {
+      "key": "hastane",
+      "word": "hastane"
+    },
+    {
+      "key": "bere",
+      "word": "bere"
+    },
+    {
+      "key": "kan",
+      "word": "kan"
+    },
+    {
+      "key": "oglan",
+      "word": "oğlan"
+    },
+    {
+      "key": "delikanli",
+      "word": "delikanlı"
+    },
+    {
+      "key": "efe",
+      "word": "efe"
+    },
+    {
+      "key": "zeybek",
+      "word": "zeybek"
+    },
+    {
+      "key": "dadas",
+      "word": "dadaş"
+    },
+    {
+      "key": "ayna",
+      "word": "ayna"
+    },
+    {
+      "key": "saat",
+      "word": "saat"
+    },
+    {
+      "key": "takvim",
+      "word": "takvim"
+    },
+    {
+      "key": "mum",
+      "word": "mum"
+    },
+    {
+      "key": "fener",
+      "word": "fener"
+    },
+    {
+      "key": "lamba",
+      "word": "lamba"
+    },
+    {
+      "key": "yuregim",
+      "word": "yüreğim"
+    },
+    {
+      "key": "gonlum",
+      "word": "gönlüm"
+    },
+    {
+      "key": "canimsin",
+      "word": "canımsın"
+    },
+    {
+      "key": "sevdigim",
+      "word": "sevdiğim"
+    },
+    {
+      "key": "yarim",
+      "word": "yarim"
+    },
+    {
+      "key": "ruzgarlar",
+      "word": "rüzgârlar"
+    },
+    {
+      "key": "bulutlar",
+      "word": "bulutlar"
+    },
+    {
+      "key": "dalgalar",
+      "word": "dalgalar"
+    },
+    {
+      "key": "yagmurlar",
+      "word": "yağmurlar"
+    },
+    {
+      "key": "hosca",
+      "word": "hoşça"
+    },
+    {
+      "key": "elveda",
+      "word": "elveda"
+    },
+    {
+      "key": "merhaba",
+      "word": "merhaba"
+    },
+    {
+      "key": "selam",
+      "word": "selam"
+    },
+    {
+      "key": "balkon",
+      "word": "balkon"
+    },
+    {
+      "key": "sokak",
+      "word": "sokak"
+    },
+    {
+      "key": "cadde",
+      "word": "cadde"
+    },
+    {
+      "key": "meydan",
+      "word": "meydan"
+    },
+    {
+      "key": "kopru",
+      "word": "köprü"
+    },
+    {
+      "key": "etmek",
+      "word": "etmek"
+    },
+    {
+      "key": "uyumak",
+      "word": "uyumak"
+    },
+    {
+      "key": "uyanmak",
+      "word": "uyanmak"
+    },
+    {
+      "key": "susmak",
+      "word": "susmak"
+    },
+    {
+      "key": "gidiyorum",
+      "word": "gidiyorum"
+    },
+    {
+      "key": "geliyorum",
+      "word": "geliyorum"
+    },
+    {
+      "key": "seviyorum",
+      "word": "seviyorum"
+    },
+    {
+      "key": "ozledim",
+      "word": "özledim"
+    },
+    {
+      "key": "yalanci",
+      "word": "yalancı"
+    },
+    {
+      "key": "vefasiz",
+      "word": "vefasız"
+    },
+    {
+      "key": "zalim",
+      "word": "zalim"
+    },
+    {
+      "key": "acimasiz",
+      "word": "acımasız"
+    },
+    {
+      "key": "kismet",
+      "word": "kısmet"
+    },
+    {
+      "key": "nasip",
+      "word": "nasip"
+    },
+    {
+      "key": "sampanya",
+      "word": "şampanya"
+    },
+    {
+      "key": "kahkaha",
+      "word": "kahkaha"
+    },
+    {
+      "key": "gozyaslarim",
+      "word": "gözyaşlarım"
+    },
+    {
+      "key": "bahce",
+      "word": "bahçe"
+    },
+    {
+      "key": "cardak",
+      "word": "çardak"
+    },
+    {
+      "key": "cesme",
+      "word": "çeşme"
+    },
+    {
+      "key": "kuyu",
+      "word": "kuyu"
+    },
+    {
+      "key": "degirmen",
+      "word": "değirmen"
+    },
+    {
+      "key": "tarla",
+      "word": "tarla"
+    },
+    {
+      "key": "bag",
+      "word": "bağ"
+    },
+    {
+      "key": "bostan",
+      "word": "bostan"
+    },
+    {
+      "key": "harman",
+      "word": "harman"
+    },
+    {
+      "key": "koyun",
+      "word": "koyun"
+    },
+    {
+      "key": "kuzu",
+      "word": "kuzu"
+    },
+    {
+      "key": "at",
+      "word": "at"
+    },
+    {
+      "key": "kisrak",
+      "word": "kısrak"
+    },
+    {
+      "key": "deve",
+      "word": "deve"
+    },
+    {
+      "key": "coban",
+      "word": "çoban"
+    },
+    {
+      "key": "koylu",
+      "word": "köylü"
+    },
+    {
+      "key": "kasaba",
+      "word": "kasaba"
+    },
+    {
+      "key": "mendil",
+      "word": "mendil"
+    },
+    {
+      "key": "yazma",
+      "word": "yazma"
+    },
+    {
+      "key": "sal",
+      "word": "şal"
+    },
+    {
+      "key": "kemer",
+      "word": "kemer"
+    },
+    {
+      "key": "yorgan",
+      "word": "yorgan"
+    },
+    {
+      "key": "yastik",
+      "word": "yastık"
+    },
+    {
+      "key": "ninni",
+      "word": "ninni"
+    },
+    {
+      "key": "gozlum",
+      "word": "gözlüm"
+    },
+    {
+      "key": "ela",
+      "word": "ela"
+    },
+    {
+      "key": "kirpik",
+      "word": "kirpik"
+    },
+    {
+      "key": "kas",
+      "word": "kaş"
+    },
+    {
+      "key": "gamze",
+      "word": "gamze"
+    },
+    {
+      "key": "sarhosluk",
+      "word": "sarhoşluk"
+    },
+    {
+      "key": "mestlik",
+      "word": "mestlik"
+    },
+    {
+      "key": "kirik",
+      "word": "kırık"
+    },
+    {
+      "key": "dokuk",
+      "word": "dökük"
+    },
+    {
+      "key": "paramparca",
+      "word": "paramparça"
+    }
+  ]
+}

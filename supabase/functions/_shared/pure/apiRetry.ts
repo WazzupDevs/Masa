@@ -5,7 +5,7 @@
 // sent, a request created), so its 5xx is shown to the user instead.
 import type { CheckinRequest } from './api/checkin.ts';
 import type { DmRequest, FriendsRequest } from './api/friends.ts';
-import type { SahtekarRequest, TabuRequest } from './api/games.ts';
+import type { HarfRequest, SahtekarRequest, SarkiRequest, TabuRequest } from './api/games.ts';
 import type { ProfileRequest } from './api/profile.ts';
 import type { RevealRequest } from './api/reveal.ts';
 
@@ -18,6 +18,8 @@ type CallName =
   | `dm/${DmRequest['action']}`
   | `tabu/${TabuRequest['action']}`
   | `sahtekar/${SahtekarRequest['action']}`
+  | `harf/${HarfRequest['action']}`
+  | `sarki/${SarkiRequest['action']}`
   | `reveal/${RevealRequest['action']}`;
 
 export const IDEMPOTENT_CALLS = [
@@ -52,6 +54,18 @@ export const IDEMPOTENT_CALLS = [
   // sahtekar.test "sahtekar, seeing the word": "drops a seat that did not look in 2 minutes, and
   // its table counts one less"
   'sahtekar/advance',
+  // say.test "Harf Kapmaca, two tables": "starts the clock from the starting table, or from either
+  // table after readyEndsAt"
+  'harf/begin',
+  // say.test "Harf Kapmaca, two tables": "gives the round to the other table when the clock runs
+  // out, once from both phones"
+  'harf/advance',
+  // say.test "Şarkıda Geçsin, two tables": "opens only the first word ready; the next word starts
+  // at once with the other table"
+  'sarki/begin',
+  // say.test "Şarkıda Geçsin, two tables": "opens only the first word ready; the next word starts
+  // at once with the other table"
+  'sarki/advance',
   // reveal.test "reveal/finalize and cleanup": "does nothing before the window ends, then closes
   // with "none" for both"
   'reveal/finalize',
