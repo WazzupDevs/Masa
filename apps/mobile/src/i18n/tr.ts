@@ -59,6 +59,23 @@ function clock(iso: string): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
+// Turkish suffixes after a seat label ("A2'ye", "A3'te", "A2'yim"), by how its last digit is read
+// (bir, iki, üç …). Seats are A1–A4 and B1–B4; the table covers 0–9.
+const SEAT_SUFFIX: Record<string, { dative: string; locative: string; copula: string }> = {
+  '0': { dative: 'a', locative: 'da', copula: 'um' },
+  '1': { dative: 'e', locative: 'de', copula: 'im' },
+  '2': { dative: 'ye', locative: 'de', copula: 'yim' },
+  '3': { dative: 'e', locative: 'te', copula: 'üm' },
+  '4': { dative: 'e', locative: 'te', copula: 'üm' },
+  '5': { dative: 'e', locative: 'te', copula: 'im' },
+  '6': { dative: 'ya', locative: 'da', copula: 'yım' },
+  '7': { dative: 'ye', locative: 'de', copula: 'yim' },
+  '8': { dative: 'e', locative: 'de', copula: 'im' },
+  '9': { dative: 'a', locative: 'da', copula: 'um' },
+};
+const seatTo = (seat: string, kind: 'dative' | 'locative' | 'copula') =>
+  `${seat}'${SEAT_SUFFIX[seat.slice(-1)]?.[kind] ?? ''}`;
+
 export const tr = {
   app: {
     name: APP_NAME,
@@ -618,6 +635,67 @@ export const tr = {
       },
     ],
     introDone: 'Anladım, başlayalım',
+  },
+  // Harf Kapmaca and Şarkıda Geçsin (docs/SPEC_V3.md §20.3–20.4): say, then the other table may
+  // object within 3 seconds; three objections per table.
+  say: {
+    category: 'Kategori',
+    word: 'Kelime',
+    letterClosed: (l: string) => `${l}, kapandı`,
+    said: 'Söyledik',
+    object: 'İtiraz',
+    objected: 'İtiraz!',
+    objectionsShort: (n: number) => `${n} hak`,
+    objectionsLeft: (n: number) => `${n} itiraz hakkı kaldı`,
+    window: (s: number) => `İtiraz penceresi · ${s} sn`,
+    windowLabel: (s: number) => `İtiraz için ${s} saniye`,
+    sayLine: 'Geçtiği bir şarkıdan bir dize söyleyin',
+    pickLetter: 'Kelimeyi söyle, baş harfine dokun.',
+  },
+  // Sahtekar (docs/SPEC_V3.md §20.2): seats are game labels, never identities.
+  sahtekar: {
+    seatDone: (seat: string) => `${seat}, baktı`,
+    viewedCount: (seen: number, total: number) => `${seen} / ${total} baktı`,
+    passTo: (seat: string) => `Telefonu ${seatTo(seat, 'dative')} ver`,
+    passHint: 'Başkası ekrana bakmasın.',
+    ready: (seat: string) => `Ben ${seatTo(seat, 'copula')}, kartımı göster`,
+    hold: 'Basılı tut',
+    holdHint: 'Parmağını kaldırınca kart kapanır.',
+    holdLabel: (seat: string) => `${seat}, kartını görmek için basılı tut`,
+    loading: 'Kart geliyor…',
+    category: (c: string) => `Kategori: ${c}`,
+    notImposter: 'Sahtekar değilsin',
+    youAreImposter: 'Sahtekarsın',
+    imposterHint: 'Kelimeyi bilmiyorsun. Dinle, belli etme.',
+    seen: 'Gördüm, telefonu ver',
+    clueRound: (n: number, total: number) => `İpucu turu ${n} / ${total}`,
+    turnOf: (seat: string) => `Sıra ${seatTo(seat, 'locative')}`,
+    clueHint: 'Tek kelime, 15 sn. Söyleyince bu masa "Söyledi"ye basar.',
+    speaking: (seat: string) => `${seat} söylüyor`,
+    said: (seat: string) => `${seat} söyledi`,
+    saidButton: 'Söyledi',
+    otherSpeaking: 'Sıra diğer masada. Dinleyin.',
+    votesCast: (n: number, total: number) => `Oylama · ${n} / ${total} oy`,
+    whoIsImposter: (seat: string) => `${seat}, sahtekar kim?`,
+    voteHint: 'Gizli oy: kimse göremez. Oy verince telefonu sıradakine ver.',
+    selfVote: (seat: string) => `${seat}, kendine oy veremezsin`,
+    you: 'sen',
+    voteFor: (seat: string) => `${seatTo(seat, 'dative')} oy ver`,
+    pickSeat: 'Bir koltuk seç',
+    lastChance: (seat: string) => `Son şans · ${seat}`,
+    guessTitle: 'Yakalandın. Kelime neydi?',
+    guessHint: (c: string) => `Bilirsen sahtekar yine kazanır. Kategori: ${c}`,
+    guessSubmit: (w: string) => `${w}, tahminim bu`,
+    pickWord: 'Bir kelime seç',
+    caught: (seat: string) => `${seat} yakalandı`,
+    guessingNow: 'Şimdi kelimeyi tahmin ediyor. Bilirse sahtekar kazanır.',
+    imposterWas: 'Sahtekar',
+    tablesWon: 'Masalar kazandı!',
+    imposterWon: 'Sahtekar kazandı!',
+    word: (w: string) => `Kelime: ${w}`,
+    wordAndGuess: (w: string, g: string) => `Kelime: ${w} · tahmin: ${g}`,
+    votesLabel: 'Oylar',
+    voteLine: (voter: string, target: string) => `${voter}, ${seatTo(target, 'dative')} oy verdi`,
   },
   reveal: {
     question: 'Tanışalım mı?',

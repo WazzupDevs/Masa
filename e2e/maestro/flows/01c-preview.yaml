@@ -8,7 +8,7 @@ appId: app.kabuk.mobile
 - scrollUntilVisible:
     element:
       id: preview-open
-    timeout: 10000
+    timeout: 30000
 - tapOn:
     id: preview-open
 - extendedWaitUntil:
@@ -20,24 +20,24 @@ appId: app.kabuk.mobile
     element:
       id: turn-start
     centerElement: true
-    timeout: 10000
+    timeout: 30000
 - takeScreenshot: 04c-preview-games-2
 - scrollUntilVisible:
     element:
       id: turn-countdown
     centerElement: true
-    timeout: 10000
+    timeout: 30000
 - takeScreenshot: 04c-preview-games-3
 - scrollUntilVisible:
     element:
       id: time-up
     centerElement: true
-    timeout: 10000
+    timeout: 30000
 - takeScreenshot: 04c-preview-games-4
 - scrollUntilVisible:
     element:
       id: preview-intro
-    timeout: 10000
+    timeout: 30000
 - tapOn:
     id: preview-confirm
 - extendedWaitUntil:
@@ -56,6 +56,110 @@ appId: app.kabuk.mobile
 - takeScreenshot: 04c-preview-intro
 - tapOn:
     id: intro-skip
+# Aşama 7 · Sahtekar
+- back
+- extendedWaitUntil:
+    visible:
+      id: preview-open
+    timeout: 10000
+- tapOn:
+    id: preview-open
+- extendedWaitUntil:
+    visible:
+      id: preview-set-sahtekar
+    timeout: 10000
+- tapOn:
+    id: preview-set-sahtekar
+- extendedWaitUntil:
+    visible:
+      id: sahtekar-pass
+    timeout: 10000
+- takeScreenshot: 04d-sahtekar-pass
+- scrollUntilVisible:
+    element:
+      id: preview-card-word
+    centerElement: true
+    timeout: 30000
+- takeScreenshot: 04d-sahtekar-word
+- scrollUntilVisible:
+    element:
+      id: preview-card-imposter
+    centerElement: true
+    timeout: 30000
+- takeScreenshot: 04d-sahtekar-imposter
+- scrollUntilVisible:
+    element:
+      id: sahtekar-clues
+    centerElement: true
+    timeout: 30000
+- takeScreenshot: 04d-sahtekar-clues
+- scrollUntilVisible:
+    element:
+      id: sahtekar-vote
+    centerElement: true
+    timeout: 30000
+- takeScreenshot: 04d-sahtekar-vote
+- scrollUntilVisible:
+    element:
+      id: sahtekar-guess
+    centerElement: true
+    timeout: 30000
+- takeScreenshot: 04d-sahtekar-guess
+- scrollUntilVisible:
+    element:
+      id: sahtekar-guess-wait
+    centerElement: true
+    timeout: 30000
+- takeScreenshot: 04d-sahtekar-guess-wait
+- scrollUntilVisible:
+    element:
+      id: sahtekar-reveal
+    centerElement: true
+    timeout: 30000
+- takeScreenshot: 04d-sahtekar-reveal
+# Aşama 7 · Harf Kapmaca ve Şarkıda Geçsin
+- back
+- extendedWaitUntil:
+    visible:
+      id: preview-open
+    timeout: 10000
+- tapOn:
+    id: preview-open
+- extendedWaitUntil:
+    visible:
+      id: preview-set-say
+    timeout: 10000
+- tapOn:
+    id: preview-set-say
+- extendedWaitUntil:
+    visible:
+      id: preview-letters
+    timeout: 10000
+- takeScreenshot: 04e-say-letters
+- scrollUntilVisible:
+    element:
+      id: preview-object
+    centerElement: true
+    timeout: 30000
+- takeScreenshot: 04e-say-object
+- scrollUntilVisible:
+    element:
+      id: objection-result
+    centerElement: true
+    timeout: 30000
+- takeScreenshot: 04e-say-objected
+- scrollUntilVisible:
+    element:
+      id: preview-song
+    centerElement: true
+    timeout: 30000
+- takeScreenshot: 04e-say-song
+- scrollUntilVisible:
+    element:
+      id: preview-song-object
+    centerElement: true
+    timeout: 30000
+- takeScreenshot: 04e-say-song-object
 # The preview and Ayarlar are scrolled down; the system back key leaves both without scrolling up.
 - back
 - extendedWaitUntil:
