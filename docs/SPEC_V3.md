@@ -1182,6 +1182,17 @@ Tasarımın bileşenleriyle:
 - Cihaz oy verir; açılış ekranı görünür.
 - Entegrasyon testi: sahtekar olmayan masaya sahtekar bilgisi, sahtekara kelime gitmez.
 
+### 20.2a Uygulamada netleşenler (7.1 sunucu)
+
+- **İstemci henüz görmüyor.** `rooms/propose-game` `sahtekar`'ı kabul eder (`pure/rooms.ts` → `PROPOSABLE_CONCEPTS`), ama uygulamanın öneri düğmeleri `CONCEPTS`'ten gelir ve orada yalnızca Sesli Tabu ile Sohbet kartları vardır. Sahtekar, ekranlarıyla birlikte `CONCEPTS`'e girer (tasarımın "Aşama 7 Sahtekar" PR'ından sonra).
+- **Sayı alanları:** `rooms/propose-game { players }` ve `rooms/answer-game { players }` (1-4) yalnızca Sahtekar'da okunur. Verilmezse masanın check-in sayısı (en çok 4).
+- **3'ten az:** kabul `not_enough_players` (409) döner. Sunucu öneriyi siler (fonksiyon reddi geri aldığı için kabul edenin adına ayrıca reddeder); iki masa da öneriyi kaybolmuş görür.
+- **Hata kodları:** `not_your_seat` (403): başka masanın koltuğu, konuşma sırası ya da tahmini. `bad_request` (400): kendine oy, seçeneklerde olmayan tahmin. Görme ya da oylama süresi geçmişse `turn_over` (409).
+- **Deste:** `cards` satırı kelime başınadır. `theme` kategori anahtarı, `prompt` kategorinin adıdır. Uygulama desteyi okuyamaz (kart politikası yalnızca Sohbet destesini açar). Seçenekler kelimenin kendi kategorisindendir. Kelime oyun başlarken gösterilmiş sayılır (`room_used_cards`).
+- **Tek masalı oyun:** `sahtekar/start` odanın etkinliğini Sahtekar yapar (yerel Tabu gibi). Yanıt `{ category, word, options }`'tur. Oyunu telefon `pure/sahtekar.ts` → `reduceLocal` ile yürütür.
+- **İdempotentlik:** `sahtekar/advance` `IDEMPOTENT_CALLS`'tadır. Tekrar görme aynı yanıtı verir; ikinci oy ve eski adıma "Söyledi" yok sayılır.
+- **Analitik:** `game_completed`'e `outcome` (`imposter` | `tables`) ve `players` (toplam) eklendi. Gönderen kod ekranlarla gelir.
+
 ### 20.3 Harf Kapmaca
 
 **Kurallar.**
