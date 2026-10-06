@@ -200,7 +200,7 @@ begin
           'owner', (c ->> 'objections')::integer, 'guest', (c ->> 'objections')::integer
         ),
         'scores', jsonb_build_object('owner', 0, 'guest', 0),
-        'lastRound', null
+        'lastRound', null, 'timeouts', 0
       )
   where id = r.id
   returning * into r;
@@ -227,11 +227,14 @@ declare
   owner_score integer;
   guest_score integer;
   ready boolean := (c ->> 'readyEachRound')::boolean;
+  timeouts integer;
 begin
   if winner is not null then
     scores := jsonb_set(scores, array[winner], to_jsonb((scores ->> winner)::integer + 1));
   end if;
   last_round := jsonb_build_object('roundNo', round_no, 'winner', winner, 'reason', reason);
+  timeouts := coalesce((r.game_state ->> 'timeouts')::integer, 0)
+              + case when reason = 'timeout' then 1 else 0 end;
 
   if round_no >= (r.game_state ->> 'totalRounds')::integer then
     owner_score := (scores ->> 'owner')::integer;
@@ -249,7 +252,7 @@ begin
     set concept = null, last_activity_at = now(),
         game_state = private.between_games(r.game_state, jsonb_build_object(
           'concept', kind, 'scores', scores, 'lastRound', last_round,
-          'objectionsLeft', r.game_state -> 'objectionsLeft'
+          'objectionsLeft', r.game_state -> 'objectionsLeft', 'timeouts', timeouts
         ))
     where id = r.id
     returning * into r;
@@ -269,7 +272,8 @@ begin
           then now() + make_interval(secs => (c ->> 'readySeconds')::integer) end,
         'endsAt', case when ready then null
           else now() + make_interval(secs => private.say_turn_seconds(kind, round_no)) end,
-        'objectionEndsAt', null, 'lastClaim', null, 'scores', scores, 'lastRound', last_round
+        'objectionEndsAt', null, 'lastClaim', null, 'scores', scores, 'lastRound', last_round,
+        'timeouts', timeouts
       )
   where id = r.id
   returning * into r;
