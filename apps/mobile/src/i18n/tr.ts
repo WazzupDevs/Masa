@@ -859,6 +859,7 @@ export const tr = {
     turn_not_started: 'Tur henüz başlamadı.',
     not_your_seat: 'Bu sıra senin masanın değil.',
     not_enough_players: 'Bu oyun için en az 3 oyuncu gerekiyor.',
+    no_objections_left: 'İtiraz hakkınız kalmadı.',
     no_passes_left: 'Pas hakkınız kalmadı.',
     too_soon: 'Biraz bekle.',
     no_cards: 'Kart kalmadı.',
