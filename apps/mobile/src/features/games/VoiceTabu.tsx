@@ -4,20 +4,23 @@ import {
   isVoiceTabu,
   type Mark,
   type MarkResult,
+  mayBeginTurn,
   optimisticView,
   pendingAfter,
   roleOf,
+  TABU,
   type TableSide,
   type VoiceTabuState,
   voiceWinner,
 } from '@shared/tabu.ts';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Text } from '@/components/Text';
+import { roomKeys } from '@/features/rooms/queries';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { gamesApi } from '@/lib/api';
@@ -27,6 +30,8 @@ import { ICON, SPACING } from '@/theme/tokens';
 
 import { ClockPill, RoleNote, TeamScore } from './GameBits';
 import { TabuCardView } from './TabuCardView';
+import { tabuStats, TurnReady } from './TurnReady';
+import { useTurnFeedback } from './useTurnFeedback';
 
 // Height of the covered card, about that of an open one.
 const COVER_HEIGHT = 192;
@@ -55,7 +60,76 @@ export function VoiceTabu({ roomId, state, side, aliases }: Props) {
       </Text>
     );
   }
+  if (voice.turnPhase === 'ready') {
+    return <ReadyTurn roomId={roomId} server={voice} side={side} aliases={aliases} />;
+  }
   return <Turn roomId={roomId} server={voice} side={side} aliases={aliases} />;
+}
+
+// Between turns (docs/SPEC_V3.md §19.1, canvas: Aşama 6 · Oyunlar → Tur hazır): the last turn's
+// summary; "Başla" on the describing table, "… hazırlanıyor" and the countdown on the other one.
+// When the countdown runs out either phone starts the turn (the server checks the time, and a
+// second call changes nothing).
+function ReadyTurn({
+  roomId,
+  server,
+  side,
+  aliases,
+}: {
+  roomId: string;
+  server: VoiceTabuState;
+  side: TableSide;
+  aliases: Record<TableSide, string>;
+}) {
+  const now = useNow(250);
+  const queryClient = useQueryClient();
+  const role = roleOf(server, side);
+  const readyEndsAt = server.readyEndsAt ?? new Date(now).toISOString();
+  const secondsLeft = Math.max(0, Math.ceil((Date.parse(readyEndsAt) - now) / 1000));
+  const begin = useMutation({
+    mutationFn: () => gamesApi.tabuBeginTurn(roomId),
+    onSettled: () => void queryClient.invalidateQueries({ queryKey: roomKeys.room(roomId) }),
+  });
+
+  const { mutate } = begin;
+  const autoStarted = useRef<number | null>(null);
+  useEffect(() => {
+    if (mayBeginTurn('judge', readyEndsAt, now) && autoStarted.current !== server.turnNo) {
+      autoStarted.current = server.turnNo;
+      mutate();
+    }
+  }, [now, readyEndsAt, server.turnNo, mutate]);
+
+  const last = server.lastTurn;
+  return (
+    <View className="gap-3">
+      <TurnReady
+        testID="turn-ready"
+        summary={
+          last
+            ? {
+                eyebrow: tr.games.turnDone(last.turnNo),
+                alias: aliases[last.describingTable],
+                title: tr.games.turnSummaryTitle(aliases[last.describingTable]),
+                points: tr.games.signedPoints(last.score),
+                stats: tabuStats(last.correct, last.taboo, last.pass),
+              }
+            : undefined
+        }
+        describing={role === 'describer'}
+        describingAlias={aliases[server.describingTable]}
+        secondsLeft={secondsLeft}
+        totalSeconds={TABU.readySeconds}
+        onStart={() => mutate()}
+        starting={begin.isPending}
+      />
+      {begin.isError ? (
+        <Text variant="fine" tone="danger">
+          {errorMessage(begin.error)}
+        </Text>
+      ) : null}
+    </View>
+  );
 }
 
 // The last game's result in the chat room: both scores and the winner.
@@ -182,7 +256,21 @@ function Turn({
   const [revealedTurn, setRevealedTurn] = useState<number | null>(null);
   const covered = role === 'describer' && revealedTurn !== server.turnNo;
 
-  const secondsLeft = Math.max(0, Math.ceil((Date.parse(server.turnEndsAt) - now) / 1000));
+  const secondsLeft = server.turnEndsAt
+    ? Math.max(0, Math.ceil((Date.parse(server.turnEndsAt) - now) / 1000))
+    : 0;
+  // The last 5 seconds and the end: vibration and "Süre bitti!" with this turn's points
+  // (docs/SPEC_V3.md §19.2). The turn's points: the describing side's score now less what it had
+  // when this phone first saw the turn.
+  const turnKey = `${roomId}:${server.gameNo}:${server.turnNo}`;
+  const sideScore = 'team' in view.scores ? view.scores.team : view.scores[view.describingTable];
+  const [turnStart, setTurnStart] = useState({ key: turnKey, score: sideScore });
+  if (turnStart.key !== turnKey) setTurnStart({ key: turnKey, score: sideScore });
+  useTurnFeedback(
+    turnKey,
+    secondsLeft,
+    tr.games.turnPointsLine(aliases[server.describingTable], sideScore - turnStart.score),
+  );
 
   // Any table ends the turn when the countdown reaches zero; the server checks and is idempotent.
   const endedTurn = useRef<number | null>(null);

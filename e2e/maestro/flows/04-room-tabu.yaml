@@ -113,13 +113,22 @@ appId: app.kabuk.mobile
 - takeScreenshot: 16b-proposal
 - tapOn:
     id: proposal-accept
-# Turn 1 opens ready (docs/SPEC_V3.md §19.1). Until the app has its Başla button (step 7, A2) the
-# bot table starts this phone's turn, as either table may once readyEndsAt has passed.
-- runScript:
-    file: ../scripts/bot.js
-    env:
-      ACTION: begin-turn
-      BODY: '{"force":true}'
+# The device's first two-table game: Sesli Tabu's short intro, once (docs/SPEC_V3.md §19.2).
+- extendedWaitUntil:
+    visible:
+      id: first-game-intro
+    timeout: 20000
+- takeScreenshot: 16c-first-game-intro
+- tapOn:
+    id: intro-done
+# Turn 1 opens ready (§19.1): this phone describes and starts it with Başla.
+- extendedWaitUntil:
+    visible:
+      id: turn-start
+    timeout: 15000
+- takeScreenshot: 16d-turn-ready
+- tapOn:
+    id: turn-start
 # Turn 1: the owner table (this phone) describes; its card starts covered.
 - extendedWaitUntil:
     visible: Kartı görmek için dokun
@@ -167,7 +176,13 @@ appId: app.kabuk.mobile
     file: ../scripts/bot.js
     env:
       ACTION: expire-turn
-# Turn 2 opens ready; the bot table describes and starts it.
+# Turn 2 opens ready: the last turn's summary and the countdown here; the bot table describes and
+# starts it.
+- extendedWaitUntil:
+    visible:
+      id: turn-countdown
+    timeout: 20000
+- takeScreenshot: 19b-turn-ready-waiting
 - runScript:
     file: ../scripts/bot.js
     env:

@@ -1,7 +1,8 @@
 import { CONCEPTS, type Concept } from '@shared/rooms.ts';
+import { parseGameState } from '@shared/tabu.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
@@ -19,7 +20,11 @@ import { useRoomSafety } from '@/features/chat/RoomSafety';
 import { useOtherTableOnline } from '@/features/chat/usePresence';
 import { useActiveTable } from '@/features/checkin/useActiveTable';
 import { GameArea, isGameRunning, useEndGame } from '@/features/games/GameArea';
+import { useFirstGameIntro } from '@/features/games/introSeen';
+import { FirstGameIntro } from '@/features/games/FirstGameIntro';
+import { useGameSignals } from '@/features/games/gameSignals';
 import { GameStage } from '@/features/games/GameStage';
+import { TimeUpOverlay } from '@/features/games/TimeUpOverlay';
 import { useRoomMemberProfile } from '@/features/profile/queries';
 import { RevealPrompt } from '@/features/reveal/RevealPrompt';
 import { RevealResult } from '@/features/reveal/RevealResult';
@@ -27,8 +32,9 @@ import { IncomingRequest } from '@/features/rooms/IncomingRequest';
 import { roomKeys, useRoom } from '@/features/rooms/queries';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
-import { trackOnce } from '@/lib/analytics';
+import { track, trackOnce } from '@/lib/analytics';
 import { roomsApi } from '@/lib/api';
+import { useKeepAwakeWhile } from '@/lib/keepAwake';
 import { useTheme } from '@/theme/ThemeProvider';
 import { SPACING } from '@/theme/tokens';
 
@@ -67,6 +73,16 @@ export default function RoomScreen() {
   } else if (gameRunning && seen === null && loaded) {
     setSeen(new Set(loaded.filter((m) => m.session_id !== ownSession).map((m) => m.id)));
   }
+
+  // While a game runs the screen stays on; "Süre bitti!" comes from the game (docs/SPEC_V3.md
+  // §19.2).
+  useKeepAwakeWhile(gameRunning);
+  const timeUp = useGameSignals((s) => s.timeUp);
+  const localProgress = useGameSignals((s) => s.local);
+  // Sesli Tabu's intro, once per device, on the first two-table game.
+  const intro = useFirstGameIntro();
+  const loadIntro = intro.load;
+  useEffect(() => loadIntro(), [loadIntro]);
 
   // "Odayı bitir" is the only way out (docs/SPEC_V3.md §5.5).
   const exit = useMutation({
@@ -143,6 +159,15 @@ export default function RoomScreen() {
   );
 
   if (r.status === 'ending' && r.reveal_ends_at) {
+    // A table left (or ended the room) while Tabu ran: the game was stopped (§19.1).
+    const stopped = parseGameState(r.game_state);
+    if (stopped?.concept === 'tabu' && stopped.phase === 'playing') {
+      trackOnce(`game_abandoned:${r.id}:${stopped.gameNo}`, 'game_abandoned', {
+        concept: 'tabu',
+        turn_no: stopped.turnNo,
+        total_turns: stopped.totalTurns,
+      });
+    }
     return (
       <Screen>
         <ScreenHeader
@@ -173,7 +198,25 @@ export default function RoomScreen() {
         unread={unread}
         chatOpen={chatOpen}
         onChat={toggleChat}
-        onEndGame={() => endGame.mutate()}
+        onEndGame={() => {
+          // A one-table game stopped before its end (§19.1); a two-table one is counted from
+          // lastGame in GameArea.
+          if (localTabu && localProgress && !localProgress.finished) {
+            track('game_abandoned', {
+              concept: 'tabu',
+              turn_no: localProgress.turnNo,
+              total_turns: localProgress.totalTurns,
+            });
+          }
+          endGame.mutate();
+        }}
+        overlay={
+          <TimeUpOverlay
+            visible={timeUp !== null}
+            detail={timeUp?.detail}
+            brand={tr.games.gameBrand(concept ? tr.concepts[concept] : tr.concepts.tabu)}
+          />
+        }
         ending={endGame.isPending}
         endError={endGame.error}
         solo={!hasOtherTable}
@@ -199,6 +242,10 @@ export default function RoomScreen() {
         {gameArea}
         {hasOtherTable ? <OtherTableStatus roomId={r.id} isOwner={isOwner} /> : null}
         {isOwner ? <IncomingRequest roomId={r.id} ownerSessionId={r.owner_session_id} /> : null}
+        <FirstGameIntro
+          visible={concept === 'tabu' && hasOtherTable && intro.seen === false}
+          onClose={intro.markSeen}
+        />
       </GameStage>
     );
   }

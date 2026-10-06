@@ -635,6 +635,12 @@ export const tr = {
       },
     ],
     introDone: 'Anladım, başlayalım',
+    // Step 7 A2 (docs/SPEC_V3.md §19.2): the ready screen's summary and the time-up line.
+    turnSummaryTitle: (alias: string) => `${alias} anlattı`,
+    signedPoints: (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0'),
+    turnPointsLine: (alias: string, n: number) =>
+      `${alias} bu turda ${n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0'}`,
+    gameBrand: (game: string) => `${APP_NAME} · ${game}`,
   },
   // Harf Kapmaca and Şarkıda Geçsin (docs/SPEC_V3.md §20.3–20.4): say, then the other table may
   // object within 3 seconds; three objections per table.
@@ -651,6 +657,24 @@ export const tr = {
     windowLabel: (s: number) => `İtiraz için ${s} saniye`,
     sayLine: 'Geçtiği bir şarkıdan bir dize söyleyin',
     pickLetter: 'Kelimeyi söyle, baş harfine dokun.',
+  },
+  // İbre (docs/SPEC_V3.md §20.5): a two-ended scale, values 0–100.
+  ibre: {
+    scale: (l: string, r: string) => `${l} ile ${r} arasında ölçek`,
+    hold: 'Basılı tut, hedefi gör',
+    holdLabel: 'Hedefi görmek için basılı tut',
+    holdHint: 'Bırakınca hedef kapanır. Takımın görmesin.',
+    loading: 'Hedef geliyor…',
+    target: (v: number) => `Hedef: ${v}`,
+    targetLabel: (v: number, l: string, r: string) => `Hedef ${v}; ${l} 0, ${r} 100`,
+    needleLabel: (v: number, l: string, r: string) => `İbre ${v}; ${l} 0, ${r} 100`,
+    left: 'İbreyi sola al',
+    right: 'İbreyi sağa al',
+    moreLeft: '← Daha sol',
+    moreRight: 'Daha sağ →',
+    revealLabel: (t: number, n: number) => `Hedef ${t}, ibre ${n}`,
+    points: (n: number) => `+${n}`,
+    pointsWord: 'puan',
   },
   // Sahtekar (docs/SPEC_V3.md §20.2): seats are game labels, never identities.
   sahtekar: {

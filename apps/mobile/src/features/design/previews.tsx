@@ -7,6 +7,13 @@ import { GameDisc, type GameGlyph } from '@/components/Glyph';
 import { Text } from '@/components/Text';
 import { FirstGameIntro } from '@/features/games/FirstGameIntro';
 import { ClockPill, TeamScore } from '@/features/games/GameBits';
+import {
+  NeedleDial,
+  NeedleReveal,
+  type Side,
+  SideChoice,
+  TargetHold,
+} from '@/features/games/ibre/Ibre';
 import { RematchButton } from '@/features/games/RematchButton';
 import {
   BOARD_LETTERS,
@@ -330,8 +337,93 @@ function SaySet() {
   );
 }
 
+const DIAL = 320;
+
+// The dials take a width; in the preview it is the block's own (a phone at 320 dp leaves less).
+function FitWidth({ children }: { children: (width: number) => ReactNode }) {
+  const [width, setWidth] = useState(0);
+  return (
+    <View onLayout={(e) => setWidth(Math.min(DIAL, Math.floor(e.nativeEvent.layout.width)))}>
+      {width > 0 ? children(width) : null}
+    </View>
+  );
+}
+
+function IbreSet() {
+  const [held, setHeld] = useState(false);
+  const [needle, setNeedle] = useState(41);
+  const [side, setSide] = useState<Side | null>('left');
+  return (
+    <View className="gap-4">
+      <PreviewBlock title="TargetHold (basılı tut)">
+        <FitWidth>
+          {(w) => (
+            <TargetHold
+              width={w}
+              left="Ucuz"
+              right="Pahalı"
+              target={held ? 34 : null}
+              onHoldStart={() => setHeld(true)}
+              onHoldEnd={() => setHeld(false)}
+            />
+          )}
+        </FitWidth>
+      </PreviewBlock>
+      <PreviewBlock title="NeedleDial · sürükle, − / +">
+        <View testID="preview-needle">
+          <FitWidth>
+            {(w) => (
+              <NeedleDial
+                width={w}
+                left="Ucuz"
+                right="Pahalı"
+                value={needle}
+                onChange={setNeedle}
+              />
+            )}
+          </FitWidth>
+        </View>
+      </PreviewBlock>
+      <PreviewBlock title="SideChoice">
+        <View className="gap-3" testID="preview-side">
+          <FitWidth>
+            {(w) => (
+              <NeedleDial
+                width={w}
+                left="Ucuz"
+                right="Pahalı"
+                value={41}
+                onChange={() => undefined}
+                disabled
+              />
+            )}
+          </FitWidth>
+          <SideChoice selected={side} onSelect={setSide} />
+        </View>
+      </PreviewBlock>
+      <PreviewBlock title="NeedleReveal">
+        <FitWidth>
+          {(w) => (
+            <NeedleReveal
+              width={w}
+              left="Ucuz"
+              right="Pahalı"
+              target={34}
+              needle={41}
+              points={3}
+              detail='Hedef 34 · ibre 41 · Sakin Martı "Daha sol" dedi: +1'
+              brand="Kabuk · İbre"
+            />
+          )}
+        </FitWidth>
+      </PreviewBlock>
+    </View>
+  );
+}
+
 export const PREVIEW_SETS: PreviewSet[] = [
   { key: 'games', label: 'Oyun', render: () => <GamesSet /> },
   { key: 'sahtekar', label: 'Sahtekar', render: () => <SahtekarSet /> },
   { key: 'say', label: 'Harf · Şarkı', render: () => <SaySet /> },
+  { key: 'ibre', label: 'İbre', render: () => <IbreSet /> },
 ];
