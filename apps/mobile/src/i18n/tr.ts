@@ -686,6 +686,8 @@ export const tr = {
     not_describer: 'Bu turda anlatan siz değilsiniz.',
     turn_over: 'Tur bitti.',
     turn_not_started: 'Tur henüz başlamadı.',
+    not_your_seat: 'Bu sıra senin masanın değil.',
+    not_enough_players: 'Bu oyun için en az 3 oyuncu gerekiyor.',
     no_passes_left: 'Pas hakkınız kalmadı.',
     too_soon: 'Biraz bekle.',
     no_cards: 'Kart kalmadı.',

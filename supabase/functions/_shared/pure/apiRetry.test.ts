@@ -17,6 +17,7 @@ describe('IDEMPOTENT_CALLS', () => {
         'ping',
         'profile/get',
         'reveal/finalize',
+        'sahtekar/advance',
         'tabu/begin-turn',
         'tabu/end-turn',
         'tabu/mark',

@@ -9,6 +9,7 @@ import { broadcast } from '../_shared/broadcast.ts';
 import { dbError } from '../_shared/db.ts';
 import { z } from '../_shared/deps.ts';
 import { handle } from '../_shared/http.ts';
+import { AppError } from '../_shared/pure/errors.ts';
 import { lobbyChanged } from '../_shared/lobby.ts';
 import { sendPush } from '../_shared/push.ts';
 import type {
@@ -22,15 +23,19 @@ import { joinAcceptedPush, joinRequestPush } from '../_shared/pure/push.ts';
 import { REVEAL } from '../_shared/pure/reveal.ts';
 import {
   BROADCAST,
-  CONCEPTS,
   GAME_PROPOSAL_TTL_SECONDS,
   INTENTS,
   JOIN_REQUEST_TTL_SECONDS,
   MAX_JOIN_REQUESTS_PER_HOUR,
+  PROPOSABLE_CONCEPTS,
   sessionChannel,
 } from '../_shared/pure/rooms.ts';
+import { SAHTEKAR } from '../_shared/pure/sahtekar.ts';
 import { SOHBET_NEXT_COOLDOWN_MS } from '../_shared/pure/sohbet.ts';
 import { TABU } from '../_shared/pure/tabu.ts';
+
+// A table's player count for Sahtekar (docs/SPEC_V3.md §20.1).
+const Players = z.number().int().min(1).max(SAHTEKAR.maxPerTable);
 
 const Body: z.ZodType<RoomsRequest> = z.discriminatedUnion('action', [
   z.object({
@@ -41,8 +46,18 @@ const Body: z.ZodType<RoomsRequest> = z.discriminatedUnion('action', [
   z.object({ action: z.literal('create-solo') }),
   z.object({ action: z.literal('request-join'), roomId: z.uuid(), profiled: z.boolean() }),
   z.object({ action: z.literal('respond'), requestId: z.uuid(), accept: z.boolean() }),
-  z.object({ action: z.literal('propose-game'), roomId: z.uuid(), concept: z.enum(CONCEPTS) }),
-  z.object({ action: z.literal('answer-game'), roomId: z.uuid(), accept: z.boolean() }),
+  z.object({
+    action: z.literal('propose-game'),
+    roomId: z.uuid(),
+    concept: z.enum(PROPOSABLE_CONCEPTS),
+    players: Players.optional(),
+  }),
+  z.object({
+    action: z.literal('answer-game'),
+    roomId: z.uuid(),
+    accept: z.boolean(),
+    players: Players.optional(),
+  }),
   z.object({ action: z.literal('end-game'), roomId: z.uuid() }),
   z.object({ action: z.literal('end') }),
 ]);
@@ -154,23 +169,35 @@ Deno.serve(
             target_room_id: body.roomId,
             new_concept: body.concept,
             ttl_seconds: GAME_PROPOSAL_TTL_SECONDS,
+            proposer_players: body.players,
           });
           if (error) throw dbError('rooms_propose_game', error);
           return { expiresAt: data.expires_at };
         }
 
         case 'answer-game': {
-          const { error } = await db.rpc('rooms_answer_game', {
-            target_user_id: user.id,
-            target_room_id: body.roomId,
-            accept: body.accept,
-            turn_seconds: TABU.turnSeconds,
-            total_turns: TABU.totalTurns,
-            max_passes: TABU.maxPasses,
-            cards_per_turn: TABU.cardsPerTurn,
-            cooldown_ms: SOHBET_NEXT_COOLDOWN_MS,
-          });
-          if (error) throw dbError('rooms_answer_game', error);
+          const answer = (accept: boolean) =>
+            db.rpc('rooms_answer_game', {
+              target_user_id: user.id,
+              target_room_id: body.roomId,
+              accept,
+              turn_seconds: TABU.turnSeconds,
+              total_turns: TABU.totalTurns,
+              max_passes: TABU.maxPasses,
+              cards_per_turn: TABU.cardsPerTurn,
+              cooldown_ms: SOHBET_NEXT_COOLDOWN_MS,
+              acceptor_players: body.players,
+            });
+          const { error } = await answer(body.accept);
+          if (error) {
+            const failed = dbError('rooms_answer_game', error);
+            // Sahtekar with fewer than 3 players: the acceptance is refused and the proposal goes
+            // (docs/SPEC_V3.md §20.1); the raise rolled the delete back, so decline it now.
+            if (failed instanceof AppError && failed.code === 'not_enough_players') {
+              await answer(false);
+            }
+            throw failed;
+          }
           return { ok: true };
         }
 

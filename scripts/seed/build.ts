@@ -13,6 +13,7 @@ import {
   parseAliasWords,
   parseCampusVenues,
   parseProfanity,
+  parseSahtekarWords,
   parseSohbetCards,
   parseTabuCards,
   parseTestVenues,
@@ -72,16 +73,19 @@ export function buildSeed(root: string): SeedBuild {
     ? parseCampusVenues(readJson(campusPath))
     : [];
 
+  const profanity = parseProfanity(readJson('content/profanity-tr.json'));
+
   const sections = [
     aliasWordsSql(parseAliasWords(readJson('content/aliases-tr.json'))),
     venuesSql(venues),
     ...(testVenues.length > 0 ? [venuesSql(testVenues, testVenuesPath, null)] : []),
     ...testSpotsSql(testVenues),
     campusSql(campus),
-    profanitySql(parseProfanity(readJson('content/profanity-tr.json'))),
+    profanitySql(profanity),
     cardsSql(
       parseTabuCards(readJson('content/tabu-cards.json')),
       parseSohbetCards(readJson('content/sohbet-cards.json')),
+      parseSahtekarWords(readJson('content/sahtekar-words.json'), profanity),
     ),
   ];
 

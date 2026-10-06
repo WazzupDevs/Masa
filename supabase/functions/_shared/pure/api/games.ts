@@ -18,3 +18,27 @@ export type TabuTurnCardsResponse = { turnNo: number; cards: TabuCard[] };
 export type GameOkResponse = { ok: true };
 
 export type SohbetRequest = { action: 'next-card'; roomId: string };
+
+// `sahtekar` (docs/SPEC_V3.md §20.2). A two-table game starts from rooms/answer-game.
+export type SahtekarRequest =
+  // One-table room: a word, its category and 6 options; the phone runs the game.
+  | { action: 'start'; roomId: string }
+  // One of the caller's seats holds its card.
+  | { action: 'view'; roomId: string; seat: string }
+  // The speaking seat's table: "Söyledi" on clue step `step`.
+  | { action: 'said'; roomId: string; step: number }
+  | { action: 'vote'; roomId: string; voter: string; target: string }
+  // The caught impostor's table: the 6 options, then its guess.
+  | { action: 'options'; roomId: string }
+  | { action: 'guess'; roomId: string; option: string }
+  // Either table once the phase's time is up; idempotent.
+  | { action: 'advance'; roomId: string };
+
+export type SahtekarStartResponse = { category: string; word: string; options: string[] };
+export type SahtekarViewResponse = {
+  seat: string;
+  category: string;
+  word: string | null;
+  imposter: boolean;
+};
+export type SahtekarOptionsResponse = { options: string[] };

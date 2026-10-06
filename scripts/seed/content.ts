@@ -6,7 +6,13 @@ import {
   type Point,
   validateRing,
 } from '../../supabase/functions/_shared/pure/geo.ts';
+import {
+  containsProfanity,
+  prepareTerms,
+} from '../../supabase/functions/_shared/pure/profanity.ts';
+import { SAHTEKAR } from '../../supabase/functions/_shared/pure/sahtekar.ts';
 import { SOHBET_THEMES, type SohbetTheme } from '../../supabase/functions/_shared/pure/sohbet.ts';
+import { normalize } from '../../supabase/functions/_shared/pure/trText.ts';
 import { isVenueKind, type VenueKind } from '../../supabase/functions/_shared/pure/venueKind.ts';
 
 export type VenueRecord = {
@@ -275,4 +281,55 @@ export function parseCampusVenues(json: unknown): CampusVenue[] {
     throw new Error('venues-campus.json has duplicate refs');
   }
   return venues;
+}
+
+// content/sahtekar-words.json (docs/SPEC_V3.md §20.2): words in categories. At least 500 words,
+// at least 12 per category (6 options and turns that do not repeat), no key, name or word twice
+// (whole deck, normalized) and nothing on the profanity list.
+export const SAHTEKAR_MIN_WORDS = 500;
+export const SAHTEKAR_MIN_PER_CATEGORY = 12;
+const SAHTEKAR_KEY = /^[a-z][a-z0-9_]*$/;
+
+export type SahtekarCategory = { key: string; name: string; words: string[] };
+
+export function parseSahtekarWords(json: unknown, profanity: ProfanityList): SahtekarCategory[] {
+  if (!isRecord(json) || !Array.isArray(json.categories)) {
+    throw new Error('sahtekar-words.json needs categories');
+  }
+  const terms = prepareTerms(profanity.terms, profanity.wholeWords);
+  const keys = new Set<string>();
+  const names = new Set<string>();
+  const words = new Map<string, string>();
+  const categories = json.categories.map((category, i) => {
+    const at = `sahtekar categories[${i}]`;
+    if (!isRecord(category)) throw new Error(`${at} must be an object`);
+    const { key, name } = category;
+    if (typeof key !== 'string' || !SAHTEKAR_KEY.test(key)) throw new Error(`${at}.key is invalid`);
+    if (typeof name !== 'string' || name.trim() === '') throw new Error(`${at}.name is required`);
+    if (keys.has(key)) throw new Error(`${at}: key "${key}" twice`);
+    if (names.has(normalize(name))) throw new Error(`${at}: name "${name}" twice`);
+    keys.add(key);
+    names.add(normalize(name));
+    const list = stringList(category.words, `${at}.words`);
+    if (list.length < SAHTEKAR_MIN_PER_CATEGORY) {
+      throw new Error(`${at}: ${list.length} words, at least ${SAHTEKAR_MIN_PER_CATEGORY}`);
+    }
+    for (const word of [name, ...list]) {
+      if (containsProfanity(word, terms))
+        throw new Error(`${at}: "${word}" is on the profanity list`);
+    }
+    for (const word of list) {
+      const seen = words.get(normalize(word));
+      if (seen) throw new Error(`${at}: "${word}" is already in ${seen}`);
+      words.set(normalize(word), key);
+    }
+    return { key, name: name.trim(), words: list.map((w) => w.trim()) };
+  });
+  if (words.size < SAHTEKAR_MIN_WORDS) {
+    throw new Error(`sahtekar-words.json: ${words.size} words, at least ${SAHTEKAR_MIN_WORDS}`);
+  }
+  if (SAHTEKAR_MIN_PER_CATEGORY < SAHTEKAR.options * 2) {
+    throw new Error('a category must hold the options twice over');
+  }
+  return categories;
 }
