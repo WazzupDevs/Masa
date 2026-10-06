@@ -1,4 +1,4 @@
-import type { Concept, Intent } from '../rooms.ts';
+import type { Intent, ProposableConcept } from '../rooms.ts';
 
 // Request and response shapes of the `rooms` Edge Function, shared with the mobile app
 // (docs/SPEC_V3.md §5, §11).
@@ -8,8 +8,20 @@ export type CreateRoomRequest = { action: 'create'; intent?: Intent; profiled: b
 export type CreateSoloRoomRequest = { action: 'create-solo' };
 export type RequestJoinRequest = { action: 'request-join'; roomId: string; profiled: boolean };
 export type RespondRequest = { action: 'respond'; requestId: string; accept: boolean };
-export type ProposeGameRequest = { action: 'propose-game'; roomId: string; concept: Concept };
-export type AnswerGameRequest = { action: 'answer-game'; roomId: string; accept: boolean };
+// `players` (1-4): Sahtekar only, this table's count; without it the check-in headcount
+// (docs/SPEC_V3.md §20.1).
+export type ProposeGameRequest = {
+  action: 'propose-game';
+  roomId: string;
+  concept: ProposableConcept;
+  players?: number;
+};
+export type AnswerGameRequest = {
+  action: 'answer-game';
+  roomId: string;
+  accept: boolean;
+  players?: number;
+};
 // "Oyunu bitir": the room returns to chat.
 export type EndGameRequest = { action: 'end-game'; roomId: string };
 export type EndRoomRequest = { action: 'end' };

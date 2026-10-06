@@ -24,7 +24,15 @@ export type AnalyticsEventProps = {
   room_two_tables: Record<string, never>;
   // v2: + mode (docs/SPEC_V2.md §13); for voice Tabu the owner table's score (cooperative: the
   // team's) and, v3, the Tabu mode (docs/SPEC_V3.md §15).
-  game_completed: { concept: Concept; score: number; mode: GameMode; tabu_mode?: TabuMode };
+  game_completed: {
+    concept: Concept;
+    score: number;
+    mode: GameMode;
+    tabu_mode?: TabuMode;
+    // Sahtekar (docs/SPEC_V3.md §20.2): who won and how many played; never the seat or the word.
+    outcome?: 'imposter' | 'tables';
+    players?: number;
+  };
   // v3 step 7 (docs/SPEC_V3.md §19.1): a Tabu game stopped before its last turn, by "Oyunu bitir"
   // or a table leaving. The turn it stopped in and the game's length; nothing else.
   game_abandoned: { concept: Concept; turn_no: number; total_turns: number };
@@ -65,7 +73,7 @@ const ALLOWED: { [E in AnalyticsEvent]: readonly (keyof AnalyticsEventProps[E])[
   join_accepted: [],
   join_unavailable: [],
   room_two_tables: [],
-  game_completed: ['concept', 'score', 'mode', 'tabu_mode'],
+  game_completed: ['concept', 'score', 'mode', 'tabu_mode', 'outcome', 'players'],
   game_abandoned: ['concept', 'turn_no', 'total_turns'],
   reveal_mutual: [],
   reveal_none: [],

@@ -36,6 +36,8 @@ export type ErrorCode =
   | 'not_describer'
   | 'turn_over'
   | 'turn_not_started'
+  | 'not_your_seat'
+  | 'not_enough_players'
   | 'no_passes_left'
   | 'too_soon'
   | 'no_cards'
@@ -81,6 +83,9 @@ export function isApiErrorBody(value: unknown): value is ApiErrorBody {
 
 // Codes the database functions raise (errcode P0001, message = code). Anything else is internal.
 export const DOMAIN_ERROR_CODES: readonly ErrorCode[] = [
+  // A value zod cannot check alone (a Sahtekar vote for the voter's own seat, a guess outside the
+  // options).
+  'bad_request',
   'no_active_table',
   'already_in_room',
   'spot_required',
@@ -106,6 +111,8 @@ export const DOMAIN_ERROR_CODES: readonly ErrorCode[] = [
   'not_describer',
   'turn_over',
   'turn_not_started',
+  'not_your_seat',
+  'not_enough_players',
   'no_passes_left',
   'too_soon',
   'no_cards',

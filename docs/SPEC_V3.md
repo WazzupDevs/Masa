@@ -1137,7 +1137,10 @@ Tasarımın bileşenleriyle:
    - Her koltuk kendi kartını basılı tutarak görür. Telefon bir koltuğun kartını yalnızca o koltuk istediğinde alır: `sahtekar/view { seat }`. Yanıt `{ category, word }` ya da sahtekara `{ category, imposter: true }`; parmak kalkınca telefon kartı bırakır.
    - Bir masa yalnızca kendi koltuklarını isteyebilir. Bir koltuk ipucu turu başlayana kadar kartını yeniden görebilir.
    - `game_state.viewed` hangi koltukların gördüğünü sayar (yalnızca evet/hayır).
-   - Bütün koltuklar görünce ya da 2 dk dolunca ipucu turu açılır. Görmeyen koltuk atlanır: ipucu sırasına ve oylamaya girmez, ama sahtekar olabilir (o zaman oyun yine oynanır; masalar kazanmak için onu bulmalıdır).
+   - Bütün koltuklar görünce ipucu turu açılır. 2 dk dolunca kartına bakmayan koltuklar oyundan çıkar ve masalarının sayısı düşer (`players`, `seats`):
+     - Sahtekar kalanlardaysa ipucu turu kalan koltuklarla açılır.
+     - Çıkanlardan biri sahtekarsa kalan koltuklara yeni sahtekar ve yeni kelimeyle yeniden dağıtılır (`dealNo` artar, `viewed` boşalır, 2 dk yeniden başlar); herkes yeniden bakar. Yeni turda da bakmayan çıkar, aynı kural işler.
+     - Kalan koltuk 3'ten azsa oyun sonuçsuz biter: oda sohbete döner, `lastGame.endedBy = 'not_enough_players'`, `game_results` yazılmaz.
 3. **İpucu:** iki tur; sıra masalar arasında dönüşümlüdür: A1, B1, A2, B2… Koltuk sayıları eşit değilse fazla koltuklar sırayla sona eklenir (A1, B1, A2, B2, A3).
    - Her konuşmacının 15 sn'si vardır. `game_state` sırayı, konuşan koltuğu ve `endsAt`'i taşır.
    - Konuşanın masası "Söyledi"ye basar (`sahtekar/said { step }`). Süre dolunca herhangi bir masa `advance` ile geçirir.
@@ -1154,6 +1157,7 @@ Tasarımın bileşenleriyle:
 
 - `sahtekar/start` yanıtı bir tur için kategoriyi, kelimeyi ve 5 çeldiriciyi taşır.
 - Sahtekarı telefon seçer. Kelime telefondadır; oyuncular telefonu elden ele geçirir, kimse başkasının kartına bakmaz.
+- Görmeyen koltuk kuralı aynıdır. Sahtekar çıktıysa reducer `phase: 'redeal'`e geçer; ekran `sahtekar/start`'tan yeni deste ister ve `redealLocal` ile kalan koltuklara yeni sahtekar seçer. 3'ten az kalırsa `phase: 'done'`, `endedBy: 'not_enough_players'`.
 - Kurallar `pure/sahtekar.ts` reducer'ındadır.
 
 **Sunucu durumu ve eylemler.**
@@ -1167,9 +1171,9 @@ Tasarımın bileşenleriyle:
 | `sahtekar/options` / `sahtekar/guess { option }`       | Sahtekarın masası                       | `phase: 'guess'`                                        |
 | `sahtekar/advance`                                     | Herhangi bir masa                       | Süre dolunca; idempotent                                |
 
-- `game_state`: `phase` (`viewing`, `clues`, `voting`, `guess`), `gameNo`, `players`, `seats`, `category` (açık bilgi; herkes, sahtekar dahil, kategoriyi görür), `viewed`, `order`, `step`, `voters` (kartını gören koltuklar), `votesCast`, `endsAt`; tahminde `accused`.
+- `game_state`: `phase` (`viewing`, `clues`, `voting`, `guess`), `gameNo`, `dealNo` (yeniden dağıtımda artar), `players` ve `seats` (görmeyenler çıkınca küçülür), `category` (açık bilgi; herkes, sahtekar dahil, kategoriyi görür), `viewed`, `order`, `step`, `voters` (kartını gören koltuklar), `votesCast`, `endsAt`; tahminde `accused`.
 - Oyun bitince oda sohbete döner (Sesli Tabu gibi): açılış `lastGame.reveal`'dadır (`imposter`, `word`, `category`, `votes`, `accused`, `guess`, `winner`). Boş alanlar (kimse yakalanmadıysa `accused`, tahmin yoksa `guess`) yazılmaz; istemci yok alanı boş sayar. `lastGame.players` rövanş içindir; "Oyunu bitir" de onu yazar.
-- Görmeyen koltuk ipucu ve oylamadan atlanır ama sahtekar seçimi görmeye bağlı değildir: sahtekar görmeyen bir koltuksa oyun yine oynanır.
+- Sahtekar oyun başında bütün koltuklar arasından seçilir. Görmeyen koltuk oyundan çıkar; sahtekar çıktıysa kalanlara yeniden dağıtılır, 3'ten az kalırsa oyun biter (yukarıda, adım 2). Kural `pure/sahtekar.ts` → `afterViewing`'dedir.
 - Süreler `pure/sahtekar.ts` → `SAHTEKAR`: görme 120 sn, ipucu 15 sn, oylama 90 sn, tahmin 30 sn, 2 ipucu turu, 6 seçenek.
 - `game_results`: iki hesaba `won = null`, `score = null`, `mode = 'sahtekar'`. Oyun sayısı rozetlerine girer.
 
@@ -1197,6 +1201,17 @@ Tasarımın bileşenleriyle:
 - Bot iki ipucu turunda "Söyledi"ye basar ve oy verir.
 - Cihaz oy verir; açılış ekranı görünür.
 - Entegrasyon testi: sahtekar olmayan masaya sahtekar bilgisi, sahtekara kelime gitmez.
+
+### 20.2a Uygulamada netleşenler (7.1 sunucu)
+
+- **İstemci henüz görmüyor.** `rooms/propose-game` `sahtekar`'ı kabul eder (`pure/rooms.ts` → `PROPOSABLE_CONCEPTS`), ama uygulamanın öneri düğmeleri `CONCEPTS`'ten gelir ve orada yalnızca Sesli Tabu ile Sohbet kartları vardır. Sahtekar, ekranlarıyla birlikte `CONCEPTS`'e girer (tasarımın "Aşama 7 Sahtekar" PR'ından sonra).
+- **Sayı alanları:** `rooms/propose-game { players }` ve `rooms/answer-game { players }` (1-4) yalnızca Sahtekar'da okunur. Verilmezse masanın check-in sayısı (en çok 4).
+- **3'ten az:** kabul `not_enough_players` (409) döner. Sunucu öneriyi siler (fonksiyon reddi geri aldığı için kabul edenin adına ayrıca reddeder); iki masa da öneriyi kaybolmuş görür.
+- **Hata kodları:** `not_your_seat` (403): başka masanın koltuğu, konuşma sırası ya da tahmini. `bad_request` (400): kendine oy, seçeneklerde olmayan tahmin. Görme ya da oylama süresi geçmişse `turn_over` (409).
+- **Deste:** `cards` satırı kelime başınadır. `theme` kategori anahtarı, `prompt` kategorinin adıdır. Uygulama desteyi okuyamaz (kart politikası yalnızca Sohbet destesini açar). Seçenekler kelimenin kendi kategorisindendir. Kelime oyun başlarken gösterilmiş sayılır (`room_used_cards`).
+- **Tek masalı oyun:** `sahtekar/start` odanın etkinliğini Sahtekar yapar (yerel Tabu gibi). Yanıt `{ category, word, options }`'tur. Oyunu telefon `pure/sahtekar.ts` → `reduceLocal` ile yürütür.
+- **İdempotentlik:** `sahtekar/advance` `IDEMPOTENT_CALLS`'tadır. Tekrar görme aynı yanıtı verir; ikinci oy ve eski adıma "Söyledi" yok sayılır.
+- **Analitik:** `game_completed`'e `outcome` (`imposter` | `tables`) ve `players` (toplam) eklendi. Gönderen kod ekranlarla gelir.
 
 ### 20.3 Harf Kapmaca
 
@@ -1377,7 +1392,7 @@ Tasarımın bileşenleriyle:
 ### 20.8 Cevaplar (proje sahibi)
 
 1. **Sahtekar, yeniden görme:** evet, ipucu turu başlayana kadar. Arayüz koltukları sırayla verir.
-2. **Sahtekar, süreler:** görme 2 dk, oylama 90 sn (telefon 4 kişi arasında dolaşıyor). Dolunca görmeyen ya da oy vermeyen koltuk atlanır.
+2. **Sahtekar, süreler:** görme 2 dk, oylama 90 sn (telefon 4 kişi arasında dolaşıyor). Dolunca oy vermeyen koltuk atlanır. Görmeyen koltuk için #63 incelemesinde değişti: oyundan çıkar, sahtekar çıktıysa yeniden dağıtılır, 3'ten az kalırsa oyun biter (§20.2 adım 2).
 3. **Sahtekar, çoğunluk:** en çok oyu alan tek koltuk. Eşitlikte sahtekar kaçar.
 4. **Sahtekar, kendine oy:** yasak.
 5. **Rozetler:** dört yeni oyun da `game_results`'a yazılır ve oyun sayısı rozetlerine girer, Sahtekar dahil. Kazanma rozeti yalnızca Sesli Tabu'da kalır; yeni kazanma rozeti yok.

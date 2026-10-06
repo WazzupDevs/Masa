@@ -5,7 +5,7 @@
 // sent, a request created), so its 5xx is shown to the user instead.
 import type { CheckinRequest } from './api/checkin.ts';
 import type { DmRequest, FriendsRequest } from './api/friends.ts';
-import type { TabuRequest } from './api/games.ts';
+import type { SahtekarRequest, TabuRequest } from './api/games.ts';
 import type { ProfileRequest } from './api/profile.ts';
 import type { RevealRequest } from './api/reveal.ts';
 
@@ -17,6 +17,7 @@ type CallName =
   | `friends/${FriendsRequest['action']}`
   | `dm/${DmRequest['action']}`
   | `tabu/${TabuRequest['action']}`
+  | `sahtekar/${SahtekarRequest['action']}`
   | `reveal/${RevealRequest['action']}`;
 
 export const IDEMPOTENT_CALLS = [
@@ -48,6 +49,9 @@ export const IDEMPOTENT_CALLS = [
   // games.test "tabu, ready turns (docs/SPEC_V3.md §19.1)": "starts the clock once from the
   // describing table, however often either phone sends it"
   'tabu/begin-turn',
+  // sahtekar.test "sahtekar, seeing the word": "drops a seat that did not look in 2 minutes, and
+  // its table counts one less"
+  'sahtekar/advance',
   // reveal.test "reveal/finalize and cleanup": "does nothing before the window ends, then closes
   // with "none" for both"
   'reveal/finalize',

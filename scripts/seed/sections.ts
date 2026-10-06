@@ -4,6 +4,7 @@ import type {
   CampusSpot,
   CampusVenue,
   ProfanityList,
+  SahtekarCategory,
   SohbetCard,
   TabuCard,
   TestVenue,
@@ -72,7 +73,11 @@ export function profanitySql({ terms, wholeWords }: ProfanityList): string {
 
 // Upserts cards by (deck, source_key) and deactivates the ones no longer in the JSON: cards may be
 // referenced by past games, so they are never deleted.
-export function cardsSql(tabu: readonly TabuCard[], sohbet: readonly SohbetCard[]): string {
+export function cardsSql(
+  tabu: readonly TabuCard[],
+  sohbet: readonly SohbetCard[],
+  sahtekar: readonly SahtekarCategory[] = [],
+): string {
   const tabuRows = tabu.map(
     (c) =>
       `('tabu', ${sqlLiteral(c.word)}, ${sqlLiteral(c.word)}, ${sqlLiteral(c.forbidden)}, null, null)`,
@@ -81,11 +86,18 @@ export function cardsSql(tabu: readonly TabuCard[], sohbet: readonly SohbetCard[
     (c) =>
       `('sohbet', ${sqlLiteral(c.prompt)}, null, null, ${sqlLiteral(c.theme)}, ${sqlLiteral(c.prompt)})`,
   );
+  // Sahtekar: one row per word; theme is the category key, prompt the category's name.
+  const sahtekarRows = sahtekar.flatMap((c) =>
+    c.words.map(
+      (w) =>
+        `('sahtekar', ${sqlLiteral(`${c.key}/${w}`)}, ${sqlLiteral(w)}, null, ${sqlLiteral(c.key)}, ${sqlLiteral(c.name)})`,
+    ),
+  );
   return [
-    '-- content/tabu-cards.json, content/sohbet-cards.json',
+    `-- content/tabu-cards.json, content/sohbet-cards.json${sahtekar.length > 0 ? ', content/sahtekar-words.json' : ''}`,
     'update public.cards set is_active = false;',
     'insert into public.cards (deck, source_key, word, forbidden, theme, prompt) values',
-    `  ${[...tabuRows, ...sohbetRows].join(',\n  ')}`,
+    `  ${[...tabuRows, ...sohbetRows, ...sahtekarRows].join(',\n  ')}`,
     'on conflict (deck, source_key) do update set',
     '  word = excluded.word, forbidden = excluded.forbidden, theme = excluded.theme,',
     '  prompt = excluded.prompt, is_active = true;',
