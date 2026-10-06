@@ -7,6 +7,13 @@ import { GameDisc, type GameGlyph } from '@/components/Glyph';
 import { Text } from '@/components/Text';
 import { FirstGameIntro } from '@/features/games/FirstGameIntro';
 import { ClockPill, TeamScore } from '@/features/games/GameBits';
+import {
+  NeedleDial,
+  NeedleReveal,
+  type Side,
+  SideChoice,
+  TargetHold,
+} from '@/features/games/ibre/Ibre';
 import { RematchButton } from '@/features/games/RematchButton';
 import {
   BOARD_LETTERS,
@@ -330,8 +337,61 @@ function SaySet() {
   );
 }
 
+const DIAL = 320;
+
+function IbreSet() {
+  const [held, setHeld] = useState(false);
+  const [needle, setNeedle] = useState(41);
+  const [side, setSide] = useState<Side | null>('left');
+  return (
+    <View className="gap-4">
+      <PreviewBlock title="TargetHold (basılı tut)">
+        <TargetHold
+          width={DIAL}
+          left="Ucuz"
+          right="Pahalı"
+          target={held ? 34 : null}
+          onHoldStart={() => setHeld(true)}
+          onHoldEnd={() => setHeld(false)}
+        />
+      </PreviewBlock>
+      <PreviewBlock title="NeedleDial · sürükle, − / +">
+        <View testID="preview-needle">
+          <NeedleDial width={DIAL} left="Ucuz" right="Pahalı" value={needle} onChange={setNeedle} />
+        </View>
+      </PreviewBlock>
+      <PreviewBlock title="SideChoice">
+        <View className="gap-3" testID="preview-side">
+          <NeedleDial
+            width={DIAL}
+            left="Ucuz"
+            right="Pahalı"
+            value={41}
+            onChange={() => undefined}
+            disabled
+          />
+          <SideChoice selected={side} onSelect={setSide} />
+        </View>
+      </PreviewBlock>
+      <PreviewBlock title="NeedleReveal">
+        <NeedleReveal
+          width={DIAL}
+          left="Ucuz"
+          right="Pahalı"
+          target={34}
+          needle={41}
+          points={3}
+          detail='Hedef 34 · ibre 41 · Sakin Martı "Daha sol" dedi: +1'
+          brand="Kabuk · İbre"
+        />
+      </PreviewBlock>
+    </View>
+  );
+}
+
 export const PREVIEW_SETS: PreviewSet[] = [
   { key: 'games', label: 'Oyun', render: () => <GamesSet /> },
   { key: 'sahtekar', label: 'Sahtekar', render: () => <SahtekarSet /> },
   { key: 'say', label: 'Harf · Şarkı', render: () => <SaySet /> },
+  { key: 'ibre', label: 'İbre', render: () => <IbreSet /> },
 ];

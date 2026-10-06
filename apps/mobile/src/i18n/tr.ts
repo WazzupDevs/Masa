@@ -652,6 +652,24 @@ export const tr = {
     sayLine: 'Geçtiği bir şarkıdan bir dize söyleyin',
     pickLetter: 'Kelimeyi söyle, baş harfine dokun.',
   },
+  // İbre (docs/SPEC_V3.md §20.5): a two-ended scale, values 0–100.
+  ibre: {
+    scale: (l: string, r: string) => `${l} ile ${r} arasında ölçek`,
+    hold: 'Basılı tut, hedefi gör',
+    holdLabel: 'Hedefi görmek için basılı tut',
+    holdHint: 'Bırakınca hedef kapanır. Takımın görmesin.',
+    loading: 'Hedef geliyor…',
+    target: (v: number) => `Hedef: ${v}`,
+    targetLabel: (v: number, l: string, r: string) => `Hedef ${v}; ${l} 0, ${r} 100`,
+    needleLabel: (v: number, l: string, r: string) => `İbre ${v}; ${l} 0, ${r} 100`,
+    left: 'İbreyi sola al',
+    right: 'İbreyi sağa al',
+    moreLeft: '← Daha sol',
+    moreRight: 'Daha sağ →',
+    revealLabel: (t: number, n: number) => `Hedef ${t}, ibre ${n}`,
+    points: (n: number) => `+${n}`,
+    pointsWord: 'puan',
+  },
   // Sahtekar (docs/SPEC_V3.md §20.2): seats are game labels, never identities.
   sahtekar: {
     seatDone: (seat: string) => `${seat}, baktı`,
