@@ -465,6 +465,9 @@ verify_jwt = false
 [functions.harf]
 verify_jwt = false
 
+[functions.ibre]
+verify_jwt = false
+
 [functions.sahtekar]
 verify_jwt = false
 

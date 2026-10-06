@@ -107,7 +107,7 @@ Pilot ve Play kullanıcıları için ayrı proje. Kurulum dev projesiyle aynı s
 Sıra:
 1. Yeni proje (Frankfurt `eu-central-1`) ve **Pro plana al** (panel → Organization → Billing). Gerekçe: Free planda otomatik yedek yok ve düşük aktivitede proje haftalık duraklatılır (https://supabase.com/docs/guides/platform/free-project-pausing); Pro'da günlük yedekler 7 gün saklanır (https://supabase.com/docs/guides/platform/backups) ve hesap silme sayfası bu süreyi söyler. Dev projesi Free kalır.
 2. `pnpm supabase link --project-ref <üretim ref>`. Dev ve üretim arasında geçerken her komuttan önce `pnpm supabase migration list`'in hangi projeye bağlı olduğunu kontrol et; bitince dev'e geri bağla.
-3. Vault anahtarı (yukarıdaki tabloya göre yeni), sonra `db push --include-seed` (seed notu tabloda) ve 17 fonksiyonun deploy'u ("main'den dev projesine yayın" adım 5).
+3. Vault anahtarı (yukarıdaki tabloya göre yeni), sonra `db push --include-seed` (seed notu tabloda) ve 18 fonksiyonun deploy'u ("main'den dev projesine yayın" adım 5).
 4. Panel → Authentication: Email kapalı, Phone açık (Twilio kutularında sahte değerler; SMS'i Netgsm kancası gönderir, `docs/SPEC_V3.md` §2.3), test numarası yalnızca inceleme hesabı, Rate Limits, Hooks → Before User Created → `private.before_user_created` ve Send SMS Hook.
 5. Panel → Realtime → Settings → Allow public access **kapalı**.
 6. `pnpm supabase secrets set POSTHOG_PERSONAL_API_KEY=… POSTHOG_PROJECT_ID=…`. `MIN_APP_BUILD` ilk production AAB'den sonra.
@@ -127,8 +127,8 @@ Tek seferlik kurulum (yukarıda) yapılmış bir projeye main'in güncel hâlini
 2. `pnpm supabase migration list`: bağlı projeyi ve uygulanmamış migration'ları gösterir (Local dolu, Remote boş satırlar). Proje yanlışsa: `pnpm supabase link --project-ref <ref>`.
 3. `pnpm supabase db push --include-seed --dry-run`: uygulanacakları yalnızca listeler. İçerik değiştiyse seed satırında yeni `supabase/seeds/content-<id>.sql` görünür; `(hash update)` yazıyorsa seed çalışmaz (dosya elle değiştirilmiş demektir: `pnpm seed` ile yeniden üret).
 4. `pnpm supabase db push --include-seed`: migration'lar, ardından içerik değiştiyse yeni seed dosyası (`supabase/seeds/content-<id>.sql`; takma ad kelimeleri, kartlar, küfür listesi, mekanlar; tekrar çalıştırılabilir; silmez, ekler ya da günceller). Profil fotoğrafı kovası ve cron işleri migration'larla gelir.
-5. Fonksiyonların hepsi (17): `pnpm supabase functions deploy account chat checkin dm friends harf ping profile reveal rooms safety sahtekar sarki sms sohbet tabu venue-chat`. `verify_jwt = false` her birinin `config.toml` bloğundan gelir; yeni bir fonksiyon eklenince bu listeye ve `config.toml`'a birlikte eklenir.
-6. Kontrol: `pnpm supabase functions list` (17'si de `ACTIVE`, sürümleri artmış) ve `pnpm supabase migration list` (her satırda Local ve Remote aynı).
+5. Fonksiyonların hepsi (18): `pnpm supabase functions deploy account chat checkin dm friends harf ibre ping profile reveal rooms safety sahtekar sarki sms sohbet tabu venue-chat`. `verify_jwt = false` her birinin `config.toml` bloğundan gelir; yeni bir fonksiyon eklenince bu listeye ve `config.toml`'a birlikte eklenir.
+6. Kontrol: `pnpm supabase functions list` (18'i de `ACTIVE`, sürümleri artmış) ve `pnpm supabase migration list` (her satırda Local ve Remote aynı).
 7. Sırlar, yalnızca gerektiğinde (`pnpm supabase secrets list` ile bak):
    - `MIN_APP_BUILD`: yalnızca eski build'leri kapatırken (bkz. "Build numarası").
    - `POSTHOG_PERSONAL_API_KEY`, `POSTHOG_PROJECT_ID`, isteğe bağlı `POSTHOG_HOST`: hesap silmede PostHog kişi silme; yoksa atlanır.

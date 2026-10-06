@@ -14,6 +14,7 @@ import {
   parseCampusVenues,
   parseProfanity,
   parseHarfCategories,
+  parseIbreScales,
   parseSahtekarWords,
   parseSarkiWords,
   parseSohbetCards,
@@ -90,6 +91,7 @@ export function buildSeed(root: string): SeedBuild {
       parseSahtekarWords(readJson('content/sahtekar-words.json'), profanity),
       parseHarfCategories(readJson('content/harf-categories.json'), profanity),
       parseSarkiWords(readJson('content/sarki-words.json'), profanity),
+      parseIbreScales(readJson('content/ibre-scales.json'), profanity),
     ),
   ];
 

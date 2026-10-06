@@ -9,7 +9,7 @@ export const ROOM_IDLE_MINUTES = 10;
 export const CONCEPTS = ['tabu', 'sohbet', 'sahtekar'] as const;
 // What rooms/propose-game accepts: CONCEPTS and the step 7 games whose screens are not in the app
 // yet (docs/SPEC_V3.md §20). A game moves into CONCEPTS with its screens.
-export const PROPOSABLE_CONCEPTS = [...CONCEPTS, 'harf', 'sarki'] as const;
+export const PROPOSABLE_CONCEPTS = [...CONCEPTS, 'harf', 'sarki', 'ibre'] as const;
 export type ProposableConcept = (typeof PROPOSABLE_CONCEPTS)[number];
 export const VISIBILITIES = ['private', 'open'] as const;
 export type Concept = (typeof CONCEPTS)[number];
