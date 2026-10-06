@@ -26,6 +26,9 @@ const BANDS: readonly { reach: number; points: number; tone: [PaletteKey, Palett
 const NEEDLE_WIDTH = SPACING[1.5];
 const HUB = SPACING[7];
 const KNOB = SPACING[10];
+// The band numbers sit on a ring this far in from the rim (their box: SPACING[6], centred
+// SPACING[6] in); its inner edge.
+const LABEL_RING = SPACING[6] + SPACING[6] / 2;
 
 const clamp = (v: number) => Math.max(NEEDLE_MIN, Math.min(NEEDLE_MAX, Math.round(v)));
 // 0 → pointing left, 50 → up, 100 → right; degrees clockwise from up for RN's rotate.
@@ -67,6 +70,9 @@ export function Dial({
 }: DialProps) {
   const { colors, shape } = useTheme();
   const r = width / 2;
+  // With the band numbers shown (the reveal), the needle stops short of their ring so it never
+  // covers the number it points at; otherwise it reaches the rim.
+  const needleTop = labels ? LABEL_RING + SPACING[2] : SPACING[3];
   return (
     <View className="gap-2 self-center" style={{ width }}>
       <View
@@ -133,9 +139,9 @@ export function Dial({
               style={{
                 position: 'absolute',
                 left: r - NEEDLE_WIDTH / 2,
-                top: SPACING[3],
+                top: needleTop,
                 width: NEEDLE_WIDTH,
-                height: r - SPACING[3],
+                height: r - needleTop,
                 borderRadius: shape.radius.pill,
                 backgroundColor: colors.text,
               }}
@@ -238,8 +244,8 @@ function BandLabel({
   color: string;
 }) {
   const a = (turn(value) * Math.PI) / 180;
-  const d = r - SPACING[6];
   const size = SPACING[6];
+  const d = r - (LABEL_RING - size / 2);
   return (
     <View
       pointerEvents="none"
@@ -511,7 +517,8 @@ export function NeedleReveal({
   // The clue is spoken; a screen may show it if the table typed nothing (§20.1: no free text).
   clue?: string;
   target: number;
-  needle: number;
+  // Null: never locked (the clock ran out); no needle is drawn.
+  needle: number | null;
   points: number;
   // "Hedef 34 · ibre 41 · Sakin Martı "Daha sol" dedi: +1".
   detail: string;

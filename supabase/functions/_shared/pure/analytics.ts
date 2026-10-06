@@ -37,6 +37,8 @@ export type AnalyticsEventProps = {
     // the clock (Harf only in the spec; Şarkı sends it too). Never the category or the word.
     objections?: number;
     rounds_lost_by_timeout?: number;
+    // İbre (§20.5): rounds the reporting table scored 4. Never the scale or the target.
+    bullseyes?: number;
   };
   // v3 step 7 (docs/SPEC_V3.md §19.1): a Tabu game stopped before its last turn, by "Oyunu bitir"
   // or a table leaving. The turn it stopped in and the game's length; nothing else.
@@ -87,6 +89,7 @@ const ALLOWED: { [E in AnalyticsEvent]: readonly (keyof AnalyticsEventProps[E])[
     'players',
     'objections',
     'rounds_lost_by_timeout',
+    'bullseyes',
   ],
   game_abandoned: ['concept', 'turn_no', 'total_turns'],
   reveal_mutual: [],

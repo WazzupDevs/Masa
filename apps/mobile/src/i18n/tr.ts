@@ -4,6 +4,7 @@ import type { InboxStamp } from '@shared/dmInbox.ts';
 import type { EventTime } from '@shared/explore.ts';
 import { TABU } from '@shared/tabu.ts';
 import { SAHTEKAR } from '@shared/sahtekar.ts';
+import { IBRE_CONFIG } from '@shared/ibre.ts';
 import { SAY_CONFIG } from '@shared/sayChallenge.ts';
 
 const MONTHS = [
@@ -46,13 +47,14 @@ function dayMonthAt(iso: string): string {
 }
 
 // play_history.concept: the last game played in the room, or 'chat' (docs/SPEC_V3.md §5.5).
-export type HistoryConcept = 'tabu' | 'sohbet' | 'sahtekar' | 'harf' | 'sarki' | 'chat';
+export type HistoryConcept = 'tabu' | 'sohbet' | 'sahtekar' | 'harf' | 'sarki' | 'ibre' | 'chat';
 const HISTORY_CONCEPTS: Record<HistoryConcept, string> = {
   tabu: 'Sesli Tabu',
   sohbet: 'Sohbet kartları',
   sahtekar: 'Sahtekar',
   harf: 'Harf Kapmaca',
   sarki: 'Şarkıda Geçsin',
+  ibre: 'İbre',
   chat: 'Sohbet',
 };
 
@@ -62,6 +64,7 @@ const VOICE_NAMES = {
   sahtekar: 'Sahtekar',
   harf: 'Harf Kapmaca',
   sarki: 'Şarkıda Geçsin',
+  ibre: 'İbre',
 } as const;
 
 const WEEKDAYS = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
@@ -246,6 +249,16 @@ export const tr = {
         `Bir kelimede en çok ${SAY_CONFIG.sarki.maxSteps} dize; sekizinci de geçerse kelime puansız biter.`,
         `${SAY_CONFIG.sarki.totalRounds} kelime oynanır; son iki kelimede süre ${SAY_CONFIG.sarki.shortSeconds} saniye.`,
         'Uygulama müzik çalmaz, şarkı göstermez; dizeyi siz söylersiniz.',
+      ],
+    },
+    ibre: {
+      body: 'Anlatıcı gizli hedefi görür, tek ipucu verir; masası ibreyi hedefe getirmeye çalışır.',
+      steps: [
+        'Telefon iki uçlu bir ölçek gösterir (ör. Ucuz ile Pahalı). Masalar sırayla anlatır.',
+        `Anlatıcı hedefi basılı tutarak görür, sesli tek ipucu verir. Masası ibreyi ayarlayıp onaylar; ${IBRE_CONFIG.clueSeconds} saniye.`,
+        `Diğer masa ${IBRE_CONFIG.sideSeconds} saniye içinde hedefin ibrenin solunda mı sağında mı olduğunu söyler; doğruysa 1 puan.`,
+        `Hedefe yakınlığa göre 4, 3 ya da 2 puan. ${IBRE_CONFIG.totalRounds} tur oynanır.`,
+        'Kendi masanla oynarken iki takıma ayrılın; anlatıcı hedefi takımından saklar.',
       ],
     },
     sohbet: {
@@ -444,10 +457,11 @@ export const tr = {
     sahtekar: 'Sahtekar',
     harf: 'Harf Kapmaca',
     sarki: 'Şarkıda Geçsin',
+    ibre: 'İbre',
   },
   // How a game is shown with its type (docs/SPEC_V2.md §8.1): only voice games are marked, since
   // they need the tables to come together.
-  conceptWithMode: (concept: 'tabu' | 'sohbet' | 'sahtekar' | 'harf' | 'sarki') =>
+  conceptWithMode: (concept: 'tabu' | 'sohbet' | 'sahtekar' | 'harf' | 'sarki' | 'ibre') =>
     concept === 'sohbet' ? 'Sohbet kartları' : `${VOICE_NAMES[concept]} · yüz yüze`,
   // The room's optional intent label (§5.2).
   intents: { game: 'Oyun', chat: 'Sohbet' },
@@ -481,7 +495,7 @@ export const tr = {
     createConfirm: 'Odayı kur',
     // The room's eyebrow: the running game, else the chat; voice games say they are played face to
     // face (docs/SPEC_V2.md §8.1).
-    roomEyebrow: (concept: 'tabu' | 'sohbet' | 'sahtekar' | 'harf' | 'sarki' | null) =>
+    roomEyebrow: (concept: 'tabu' | 'sohbet' | 'sahtekar' | 'harf' | 'sarki' | 'ibre' | null) =>
       concept === null
         ? 'Oda'
         : concept === 'sohbet'
@@ -738,9 +752,35 @@ export const tr = {
     right: 'İbreyi sağa al',
     moreLeft: '← Daha sol',
     moreRight: 'Daha sağ →',
-    revealLabel: (t: number, n: number) => `Hedef ${t}, ibre ${n}`,
+    revealLabel: (t: number, n: number | null) =>
+      n === null ? `Hedef ${t}, ibre onaylanmadı` : `Hedef ${t}, ibre ${n}`,
     points: (n: number) => `+${n}`,
     pointsWord: 'puan',
+    // The game screens (docs/SPEC_V3.md §20.5).
+    round: (n: number, total: number) => `Tur ${n} / ${total}`,
+    readyHint: `Başla'ya basınca ${IBRE_CONFIG.clueSeconds} saniye: hedefe bakın, tek ipucu verin, ibreyi onaylayın.`,
+    readyWaitingHint: 'Karşı masa hedefe bakıp tek ipucu verecek. Dinleyin.',
+    clueHint: 'Anlatıcı hedefe baksın, sesli tek ipucu versin. Masası ibreyi ayarlayıp onaylasın.',
+    lock: 'İbreyi onayla',
+    otherClue: (alias: string) => `${alias} ipucu veriyor. İbre onaylanınca taraf seçeceksiniz.`,
+    sideTitle: 'Hedef ibrenin solunda mı, sağında mı?',
+    sideHint: (s: number) => `${s} sn içinde seçin; doğruysa 1 puan.`,
+    sideWaiting: (alias: string) => `${alias} taraf seçiyor.`,
+    describerTurn: (team: string) => `${team} anlatıyor. Telefonu anlatıcıya verin.`,
+    sideTurn: (team: string) => `${team}: hedef ibrenin solunda mı, sağında mı?`,
+    roundTitle: (alias: string, band: number) => `${alias} bu turda +${band}`,
+    revealDetail: (
+      target: number,
+      needle: number | null,
+      guesser: string,
+      side: 'left' | 'right' | null,
+      point: boolean,
+    ) =>
+      needle === null
+        ? `Hedef ${target} · ibre onaylanmadı`
+        : side === null
+          ? `Hedef ${target} · ibre ${needle} · ${guesser} taraf seçmedi`
+          : `Hedef ${target} · ibre ${needle} · ${guesser} "${side === 'left' ? 'Daha sol' : 'Daha sağ'}" dedi: ${point ? '+1' : '0'}`,
   },
   // Sahtekar (docs/SPEC_V3.md §20.2): seats are game labels, never identities.
   sahtekar: {

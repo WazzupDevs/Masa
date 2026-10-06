@@ -1,0 +1,148 @@
+# İbre (docs/SPEC_V3.md §20.5): round 1 this phone describes: Başla, holds the target, drags the
+# needle, locks it; the bot says "Daha sağ" and the reveal shows. Round 2 the bot describes and this
+# phone picks a side. The bot then ends the game on the clock and the result shows. The clocks are
+# held (ibre-hold) wherever the emulator's slow screen reads would race them.
+appId: app.kabuk.mobile
+appId: app.kabuk.mobile
+---
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: leave
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: checkin
+      BODY: '{"spot":"kutuphane","headcount":2}'
+- tapOn:
+    id: tab-venue
+- extendedWaitUntil:
+    visible: Oda kur
+    timeout: 15000
+- tapOn: Oda kur
+- extendedWaitUntil:
+    visible:
+      id: intent-none
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: Odayı kur
+    timeout: 10000
+- tapOn: Odayı kur
+- extendedWaitUntil:
+    visible:
+      id: solo-tabu
+    timeout: 15000
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: request-join
+- extendedWaitUntil:
+    visible: Katılma isteği
+    timeout: 20000
+- tapOn:
+    id: join-accept
+- scrollUntilVisible:
+    element:
+      id: propose-ibre
+    timeout: 15000
+- tapOn:
+    id: propose-ibre
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: answer-game
+# Round 1: this phone's table describes.
+- extendedWaitUntil:
+    visible:
+      id: turn-start
+    timeout: 20000
+- takeScreenshot: 54-ibre-ready
+- tapOn:
+    id: turn-start
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: ibre-hold
+- extendedWaitUntil:
+    visible:
+      id: ibre-hold
+    timeout: 15000
+- longPressOn:
+    id: ibre-hold
+- swipe:
+    from:
+      id: ibre-drag
+    direction: RIGHT
+    duration: 600
+- tapOn:
+    id: ibre-plus
+- takeScreenshot: 55-ibre-needle
+- tapOn:
+    id: ibre-lock
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: ibre-side
+      BODY: '{"side":"right"}'
+# The reveal over round 2's ready state.
+- extendedWaitUntil:
+    visible:
+      id: ibre-reveal
+    timeout: 20000
+- takeScreenshot: 56-ibre-reveal
+# Round 2: the bot table describes; this phone picks a side.
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: ibre-begin
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: ibre-lock
+      BODY: '{"value":30}'
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: ibre-hold
+- extendedWaitUntil:
+    visible:
+      id: ibre-side-left
+    timeout: 20000
+- takeScreenshot: 57-ibre-side
+- tapOn:
+    id: ibre-side-left
+- extendedWaitUntil:
+    visible:
+      id: ibre-reveal
+    timeout: 20000
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: ibre-end
+- extendedWaitUntil:
+    visible:
+      id: last-game
+    timeout: 20000
+- takeScreenshot: 58-ibre-result
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: end-room
+- extendedWaitUntil:
+    visible: Tanışalım mı\?
+    timeout: 20000
+- tapOn:
+    id: reveal-no
+- extendedWaitUntil:
+    visible: Güzel oyundu.*
+    timeout: 15000
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: reveal
+      BODY: '{"yes":false}'
+- tapOn: Mekana dön
+- extendedWaitUntil:
+    visible: Oda kur
+    timeout: 15000

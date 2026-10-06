@@ -1411,6 +1411,17 @@ Tasarımın bileşenleriyle:
 - **İdempotentlik:** `ibre/begin`, `ibre/target`, `ibre/advance` `IDEMPOTENT_CALLS`'ta.
 - **İçerik:** `content/ibre-scales.json` (241 ölçek) proje sahibinin incelemesine taslaktır.
 
+### 20.5b Uygulamada netleşenler (7.4 ekranlar)
+
+- **Öneri ve Aktiviteler:** İbre `CONCEPTS`'te; öneri kutucuğu ibre ikonuyla, Aktiviteler'de kart ve "Nasıl oynanır".
+- **Kadranın genişliği:** her kadran, içinde durduğu sütunun gerçek genişliğini `onLayout` ile ölçer ve onunla çizilir (en çok 360). Sabit genişlik yok.
+- **Açılışta ibre ve bant numarası:** bant numaraları gösterilirken (açılış) ibre numaraların halkasının içinde biter; ucunu gösterdiği numarayı örtmez. Onaylanmamış ibre açılışta çizilmez.
+- **İki masalı ekran** (`IbreGame`): hazır durumda önceki turun açılışı (ilk turda boş ölçek) ve `TurnReady` (Başla yalnızca anlatan masada). Anlatan masada hedef basılı tutulunca `ibre/target`'tan gelir (tur boyunca saklanır), altında sürüklenen ya da − / + ile oynatılan ibre ve "İbreyi onayla". Karşı masada ölçek ve "… ipucu veriyor". Taraf aşamasında kilitli ibre; karşı masa "Daha sol / Daha sağ" seçer. Süre dolunca iki telefon da bir kez `advance` çağırır.
+- **Tek masalı oyun** (`LocalIbre`): "Masanla oyna"da düğme (en az 2 kişi); hedefi telefon üretir; anlatıcı basılı tutarak görür, takımı ibreyi ayarlar, diğer takım aynı telefonda taraf seçer. Ölçekler `ibre/start`'tan bir kerede gelir.
+- **Bitiş:** oda sohbete döner; son turun açılışı ve son oyun kartı (iki skor, "Rövanş").
+- **Analitik:** iki masalı oyunu sahip masanın telefonu `lastGame`'den bir kez gönderir (`score` ve `bullseyes` sahip masanın). "Oyunu bitir" `game_abandoned` gönderir.
+- **Bot ve E2E:** `ibre-begin`, `ibre-lock` (`value` ya da hedefin yakını), `ibre-side`, yerelde `ibre-hold` (saatleri 60 sn ileri iter) ve `ibre-end`. Karşı masa modu kendi turunda hedefin yakınına kilitler, diğer turda rastgele taraf seçer. Akış `12-ibre.yaml` (11'den sonra).
+
 ### 20.6 Uygulama sırası ve yayın
 
 | Adım               | Sunucu                                                                                          | İstemci                                           | Yayın                                   |

@@ -22,7 +22,7 @@ import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { useNow } from '@/lib/useNow';
 
-type Game = 'tabu' | 'sohbet' | 'sahtekar' | 'harf' | 'sarki';
+type Game = 'tabu' | 'sohbet' | 'sahtekar' | 'harf' | 'sarki' | 'ibre';
 
 // The intent "Bu oyunla oda kur" opens the room form with (the room still starts without a game).
 const INTENT_OF: Record<Game, Intent> = {
@@ -31,6 +31,7 @@ const INTENT_OF: Record<Game, Intent> = {
   sahtekar: 'game',
   harf: 'game',
   sarki: 'game',
+  ibre: 'game',
 };
 
 // Aktiviteler, the game hub (docs/SPEC_V3.md §18.3; canvas: Aşama 5 · Geri bildirim): one card per
@@ -45,7 +46,7 @@ export default function ActivitiesScreen() {
   const recent = useRecentGames();
   const [howTo, setHowTo] = useState<Game | null>(null);
 
-  const games: Game[] = ['tabu', 'sahtekar', 'harf', 'sarki', 'sohbet'];
+  const games: Game[] = ['tabu', 'sahtekar', 'harf', 'sarki', 'ibre', 'sohbet'];
 
   return (
     <Screen edges={['top']}>
