@@ -1,0 +1,696 @@
+{
+  "categories": [
+    {
+      "key": "meyve",
+      "name": "Meyve"
+    },
+    {
+      "key": "sebze",
+      "name": "Sebze"
+    },
+    {
+      "key": "hayvan",
+      "name": "Hayvan"
+    },
+    {
+      "key": "kus",
+      "name": "Kuş"
+    },
+    {
+      "key": "bocek",
+      "name": "Böcek"
+    },
+    {
+      "key": "deniz_canlisi",
+      "name": "Deniz canlısı"
+    },
+    {
+      "key": "turkiye_de_sehir",
+      "name": "Türkiye'de şehir"
+    },
+    {
+      "key": "turkiye_de_ilce",
+      "name": "Türkiye'de ilçe"
+    },
+    {
+      "key": "istanbul_da_semt",
+      "name": "İstanbul'da semt"
+    },
+    {
+      "key": "ulke",
+      "name": "Ülke"
+    },
+    {
+      "key": "baskent",
+      "name": "Başkent"
+    },
+    {
+      "key": "dunyada_sehir",
+      "name": "Dünyada şehir"
+    },
+    {
+      "key": "nehir_ya_da_gol",
+      "name": "Nehir ya da göl"
+    },
+    {
+      "key": "dag",
+      "name": "Dağ"
+    },
+    {
+      "key": "erkek_adi",
+      "name": "Erkek adı"
+    },
+    {
+      "key": "kadin_adi",
+      "name": "Kadın adı"
+    },
+    {
+      "key": "soyadi",
+      "name": "Soyadı"
+    },
+    {
+      "key": "meslek",
+      "name": "Meslek"
+    },
+    {
+      "key": "evde_esya",
+      "name": "Evde eşya"
+    },
+    {
+      "key": "mutfak_esyasi",
+      "name": "Mutfak eşyası"
+    },
+    {
+      "key": "giysi",
+      "name": "Giysi"
+    },
+    {
+      "key": "ayakkabi_ya_da_aksesuar",
+      "name": "Ayakkabı ya da aksesuar"
+    },
+    {
+      "key": "taki",
+      "name": "Takı"
+    },
+    {
+      "key": "yemek",
+      "name": "Yemek"
+    },
+    {
+      "key": "tatli",
+      "name": "Tatlı"
+    },
+    {
+      "key": "icecek",
+      "name": "İçecek"
+    },
+    {
+      "key": "kahvaltilik",
+      "name": "Kahvaltılık"
+    },
+    {
+      "key": "sokak_lezzeti",
+      "name": "Sokak lezzeti"
+    },
+    {
+      "key": "baharat",
+      "name": "Baharat"
+    },
+    {
+      "key": "cicek",
+      "name": "Çiçek"
+    },
+    {
+      "key": "agac",
+      "name": "Ağaç"
+    },
+    {
+      "key": "bitki",
+      "name": "Bitki"
+    },
+    {
+      "key": "renk",
+      "name": "Renk"
+    },
+    {
+      "key": "marka",
+      "name": "Marka"
+    },
+    {
+      "key": "araba_markasi",
+      "name": "Araba markası"
+    },
+    {
+      "key": "telefon_ya_da_teknoloji_markasi",
+      "name": "Telefon ya da teknoloji markası"
+    },
+    {
+      "key": "giyim_markasi",
+      "name": "Giyim markası"
+    },
+    {
+      "key": "spor_dali",
+      "name": "Spor dalı"
+    },
+    {
+      "key": "futbolcu",
+      "name": "Futbolcu"
+    },
+    {
+      "key": "futbol_takimi",
+      "name": "Futbol takımı"
+    },
+    {
+      "key": "basketbolcu",
+      "name": "Basketbolcu"
+    },
+    {
+      "key": "sporcu",
+      "name": "Sporcu"
+    },
+    {
+      "key": "oyuncak",
+      "name": "Oyuncak"
+    },
+    {
+      "key": "masa_ya_da_kutu_oyunu",
+      "name": "Masa ya da kutu oyunu"
+    },
+    {
+      "key": "cocuk_oyunu",
+      "name": "Çocuk oyunu"
+    },
+    {
+      "key": "bilgisayar_oyunu",
+      "name": "Bilgisayar oyunu"
+    },
+    {
+      "key": "film",
+      "name": "Film"
+    },
+    {
+      "key": "yabanci_film",
+      "name": "Yabancı film"
+    },
+    {
+      "key": "turk_filmi",
+      "name": "Türk filmi"
+    },
+    {
+      "key": "dizi",
+      "name": "Dizi"
+    },
+    {
+      "key": "turk_dizisi",
+      "name": "Türk dizisi"
+    },
+    {
+      "key": "cizgi_film_ya_da_karakter",
+      "name": "Çizgi film ya da karakter"
+    },
+    {
+      "key": "super_kahraman",
+      "name": "Süper kahraman"
+    },
+    {
+      "key": "masal_kahramani",
+      "name": "Masal kahramanı"
+    },
+    {
+      "key": "sarkici",
+      "name": "Şarkıcı"
+    },
+    {
+      "key": "turk_sarkici",
+      "name": "Türk şarkıcı"
+    },
+    {
+      "key": "yabanci_sarkici",
+      "name": "Yabancı şarkıcı"
+    },
+    {
+      "key": "grup",
+      "name": "Grup"
+    },
+    {
+      "key": "muzik_aleti",
+      "name": "Müzik aleti"
+    },
+    {
+      "key": "muzik_turu",
+      "name": "Müzik türü"
+    },
+    {
+      "key": "dans",
+      "name": "Dans"
+    },
+    {
+      "key": "oyuncu_aktor_ya_da_aktris",
+      "name": "Oyuncu (aktör ya da aktris)"
+    },
+    {
+      "key": "yazar",
+      "name": "Yazar"
+    },
+    {
+      "key": "sair",
+      "name": "Şair"
+    },
+    {
+      "key": "kitap",
+      "name": "Kitap"
+    },
+    {
+      "key": "roman_kahramani",
+      "name": "Roman kahramanı"
+    },
+    {
+      "key": "tarihi_kisi",
+      "name": "Tarihi kişi"
+    },
+    {
+      "key": "bilim_insani",
+      "name": "Bilim insanı"
+    },
+    {
+      "key": "ressam",
+      "name": "Ressam"
+    },
+    {
+      "key": "unlu_herhangi_biri",
+      "name": "Ünlü (herhangi biri)"
+    },
+    {
+      "key": "okulda_ders",
+      "name": "Okulda ders"
+    },
+    {
+      "key": "okulda_bulunan_sey",
+      "name": "Okulda bulunan şey"
+    },
+    {
+      "key": "kirtasiye",
+      "name": "Kırtasiye"
+    },
+    {
+      "key": "universite_bolumu",
+      "name": "Üniversite bölümü"
+    },
+    {
+      "key": "ulasim_araci",
+      "name": "Ulaşım aracı"
+    },
+    {
+      "key": "tasit_parcasi",
+      "name": "Taşıt parçası"
+    },
+    {
+      "key": "hastalik",
+      "name": "Hastalık"
+    },
+    {
+      "key": "vucut_parcasi",
+      "name": "Vücut parçası"
+    },
+    {
+      "key": "organ",
+      "name": "Organ"
+    },
+    {
+      "key": "duygu",
+      "name": "Duygu"
+    },
+    {
+      "key": "kisilik_ozelligi",
+      "name": "Kişilik özelliği"
+    },
+    {
+      "key": "sifat",
+      "name": "Sıfat"
+    },
+    {
+      "key": "fiil",
+      "name": "Fiil"
+    },
+    {
+      "key": "mastar_mak_mek",
+      "name": "Mastar (-mak, -mek)"
+    },
+    {
+      "key": "hava_durumu",
+      "name": "Hava durumu"
+    },
+    {
+      "key": "doga_olayi",
+      "name": "Doğa olayı"
+    },
+    {
+      "key": "gokyuzunde_gorulen",
+      "name": "Gökyüzünde görülen"
+    },
+    {
+      "key": "uzayla_ilgili",
+      "name": "Uzayla ilgili"
+    },
+    {
+      "key": "element",
+      "name": "Element"
+    },
+    {
+      "key": "sekil",
+      "name": "Şekil"
+    },
+    {
+      "key": "malzeme_tahta_cam",
+      "name": "Malzeme (tahta, cam…)"
+    },
+    {
+      "key": "alet_ya_da_el_aleti",
+      "name": "Alet ya da el aleti"
+    },
+    {
+      "key": "elektronik_esya",
+      "name": "Elektronik eşya"
+    },
+    {
+      "key": "ev_aleti",
+      "name": "Ev aleti"
+    },
+    {
+      "key": "mobilya",
+      "name": "Mobilya"
+    },
+    {
+      "key": "odada_bulunan",
+      "name": "Odada bulunan"
+    },
+    {
+      "key": "banyoda_bulunan",
+      "name": "Banyoda bulunan"
+    },
+    {
+      "key": "bahcede_bulunan",
+      "name": "Bahçede bulunan"
+    },
+    {
+      "key": "plajda_bulunan",
+      "name": "Plajda bulunan"
+    },
+    {
+      "key": "kampta_gereken",
+      "name": "Kampta gereken"
+    },
+    {
+      "key": "cantada_tasinan",
+      "name": "Çantada taşınan"
+    },
+    {
+      "key": "bavula_konan",
+      "name": "Bavula konan"
+    },
+    {
+      "key": "hastanede_bulunan",
+      "name": "Hastanede bulunan"
+    },
+    {
+      "key": "markette_satilan",
+      "name": "Markette satılan"
+    },
+    {
+      "key": "pazarda_satilan",
+      "name": "Pazarda satılan"
+    },
+    {
+      "key": "eczanede_satilan",
+      "name": "Eczanede satılan"
+    },
+    {
+      "key": "kafede_siparis_edilen",
+      "name": "Kafede sipariş edilen"
+    },
+    {
+      "key": "restoranda_gorulen",
+      "name": "Restoranda görülen"
+    },
+    {
+      "key": "sehirde_gorulen_yer",
+      "name": "Şehirde görülen yer"
+    },
+    {
+      "key": "bina_turu",
+      "name": "Bina türü"
+    },
+    {
+      "key": "turistik_yer",
+      "name": "Turistik yer"
+    },
+    {
+      "key": "unlu_yapi",
+      "name": "Ünlü yapı"
+    },
+    {
+      "key": "tatil_yeri",
+      "name": "Tatil yeri"
+    },
+    {
+      "key": "kampuste_bir_yer",
+      "name": "Kampüste bir yer"
+    },
+    {
+      "key": "ders_disi_etkinlik",
+      "name": "Ders dışı etkinlik"
+    },
+    {
+      "key": "hobi",
+      "name": "Hobi"
+    },
+    {
+      "key": "spor_malzemesi",
+      "name": "Spor malzemesi"
+    },
+    {
+      "key": "kis_ile_ilgili",
+      "name": "Kış ile ilgili"
+    },
+    {
+      "key": "yaz_ile_ilgili",
+      "name": "Yaz ile ilgili"
+    },
+    {
+      "key": "bayram_ya_da_kutlama",
+      "name": "Bayram ya da kutlama"
+    },
+    {
+      "key": "dugunde_gorulen",
+      "name": "Düğünde görülen"
+    },
+    {
+      "key": "dogum_gununde_gorulen",
+      "name": "Doğum gününde görülen"
+    },
+    {
+      "key": "hediye",
+      "name": "Hediye"
+    },
+    {
+      "key": "para_ile_ilgili",
+      "name": "Para ile ilgili"
+    },
+    {
+      "key": "is_hayatiyla_ilgili",
+      "name": "İş hayatıyla ilgili"
+    },
+    {
+      "key": "hukukla_ilgili",
+      "name": "Hukukla ilgili"
+    },
+    {
+      "key": "siyasetle_ilgili",
+      "name": "Siyasetle ilgili"
+    },
+    {
+      "key": "askerlikle_ilgili",
+      "name": "Askerlikle ilgili"
+    },
+    {
+      "key": "dinle_ilgili",
+      "name": "Dinle ilgili"
+    },
+    {
+      "key": "mitoloji",
+      "name": "Mitoloji"
+    },
+    {
+      "key": "efsanevi_yaratik",
+      "name": "Efsanevi yaratık"
+    },
+    {
+      "key": "korku_filmiyle_ilgili",
+      "name": "Korku filmiyle ilgili"
+    },
+    {
+      "key": "sihir_ve_buyu",
+      "name": "Sihir ve büyü"
+    },
+    {
+      "key": "tarihi_olay",
+      "name": "Tarihi olay"
+    },
+    {
+      "key": "savas_ya_da_savasla_ilgili",
+      "name": "Savaş ya da savaşla ilgili"
+    },
+    {
+      "key": "icat",
+      "name": "İcat"
+    },
+    {
+      "key": "dil",
+      "name": "Dil"
+    },
+    {
+      "key": "millet",
+      "name": "Millet"
+    },
+    {
+      "key": "para_birimi",
+      "name": "Para birimi"
+    },
+    {
+      "key": "gazete_ya_da_dergi",
+      "name": "Gazete ya da dergi"
+    },
+    {
+      "key": "televizyon_programi",
+      "name": "Televizyon programı"
+    },
+    {
+      "key": "uygulama_ya_da_site",
+      "name": "Uygulama ya da site"
+    },
+    {
+      "key": "internetle_ilgili",
+      "name": "İnternetle ilgili"
+    },
+    {
+      "key": "bilgisayarla_ilgili",
+      "name": "Bilgisayarla ilgili"
+    },
+    {
+      "key": "sosyal_medya_ile_ilgili",
+      "name": "Sosyal medya ile ilgili"
+    },
+    {
+      "key": "kisaltma",
+      "name": "Kısaltma"
+    },
+    {
+      "key": "argo_ya_da_gunluk_soz",
+      "name": "Argo ya da günlük söz"
+    },
+    {
+      "key": "atasozu_ilk_kelimesi",
+      "name": "Atasözü (ilk kelimesi)"
+    },
+    {
+      "key": "deyim_ilk_kelimesi",
+      "name": "Deyim (ilk kelimesi)"
+    },
+    {
+      "key": "unlem",
+      "name": "Ünlem"
+    },
+    {
+      "key": "hayvan_sesi",
+      "name": "Hayvan sesi"
+    },
+    {
+      "key": "ses_ya_da_gurultu",
+      "name": "Ses ya da gürültü"
+    },
+    {
+      "key": "koku_veren_sey",
+      "name": "Koku veren şey"
+    },
+    {
+      "key": "tatli_tadi_olan",
+      "name": "Tatlı tadı olan"
+    },
+    {
+      "key": "eksi_tadi_olan",
+      "name": "Ekşi tadı olan"
+    },
+    {
+      "key": "aci_tadi_olan",
+      "name": "Acı tadı olan"
+    },
+    {
+      "key": "yuvarlak_olan",
+      "name": "Yuvarlak olan"
+    },
+    {
+      "key": "kirmizi_olan",
+      "name": "Kırmızı olan"
+    },
+    {
+      "key": "beyaz_olan",
+      "name": "Beyaz olan"
+    },
+    {
+      "key": "yesil_olan",
+      "name": "Yeşil olan"
+    },
+    {
+      "key": "uzun_olan",
+      "name": "Uzun olan"
+    },
+    {
+      "key": "kucuk_olan",
+      "name": "Küçük olan"
+    },
+    {
+      "key": "agir_olan",
+      "name": "Ağır olan"
+    },
+    {
+      "key": "sicak_olan",
+      "name": "Sıcak olan"
+    },
+    {
+      "key": "soguk_olan",
+      "name": "Soğuk olan"
+    },
+    {
+      "key": "gece_gorulen",
+      "name": "Gece görülen"
+    },
+    {
+      "key": "sabah_yapilan",
+      "name": "Sabah yapılan"
+    },
+    {
+      "key": "cocuklarin_sevdigi",
+      "name": "Çocukların sevdiği"
+    },
+    {
+      "key": "annelerin_soyledigi",
+      "name": "Annelerin söylediği"
+    },
+    {
+      "key": "kafede_duyulan",
+      "name": "Kafede duyulan"
+    },
+    {
+      "key": "yolculukta_yapilan",
+      "name": "Yolculukta yapılan"
+    },
+    {
+      "key": "kaybedilen_sey",
+      "name": "Kaybedilen şey"
+    },
+    {
+      "key": "toplanan_ya_da_biriktirilen",
+      "name": "Toplanan ya da biriktirilen"
+    }
+  ]
+}

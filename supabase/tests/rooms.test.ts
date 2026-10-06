@@ -605,6 +605,45 @@ describe('locks', () => {
   // Sahtekar (docs/SPEC_V3.md §20.2) holds the caller's session, the room, then the game's secrets.
   // A vote goes through while the other table is leaving (its session held for no key update), and
   // both phones moving the game on at once move it once.
+  it('takes a Harf letter while the other table holds its session, and advances once from both phones', async () => {
+    const [owner, guest] = await threeTables();
+    const roomId = await createRoom(owner);
+    await requestJoin(guest, roomId);
+    const [requestId] = await pendingRequestIds(owner, roomId);
+    await rooms(owner, { action: 'respond', requestId, accept: true });
+    await rooms(guest, { action: 'propose-game', roomId, concept: 'harf' });
+    expect((await rooms(owner, { action: 'answer-game', roomId, accept: true })).status).toBe(200);
+    expect((await invoke(owner, 'harf', { action: 'begin', roomId })).status).toBe(200);
+    // The owner's table claims while the guest's session is held.
+    const [ownerId, guestId] = await Promise.all([userIdOf(owner), userIdOf(guest)]);
+    const claiming = postgres(dbUrl, { max: 1, onnotice: () => {} });
+    try {
+      await sql.begin(async (tx) => {
+        await tx`select id from private.active_session_for_update(${guestId})`;
+        const claimed = await claiming.begin(async (ctx) => {
+          await ctx`set local lock_timeout = '2s'`;
+          return ctx`
+            select (public.say_claim(${ownerId}, ${roomId}, 'harf', 1, 0, 'A')).game_state ->> 'step' as step
+          `;
+        });
+        expect(claimed).toEqual([{ step: '1' }]);
+      });
+    } finally {
+      await claiming.end();
+    }
+    // Both phones at the end of the guest's turn: one round lost, not two.
+    await sql`update public.rooms set game_state = jsonb_set(game_state, '{endsAt}', to_jsonb(now() - interval '1 second')) where id = ${roomId}`;
+    const both = await Promise.all(
+      [owner, guest].map((c) => invoke(c, 'harf', { action: 'advance', roomId })),
+    );
+    expect(both.map((r) => r.status)).toEqual([200, 200]);
+    const [state] = await sql`
+      select (game_state ->> 'roundNo')::int as round, game_state -> 'scores' as scores
+      from public.rooms where id = ${roomId}
+    `;
+    expect(state).toEqual({ round: 2, scores: { owner: 1, guest: 0 } });
+  });
+
   it('takes a Sahtekar vote while the other table holds its session, and advances once from both phones', async () => {
     const [owner, guest] = await threeTables();
     const roomId = await createRoom(owner);

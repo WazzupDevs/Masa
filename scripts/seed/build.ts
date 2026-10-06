@@ -13,7 +13,9 @@ import {
   parseAliasWords,
   parseCampusVenues,
   parseProfanity,
+  parseHarfCategories,
   parseSahtekarWords,
+  parseSarkiWords,
   parseSohbetCards,
   parseTabuCards,
   parseTestVenues,
@@ -86,6 +88,8 @@ export function buildSeed(root: string): SeedBuild {
       parseTabuCards(readJson('content/tabu-cards.json')),
       parseSohbetCards(readJson('content/sohbet-cards.json')),
       parseSahtekarWords(readJson('content/sahtekar-words.json'), profanity),
+      parseHarfCategories(readJson('content/harf-categories.json'), profanity),
+      parseSarkiWords(readJson('content/sarki-words.json'), profanity),
     ),
   ];
 

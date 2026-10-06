@@ -38,6 +38,7 @@ export type ErrorCode =
   | 'turn_not_started'
   | 'not_your_seat'
   | 'not_enough_players'
+  | 'no_objections_left'
   | 'no_passes_left'
   | 'too_soon'
   | 'no_cards'
@@ -113,6 +114,7 @@ export const DOMAIN_ERROR_CODES: readonly ErrorCode[] = [
   'turn_not_started',
   'not_your_seat',
   'not_enough_players',
+  'no_objections_left',
   'no_passes_left',
   'too_soon',
   'no_cards',

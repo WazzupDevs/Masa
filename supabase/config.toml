@@ -462,7 +462,13 @@ verify_jwt = false
 [functions.safety]
 verify_jwt = false
 
+[functions.harf]
+verify_jwt = false
+
 [functions.sahtekar]
+verify_jwt = false
+
+[functions.sarki]
 verify_jwt = false
 
 [functions.tabu]
