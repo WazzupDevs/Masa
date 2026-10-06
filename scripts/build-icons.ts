@@ -22,6 +22,8 @@ import {
 import {
   BADGE_GLYPHS,
   type BadgeGlyph,
+  GAME_GLYPHS,
+  type GameGlyph,
   glyphSvg,
   LOCK,
   MARKERS,
@@ -100,6 +102,11 @@ for (const id of Object.keys(BADGE_GLYPHS) as BadgeGlyph[]) {
   await glyphPngs((px) => glyphSvg(BADGE_GLYPHS[id], px), `badge-${id}`, 32);
 }
 await glyphPngs((px) => glyphSvg(LOCK, px), 'lock', 14);
+// Games (src/components/Glyph.tsx → GameIcon): up to 32 dp inside their disc.
+for (const id of Object.keys(GAME_GLYPHS) as GameGlyph[]) {
+  const g = GAME_GLYPHS[id];
+  await glyphPngs((px) => glyphSvg(g.solid, px, { cut: g.cut }), `game-${id}`, 32);
+}
 // The tab bar's fade (src/components/TabBar.tsx): white, transparent at the top, opaque at the
 // bottom, eased; tinted with the canvas colour and stretched to the band.
 await sharp({

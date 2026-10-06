@@ -1,5 +1,7 @@
+import { router } from 'expo-router';
 import { View } from 'react-native';
 
+import { Button } from '@/components/Button';
 import { Segmented } from '@/components/Segmented';
 import { Text } from '@/components/Text';
 import { tr } from '@/i18n/tr';
@@ -37,6 +39,14 @@ export function DesignPicker() {
           testID: `design-scheme-${value}`,
         }))}
       />
+      <View className="mt-2">
+        <Button
+          variant="secondary"
+          testID="preview-open"
+          label={tr.design.previewOpen}
+          onPress={() => router.push('/design-preview')}
+        />
+      </View>
     </View>
   );
 }

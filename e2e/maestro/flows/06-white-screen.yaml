@@ -89,6 +89,9 @@ appId: app.kabuk.mobile
     timeout: 10000
 - tapOn:
     id: end-game
+# "Oyunu bitir" asks first (canvas: Aşama 6 · Oyunlar).
+- tapOn:
+    id: end-game-confirm
 - scrollUntilVisible:
     element:
       id: solo-sohbet
