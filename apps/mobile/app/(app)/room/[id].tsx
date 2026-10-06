@@ -46,6 +46,27 @@ export default function RoomScreen() {
   const [chatOpen, setChatOpen] = useState(false);
   // Messages from the other table seen so far; the rest count as unread on the game's chat button.
   const [seen, setSeen] = useState<ReadonlySet<string> | null>(null);
+  const roomConcept = room.data?.concept;
+  const gameRunning =
+    !!room.data &&
+    isGameRunning(
+      (CONCEPTS as readonly unknown[]).includes(roomConcept) ? (roomConcept as Concept) : null,
+      room.data.guest_session_id !== null,
+      localTabu,
+    );
+  const ownSession = table.data?.id;
+  const loaded = chat.messages.data;
+  // Each game counts unread messages from its own start: what came before (chat between games)
+  // is seen. The chat panel closes when the game ends. Adjusted while rendering (React's "storing
+  // information from previous renders"), not in an effect.
+  const [wasRunning, setWasRunning] = useState(gameRunning);
+  if (wasRunning !== gameRunning) {
+    setWasRunning(gameRunning);
+    setSeen(null);
+    setChatOpen(false);
+  } else if (gameRunning && seen === null && loaded) {
+    setSeen(new Set(loaded.filter((m) => m.session_id !== ownSession).map((m) => m.id)));
+  }
 
   // "Odayı bitir" is the only way out (docs/SPEC_V3.md §5.5).
   const exit = useMutation({
@@ -141,9 +162,7 @@ export default function RoomScreen() {
   // A running game takes the whole screen; the chat folds into a button (canvas: Aşama 6 · Oyunlar).
   if (isGameRunning(concept, hasOtherTable, localTabu)) {
     const others = (chat.messages.data ?? []).filter((m) => m.session_id !== sessionId);
-    const seenNow = seen ?? new Set(others.map((m) => m.id));
-    if (!seen && chat.messages.data) setSeen(seenNow);
-    const unread = chatOpen ? 0 : others.filter((m) => !seenNow.has(m.id)).length;
+    const unread = chatOpen || !seen ? 0 : others.filter((m) => !seen.has(m.id)).length;
     const toggleChat = (open: boolean) => {
       setChatOpen(open);
       setSeen(new Set(others.map((m) => m.id)));
