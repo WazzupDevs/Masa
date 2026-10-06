@@ -299,7 +299,12 @@ describe('Harf Kapmaca, two tables', () => {
     const { concept, gs } = await state(t.roomId);
     expect(concept).toBeNull();
     // Rounds 1, 3, 5 the owner started and ran out; 2, 4 the guest.
-    expect(gs.lastGame).toMatchObject({ concept: 'harf', scores: { owner: 2, guest: 3 } });
+    expect(gs.lastGame).toMatchObject({
+      concept: 'harf',
+      scores: { owner: 2, guest: 3 },
+      timeouts: 5,
+      objectionsLeft: { owner: 3, guest: 3 },
+    });
     const results = await sql`
       select score, won, mode from public.game_results where room_id = ${t.roomId} order by score
     `;

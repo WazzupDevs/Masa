@@ -4,6 +4,7 @@ import {
   HARF_LETTERS,
   mayObject,
   newSayGame,
+  parseSayState,
   roundStarter,
   SAY_CONFIG,
   sayAdvance,
@@ -207,5 +208,41 @@ describe('Şarkıda Geçsin', () => {
       endsAt: start + 5_000,
       objectionEndsAt: start + 3_000,
     });
+  });
+});
+
+describe('the app reading game_state', () => {
+  it('reads a running game with its clocks, and refuses anything else', () => {
+    const gs = {
+      concept: 'harf',
+      phase: 'playing',
+      turnPhase: 'running',
+      readyEndsAt: null,
+      roundNo: 2,
+      totalRounds: 5,
+      prompt: 'Meyve',
+      letters: [{ letter: 'A', closed: true }],
+      turnTable: 'guest',
+      step: 1,
+      endsAt: '2026-10-06T12:00:10Z',
+      objectionEndsAt: '2026-10-06T12:00:03Z',
+      lastClaim: { table: 'owner', step: 0, letter: 'A' },
+      objectionsLeft: { owner: 3, guest: 2 },
+      scores: { owner: 0, guest: 1 },
+      lastRound: { roundNo: 1, winner: 'guest', reason: 'objection' },
+    };
+    expect(parseSayState(gs)).toMatchObject({
+      kind: 'harf',
+      endsAt: Date.parse('2026-10-06T12:00:10Z'),
+      objectionEndsAt: Date.parse('2026-10-06T12:00:03Z'),
+      readyEndsAt: null,
+      lastClaim: { table: 'owner', step: 0, letter: 'A' },
+      lastRound: { winner: 'guest', reason: 'objection' },
+    });
+    expect(parseSayState({ ...gs, concept: 'tabu' })).toBeNull();
+    expect(parseSayState({ ...gs, turnTable: 'x' })).toBeNull();
+    expect(
+      parseSayState({ ...gs, lastRound: { roundNo: 1, reason: 'nope' } })?.lastRound,
+    ).toBeNull();
   });
 });

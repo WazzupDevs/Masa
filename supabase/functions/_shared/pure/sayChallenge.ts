@@ -87,6 +87,8 @@ export type SayState = {
   objectionsLeft: Record<TableSide, number>;
   scores: Record<TableSide, number>;
   lastRound: { roundNo: number; winner: TableSide | null; reason: RoundEnd } | null;
+  // Rounds lost on the clock, for game_completed (rounds_lost_by_timeout).
+  timeouts: number;
 };
 
 export const otherSide = (side: TableSide): TableSide => (side === 'owner' ? 'guest' : 'owner');
@@ -125,6 +127,7 @@ export function newSayGame(kind: SayKind, prompt: string, now: number): SayState
     objectionsLeft: { owner: c.objections, guest: c.objections },
     scores: { owner: 0, guest: 0 },
     lastRound: null,
+    timeouts: 0,
   };
 }
 
@@ -138,6 +141,7 @@ function endRound(
 ): SayState {
   const scores = winner ? { ...game.scores, [winner]: game.scores[winner] + 1 } : game.scores;
   const lastRound = { roundNo: game.roundNo, winner, reason };
+  const timeouts = game.timeouts + (reason === 'timeout' ? 1 : 0);
   if (game.roundNo >= game.totalRounds) {
     return {
       ...game,
@@ -147,6 +151,7 @@ function endRound(
       readyEndsAt: null,
       scores,
       lastRound,
+      timeouts,
     };
   }
   const c = SAY_CONFIG[game.kind];
@@ -166,6 +171,7 @@ function endRound(
     lastClaim: null,
     scores,
     lastRound,
+    timeouts,
   };
 }
 
@@ -273,4 +279,74 @@ export function mayObject(game: SayState, by: TableSide, now: number): boolean {
 export function sayWinner(game: Pick<SayState, 'scores'>): TableSide | null {
   const { owner, guest } = game.scores;
   return owner === guest ? null : owner > guest ? 'owner' : 'guest';
+}
+
+// ---------------------------------------------------------------------------------------------
+// The two-table game as the app reads it from rooms.game_state; the clocks become milliseconds.
+
+const isObj = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v);
+const isInt = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v);
+const isSide = (v: unknown): v is TableSide => v === 'owner' || v === 'guest';
+const time = (v: unknown): number | null => (typeof v === 'string' ? Date.parse(v) : null);
+const pair = (v: unknown): Record<TableSide, number> | null =>
+  isObj(v) && isInt(v.owner) && isInt(v.guest) ? { owner: v.owner, guest: v.guest } : null;
+const REASONS: readonly RoundEnd[] = ['objection', 'timeout', 'board', 'lines'];
+
+export function parseSayState(value: unknown): SayState | null {
+  if (!isObj(value) || (value.concept !== 'harf' && value.concept !== 'sarki')) return null;
+  const v = value;
+  const scores = pair(v.scores);
+  const objectionsLeft = pair(v.objectionsLeft);
+  if (
+    v.phase !== 'playing' ||
+    (v.turnPhase !== 'ready' && v.turnPhase !== 'running') ||
+    !isInt(v.roundNo) ||
+    !isInt(v.totalRounds) ||
+    typeof v.prompt !== 'string' ||
+    !Array.isArray(v.letters) ||
+    !isSide(v.turnTable) ||
+    !isInt(v.step) ||
+    !scores ||
+    !objectionsLeft
+  ) {
+    return null;
+  }
+  const claim = v.lastClaim;
+  const round = v.lastRound;
+  return {
+    kind: v.concept as SayKind,
+    phase: 'playing',
+    turnPhase: v.turnPhase,
+    readyEndsAt: time(v.readyEndsAt),
+    roundNo: v.roundNo,
+    totalRounds: v.totalRounds,
+    prompt: v.prompt,
+    letters: v.letters
+      .filter(isObj)
+      .map((l) => ({ letter: String(l.letter), closed: l.closed === true })),
+    turnTable: v.turnTable,
+    step: v.step,
+    endsAt: time(v.endsAt),
+    objectionEndsAt: time(v.objectionEndsAt),
+    lastClaim:
+      isObj(claim) && isSide(claim.table) && isInt(claim.step)
+        ? {
+            table: claim.table,
+            step: claim.step,
+            letter: typeof claim.letter === 'string' ? claim.letter : null,
+          }
+        : null,
+    objectionsLeft,
+    scores,
+    lastRound:
+      isObj(round) && isInt(round.roundNo) && REASONS.includes(round.reason as RoundEnd)
+        ? {
+            roundNo: round.roundNo,
+            winner: isSide(round.winner) ? round.winner : null,
+            reason: round.reason as RoundEnd,
+          }
+        : null,
+    timeouts: isInt(v.timeouts) ? v.timeouts : 0,
+  };
 }
