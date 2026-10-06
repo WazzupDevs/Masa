@@ -115,6 +115,7 @@ describe('a round', () => {
       bullseyes: { owner: 0, guest: 0 },
       reveal: {
         roundNo: 1,
+        scale: { left: 'Ucuz', right: 'Pahalı' },
         table: 'owner',
         target: 34,
         needle: 41,
@@ -195,6 +196,7 @@ describe('the app reading game_state', () => {
       bullseyes: { owner: 0, guest: 0 },
       reveal: {
         roundNo: 1,
+        scale: { left: 'Ucuz', right: 'Pahalı' },
         table: 'owner',
         target: 34,
         needle: 41,

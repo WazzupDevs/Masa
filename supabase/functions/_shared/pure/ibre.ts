@@ -42,6 +42,8 @@ export function randomTarget(random: () => number): number {
 
 export type IbreReveal = {
   roundNo: number;
+  // The round's scale (game_state.scale is the next round's by then).
+  scale: IbreScale;
   // The describing table.
   table: TableSide;
   target: number;
@@ -187,6 +189,7 @@ function endRound(
   } as Record<TableSide, number>;
   const reveal: IbreReveal = {
     roundNo: game.roundNo,
+    scale: game.scale,
     table: describer,
     target,
     needle,
@@ -239,11 +242,22 @@ const pair = (v: unknown): Record<TableSide, number> | null =>
   isObj(v) && isInt(v.owner) && isInt(v.guest) ? { owner: v.owner, guest: v.guest } : null;
 
 export function parseIbreReveal(v: unknown): IbreReveal | null {
-  if (!isObj(v) || !isInt(v.roundNo) || !isSide(v.table) || !isInt(v.target) || !isInt(v.band)) {
+  const scale = isObj(v) ? v.scale : null;
+  if (
+    !isObj(v) ||
+    !isInt(v.roundNo) ||
+    !isSide(v.table) ||
+    !isInt(v.target) ||
+    !isInt(v.band) ||
+    !isObj(scale) ||
+    typeof scale.left !== 'string' ||
+    typeof scale.right !== 'string'
+  ) {
     return null;
   }
   return {
     roundNo: v.roundNo,
+    scale: { left: scale.left, right: scale.right },
     table: v.table,
     target: v.target,
     needle: isInt(v.needle) ? v.needle : null,

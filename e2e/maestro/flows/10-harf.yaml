@@ -77,26 +77,33 @@ appId: app.kabuk.mobile
     file: ../scripts/bot.js
     env:
       ACTION: say-begin
+# The clocks are held (say-hold) wherever the emulator's slow screen reads would race them.
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: say-hold
 - extendedWaitUntil:
     visible:
       id: say-round
     timeout: 15000
 # The bot table has 2 objections left.
-- assertVisible: 2 hak
+- extendedWaitUntil:
+    visible: 2 hak
+    timeout: 20000
 - runScript:
     file: ../scripts/bot.js
     env:
       ACTION: say-claim
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: say-hold
 - extendedWaitUntil:
     visible:
       id: say-object
     timeout: 15000
 - takeScreenshot: 48-harf-window
-# This phone lets it pass; the window closes.
-- extendedWaitUntil:
-    notVisible:
-      id: say-object
-    timeout: 10000
+# This phone lets it pass; the bot runs the game to its end.
 - runScript:
     file: ../scripts/bot.js
     env:
