@@ -229,7 +229,8 @@ begin
     to_jsonb((bullseyes ->> describer)::integer + case when band = 4 then 1 else 0 end)
   );
   reveal := jsonb_build_object(
-    'roundNo', round_no, 'table', describer, 'target', target, 'needle', needle, 'band', band,
+    'roundNo', round_no, 'scale', gs -> 'scale', 'table', describer, 'target', target,
+    'needle', needle, 'band', band,
     'side', side, 'sidePoint', side_point
   );
 

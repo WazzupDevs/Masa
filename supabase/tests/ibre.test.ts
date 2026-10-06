@@ -68,6 +68,7 @@ async function started() {
 
 type Reveal = {
   roundNo: number;
+  scale: { left: string; right: string };
   table: string;
   target: number;
   needle: number | null;
@@ -283,6 +284,7 @@ describe('İbre, two tables', () => {
 
   it('reveals on the side guess with the server’s bands and side point, then opens round 2 ready', async () => {
     const t = await started();
+    const scale1 = (await state(t.roomId)).gs.scale;
     await setTarget(t.roomId, 34);
     await t.call(t.owner, { action: 'begin' });
     await t.call(t.owner, { action: 'lock', round: 1, value: 41 });
@@ -295,7 +297,7 @@ describe('İbre, two tables', () => {
     const { gs } = await state(t.roomId);
     // The reducer on the same moves.
     const local = ibreSide(
-      ibreLock(ibreBegin(newIbreGame(gs.scale, 0), 'owner', 0), 'owner', 1, 41, 0),
+      ibreLock(ibreBegin(newIbreGame(scale1, 0), 'owner', 0), 'owner', 1, 41, 0),
       'guest',
       1,
       'left',
@@ -315,6 +317,7 @@ describe('İbre, two tables', () => {
     });
     expect(gs.reveal).toEqual({
       roundNo: 1,
+      scale: scale1,
       table: 'owner',
       target: 34,
       needle: 41,
@@ -385,8 +388,10 @@ describe('İbre, two tables', () => {
   it('plays 4 rounds with the tables in turn, writes game_results and keeps the last reveal', async () => {
     const t = await started();
     const tables = { owner: t.owner, guest: t.guest };
+    let lastScale = { left: '', right: '' };
     for (let round = 1; round <= 4; round++) {
       const { gs } = await state(t.roomId);
+      lastScale = gs.scale;
       expect(gs.turnTable).toBe(round % 2 === 1 ? 'owner' : 'guest');
       const describer = tables[gs.turnTable];
       const guesser = tables[gs.turnTable === 'owner' ? 'guest' : 'owner'];
@@ -404,6 +409,7 @@ describe('İbre, two tables', () => {
       bullseyes: { owner: 0, guest: 0 },
       reveal: {
         roundNo: 4,
+        scale: lastScale,
         table: 'guest',
         target: 40,
         needle: 50,
