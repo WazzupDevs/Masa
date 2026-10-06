@@ -46,8 +46,8 @@ export const IDEMPOTENT_CALLS = [
   // games.test "tabu, two tables face to face": "alternates the tables, deals a new list per turn,
   // and ends turns idempotently"
   'tabu/end-turn',
-  // games.test "tabu, ready turns (docs/SPEC_V3.md §19.1)": "starts the clock once, from the
-  // describing table or from either table after readyEndsAt"
+  // games.test "tabu, ready turns (docs/SPEC_V3.md §19.1)": "starts the clock once from the
+  // describing table, however often either phone sends it"
   'tabu/begin-turn',
   // sahtekar.test "sahtekar, seeing the word": "drops a seat that did not look in 2 minutes, and
   // its table counts one less"

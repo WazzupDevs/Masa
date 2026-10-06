@@ -68,6 +68,10 @@ export type Client = SupabaseClient<Database>;
 const RETIRED_WORKER_BODY =
   '{"code":"Internal Server Error","message":"Request failed due to an internal server error"}';
 
+// Every function answers locally in well under a second; a request still open after this hung, and
+// fails here with its function and action instead of as an unnamed test timeout.
+export const INVOKE_TIMEOUT_MS = 10_000;
+
 // Calls an Edge Function; errors come back as { status, body } instead of throwing. A 5xx is never
 // an expected answer, so it throws with the function, action and body to name the failure.
 export async function invoke(
@@ -76,14 +80,40 @@ export async function invoke(
   body: Record<string, unknown>,
   attempt = 1,
 ): Promise<{ status: number; body: unknown }> {
-  const { data, error } = await client.functions.invoke(fn, { body });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), INVOKE_TIMEOUT_MS);
+  let answer: { status: number; body: unknown } | 'retired';
+  try {
+    answer = await send(client, fn, body, controller.signal, attempt);
+  } catch (e) {
+    if (!controller.signal.aborted) throw e;
+    throw new Error(`${fn}/${String(body.action)} got no answer in ${INVOKE_TIMEOUT_MS} ms`, {
+      cause: e,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+  if (answer === 'retired') {
+    console.warn(`retired worker: sending ${fn}/${String(body.action)} again`);
+    return invoke(client, fn, body, 2);
+  }
+  return answer;
+}
+
+async function send(
+  client: Client,
+  fn: string,
+  body: Record<string, unknown>,
+  signal: AbortSignal,
+  attempt: number,
+): Promise<{ status: number; body: unknown } | 'retired'> {
+  const { data, error } = await client.functions.invoke(fn, { body, signal });
+  // A request aborted mid-way may come back as an error value rather than a throw.
+  signal.throwIfAborted();
   if (error instanceof FunctionsHttpError) {
     const status = error.context.status as number;
     const text = await (error.context as Response).text();
-    if (status === 500 && text === RETIRED_WORKER_BODY && attempt === 1) {
-      console.warn(`retired worker: sending ${fn}/${String(body.action)} again`);
-      return invoke(client, fn, body, 2);
-    }
+    if (status === 500 && text === RETIRED_WORKER_BODY && attempt === 1) return 'retired';
     if (status >= 500) {
       throw new Error(`${fn}/${String(body.action)} answered ${status}: ${text}`);
     }
