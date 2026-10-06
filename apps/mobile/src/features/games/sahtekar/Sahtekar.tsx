@@ -553,11 +553,11 @@ export function ImposterReveal({
             accessibilityLabel={tr.sahtekar.voteLine(v.voter, v.target)}
             className="flex-row items-center gap-1.5"
           >
-            <SeatBadge seat={v.voter} size={SPACING[9]} />
+            <SeatBadge seat={v.voter} size={SPACING[9]} ring={fg} />
             <Text variant="bodyStrong" color={fg}>
               →
             </Text>
-            <SeatBadge seat={v.target} size={SPACING[9]} />
+            <SeatBadge seat={v.target} size={SPACING[9]} ring={fg} />
           </View>
         ))}
       </View>

@@ -14,10 +14,13 @@ export function SeatBadge({
   seat,
   state = 'idle',
   size = SPACING[12],
+  ring,
 }: {
   seat: string;
   state?: SeatState;
   size?: number;
+  // On a card of the same colour (the guest's seats on the lively reveal) the disc is outlined.
+  ring?: string;
 }) {
   const { colors, shape } = useTheme();
   const owner = seat.startsWith('A');
@@ -39,8 +42,13 @@ export function SeatBadge({
         height: size,
         borderRadius: shape.radius.pill,
         backgroundColor: bg,
-        borderWidth: state === 'current' ? Math.max(shape.stroke.control, 2) : 0,
-        borderColor: colors.border,
+        borderWidth:
+          state === 'current'
+            ? Math.max(shape.stroke.control, 2)
+            : ring
+              ? shape.stroke.hairline * 2
+              : 0,
+        borderColor: state !== 'current' && ring ? ring : colors.border,
       }}
     >
       <Text variant={size >= SPACING[16] ? 'hero' : 'mark'} color={fg}>
