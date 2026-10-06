@@ -1,0 +1,70 @@
+# Ayarlar → Tasarım (test) → Bileşen önizleme: the game components that screens wire later, with
+# sample props, photographed in the run's scheme. One block per set (Aşama 6, Aşama 7).
+appId: app.kabuk.mobile
+---
+- tapOn:
+    id: tab-profile
+- tapOn: Ayarlar
+- scrollUntilVisible:
+    element:
+      id: preview-open
+    timeout: 10000
+- tapOn:
+    id: preview-open
+- extendedWaitUntil:
+    visible:
+      id: preview-games
+    timeout: 10000
+- takeScreenshot: 04c-preview-games-1
+- scrollUntilVisible:
+    element:
+      id: turn-start
+    centerElement: true
+    timeout: 10000
+- takeScreenshot: 04c-preview-games-2
+- scrollUntilVisible:
+    element:
+      id: turn-countdown
+    centerElement: true
+    timeout: 10000
+- takeScreenshot: 04c-preview-games-3
+- scrollUntilVisible:
+    element:
+      id: time-up
+    centerElement: true
+    timeout: 10000
+- takeScreenshot: 04c-preview-games-4
+- scrollUntilVisible:
+    element:
+      id: preview-intro
+    timeout: 10000
+- tapOn:
+    id: preview-confirm
+- extendedWaitUntil:
+    visible:
+      id: preview-confirm-ok
+    timeout: 10000
+- takeScreenshot: 04c-preview-confirm
+- tapOn:
+    id: preview-confirm-ok-cancel
+- tapOn:
+    id: preview-intro
+- extendedWaitUntil:
+    visible:
+      id: intro-done
+    timeout: 10000
+- takeScreenshot: 04c-preview-intro
+- tapOn:
+    id: intro-skip
+# The preview and Ayarlar are scrolled down; the system back key leaves both without scrolling up.
+- back
+- extendedWaitUntil:
+    visible:
+      id: preview-open
+    timeout: 10000
+- back
+- tapOn:
+    id: tab-explore
+- extendedWaitUntil:
+    visible: Liste
+    timeout: 10000

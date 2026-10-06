@@ -29,6 +29,8 @@ const PAIRS: readonly Pair[] = [
   ['read', 'surface', AA_TEXT],
   ['danger', 'canvas', AA_TEXT], // error messages
   ['danger', 'surface', AA_TEXT],
+  ['success', 'surface', AA_TEXT], // turn summary counts (Doğru)
+  ['success', 'canvas', AA_TEXT],
   ['onAccent', 'accent', AA_TEXT],
   ['onDanger', 'danger', AA_TEXT],
   ['onSuccess', 'success', AA_TEXT],

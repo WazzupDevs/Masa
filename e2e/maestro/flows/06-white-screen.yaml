@@ -42,6 +42,12 @@ appId: app.kabuk.mobile
     file: ../scripts/bot.js
     env:
       ACTION: answer-game
+# Turn 1 opens ready (docs/SPEC_V3.md §19.1); the bot table starts this phone's turn.
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: begin-turn
+      BODY: '{"force":true}'
 - extendedWaitUntil:
     visible: Kartı görmek için dokun
     timeout: 20000
@@ -89,6 +95,9 @@ appId: app.kabuk.mobile
     timeout: 10000
 - tapOn:
     id: end-game
+# "Oyunu bitir" asks first (canvas: Aşama 6 · Oyunlar).
+- tapOn:
+    id: end-game-confirm
 - scrollUntilVisible:
     element:
       id: solo-sohbet
