@@ -321,7 +321,12 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
   // first moves readyEndsAt into the past, so the bot starts the device's turn too, as either
   // table may then.
   async 'begin-turn'(args) {
-    const room = await myRoom();
+    // The device's acceptance may still be on its way: wait for the ready turn first, or the call
+    // finds no game and the turn stays ready.
+    const room = await retryUntil('a ready Tabu turn', async () => {
+      const r = await myRoom();
+      return (r.game_state as { turnPhase?: string } | null)?.turnPhase === 'ready' ? r : null;
+    });
     if (args.force === true) {
       const sql = db();
       try {
@@ -333,7 +338,18 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
         await sql.end();
       }
     }
-    return call('tabu', { action: 'begin-turn', roomId: room.id });
+    await call('tabu', { action: 'begin-turn', roomId: room.id });
+    // begin-turn answers ok even when it starts nothing: check that the clock runs.
+    return retryUntil(
+      'the turn to start',
+      async () => {
+        const r = await myRoom();
+        return (r.game_state as { turnPhase?: string } | null)?.turnPhase === 'running'
+          ? { ok: true }
+          : null;
+      },
+      5_000,
+    );
   },
 
   // Local only: ends the current turn now instead of in 60 seconds.
