@@ -12,6 +12,8 @@ type Props = Omit<TextProps, 'style'> & {
   align?: 'left' | 'center' | 'right';
   // Equal-width digits for clocks and counters.
   tabular?: boolean;
+  // Struck through: a closed letter on the Harf Kapmaca board.
+  strike?: boolean;
   className?: string;
   children: ReactNode;
 };
@@ -23,6 +25,7 @@ export function Text({
   color,
   align,
   tabular,
+  strike,
   className,
   children,
   ...rest
@@ -43,6 +46,7 @@ export function Text({
         { color: color ?? theme.colors[tone ?? defaultTone] },
         align ? { textAlign: align } : null,
         tabular ? { fontVariant: ['tabular-nums'] } : null,
+        strike ? { textDecorationLine: 'line-through' } : null,
       ]}
     >
       {children}
