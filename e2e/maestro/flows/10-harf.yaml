@@ -98,8 +98,9 @@ appId: app.kabuk.mobile
     file: ../scripts/bot.js
     env:
       ACTION: say-hold
-- extendedWaitUntil:
-    visible:
+# İtiraz sits under the letter board, below the fold on a small screen.
+- scrollUntilVisible:
+    element:
       id: say-object
     timeout: 15000
 - takeScreenshot: 48-harf-window
