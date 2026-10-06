@@ -297,3 +297,137 @@ export function reduceLocal(game: LocalSahtekar, action: LocalAction, now: numbe
 export function allViewed(game: Pick<LocalSahtekar, 'seats' | 'viewed'>): boolean {
   return game.seats.every((s) => game.viewed.includes(s));
 }
+
+// ---------------------------------------------------------------------------------------------
+// The two-table game as the app reads it from rooms.game_state (§20.2). The impostor's seat and
+// the word are never in it before the reveal (rule 4).
+
+export type SahtekarPhase = 'viewing' | 'clues' | 'voting' | 'guess';
+
+export type SahtekarState = {
+  concept: 'sahtekar';
+  phase: SahtekarPhase;
+  gameNo: number;
+  // Goes up when the seats left get a new impostor and word (a seat that did not look left).
+  dealNo: number;
+  players: Players;
+  seats: Seat[];
+  category: string;
+  viewed: Seat[];
+  order: Seat[];
+  step: number;
+  voters: Seat[];
+  votesCast: number;
+  endsAt: string;
+  accused: Seat | null;
+};
+
+export type SahtekarReveal = {
+  imposter: Seat;
+  word: string;
+  category: string;
+  votes: Record<Seat, Seat>;
+  accused: Seat | null;
+  guess: string | null;
+  winner: Winner;
+};
+
+// lastGame of a Sahtekar game: the counts for the rematch, and the reveal; or, when fewer than 3
+// seats looked, endedBy and no reveal.
+export type SahtekarLastGame = {
+  players: Players | null;
+  reveal: SahtekarReveal | null;
+  endedBy: 'not_enough_players' | null;
+};
+
+const PHASES: readonly SahtekarPhase[] = ['viewing', 'clues', 'voting', 'guess'];
+
+function isObj(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+const isInt = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v);
+const isStr = (v: unknown): v is string => typeof v === 'string';
+const strs = (v: unknown): v is string[] => Array.isArray(v) && v.every(isStr);
+
+function parsePlayers(v: unknown): Players | null {
+  return isObj(v) && isInt(v.owner) && isInt(v.guest) ? { owner: v.owner, guest: v.guest } : null;
+}
+
+export function parseSahtekarState(value: unknown): SahtekarState | null {
+  if (!isObj(value) || value.concept !== 'sahtekar') return null;
+  const v = value;
+  const players = parsePlayers(v.players);
+  if (
+    !(PHASES as readonly unknown[]).includes(v.phase) ||
+    !isInt(v.gameNo) ||
+    !players ||
+    !strs(v.seats) ||
+    !isStr(v.category) ||
+    !strs(v.viewed) ||
+    !strs(v.order) ||
+    !isInt(v.step) ||
+    !strs(v.voters) ||
+    !isInt(v.votesCast) ||
+    !isStr(v.endsAt)
+  ) {
+    return null;
+  }
+  return {
+    concept: 'sahtekar',
+    phase: v.phase as SahtekarPhase,
+    gameNo: v.gameNo,
+    dealNo: isInt(v.dealNo) ? v.dealNo : 1,
+    players,
+    seats: v.seats,
+    category: v.category,
+    viewed: v.viewed,
+    order: v.order,
+    step: v.step,
+    voters: v.voters,
+    votesCast: v.votesCast,
+    endsAt: v.endsAt,
+    accused: isStr(v.accused) ? v.accused : null,
+  };
+}
+
+export function parseSahtekarLastGame(last: unknown): SahtekarLastGame | null {
+  if (!isObj(last) || last.concept !== 'sahtekar') return null;
+  const r = last.reveal;
+  const reveal: SahtekarReveal | null =
+    isObj(r) &&
+    isStr(r.imposter) &&
+    isStr(r.word) &&
+    isStr(r.category) &&
+    (r.winner === 'imposter' || r.winner === 'tables')
+      ? {
+          imposter: r.imposter,
+          word: r.word,
+          category: r.category,
+          votes: isObj(r.votes)
+            ? (Object.fromEntries(Object.entries(r.votes).filter(([, t]) => isStr(t))) as Record<
+                Seat,
+                Seat
+              >)
+            : {},
+          accused: isStr(r.accused) ? r.accused : null,
+          guess: isStr(r.guess) ? r.guess : null,
+          winner: r.winner as Winner,
+        }
+      : null;
+  return {
+    players: parsePlayers(last.players),
+    reveal,
+    endedBy: last.endedBy === 'not_enough_players' ? 'not_enough_players' : null,
+  };
+}
+
+// Which seats belong to this phone's table.
+export function ownSeats(seats: readonly Seat[], side: TableSide): Seat[] {
+  return seats.filter((s) => tableOfSeat(s) === side);
+}
+
+// The clue round (1-based) of a step: the order is the same round repeated clueRounds times.
+export function clueRoundOf(step: number, orderLength: number): number {
+  const perRound = Math.max(1, orderLength / SAHTEKAR.clueRounds);
+  return Math.min(SAHTEKAR.clueRounds, Math.floor(step / perRound) + 1);
+}

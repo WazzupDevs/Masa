@@ -6,6 +6,9 @@ import type {
   GameOkResponse,
   TabuStartResponse,
   TabuTurnCardsResponse,
+  SahtekarOptionsResponse,
+  SahtekarStartResponse,
+  SahtekarViewResponse,
 } from '@shared/api/games.ts';
 import type {
   CreateRoomRequest,
@@ -134,10 +137,22 @@ export const roomsApi = {
     invoke<RequestJoinResponse>('rooms', { action: 'request-join', roomId, profiled }),
   respond: (requestId: string, accept: boolean) =>
     invoke<RoomsOkResponse>('rooms', { action: 'respond', requestId, accept }),
-  proposeGame: (roomId: string, concept: Concept) =>
-    invoke<ProposeGameResponse>('rooms', { action: 'propose-game', roomId, concept }),
-  answerGame: (roomId: string, accept: boolean) =>
-    invoke<RoomsOkResponse>('rooms', { action: 'answer-game', roomId, accept }),
+  // `players`: Sahtekar only, the table's count (1-4); without it the server takes the check-in
+  // headcount (docs/SPEC_V3.md §20.2a).
+  proposeGame: (roomId: string, concept: Concept, players?: number) =>
+    invoke<ProposeGameResponse>('rooms', {
+      action: 'propose-game',
+      roomId,
+      concept,
+      ...(players ? { players } : {}),
+    }),
+  answerGame: (roomId: string, accept: boolean, players?: number) =>
+    invoke<RoomsOkResponse>('rooms', {
+      action: 'answer-game',
+      roomId,
+      accept,
+      ...(players ? { players } : {}),
+    }),
   endGame: (roomId: string) => invoke<RoomsOkResponse>('rooms', { action: 'end-game', roomId }),
   end: () => invoke<RoomsOkResponse>('rooms', { action: 'end' }),
 };
@@ -203,6 +218,21 @@ export const gamesApi = {
   tabuBeginTurn: (roomId: string) =>
     invoke<GameOkResponse>('tabu', { action: 'begin-turn', roomId }),
   sohbetNext: (roomId: string) => invoke<GameOkResponse>('sohbet', { action: 'next-card', roomId }),
+  // Sahtekar (docs/SPEC_V3.md §20.2): the one-table deck, then the two-table game's actions.
+  sahtekarStart: (roomId: string) =>
+    invoke<SahtekarStartResponse>('sahtekar', { action: 'start', roomId }),
+  sahtekarView: (roomId: string, seat: string) =>
+    invoke<SahtekarViewResponse>('sahtekar', { action: 'view', roomId, seat }),
+  sahtekarSaid: (roomId: string, step: number) =>
+    invoke<GameOkResponse>('sahtekar', { action: 'said', roomId, step }),
+  sahtekarVote: (roomId: string, voter: string, target: string) =>
+    invoke<GameOkResponse>('sahtekar', { action: 'vote', roomId, voter, target }),
+  sahtekarOptions: (roomId: string) =>
+    invoke<SahtekarOptionsResponse>('sahtekar', { action: 'options', roomId }),
+  sahtekarGuess: (roomId: string, option: string) =>
+    invoke<GameOkResponse>('sahtekar', { action: 'guess', roomId, option }),
+  sahtekarAdvance: (roomId: string) =>
+    invoke<GameOkResponse>('sahtekar', { action: 'advance', roomId }),
 };
 
 export const revealApi = {

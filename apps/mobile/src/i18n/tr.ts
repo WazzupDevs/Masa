@@ -3,6 +3,7 @@ import { headcountLabel } from '@shared/checkin.ts';
 import type { InboxStamp } from '@shared/dmInbox.ts';
 import type { EventTime } from '@shared/explore.ts';
 import { TABU } from '@shared/tabu.ts';
+import { SAHTEKAR } from '@shared/sahtekar.ts';
 
 const MONTHS = [
   'Ocak',
@@ -44,10 +45,11 @@ function dayMonthAt(iso: string): string {
 }
 
 // play_history.concept: the last game played in the room, or 'chat' (docs/SPEC_V3.md §5.5).
-export type HistoryConcept = 'tabu' | 'sohbet' | 'chat';
+export type HistoryConcept = 'tabu' | 'sohbet' | 'sahtekar' | 'chat';
 const HISTORY_CONCEPTS: Record<HistoryConcept, string> = {
   tabu: 'Sesli Tabu',
   sohbet: 'Sohbet kartları',
+  sahtekar: 'Sahtekar',
   chat: 'Sohbet',
 };
 
@@ -203,6 +205,16 @@ export const tr = {
         `Doğru: kelime bilindi, iki masa da basabilir. Pas: kart geçilir, yalnızca anlatan masa basar, turda en çok ${TABU.maxPasses}. Tabu: yasaklı kelime söylendi, yalnızca dinleyen masa basar.`,
         'Masalardan biri tek kişiyse iş birliği modu: tek takım, süreye karşı; üç düğmeye yalnızca anlatan masa basar.',
         'Kendi masanla oynarken masanızı iki takıma ayırın; anlatan telefonu tutar, takımı tahmin eder.',
+      ],
+    },
+    sahtekar: {
+      body: 'Herkes aynı kelimeyi görür, biri hariç: sahtekar yalnızca kategoriyi bilir. Onu bulun.',
+      steps: [
+        `En az ${SAHTEKAR.minPlayers} kişi. Telefon elden ele dolaşır; herkes kendi kartını basılı tutarak görür.`,
+        `Kartına ${SAHTEKAR.viewSeconds / 60} dakikada bakmayan oyundan çıkar.`,
+        `İki tur boyunca sırayla tek kelimelik ipucu verin; her ipucu ${SAHTEKAR.clueSeconds} saniye.`,
+        'Sonra herkes gizlice sahtekar sandığı kişiye oy verir; kendine oy verilmez.',
+        'Sahtekar yakalanırsa kelimeyi altı seçenek arasından tahmin eder. Bilirse ya da yakalanmazsa sahtekar kazanır.',
       ],
     },
     sohbet: {
@@ -395,11 +407,15 @@ export const tr = {
     continue: 'Devam',
   },
   // The games (docs/SPEC_V3.md §5.1). "Sohbet" alone is the intent label, never a game.
-  concepts: { tabu: 'Sesli Tabu', sohbet: 'Sohbet kartları' },
+  concepts: { tabu: 'Sesli Tabu', sohbet: 'Sohbet kartları', sahtekar: 'Sahtekar' },
   // How a game is shown with its type (docs/SPEC_V2.md §8.1): only voice games are marked, since
   // they need the tables to come together.
-  conceptWithMode: (concept: 'tabu' | 'sohbet') =>
-    concept === 'tabu' ? 'Sesli Tabu · yüz yüze' : 'Sohbet kartları',
+  conceptWithMode: (concept: 'tabu' | 'sohbet' | 'sahtekar') =>
+    concept === 'tabu'
+      ? 'Sesli Tabu · yüz yüze'
+      : concept === 'sahtekar'
+        ? 'Sahtekar · yüz yüze'
+        : 'Sohbet kartları',
   // The room's optional intent label (§5.2).
   intents: { game: 'Oyun', chat: 'Sohbet' },
   voiceNote:
@@ -432,12 +448,14 @@ export const tr = {
     createConfirm: 'Odayı kur',
     // The room's eyebrow: the running game, else the chat; voice games say they are played face to
     // face (docs/SPEC_V2.md §8.1).
-    roomEyebrow: (concept: 'tabu' | 'sohbet' | null) =>
+    roomEyebrow: (concept: 'tabu' | 'sohbet' | 'sahtekar' | null) =>
       concept === 'tabu'
         ? 'Sesli Tabu · yüz yüze'
-        : concept === 'sohbet'
-          ? 'Sohbet kartları'
-          : 'Oda',
+        : concept === 'sahtekar'
+          ? 'Sahtekar · yüz yüze'
+          : concept === 'sohbet'
+            ? 'Sohbet kartları'
+            : 'Oda',
     withGuest: (owner: string, guest: string) => `${owner} ve ${guest}`,
     waitingForGuest: 'Başka bir masa katılmak isteyebilir. Bu arada kendi masanla oynayabilirsin.',
     end: 'Odayı bitir',
@@ -720,6 +738,16 @@ export const tr = {
     wordAndGuess: (w: string, g: string) => `Kelime: ${w} · tahmin: ${g}`,
     votesLabel: 'Oylar',
     voteLine: (voter: string, target: string) => `${voter}, ${seatTo(target, 'dative')} oy verdi`,
+    // The game screens (docs/SPEC_V3.md §20.2).
+    ownTable: 'Sizin masanız',
+    otherTable: 'Diğer masa',
+    ownDone: 'Masanızda herkes baktı. Diğer masa bekleniyor.',
+    redealt:
+      'Sahtekar kartına bakmadı ve oyundan çıktı. Yeni kelime dağıtıldı; herkes yeniden baksın.',
+    dealing: 'Yeni kelime geliyor…',
+    votesDone: 'Masanızın oyları verildi. Diğer masa bekleniyor.',
+    notEnough: 'Kartına bakmayanlar oyundan çıktı; 3 kişi kalmadı. Oyun bitti.',
+    needsThree: `Sahtekar için masada en az ${SAHTEKAR.minPlayers} kişi olmalı.`,
   },
   reveal: {
     question: 'Tanışalım mı?',

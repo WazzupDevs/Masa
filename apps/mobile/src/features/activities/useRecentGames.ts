@@ -6,7 +6,7 @@ const RECENT = 5;
 
 export type RecentGame = {
   id: string;
-  concept: 'tabu' | 'sohbet';
+  concept: 'tabu' | 'sohbet' | 'sahtekar';
   completedAt: string;
   score: number | null;
   won: boolean | null;
@@ -39,7 +39,7 @@ export function useRecentGames() {
       }
       return data.map((g) => ({
         id: g.id,
-        concept: g.concept === 'sohbet' ? 'sohbet' : 'tabu',
+        concept: g.concept === 'sohbet' || g.concept === 'sahtekar' ? g.concept : 'tabu',
         completedAt: g.completed_at,
         score: g.score,
         won: g.won,

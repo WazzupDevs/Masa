@@ -19,7 +19,7 @@ import { RoomComposer, RoomMessages, useRoomChat } from '@/features/chat/ChatPan
 import { useRoomSafety } from '@/features/chat/RoomSafety';
 import { useOtherTableOnline } from '@/features/chat/usePresence';
 import { useActiveTable } from '@/features/checkin/useActiveTable';
-import { GameArea, isGameRunning, useEndGame } from '@/features/games/GameArea';
+import { GameArea, isGameRunning, type LocalGame, useEndGame } from '@/features/games/GameArea';
 import { useFirstGameIntro } from '@/features/games/introSeen';
 import { FirstGameIntro } from '@/features/games/FirstGameIntro';
 import { useGameSignals } from '@/features/games/gameSignals';
@@ -45,10 +45,10 @@ export default function RoomScreen() {
   const table = useActiveTable();
   const room = useRoom(id);
   const chat = useRoomChat(id);
-  // One-table Tabu runs on this phone; it starts in GameArea and keeps its place when the room's
-  // concept turns to 'tabu', so the deck is not dealt twice.
-  const [localTabu, setLocalTabu] = useState(false);
-  const endGame = useEndGame(id, () => setLocalTabu(false));
+  // A one-table game (Tabu, Sahtekar) runs on this phone; it starts in GameArea and keeps its place
+  // when the room's concept turns to it, so the deck is not dealt twice.
+  const [localGame, setLocalGame] = useState<LocalGame | null>(null);
+  const endGame = useEndGame(id, () => setLocalGame(null));
   const [chatOpen, setChatOpen] = useState(false);
   // Messages from the other table seen so far; the rest count as unread on the game's chat button.
   const [seen, setSeen] = useState<ReadonlySet<string> | null>(null);
@@ -58,7 +58,7 @@ export default function RoomScreen() {
     isGameRunning(
       (CONCEPTS as readonly unknown[]).includes(roomConcept) ? (roomConcept as Concept) : null,
       room.data.guest_session_id !== null,
-      localTabu,
+      localGame,
     );
   const ownSession = table.data?.id;
   const loaded = chat.messages.data;
@@ -153,8 +153,9 @@ export default function RoomScreen() {
       hasGuest={hasOtherTable}
       isOwner={isOwner}
       aliases={{ owner: r.owner_alias, guest: r.guest_alias ?? '' }}
-      localTabu={localTabu}
-      onLocalTabu={setLocalTabu}
+      headcount={table.data?.headcount ?? 0}
+      localGame={localGame}
+      onLocalGame={setLocalGame}
     />
   );
 
@@ -185,7 +186,7 @@ export default function RoomScreen() {
   }
 
   // A running game takes the whole screen; the chat folds into a button (canvas: Aşama 6 · Oyunlar).
-  if (isGameRunning(concept, hasOtherTable, localTabu)) {
+  if (isGameRunning(concept, hasOtherTable, localGame)) {
     const others = (chat.messages.data ?? []).filter((m) => m.session_id !== sessionId);
     const unread = chatOpen || !seen ? 0 : others.filter((m) => !seen.has(m.id)).length;
     const toggleChat = (open: boolean) => {
@@ -194,14 +195,14 @@ export default function RoomScreen() {
     };
     return (
       <GameStage
-        title={concept ? tr.concepts[concept] : tr.concepts.tabu}
+        title={tr.concepts[concept ?? localGame ?? 'tabu']}
         unread={unread}
         chatOpen={chatOpen}
         onChat={toggleChat}
         onEndGame={() => {
           // A one-table game stopped before its end (§19.1); a two-table one is counted from
           // lastGame in GameArea.
-          if (localTabu && localProgress && !localProgress.finished) {
+          if (localGame === 'tabu' && localProgress && !localProgress.finished) {
             track('game_abandoned', {
               concept: 'tabu',
               turn_no: localProgress.turnNo,
@@ -214,7 +215,7 @@ export default function RoomScreen() {
           <TimeUpOverlay
             visible={timeUp !== null}
             detail={timeUp?.detail}
-            brand={tr.games.gameBrand(concept ? tr.concepts[concept] : tr.concepts.tabu)}
+            brand={tr.games.gameBrand(tr.concepts[concept ?? localGame ?? 'tabu'])}
           />
         }
         ending={endGame.isPending}

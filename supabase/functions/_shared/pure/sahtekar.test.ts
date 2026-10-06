@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import {
   afterViewing,
+  clueRoundOf,
+  ownSeats,
+  parseSahtekarLastGame,
+  parseSahtekarState,
   cardOf,
   clueOrder,
   isPlayerCount,
@@ -271,5 +275,74 @@ describe('one-table game', () => {
       accused: null,
       winner: 'imposter',
     });
+  });
+});
+
+describe('the app reading game_state', () => {
+  const state = {
+    concept: 'sahtekar',
+    phase: 'clues',
+    gameNo: 3,
+    dealNo: 2,
+    players: { owner: 2, guest: 1 },
+    seats: ['A1', 'A2', 'B1'],
+    category: 'Tatlı',
+    viewed: ['A1', 'A2', 'B1'],
+    order: clueOrder(['A1', 'A2', 'B1']),
+    step: 4,
+    voters: [],
+    votesCast: 0,
+    endsAt: '2026-10-06T12:00:15Z',
+  };
+
+  it('reads a running game and refuses anything else', () => {
+    expect(parseSahtekarState(state)).toMatchObject({ phase: 'clues', dealNo: 2, accused: null });
+    expect(parseSahtekarState({ ...state, dealNo: undefined })?.dealNo).toBe(1);
+    expect(parseSahtekarState({ ...state, phase: 'reveal' })).toBeNull();
+    expect(parseSahtekarState({ ...state, concept: 'tabu' })).toBeNull();
+    expect(parseSahtekarState({ ...state, seats: [1] })).toBeNull();
+    expect(parseSahtekarState(null)).toBeNull();
+  });
+
+  it('reads the reveal, and a game that ended for too few seats', () => {
+    expect(
+      parseSahtekarLastGame({
+        concept: 'sahtekar',
+        players: { owner: 2, guest: 1 },
+        reveal: {
+          imposter: 'B1',
+          word: 'Baklava',
+          category: 'Tatlı',
+          votes: { A1: 'B1', A2: 'B1' },
+          accused: 'B1',
+          winner: 'tables',
+        },
+      }),
+    ).toEqual({
+      players: { owner: 2, guest: 1 },
+      reveal: {
+        imposter: 'B1',
+        word: 'Baklava',
+        category: 'Tatlı',
+        votes: { A1: 'B1', A2: 'B1' },
+        accused: 'B1',
+        guess: null,
+        winner: 'tables',
+      },
+      endedBy: null,
+    });
+    expect(
+      parseSahtekarLastGame({
+        concept: 'sahtekar',
+        players: { owner: 2, guest: 1 },
+        endedBy: 'not_enough_players',
+      }),
+    ).toEqual({ players: { owner: 2, guest: 1 }, reveal: null, endedBy: 'not_enough_players' });
+    expect(parseSahtekarLastGame({ concept: 'tabu' })).toBeNull();
+  });
+
+  it('finds the table’s own seats and the clue round of a step', () => {
+    expect(ownSeats(['A1', 'A2', 'B1'], 'guest')).toEqual(['B1']);
+    expect([0, 2, 3, 5].map((step) => clueRoundOf(step, 6))).toEqual([1, 1, 2, 2]);
   });
 });

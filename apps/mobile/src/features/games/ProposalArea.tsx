@@ -5,13 +5,13 @@ import {
   type ProposalView,
   proposalView,
 } from '@shared/rooms.ts';
-import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { GAME_TONES, GameDisc, type GameGlyph, GameIcon } from '@/components/Glyph';
 import { usePressScale } from '@/components/motion';
 import { Text } from '@/components/Text';
 import { roomKeys, useGameProposal } from '@/features/rooms/queries';
@@ -70,7 +70,7 @@ export function ProposalArea({ roomId, sessionId, gameRunning }: Props) {
       {view.kind === 'theirs' ? (
         <View className="gap-3">
           <View className="flex-row items-center gap-3">
-            <GameDisc concept={view.concept} />
+            <ConceptDisc concept={view.concept} />
             <Text variant="bodyStrong" accessibilityLiveRegion="polite" className="flex-1">
               {tr.games.proposalTheirs(tr.concepts[view.concept])}
             </Text>
@@ -134,30 +134,17 @@ export function ProposalArea({ roomId, sessionId, gameRunning }: Props) {
   );
 }
 
-// Each game's colour and icon: Sesli Tabu violet, Sohbet kartları the signal green.
+// Each game's icon and colour pair (canvas: Aşama 6 · Oyunlar → Oyun ikonları).
+const GLYPH: Record<Concept, GameGlyph> = { tabu: 'tabu', sohbet: 'sohbet', sahtekar: 'impostor' };
+
 function useGameColors(concept: Concept) {
   const { colors } = useTheme();
-  return concept === 'tabu'
-    ? { bg: colors.violet, fg: colors.onViolet, icon: 'mic-outline' as const }
-    : { bg: colors.signal, fg: colors.onSignal, icon: 'chatbubbles-outline' as const };
+  const [bg, fg] = GAME_TONES[GLYPH[concept]];
+  return { bg: colors[bg], fg: colors[fg], glyph: GLYPH[concept] };
 }
 
-function GameDisc({ concept }: { concept: Concept }) {
-  const { shape } = useTheme();
-  const c = useGameColors(concept);
-  return (
-    <View
-      className="items-center justify-center"
-      style={{
-        width: TOUCH.button,
-        height: TOUCH.button,
-        borderRadius: shape.radius.pill,
-        backgroundColor: c.bg,
-      }}
-    >
-      <Ionicons name={c.icon} size={ICON.lg} color={c.fg} />
-    </View>
-  );
+function ConceptDisc({ concept }: { concept: Concept }) {
+  return <GameDisc name={GLYPH[concept]} size={TOUCH.button} />;
 }
 
 // A game to propose: a colour tile with its icon and name. Canvas: the bar is titled "Oyun öner";
@@ -198,7 +185,7 @@ function GameTile({
             pressScale(pressed),
           ]}
         >
-          <Ionicons name={c.icon} size={ICON.lg} color={c.fg} />
+          <GameIcon name={c.glyph} color={c.fg} size={ICON.lg} />
           <Text variant="heading" color={c.fg} numberOfLines={2}>
             {tr.concepts[concept]}
           </Text>

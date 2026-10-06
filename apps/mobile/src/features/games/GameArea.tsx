@@ -1,4 +1,5 @@
 import type { Concept } from '@shared/rooms.ts';
+import { parseSahtekarState, SAHTEKAR } from '@shared/sahtekar.ts';
 import { parseBetweenGames, parseGameState, type TableSide } from '@shared/tabu.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
@@ -16,6 +17,9 @@ import { gamesApi, roomsApi } from '@/lib/api';
 import { LocalTabu } from './LocalTabu';
 import { ProposalArea } from './ProposalArea';
 import { RematchButton } from './RematchButton';
+import { LocalSahtekar } from './sahtekar/LocalSahtekar';
+import { ImposterReveal } from './sahtekar/Sahtekar';
+import { SahtekarGame } from './sahtekar/SahtekarGame';
 import { SohbetCard } from './SohbetCard';
 import { VoiceTabu, VoiceTabuResult } from './VoiceTabu';
 
@@ -28,15 +32,23 @@ type Props = {
   hasGuest: boolean;
   isOwner: boolean;
   aliases: Record<TableSide, string>;
-  // One-table Tabu runs on this phone (LocalTabu); the room screen keeps the flag so it can lay
-  // the running game out full screen.
-  localTabu: boolean;
-  onLocalTabu: (on: boolean) => void;
+  // The table's check-in headcount: the seats of one-table Sahtekar.
+  headcount: number;
+  // A one-table game run on this phone (LocalTabu, LocalSahtekar); the room screen keeps it so it
+  // can lay the running game out full screen.
+  localGame: LocalGame | null;
+  onLocalGame: (game: LocalGame | null) => void;
 };
 
+export type LocalGame = 'tabu' | 'sahtekar';
+
 // Whether a game is running: the room screen shows it full screen (canvas: Aşama 6 · Oyunlar).
-export function isGameRunning(concept: Concept | null, hasGuest: boolean, localTabu: boolean) {
-  return concept !== null || (!hasGuest && localTabu);
+export function isGameRunning(
+  concept: Concept | null,
+  hasGuest: boolean,
+  localGame: LocalGame | null,
+) {
+  return concept !== null || (!hasGuest && localGame !== null);
 }
 
 // "Oyunu bitir" (after the confirmation in GameStage): the room returns to chat.
@@ -63,8 +75,9 @@ export function GameArea({
   hasGuest,
   isOwner,
   aliases,
-  localTabu,
-  onLocalTabu: setLocalTabu,
+  headcount,
+  localGame,
+  onLocalGame: setLocalGame,
 }: Props) {
   const queryClient = useQueryClient();
   const side: TableSide = isOwner ? 'owner' : 'guest';
@@ -103,38 +116,83 @@ export function GameArea({
     }
   }, [abandoned, roomId, between.gameNo]);
 
-  // "Rövanş" after a finished two-table Tabu: the same game proposed again (§19.2); it starts when
-  // the other table accepts.
+  // A finished two-table Sahtekar counts once, from the owner's phone: who won and how many played
+  // (never the seat or the word).
+  const sahtekarLast = last?.sahtekar ?? null;
+  const revealed = sahtekarLast?.reveal ?? null;
+  const sahtekarPlayers = sahtekarLast?.players
+    ? sahtekarLast.players.owner + sahtekarLast.players.guest
+    : 0;
+  useEffect(() => {
+    if (isOwner && revealed) {
+      trackOnce(`game_completed:${roomId}:${between.gameNo}`, 'game_completed', {
+        concept: 'sahtekar',
+        mode: 'voice',
+        outcome: revealed.winner,
+        players: sahtekarPlayers,
+      });
+    }
+  }, [isOwner, revealed, sahtekarPlayers, roomId, between.gameNo]);
+
+  // "Rövanş" after a finished two-table game: the same game proposed again (§19.2); it starts when
+  // the other table accepts. Sahtekar keeps this table's count from the last game (§20.1).
+  const rematchConcept = last?.concept === 'sahtekar' ? 'sahtekar' : 'tabu';
+  const rematchPlayers = sahtekarLast?.players?.[side];
   const rematch = useMutation({
-    mutationFn: () => roomsApi.proposeGame(roomId, 'tabu'),
-    onSuccess: () => track('game_proposed', { concept: 'tabu' }),
+    mutationFn: () => roomsApi.proposeGame(roomId, rematchConcept, rematchPlayers),
+    onSuccess: () => track('game_proposed', { concept: rematchConcept }),
     onSettled: refresh,
   });
-  const canRematch = hasGuest && last?.concept === 'tabu' && !last.abandoned;
+  const canRematch =
+    hasGuest &&
+    ((last?.concept === 'tabu' && !last.abandoned) || (last?.concept === 'sahtekar' && !!revealed));
 
-  // A second table ends the local game (the room returns to chat), and so does Sohbet kartları.
-  const showLocalTabu = !hasGuest && concept !== 'sohbet' && (concept === 'tabu' || localTabu);
+  // The one-table game on this phone. A second table ends it (the room returns to chat), and so
+  // does Sohbet kartları.
+  const local: LocalGame | null =
+    hasGuest || concept === 'sohbet'
+      ? null
+      : (localGame ?? (concept === 'tabu' || concept === 'sahtekar' ? concept : null));
   const state = parseGameState(gameState);
 
-  const game = showLocalTabu ? (
-    <LocalTabu roomId={roomId} />
-  ) : concept === 'sohbet' ? (
-    <SohbetCard
-      roomId={roomId}
-      isOwner={isOwner}
-      state={state?.concept === 'sohbet' ? state : null}
-    />
-  ) : concept === 'tabu' ? (
-    <VoiceTabu roomId={roomId} state={state} side={side} aliases={aliases} />
-  ) : null;
+  const game =
+    local === 'tabu' ? (
+      <LocalTabu roomId={roomId} />
+    ) : local === 'sahtekar' ? (
+      <LocalSahtekar roomId={roomId} players={headcount} />
+    ) : concept === 'sahtekar' ? (
+      <SahtekarGame roomId={roomId} state={parseSahtekarState(gameState)} side={side} />
+    ) : concept === 'sohbet' ? (
+      <SohbetCard
+        roomId={roomId}
+        isOwner={isOwner}
+        state={state?.concept === 'sohbet' ? state : null}
+      />
+    ) : concept === 'tabu' ? (
+      <VoiceTabu roomId={roomId} state={state} side={side} aliases={aliases} />
+    ) : null;
 
   if (game) return <View className="gap-3">{game}</View>;
 
   return (
     <View className="mt-4 gap-3">
+      {revealed ? (
+        <ImposterReveal
+          imposter={revealed.imposter}
+          word={revealed.word}
+          guess={revealed.guess}
+          outcome={revealed.winner}
+          votes={Object.entries(revealed.votes).map(([voter, target]) => ({ voter, target }))}
+          brand={tr.games.gameBrand(tr.concepts.sahtekar)}
+        />
+      ) : null}
       {last ? (
         <Card tone="note" testID="last-game">
-          {last.scores && hasGuest ? (
+          {sahtekarLast?.endedBy ? (
+            <Text variant="fine" testID="sahtekar-not-enough">
+              {tr.sahtekar.notEnough}
+            </Text>
+          ) : last.scores && hasGuest ? (
             <VoiceTabuResult scores={last.scores} side={side} aliases={aliases} />
           ) : last.teamScore !== null ? (
             <Text variant="fine">{tr.games.lastGameTeam(last.teamScore)}</Text>
@@ -169,8 +227,18 @@ export function GameArea({
             <Button
               testID="solo-tabu"
               label={tr.games.start(tr.concepts.tabu)}
-              onPress={() => setLocalTabu(true)}
+              onPress={() => setLocalGame('tabu')}
             />
+            <Button
+              variant="secondary"
+              testID="solo-sahtekar"
+              label={tr.games.start(tr.concepts.sahtekar)}
+              onPress={() => setLocalGame('sahtekar')}
+              disabled={headcount < SAHTEKAR.minPlayers}
+            />
+            {headcount < SAHTEKAR.minPlayers ? (
+              <Text variant="fine">{tr.sahtekar.needsThree}</Text>
+            ) : null}
             <Button
               variant="secondary"
               testID="solo-sohbet"
