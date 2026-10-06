@@ -56,14 +56,13 @@ appId: app.kabuk.mobile
 - takeScreenshot: 04c-preview-intro
 - tapOn:
     id: intro-skip
-# The preview is scrolled down; its back button is at the top.
-- scrollUntilVisible:
-    element:
-      text: Geri
-    direction: UP
+# The preview and Ayarlar are scrolled down; the system back key leaves both without scrolling up.
+- back
+- extendedWaitUntil:
+    visible:
+      id: preview-open
     timeout: 10000
-- tapOn: Geri
-- tapOn: Geri
+- back
 - tapOn:
     id: tab-explore
 - extendedWaitUntil:

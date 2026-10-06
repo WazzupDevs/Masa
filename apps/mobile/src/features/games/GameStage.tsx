@@ -192,16 +192,21 @@ function RoundButton({
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
-      style={({ pressed }) => ({
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: TOUCH.min,
-        height: TOUCH.min,
-        borderRadius: shape.radius.pill,
-        backgroundColor: pressed ? colors.raised : colors.surface2,
-      })}
     >
-      <Ionicons name={icon} size={ICON.md} color={colors.text} />
+      {({ pressed }) => (
+        <View
+          style={{
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: TOUCH.min,
+            height: TOUCH.min,
+            borderRadius: shape.radius.pill,
+            backgroundColor: pressed ? colors.raised : colors.surface2,
+          }}
+        >
+          <Ionicons name={icon} size={ICON.md} color={colors.text} />
+        </View>
+      )}
     </Pressable>
   );
 }

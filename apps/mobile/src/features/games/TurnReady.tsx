@@ -95,23 +95,28 @@ export function TurnReady({
               accessibilityState={{ disabled: !!starting }}
               disabled={starting}
               onPress={onStart}
-              style={({ pressed }) => ({
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: START,
-                height: START,
-                borderRadius: shape.radius.pill,
-                backgroundColor: colors.accent,
-                borderWidth: Math.max(shape.stroke.feature, 2),
-                borderColor: colors.border,
-                boxShadow: shape.shadow.primaryButton ?? undefined,
-                opacity: starting ? 0.6 : 1,
-                transform: [{ scale: pressed ? 0.97 : 1 }],
-              })}
             >
-              <Text variant="hero" tone="onAccent">
-                {tr.games.turnReadyStart}
-              </Text>
+              {({ pressed }) => (
+                <View
+                  style={{
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: START,
+                    height: START,
+                    borderRadius: shape.radius.pill,
+                    backgroundColor: colors.accent,
+                    borderWidth: Math.max(shape.stroke.feature, 2),
+                    borderColor: colors.border,
+                    boxShadow: shape.shadow.primaryButton ?? undefined,
+                    opacity: starting ? 0.6 : 1,
+                    transform: [{ scale: pressed ? 0.97 : 1 }],
+                  }}
+                >
+                  <Text variant="hero" tone="onAccent">
+                    {tr.games.turnReadyStart}
+                  </Text>
+                </View>
+              )}
             </Pressable>
             <Text variant="bodyStrong" align="center">
               {tr.games.turnReadyYou}
