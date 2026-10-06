@@ -521,6 +521,30 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
     });
   },
 
+  // Local only: pushes the running clocks (the turn and the objection window) 60 seconds forward,
+  // so a slow emulator step (a tap, a screen read) cannot race a 3- or 10-second clock.
+  async 'say-hold'() {
+    if (!isLocal) throw new Error('say-hold is local only');
+    const room = await sayRoom();
+    const sql = db();
+    try {
+      await sql`
+        update public.rooms
+        set game_state = game_state
+          || case when game_state ->> 'endsAt' is not null
+               then jsonb_build_object('endsAt', (game_state ->> 'endsAt')::timestamptz + interval '60 seconds')
+               else '{}'::jsonb end
+          || case when game_state ->> 'objectionEndsAt' is not null
+               then jsonb_build_object('objectionEndsAt', (game_state ->> 'objectionEndsAt')::timestamptz + interval '60 seconds')
+               else '{}'::jsonb end
+        where id = ${room.id}
+      `;
+    } finally {
+      await sql.end();
+    }
+    return { ok: true };
+  },
+
   // Local only: runs the clock out now and moves the game on. `toRound` first jumps so the advance
   // opens that round; `lastRound` jumps to the last round, so the advance ends the game.
   async 'say-expire'(args) {

@@ -1,6 +1,7 @@
 # Şarkıda Geçsin (docs/SPEC_V3.md §20.4): this phone starts and sings (Söyledik); the bot table lets
 # it pass, sings back and this phone objects (its objections drop to 2). The last two words show a
-# 5-second clock; they run out and the result shows.
+# 5-second clock (a screenshot; the pure and integration tests check the seconds); they run out
+# and the result shows.
 appId: app.kabuk.mobile
 ---
 - runScript:
@@ -68,6 +69,11 @@ appId: app.kabuk.mobile
     file: ../scripts/bot.js
     env:
       ACTION: say-claim
+# The window is held so the emulator's slow tap lands inside it.
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: say-hold
 - extendedWaitUntil:
     visible:
       id: say-object
@@ -76,7 +82,7 @@ appId: app.kabuk.mobile
     id: say-object
 - extendedWaitUntil:
     visible: siz · 2 hak
-    timeout: 15000
+    timeout: 20000
 - takeScreenshot: 51-sarki-objected
 # The last two words: 5 seconds a line.
 - runScript:
@@ -84,9 +90,7 @@ appId: app.kabuk.mobile
     env:
       ACTION: say-expire
       BODY: '{"toRound":7}'
-- extendedWaitUntil:
-    visible: '0:0[0-5]'
-    timeout: 10000
+# (No wait on the 5-second clock text: a screen read can take longer than both words.)
 - takeScreenshot: 52-sarki-short
 # Words 7 and 8 run out on the clock (either phone advances): the game ends.
 - extendedWaitUntil:
