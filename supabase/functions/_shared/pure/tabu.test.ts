@@ -17,6 +17,7 @@ import {
   summarizeTurn,
   TABU,
   tabuMode,
+  turnCue,
   type CooperativeTabuState,
   voiceWinner,
   type RefereedTabuState,
@@ -33,7 +34,10 @@ const state: RefereedTabuState = {
   turnSeconds: 60,
   cardsPerTurn: 40,
   describingTable: 'owner',
+  turnPhase: 'running',
   turnEndsAt: '2026-10-06T20:00:30Z',
+  readyEndsAt: null,
+  lastTurn: null,
   scores: { owner: 0, guest: 0 },
   passesUsed: 0,
   maxPasses: 3,
@@ -166,7 +170,9 @@ describe('applyMark', () => {
       kind: 'rejected',
       reason: 'no_passes_left',
     });
-    expect(applyMark(state, mark(0, 'correct'), 'judge', Date.parse(state.turnEndsAt))).toEqual({
+    expect(
+      applyMark(state, mark(0, 'correct'), 'judge', Date.parse(state.turnEndsAt ?? '')),
+    ).toEqual({
       kind: 'rejected',
       reason: 'turn_over',
     });
@@ -377,5 +383,42 @@ describe('ready turns (docs/SPEC_V3.md §19.1)', () => {
     expect(parseReadyTurn({ concept: 'tabu', turnPhase: 'ready' })).toBeNull();
     expect(parseReadyTurn({ concept: 'sohbet', turnPhase: 'ready', readyEndsAt: 'x' })).toBeNull();
     expect(parseReadyTurn(null)).toBeNull();
+  });
+});
+
+describe('turn feedback (docs/SPEC_V3.md §19.2)', () => {
+  it('ticks in each of the last 5 seconds and marks the end', () => {
+    expect([8, 6, 5, 3, 1, 0].map((s) => turnCue(s)?.kind ?? null)).toEqual([
+      null,
+      null,
+      'tick',
+      'tick',
+      'tick',
+      'timeUp',
+    ]);
+    expect(turnCue(-1)).toBeNull();
+    expect(turnCue(0)?.vibrateMs).toBeGreaterThan(turnCue(1)?.vibrateMs ?? 0);
+  });
+
+  it('parses a ready turn with its summary and no clock', () => {
+    const ready = parseGameState({
+      ...state,
+      turnPhase: 'ready',
+      turnEndsAt: undefined,
+      readyEndsAt: '2026-10-06T20:00:15Z',
+      lastTurn: { turnNo: 1, describingTable: 'guest', score: 2, correct: 3, taboo: 1, pass: 0 },
+    });
+    expect(ready).toMatchObject({
+      turnPhase: 'ready',
+      turnEndsAt: null,
+      readyEndsAt: '2026-10-06T20:00:15Z',
+      lastTurn: { turnNo: 1, score: 2 },
+    });
+    expect(applyMark(ready as RefereedTabuState, mark(0, 'correct'), 'judge', now)).toEqual({
+      kind: 'rejected',
+      reason: 'turn_not_started',
+    });
+    // A ready turn without readyEndsAt is not a state.
+    expect(parseGameState({ ...state, turnPhase: 'ready', turnEndsAt: undefined })).toBeNull();
   });
 });

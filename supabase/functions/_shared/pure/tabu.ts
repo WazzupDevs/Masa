@@ -46,7 +46,12 @@ type TabuStateBase = {
   turnSeconds: number;
   cardsPerTurn: number;
   describingTable: TableSide;
-  turnEndsAt: string;
+  // A turn opens ready (docs/SPEC_V3.md §19.1): no clock until tabu/begin-turn. turnEndsAt is set
+  // once it runs; readyEndsAt and lastTurn only while it is ready.
+  turnPhase: TurnPhase;
+  turnEndsAt: string | null;
+  readyEndsAt: string | null;
+  lastTurn: TurnSummary | null;
   passesUsed: number;
   maxPasses: number;
   // Index of the card being played in this turn's list.
@@ -100,7 +105,13 @@ export type MarkOutcome =
   | { kind: 'ignored' }
   | {
       kind: 'rejected';
-      reason: 'no_game' | 'not_judge' | 'not_describer' | 'turn_over' | 'no_passes_left';
+      reason:
+        | 'no_game'
+        | 'not_judge'
+        | 'not_describer'
+        | 'turn_not_started'
+        | 'turn_over'
+        | 'no_passes_left';
     };
 
 export function applyMark(
@@ -119,6 +130,9 @@ export function applyMark(
     mark.cardIndex >= state.cardsPerTurn
   ) {
     return { kind: 'ignored' };
+  }
+  if (state.turnPhase === 'ready' || state.turnEndsAt === null) {
+    return { kind: 'rejected', reason: 'turn_not_started' };
   }
   if (now >= Date.parse(state.turnEndsAt)) return { kind: 'rejected', reason: 'turn_over' };
   if (mark.result === 'pass' && state.passesUsed >= state.maxPasses) {
@@ -236,6 +250,20 @@ export function mayBeginTurn(role: TableRole, readyEndsAt: string, now: number):
   return role === 'describer' || now >= Date.parse(readyEndsAt);
 }
 
+// The end of a running turn on the phone (docs/SPEC_V3.md §19.2): a short vibration in each of the
+// last 5 seconds, a longer one at zero with "Süre bitti!".
+export const TURN_CUE = { warnFromSeconds: 5, tickMs: 40, timeUpMs: 400 } as const;
+
+export type TurnCue = { kind: 'tick' | 'timeUp'; vibrateMs: number };
+
+export function turnCue(secondsLeft: number): TurnCue | null {
+  if (secondsLeft === 0) return { kind: 'timeUp', vibrateMs: TURN_CUE.timeUpMs };
+  if (secondsLeft > 0 && secondsLeft <= TURN_CUE.warnFromSeconds) {
+    return { kind: 'tick', vibrateMs: TURN_CUE.tickMs };
+  }
+  return null;
+}
+
 export function voiceWinner(scores: Record<TableSide, number>): TableSide | 'draw' {
   if (scores.owner === scores.guest) return 'draw';
   return scores.owner > scores.guest ? 'owner' : 'guest';
@@ -260,6 +288,8 @@ export function parseGameState(value: unknown): GameState | null {
   const mode = value.mode === 'voice' ? 'refereed' : value.mode;
   if (value.concept === 'tabu' && (mode === 'refereed' || mode === 'cooperative')) {
     const v = value;
+    // A game started before §19.1 has no turnPhase: its turn runs.
+    const ready = v.turnPhase === 'ready';
     const scores = v.scores;
     const teamScores: { team: number } | null =
       mode === 'cooperative' && isRecord(scores) && num(scores.team) ? { team: scores.team } : null;
@@ -275,7 +305,7 @@ export function parseGameState(value: unknown): GameState | null {
       num(v.turnSeconds) &&
       num(v.cardsPerTurn) &&
       (v.describingTable === 'owner' || v.describingTable === 'guest') &&
-      str(v.turnEndsAt) &&
+      (ready ? str(v.readyEndsAt) : str(v.turnEndsAt)) &&
       (teamScores !== null || tableScores !== null) &&
       num(v.passesUsed) &&
       num(v.maxPasses) &&
@@ -290,7 +320,10 @@ export function parseGameState(value: unknown): GameState | null {
         turnSeconds: v.turnSeconds,
         cardsPerTurn: v.cardsPerTurn,
         describingTable: v.describingTable,
-        turnEndsAt: v.turnEndsAt,
+        turnPhase: ready ? 'ready' : 'running',
+        turnEndsAt: !ready && str(v.turnEndsAt) ? v.turnEndsAt : null,
+        readyEndsAt: ready && str(v.readyEndsAt) ? v.readyEndsAt : null,
+        lastTurn: ready ? (parseReadyTurn(v)?.lastTurn ?? null) : null,
         passesUsed: v.passesUsed,
         maxPasses: v.maxPasses,
         cardIndex: v.cardIndex,
