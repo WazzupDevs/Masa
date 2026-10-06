@@ -35,8 +35,8 @@ export function SeatList({
   const seen = seats.filter((s) => s.viewed).length;
   return (
     <View className="gap-2.5">
-      <View className="flex-row items-center justify-between">
-        <Text variant="overline" tone="muted">
+      <View className="flex-row items-center gap-3">
+        <Text variant="overline" tone="muted" className="flex-1">
           {title}
         </Text>
         <Text variant="caption" tone="muted">
