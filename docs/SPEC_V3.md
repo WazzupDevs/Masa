@@ -912,3 +912,382 @@ Tasarımın "Aşama 5" PR'ı main'e girmeden başlamaz: `TabBar.tsx`, `profile/i
   - `dm_typing`: üye abone olur ve yayın yapar; üye olmayan, arkadaşlıktan çıkarılan ve engellenen yapamaz.
 - **PR 3:** E2E açık ve koyu yeşil; yeni DM akışı dahil.
 - Her PR'da typecheck, lint, birim ve entegrasyon testleri temizdir. CI, entegrasyon ve iki E2E yeşilse PR birleştirilir. Deploy proje sahibindedir.
+
+---
+
+## 20. Adım 7 B: Yeni oyunlar
+
+**Onaylandı.** Proje sahibinin kararları; §20.8'deki cevaplar ve üç değişiklik (oyuncu sayısı, itiraz hakkı, hazır durumu) metne işlendi.
+
+- Sıra: Sahtekar, Harf Kapmaca, Şarkıda Geçsin, İbre. Her oyun kendi adımı, PR'ı ve E2E akışıyla gelir.
+- Bir oyunun içerik taslağı (`content/*.json`) o oyunun PR'ında gelir. PR açıklamasında her kategoriden ilk 10 kelime örneklenir; proje sahibi örnekler ve onaylar. Onaylanmamış içerik birleşmez.
+- Sunucu, içerik ve tek masalı reducer hemen yapılır. Ekranlar tasarımın ilgili bileşen PR'ı main'e girince yapılır (Sahtekar için başlığında "Aşama 7 Sahtekar" geçen PR).
+
+### 20.1 Ortak kurallar
+
+**Başlatma (kural 3).**
+
+- İki masalı odada oyun yalnızca öneriyle başlar: bir masa önerir, diğeri kabul eder (§5.3). Odada aynı anda tek oyun ve tek öneri olur. Tek masalı odada oyun doğrudan başlar.
+- `game_proposals.concept`, `rooms.concept`, `play_history.concept` ve `game_results.concept` kısıtları her oyunun kendi migration'ında genişler. Kavram adları: `sahtekar`, `harf`, `sarki`, `ibre`.
+- Aktiviteler'e ve oda içindeki öneri alanına her oyun bir kartla eklenir.
+
+**Oyuncu sayısı ayrı bir aşama değildir.**
+
+- Harf Kapmaca, Şarkıda Geçsin ve İbre'de her masa bir takımdır; kişi sayısı kullanılmaz. Bu oyunlarda oyuncu sayısı aşaması ya da eylemi yoktur.
+- Sahtekar'da sayı öneri ve kabulle gelir:
+  - Öneren masa önerirken (`rooms/propose-game { concept: 'sahtekar', players }`), kabul eden masa kabul ederken (`rooms/answer-game { accept: true, players }`) kendi sayısını verir (1-4).
+  - İki alan da arayüzde masanın check-in sayısıyla dolu gelir; masa değiştirebilir.
+  - Önerenin sayısı `game_proposals.proposer_players`'ta durur. Kabul edilince iki sayı `game_state.players`'a yazılır (ör. `{ owner: 3, guest: 2 }`).
+  - Sayı yalnızca o oyun içindir; `table_sessions.headcount` değişmez.
+  - Toplam 3'ten azsa kabul `not_enough_players` (409) döner, öneri silinir ve oyun başlamaz.
+- **Rövanş** (A2'deki "Rövanş", aynı oyunla öneri) son oyunun sayılarını kullanır: arayüz iki alanı `lastGame.players`'tan doldurur.
+
+**Hazır durumu** (§19.1'in kalıbı, süreli her yeni oyunda).
+
+- Süre başlamadan önce `game_state` `turnPhase: 'ready'` ve `readyEndsAt` (şimdi + 10 sn) taşır. Önceki bölümün özeti varsa o da durur.
+- Süre, başlayan masa "Başla"ya basınca (`<oyun>/begin`) ya da 10 sn sonra kendiliğinden başlar.
+- "Kendiliğinden" şöyle çalışır: zamanlanmış iş yoktur. `readyEndsAt` geçince telefonlar `<oyun>/advance` çağırır. Sunucu süreyi çağrı anından değil `readyEndsAt`'ten başlatır; geç gelen çağrı süreyi uzatmaz.
+- `begin` başka masadan gelirse, tur zaten başlamışsa ya da oyun yoksa oda değişmez (`{ ok: true }`). İdempotenttir.
+- Hazır durumunda istem (kategori, kelime, ölçek) `game_state`'te görünür; yalnızca süre işlemez. Gizli bilgi (İbre'nin hedefi) hazır durumunda verilmez.
+- Nerede:
+  - **Harf Kapmaca:** her kategorinin başında; başlayan masa o kategoriyi açan masadır.
+  - **Şarkıda Geçsin:** oyunun başında; başlayan masa ilk kelimeyi söyleyecek masadır. Sonraki kelimeler hazır durumu olmadan açılır.
+  - **İbre:** her turun başında; başlayan masa anlatan masadır.
+  - **Sahtekar:** hazır durumu yoktur. Kelimeyi görme aşaması oyunun doğal başlangıcıdır ve kendi süresi vardır.
+
+**Her oyunun tek masalı sürümü** telefonda oynanır (LocalTabu gibi):
+
+- Deste sunucudan gelir: `<oyun>/start`, tek masalı odada. Yanıt yalnızca o oyunda gerekenleri taşır.
+- Kurallar `pure/` altında testli bir reducer'dadır; telefon sırayı, süreyi ve puanı onunla tutar.
+- Tek masalı oyun sunucuya sonuç yazmaz (bugünkü yerel Tabu gibi); yalnızca analitik olayı gider.
+- Alt sınır: Sahtekar'da masada en az 3 kişi; Harf Kapmaca, Şarkıda Geçsin ve İbre'de en az 2 kişi (iki takım). Tek masalı sürümde sayıyı oyun başında telefon sorar, check-in sayısıyla dolu gelir.
+
+**Sunucu otoriter (kural 3).**
+
+- Süreyi (`endsAt`), içeriği, sırayı, puanı ve eylem yetkisini sunucu hesaplar.
+- Her eylem bir tur ve adım indeksine bağlıdır (`roundNo`, `step`). Aynı adıma ikinci eylem yok sayılır; yanıt `{ ok: true }`, oda değişmez (Tabu'daki `mark` gibi).
+- Süre dolunca herhangi bir masa `<oyun>/advance` çağırır; sunucu süreyi denetler ve idempotenttir (`tabu/end-turn` gibi). `begin` ve `advance` `IDEMPOTENT_CALLS`'a iki kez gönderen testle girer.
+- Hakemlik "itiraz" ile karşı masadadır (Sesli Tabu'daki Tabu düğmesi gibi): oyun sözü dinlemez, masalar karar verir.
+
+**Gizli bilgi.**
+
+- Gizli bilgi (sahtekarın kim olduğu, kelime, oylar, hedef değer) `rooms.game_state`'te, `game_events`'te ve hiçbir Realtime yükünde bulunmaz.
+- Yeni sunucu tablosu `game_secrets`:
+  - Bir satır, bir odanın bir oyunudur: `room_id`, `game_no`, `concept`, `secret jsonb`.
+  - RLS açık, politika yok, yalnızca service role okur (`tabu_turns` gibi).
+- Gizli bilgi yalnızca ilgili telefona ilgili anda bir eylemin yanıtıyla gider (Tabu'nun `turn-cards`'ı gibi). Açılışta `game_state`'e yazılır ve iki masaya birden gider.
+
+**Ses ve metin.**
+
+- Serbest metin yok: her şey sesli söylenir. Telefon sırayı, süreyi, puanı ve hakemliği tutar.
+- Uygulama ses çalmaz ve dinlemez; mikrofon izni yok.
+
+**Sonuç ve rozetler.**
+
+- Dört oyun da iki masalı oyunun sonunda `game_results`'a iki hesap için birer satır yazar. Satırlar oyun sayısı rozetlerine (`first_game`, `ten_games`) girer, Sahtekar dahil.
+- Kazanma rozeti yalnızca Sesli Tabu'da kalır; yeni kazanma rozeti yok.
+- `game_results.mode` oyunun adıdır (`sahtekar`, `harf`, `sarki`, `ibre`).
+
+**İçerik.**
+
+- İçerik `content/` altında JSON'dur ve `pnpm seed` ile tek seed dosyasına girer (#46). Seed doğrular: zorunlu alanlar, en az miktar, tekrar yok ve küfür listesi (`pure/profanity.ts`).
+- İçerikte gerçek kişi adı, siyaset, din, cinsellik ve alkol yoktur. Konular kampüs ve Türk gündelik kültürüdür.
+- `cards.deck` kısıtı oyun başına genişler (`sahtekar`, `harf`, `sarki`, `ibre`). Her destenin satır kısıtı kendi alanlarını zorunlu tutar (Tabu ve Sohbet'teki gibi).
+- Kullanılan içerik odada tekrar etmez (`room_used_cards`). Adım 7 A1'deki kural geçerlidir: içerik gösterilince kullanılmış sayılır.
+
+**Ticari adlar** (Wavelength, Tapple, Imposter, Heads Up) ve onların kart metinleri ya da görselleri hiçbir yerde kullanılmaz: kodda, içerikte, mağaza metninde, ekranda. Mekanik uyarlanır, içerik özgündür.
+
+**Değişmez kurallarla uyum (her oyunda aynı).**
+
+- **Kural 3:** yukarıda.
+- **Kural 4:** oyunlar diğer masaya yeni bir kimlik göndermez.
+  - Koltuklar (`A1`, `B2`) yalnızca oyun içi etikettir; hesaba ya da profile bağlanmaz.
+  - Odanın anonimlik seçimi (oda başına) aynen geçerlidir.
+- **Kural 9:** yeni kanal yok. İki masa oyunu odanın mevcut kanalından (`rooms` ve `game_events` Postgres Changes) izler; yükte gizli bilgi yoktur.
+- **Kural 10:** `game_secrets` odanın satırları arasında `tabu_turns`'ten sonra yer alır. Sıra `rooms` → `game_proposals` → `game_secrets` → `room_used_cards`, `game_events`.
+  - Odayı kilitleyen her yeni eylem `rooms.test` → `locks` kalıbında bir testle gelir: diğer masanın oturumu tutulurken eylem geçer; iki telefon aynı anda basınca tek sonuç.
+  - Zamanlanmış iş yok; süreyi `advance` ilerletir.
+
+**Analitik.**
+
+- Mevcut olaylar yeni kavramlarla kullanılır: `game_proposed`, `game_accepted` (`concept`), `game_completed` (`concept`, `score`, `mode`), `game_abandoned` (`concept`, `turn_no`, `total_turns`).
+- Oyuna özel yeni özellikler §20.2-20.5'te. İçerik (kelime, kategori, şarkı sözü) ve karşı taraf hiçbir olaya girmez.
+
+**E2E.** Her oyun kendi akışıyla gelir (`e2e/maestro/flows/09-sahtekar.yaml` ve sırası).
+
+- Bot karşı masa olur: botun `serve` eylemleri her oyuna eklenir ve dev projesinde rakip modunda oynar.
+- Gizli bilginin cihaza gitmediği akışta değil, entegrasyon testinde denetlenir: yanıtlar, `rooms` satırı, `game_events` ve Realtime yükü taranır (bugünkü `readableBy` ve `watchRoomChannel` kalıbı).
+
+### 20.2 Sahtekar
+
+**Kurallar.**
+
+- İki masanın bütün oyuncuları aynı gizli kelimeyi görür, biri hariç: sahtekar yalnızca kategoriyi görür. En az 3 oyuncu gerekir.
+- İki ipucu turu oynanır: herkes sırayla sesli tek kelime söyler.
+- Sonra herkes gizlice bir koltuğa oy verir; kendine oy veremez.
+  - En çok oyu alan tek koltuk sahtekarsa sahtekar yakalanmıştır. Sahtekar aynı kategoriden 6 seçenek arasından kelimeyi tahmin eder; bilirse yine sahtekar kazanır.
+  - Eşitlikte ya da en çok oyu başka bir koltuk alırsa sahtekar kaçar.
+- Puan yok. Sonuç "Sahtekar kazandı" ya da "Masalar kazandı".
+
+**İki masalı akış.**
+
+1. **Oyuncular:** sayılar öneri ve kabulle gelir (§20.1). Koltuklar `A1…An` (sahip masa) ve `B1…Bm` (misafir masa).
+2. **Kelimeyi görme** (en fazla 2 dk):
+   - Sunucu sahtekarı bütün koltuklar arasından rastgele seçer.
+   - Her masa telefonu elden ele geçirir. Arayüz koltukları sırayla verir: "A1 gördü, telefonu A2'ye ver".
+   - Her koltuk kendi kartını basılı tutarak görür. Telefon bir koltuğun kartını yalnızca o koltuk istediğinde alır: `sahtekar/view { seat }`. Yanıt `{ category, word }` ya da sahtekara `{ category, imposter: true }`; parmak kalkınca telefon kartı bırakır.
+   - Bir masa yalnızca kendi koltuklarını isteyebilir. Bir koltuk ipucu turu başlayana kadar kartını yeniden görebilir.
+   - `game_state.viewed` hangi koltukların gördüğünü sayar (yalnızca evet/hayır).
+   - Bütün koltuklar görünce ya da 2 dk dolunca ipucu turu açılır. Görmeyen koltuk atlanır: ipucu sırasına ve oylamaya girmez, ama sahtekar olabilir (o zaman oyun yine oynanır; masalar kazanmak için onu bulmalıdır).
+3. **İpucu:** iki tur; sıra masalar arasında dönüşümlüdür: A1, B1, A2, B2… Koltuk sayıları eşit değilse fazla koltuklar sırayla sona eklenir (A1, B1, A2, B2, A3).
+   - Her konuşmacının 15 sn'si vardır. `game_state` sırayı, konuşan koltuğu ve `endsAt`'i taşır.
+   - Konuşanın masası "Söyledi"ye basar (`sahtekar/said { step }`). Süre dolunca herhangi bir masa `advance` ile geçirir.
+4. **Oylama** (en fazla 90 sn; telefon 4 kişi arasında dolaşır):
+   - Arayüz koltukları yine sırayla verir. Her koltuk gizlice bir koltuğa oy verir: `sahtekar/vote { voter, target }`. Kendine oy `bad_request`.
+   - Oylar `game_secrets`'tadır. `game_state` yalnızca kaç oy verildiğini taşır.
+   - Bütün oylar gelince ya da 90 sn dolunca sayılır. Oy vermeyen koltuk atlanır.
+5. **Tahmin** (yakalandıysa):
+   - Sahtekarın masasına aynı kategoriden 6 seçenek gider (`sahtekar/options`, yalnızca o masaya).
+   - Tahmin `sahtekar/guess { option }` ile; süre 30 sn, dolarsa yanlış sayılır.
+6. **Açılış:** `game_state` artık sahtekarın koltuğunu, kelimeyi, kategoriyi, bütün oyları (kim kime) ve sonucu taşır. İki telefonda büyük açılış ekranı görünür.
+
+**Tek masalı sürüm:** masada en az 3 kişi; aynı akış tek telefonda yürür (elden ele görme, sıra, oylama, tahmin).
+
+- `sahtekar/start` yanıtı bir tur için kategoriyi, kelimeyi ve 5 çeldiriciyi taşır.
+- Sahtekarı telefon seçer. Kelime telefondadır; oyuncular telefonu elden ele geçirir, kimse başkasının kartına bakmaz.
+- Kurallar `pure/sahtekar.ts` reducer'ındadır.
+
+**Sunucu durumu ve eylemler.**
+
+| Eylem                                                  | Kim                                     | Ne zaman                                                |
+| ------------------------------------------------------ | --------------------------------------- | ------------------------------------------------------- |
+| `rooms/propose-game` / `rooms/answer-game` + `players` | Öneren ve kabul eden masa, kendi sayısı | Öneri ve kabul                                          |
+| `sahtekar/view { seat }`                               | O koltuğun masası                       | `phase: 'viewing'`; ipucu turuna kadar yeniden          |
+| `sahtekar/said { step }`                               | Konuşan koltuğun masası                 | `phase: 'clues'`                                        |
+| `sahtekar/vote { voter, target }`                      | Oy verenin masası                       | `phase: 'voting'`, koltuk başına bir kez, kendine değil |
+| `sahtekar/options` / `sahtekar/guess { option }`       | Sahtekarın masası                       | `phase: 'guess'`                                        |
+| `sahtekar/advance`                                     | Herhangi bir masa                       | Süre dolunca; idempotent                                |
+
+- `game_state`: `phase` (`viewing`, `clues`, `voting`, `guess`), `gameNo`, `players`, `seats`, `category` (açık bilgi; herkes, sahtekar dahil, kategoriyi görür), `viewed`, `order`, `step`, `voters` (kartını gören koltuklar), `votesCast`, `endsAt`; tahminde `accused`.
+- Oyun bitince oda sohbete döner (Sesli Tabu gibi): açılış `lastGame.reveal`'dadır (`imposter`, `word`, `category`, `votes`, `accused`, `guess`, `winner`). Boş alanlar (kimse yakalanmadıysa `accused`, tahmin yoksa `guess`) yazılmaz; istemci yok alanı boş sayar. `lastGame.players` rövanş içindir; "Oyunu bitir" de onu yazar.
+- Görmeyen koltuk ipucu ve oylamadan atlanır ama sahtekar seçimi görmeye bağlı değildir: sahtekar görmeyen bir koltuksa oyun yine oynanır.
+- Süreler `pure/sahtekar.ts` → `SAHTEKAR`: görme 120 sn, ipucu 15 sn, oylama 90 sn, tahmin 30 sn, 2 ipucu turu, 6 seçenek.
+- `game_results`: iki hesaba `won = null`, `score = null`, `mode = 'sahtekar'`. Oyun sayısı rozetlerine girer.
+
+**İçerik:** `content/sahtekar-words.json` → `{ categories: [{ key, name, words: [...] }] }`.
+
+- En az 500 kelime.
+- Her kategoride en az 12 kelime: 6 seçenek ve tekrar etmeyen turlar için.
+- Seed kategori ve kelime tekrarını reddeder.
+
+**Kurallarla uyum.**
+
+- **Kural 3:** sahtekarı, sırayı, süreyi ve oyları sunucu tutar.
+- **Kural 4:** koltuk etiketi kimlik değildir.
+  - Sahtekarın koltuğu ve kelime açılıştan önce `game_state`'te, olaylarda ve Realtime'da yoktur.
+  - `view` yanıtı yalnızca istenen koltuğun masasına gider.
+  - Açılışta oylar koltuk etiketiyle görünür, hesapla değil.
+- **Kural 9:** yeni kanal yok.
+- **Kural 10:** `rooms` → `game_proposals` → `game_secrets`.
+
+**Analitik:** `game_completed` + `outcome: 'imposter' | 'tables'`, `players: number` (toplam). Sahtekarın koltuğu ve kelime gitmez.
+
+**E2E:** cihaz 1 kişilik masa, bot 2 kişilik masa (toplam 3).
+
+- Cihaz kendi koltuğunun kartını basılı tutar.
+- Bot iki ipucu turunda "Söyledi"ye basar ve oy verir.
+- Cihaz oy verir; açılış ekranı görünür.
+- Entegrasyon testi: sahtekar olmayan masaya sahtekar bilgisi, sahtekara kelime gitmez.
+
+### 20.3 Harf Kapmaca
+
+**Kurallar.**
+
+- Telefon bir kategori ve harf tahtası gösterir. Tahta 23 harftir: A B C Ç D E F G H İ K L M N O P R S Ş T U Y Z (Ğ, I, J, Ö, Ü, V çıkarıldı; bunlarla başlayan kelime az).
+- Sıradaki masa 10 sn içinde kategoriye uyan ve açık bir harfle başlayan bir kelime söyler, o harfe dokunur. Harf kapanır, sıra karşı masaya geçer.
+- Karşı masa 3 sn içinde "İtiraz" ederse harf yeniden açılır ve oynayan masa turu kaybeder (Sesli Tabu'daki hakemlik gibi).
+- **İtiraz hakkı:** her masanın oyun boyunca 3 itiraz hakkı vardır. İtiraz rakibe doğrudan puan kaybettirdiği için sınırsız olursa kötüye kullanılır. Kalan hak `game_state`'te ve ekranda görünür; hakkı biten masa itiraz edemez (`no_objections_left`).
+- Süresi dolan masa da turu kaybeder; turu kaybeden masanın rakibi 1 puan alır.
+- Bütün harfler kapanırsa tur, son harfi kapatan masanın olur (1 puan).
+- 5 kategori oynanır. En çok puanı alan kazanır; eşitlik berabere.
+
+**İki masalı akış.**
+
+1. **Hazır:** sunucu kategoriyi seçer; kategori ve tahta görünür, süre işlemez (§20.1). Başlayan masa (1. kategori sahip masa, sonra dönüşümlü) "Başla"ya basar ya da 10 sn sonra süre kendiliğinden başlar.
+2. **Harf:** sıradaki masa harfe dokunur: `harf/claim { round, step, letter }`.
+   - Harf kapanır, sıra geçer, karşı masanın 10 sn'si başlar.
+   - Aynı anda 3 sn'lik itiraz penceresi açılır (`objectionEndsAt`). İki süre birlikte işler.
+3. **İtiraz:** karşı masa pencere içinde `harf/object { round, step }` gönderir. Hakkı biter, harf açılır, oynayan masa turu kaybeder, karşı masa 1 puan alır, sonraki kategori hazır açılır.
+4. **Süre:** süre dolunca herhangi bir masa `harf/advance` çağırır. Süresi dolan masa turu kaybeder.
+
+**Tek masalı sürüm:** Takım A ve B, tek telefon, aynı kurallar (itiraz hakkı dahil). İtirazı diğer takım aynı telefonda basar. Masada en az 2 kişi.
+
+**Ortak motor:** Harf Kapmaca ve Şarkıda Geçsin aynı motoru paylaşır: istem, süre, söyle, itiraz.
+
+- `pure/sayChallenge.ts`: istem, sıra, süre, itiraz penceresi, itiraz hakkı, tur kaybı ve puan. Saf reducer, vitest'li.
+- Sunucu aynı kuralları SQL'de uygular; entegrasyon testi ikisinin aynı olduğunu denetler (Tabu'daki `applyMark` kalıbı).
+
+**Sunucu durumu ve eylemler.**
+
+- `game_state`: `phase`, `turnPhase`, `readyEndsAt`, `roundNo`, `totalRounds` (5), `category` (açık bilgi, iki masa da görür), `letters` (açık ve kapalı), `turnTable`, `step`, `endsAt`, `objectionEndsAt`, `lastClaim`, `objectionsLeft` (`{ owner, guest }`, 3'ten başlar), `scores`.
+- Kategori gizli değildir; `game_secrets` gerekmez.
+- Eylemler `harf/begin`, `harf/claim`, `harf/object`, `harf/advance`. `begin` ve `advance` idempotenttir.
+- `game_results`: masa başına skor, `won` çok puanla (Tabu hakemli mod gibi), `mode = 'harf'`.
+
+**İçerik:** `content/harf-categories.json` → `{ categories: [{ key, name }] }`; en az 150 kategori. Her kategori tahtadaki harflerin çoğuyla oynanabilir olmalı; seed bunu denetleyemez, proje sahibi örneklerken bakar.
+
+**Kurallarla uyum.**
+
+- **Kural 3:** sıra, süre, itiraz penceresi, itiraz hakkı ve puan sunucuda. Aynı adıma ikinci `claim` ya da `object` yok sayılır.
+- **Kural 4:** yeni bilgi yok.
+- **Kural 9:** yeni kanal yok.
+- **Kural 10:** `rooms` → `room_used_cards`.
+
+**Analitik:** `game_completed` (`score` sahip masanın), `rounds_lost_by_timeout: number`, `objections: number`. Kategori gitmez.
+
+**E2E:**
+
+- Cihaz "Başla"ya basar ve bir harfe dokunur.
+- Bot itiraz eder; harf açılır, puan bota geçer, cihazda botun kalan itiraz hakkı 2 görünür.
+- Bot bir harfe dokunur, cihaz itiraz etmez.
+- Süre dolar (bot `advance`); son tur ve sonuç görünür.
+
+### 20.4 Şarkıda Geçsin
+
+**Kurallar.**
+
+- Telefon bir kelime gösterir. Bir kelimede masalar sırayla, her biri 10 sn içinde bu kelimenin geçtiği bir şarkıdan bir dize söyler ve "Söyledik"e basar.
+- Karşı masa 3 sn içinde itiraz edebilir. Söyleyemeyen ya da itiraz alan masanın rakibi 1 puan alır ve kelime biter (ilk başarısızlık).
+- Bir kelimede en fazla 8 dize söylenir; 8. dize de geçerse kelime puansız biter.
+- **İtiraz hakkı:** her masanın oyun boyunca 3 itiraz hakkı vardır (Harf Kapmaca'daki gibi); kalan hak `game_state`'te ve ekranda görünür.
+- Oyun 8 kelime sürer; son iki kelimede süre 5 sn'ye iner. Kelimeyi açan masa dönüşümlüdür.
+- Uygulama müzik çalmaz, şarkı sözü ya da şarkı adı göstermez.
+
+**İki masalı akış:** Harf Kapmaca'nın motoru (§20.3). Farkları:
+
+- İstem harf tahtası değil tek kelimedir.
+- Hazır durumu yalnızca oyunun başındadır (§20.1); sonraki kelimeler doğrudan açılır.
+- Eylemler `sarki/begin`, `sarki/said { round, step }`, `sarki/object { round, step }`, `sarki/advance`.
+
+**Tek masalı sürüm:** Takım A ve B, tek telefon. Masada en az 2 kişi.
+
+**Sunucu durumu:** `game_state`: `phase`, `turnPhase`, `readyEndsAt`, `roundNo`, `totalRounds` (8), `word` (açık), `turnTable`, `step` (kelimedeki dize, en fazla 8), `endsAt`, `objectionEndsAt`, `objectionsLeft`, `scores`.
+
+- Son iki kelimede `endsAt` 5 sn ile kurulur (`SARKI.shortRounds`, `SARKI.shortSeconds`).
+- `game_results` masa başına skor, `mode = 'sarki'`.
+
+**İçerik:** `content/sarki-words.json` → `{ words: [{ key, word }] }`.
+
+- Türkçe şarkılarda sık geçen en az 400 kelime.
+- Şarkı adı, sanatçı ya da söz yazılmaz; yalnızca kelime.
+
+**Kurallarla uyum:** Harf Kapmaca ile aynı.
+
+**Analitik:** `game_completed` (`score` sahip masanın), `objections: number`.
+
+**E2E:**
+
+- Cihaz "Başla"ya basar, "Söyledik"e basar; bot itiraz etmez.
+- Bot "Söyledik"e basar, cihaz itiraz eder; cihazın kalan itiraz hakkı 2 görünür.
+- Son iki kelimede süre 5 sn görünür. Sonuç görünür.
+
+### 20.5 İbre
+
+**Kurallar.**
+
+- Telefon iki uçlu bir ölçek gösterir (ör. Ucuz ile Pahalı).
+- Sıradaki masanın anlatıcısı gizli hedefi (0 ile 100 arası) görür, telefonu kapatır, sesli tek ipucu verir.
+- Kendi masası ibreyi telefonda sürükleyip onaylar.
+- Karşı masa 15 sn içinde "Daha sol" ya da "Daha sağ" der; doğruysa 1 puan alır.
+- Puan, hedefe uzaklığa göre 4, 3, 2 ya da 0'dır; bantları sunucu hesaplar.
+- 4 tur oynanır, masalar dönüşümlü.
+
+**İki masalı akış.**
+
+1. **Hazır:** ölçek görünür, süre işlemez (§20.1). Anlatan masa "Başla"ya basar ya da 10 sn sonra süre kendiliğinden başlar.
+2. **Hedef:** hedef `game_secrets`'tadır.
+   - Anlatan masa hedefi `ibre/target { round }` ile yalnızca süre işlerken alır; diğer masa `not_describer`, hazır durumunda `turn_not_started` alır.
+   - Telefon hedefi basılı tutunca gösterir (Tabu'daki kapalı kart gibi).
+3. **İbre:** anlatan masa ibreyi sürükler ve onaylar: `ibre/lock { round, value }` (0-100 tamsayı).
+4. **Taraf:** karşı masa 15 sn içinde `ibre/side { round, side: 'left' | 'right' }` gönderir; süre dolarsa taraf puanı yok.
+5. **Açılış:** `game_state` hedefi, ibreyi, bandı, puanı ve taraf sonucunu taşır; sonraki tur hazır açılır.
+
+**Bantlar** (`pure/ibre.ts` → `ibreBand(distance)`; SQL aynısını uygular, test denetler):
+
+| Uzaklık    | Puan |
+| ---------- | ---- |
+| 0-4        | 4    |
+| 5-11       | 3    |
+| 12-19      | 2    |
+| 20 ve üstü | 0    |
+
+İbre hedefin tam üstündeyse taraf tahmini puan almaz.
+
+**Tek masalı sürüm:** Takım A ve B, tek telefon. Hedef telefonda üretilir. Masada en az 2 kişi; anlatıcı telefonu takımından saklar.
+
+**Sunucu durumu ve eylemler.**
+
+- `game_state`: `phase`, `turnPhase`, `readyEndsAt`, `roundNo`, `totalRounds` (4), `scale` ({ left, right }, açık), `turnTable`, `endsAt`, `needle` (kilitlenince), `scores`. Açılışta `reveal: { target, band, sidePoint }`.
+- Eylemler: `ibre/begin`, `ibre/target`, `ibre/lock`, `ibre/side`, `ibre/advance`.
+- `game_results` masa başına skor, `mode = 'ibre'`.
+
+**Sürükleme:** yalnızca JS. `react-native-reanimated` (kurulu) ya da `PanResponder`; yeni native modül yok. Erişilebilirlik için ibre ± düğmeleriyle de oynatılır.
+
+**İçerik:** `content/ibre-scales.json` → `{ scales: [{ key, left, right }] }`; en az 200 zıt kavram çifti. Seed çift tekrarını ve boş ucu reddeder.
+
+**Kurallarla uyum.**
+
+- **Kural 3:** hedef, bant ve puan sunucuda.
+- **Kural 4:** hedef açılıştan önce yalnızca anlatan masaya ve yalnızca `target` yanıtıyla gider; `game_state`, olaylar ve Realtime'da yoktur.
+- **Kural 9:** yeni kanal yok.
+- **Kural 10:** `rooms` → `game_secrets` → `room_used_cards`.
+
+**Analitik:** `game_completed` (`score` sahip masanın), `bullseyes: number`. Ölçek ve hedef gitmez.
+
+**E2E:**
+
+- Cihaz anlatan masadır: "Başla"ya basar, hedefi basılı tutar, ibreyi sürükler, onaylar.
+- Bot "Daha sağ" der. Açılış görünür.
+- Bot anlatan masa olur, cihaz taraf seçer.
+- Entegrasyon testi: hedef, karşı masaya ve odanın satırına açılıştan önce gitmez.
+
+### 20.6 Uygulama sırası ve yayın
+
+| Adım               | Sunucu                                                                                          | İstemci                                           | Yayın                                   |
+| ------------------ | ----------------------------------------------------------------------------------------------- | ------------------------------------------------- | --------------------------------------- |
+| 7.1 Sahtekar       | `…_sahtekar.sql` (`game_secrets`, kısıtlar, deste, öneride sayı), `sahtekar` fonksiyonu, içerik | Oyun, açılış, tek masalı sürüm, Aktiviteler kartı | `db push --include-seed` + deploy → OTA |
+| 7.2 Harf Kapmaca   | `…_harf.sql`, `harf`, `pure/sayChallenge.ts`, içerik                                            | Tahta, itiraz                                     | Aynı                                    |
+| 7.3 Şarkıda Geçsin | `…_sarki.sql`, `sarki` (aynı motor), içerik                                                     | İstem ekranı                                      | Aynı                                    |
+| 7.4 İbre           | `…_ibre.sql`, `ibre`, `pure/ibre.ts`, içerik                                                    | İbre (JS), açılış                                 | Aynı                                    |
+
+- Her oyun ayrı PR'dır, `e2e` etiketi taşır, kendi E2E akışıyla gelir.
+- Sunucu, içerik ve tek masalı reducer hemen yapılır. Görsel bileşenler tasarım oturumunun ilgili "Aşama" PR'ından gelir; ekranlar o PR main'e girince yapılır.
+- Yeni Edge Function'lar "main'den dev projesine yayın" listesine ve `config.toml`'a birlikte eklenir (`verify_jwt = false`).
+
+### 20.7 Kabul (her oyun)
+
+- Entegrasyon testleri şunları gösterir:
+  - Öneri olmadan başlamaz.
+  - Süre ve sıra sunucudadır; aynı adıma ikinci eylem yok sayılır; `begin` ve `advance` idempotenttir.
+  - Gizli bilgi yalnızca ilgili masaya gider (yanıt, satır, olay, Realtime).
+  - `locks` testi geçer.
+- Tek masalı reducer'ın birim testleri vardır.
+- E2E açık ve koyu yeşildir.
+- İçerik seed doğrulamasından geçer ve proje sahibince onaylanmıştır.
+
+### 20.8 Cevaplar (proje sahibi)
+
+1. **Sahtekar, yeniden görme:** evet, ipucu turu başlayana kadar. Arayüz koltukları sırayla verir.
+2. **Sahtekar, süreler:** görme 2 dk, oylama 90 sn (telefon 4 kişi arasında dolaşıyor). Dolunca görmeyen ya da oy vermeyen koltuk atlanır.
+3. **Sahtekar, çoğunluk:** en çok oyu alan tek koltuk. Eşitlikte sahtekar kaçar.
+4. **Sahtekar, kendine oy:** yasak.
+5. **Rozetler:** dört yeni oyun da `game_results`'a yazılır ve oyun sayısı rozetlerine girer, Sahtekar dahil. Kazanma rozeti yalnızca Sesli Tabu'da kalır; yeni kazanma rozeti yok.
+6. (5 ile birlikte cevaplandı.)
+7. **Harf tahtası:** 23 harf (§20.3).
+8. **Harf Kapmaca, tahta dolarsa:** tur, son harfi kapatan masanın.
+9. **Şarkıda Geçsin, tur yapısı:** bir kelimede masalar sırayla söyler, ilk başarısızlıkta kelime biter. Bir kelimede en fazla 8 dize; dolarsa kelime puansız biter.
+10. **İbre:** 4/11/19 bantları ve taraf için 15 sn.
+11. **Oyuncu sayısı onayı:** soru kalktı; oyuncu sayısı ayrı bir aşama değil (§20.1).
+12. **Tek masalı sürümler:** Harf Kapmaca, Şarkıda Geçsin ve İbre'de en az 2 kişi.
+
+Ek kararlar: oyuncu sayısı yalnızca Sahtekar'da ve öneri/kabulle (§20.1); itiraz hakkı masa başına 3 (§20.3, §20.4); süreli her yeni oyunda 10 sn'lik hazır durumu (§20.1).
