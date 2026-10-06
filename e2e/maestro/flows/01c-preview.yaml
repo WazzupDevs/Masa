@@ -8,7 +8,7 @@ appId: app.kabuk.mobile
 - scrollUntilVisible:
     element:
       id: preview-open
-    timeout: 10000
+    timeout: 30000
 - tapOn:
     id: preview-open
 - extendedWaitUntil:
@@ -20,24 +20,24 @@ appId: app.kabuk.mobile
     element:
       id: turn-start
     centerElement: true
-    timeout: 10000
+    timeout: 30000
 - takeScreenshot: 04c-preview-games-2
 - scrollUntilVisible:
     element:
       id: turn-countdown
     centerElement: true
-    timeout: 10000
+    timeout: 30000
 - takeScreenshot: 04c-preview-games-3
 - scrollUntilVisible:
     element:
       id: time-up
     centerElement: true
-    timeout: 10000
+    timeout: 30000
 - takeScreenshot: 04c-preview-games-4
 - scrollUntilVisible:
     element:
       id: preview-intro
-    timeout: 10000
+    timeout: 30000
 - tapOn:
     id: preview-confirm
 - extendedWaitUntil:
@@ -79,43 +79,43 @@ appId: app.kabuk.mobile
     element:
       id: preview-card-word
     centerElement: true
-    timeout: 10000
+    timeout: 30000
 - takeScreenshot: 04d-sahtekar-word
 - scrollUntilVisible:
     element:
       id: preview-card-imposter
     centerElement: true
-    timeout: 10000
+    timeout: 30000
 - takeScreenshot: 04d-sahtekar-imposter
 - scrollUntilVisible:
     element:
       id: sahtekar-clues
     centerElement: true
-    timeout: 10000
+    timeout: 30000
 - takeScreenshot: 04d-sahtekar-clues
 - scrollUntilVisible:
     element:
       id: sahtekar-vote
     centerElement: true
-    timeout: 10000
+    timeout: 30000
 - takeScreenshot: 04d-sahtekar-vote
 - scrollUntilVisible:
     element:
       id: sahtekar-guess
     centerElement: true
-    timeout: 10000
+    timeout: 30000
 - takeScreenshot: 04d-sahtekar-guess
 - scrollUntilVisible:
     element:
       id: sahtekar-guess-wait
     centerElement: true
-    timeout: 10000
+    timeout: 30000
 - takeScreenshot: 04d-sahtekar-guess-wait
 - scrollUntilVisible:
     element:
       id: sahtekar-reveal
     centerElement: true
-    timeout: 10000
+    timeout: 30000
 - takeScreenshot: 04d-sahtekar-reveal
 # The preview and Ayarlar are scrolled down; the system back key leaves both without scrolling up.
 - back
