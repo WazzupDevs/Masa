@@ -597,16 +597,22 @@ describe('tabu, ready turns (docs/SPEC_V3.md §19.1)', () => {
     expect(await usedCards(roomId)).toEqual([]);
   });
 
-  it('starts the clock once, from the describing table or from either table after readyEndsAt', async () => {
+  it('leaves a ready turn alone when the judging table starts it before readyEndsAt', async () => {
     const { owner, guest, roomId } = await room(true);
     await play(guest, owner, roomId, 'tabu');
     const ready = await gameState(roomId);
-    // The judging table before readyEndsAt: nothing happens.
     expect(await begin(guest, roomId)).toEqual(OK);
     expect(await gameState(roomId)).toEqual(ready);
+    expect(
+      await sql`select 1 from public.game_events where room_id = ${roomId} and type = 'turn_started'`,
+    ).toHaveLength(0);
+  });
 
-    // The describing table starts it; sent again (the app retries after a 5xx, pure/apiRetry.ts)
-    // and from the other phone, the same answer and the same clock.
+  it('starts the clock once from the describing table, however often either phone sends it', async () => {
+    const { owner, guest, roomId } = await room(true);
+    await play(guest, owner, roomId, 'tabu');
+    // Sent again (the app retries after a 5xx, pure/apiRetry.ts) and from the other phone: the
+    // same answer and the same clock.
     const before = Date.now();
     expect(await begin(owner, roomId)).toEqual(OK);
     const running = await gameState(roomId);
@@ -621,7 +627,12 @@ describe('tabu, ready turns (docs/SPEC_V3.md §19.1)', () => {
     expect(
       await sql`select 1 from public.game_events where room_id = ${roomId} and type = 'turn_started'`,
     ).toHaveLength(1);
+  });
 
+  it('lets either table start turn 2 once readyEndsAt has passed, and nothing without a game', async () => {
+    const { owner, guest, roomId } = await room(true);
+    await play(guest, owner, roomId, 'tabu');
+    await begin(owner, roomId);
     // Turn 2: the guest table describes. The owner table waits for readyEndsAt, then may start.
     await expireTurn(roomId);
     await tabu(owner, { action: 'end-turn', roomId });
