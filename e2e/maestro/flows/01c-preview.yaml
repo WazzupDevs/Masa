@@ -117,6 +117,49 @@ appId: app.kabuk.mobile
     centerElement: true
     timeout: 30000
 - takeScreenshot: 04d-sahtekar-reveal
+# Aşama 7 · Harf Kapmaca ve Şarkıda Geçsin
+- back
+- extendedWaitUntil:
+    visible:
+      id: preview-open
+    timeout: 10000
+- tapOn:
+    id: preview-open
+- extendedWaitUntil:
+    visible:
+      id: preview-set-say
+    timeout: 10000
+- tapOn:
+    id: preview-set-say
+- extendedWaitUntil:
+    visible:
+      id: preview-letters
+    timeout: 10000
+- takeScreenshot: 04e-say-letters
+- scrollUntilVisible:
+    element:
+      id: preview-object
+    centerElement: true
+    timeout: 30000
+- takeScreenshot: 04e-say-object
+- scrollUntilVisible:
+    element:
+      id: objection-result
+    centerElement: true
+    timeout: 30000
+- takeScreenshot: 04e-say-objected
+- scrollUntilVisible:
+    element:
+      id: preview-song
+    centerElement: true
+    timeout: 30000
+- takeScreenshot: 04e-say-song
+- scrollUntilVisible:
+    element:
+      id: preview-song-object
+    centerElement: true
+    timeout: 30000
+- takeScreenshot: 04e-say-song-object
 # The preview and Ayarlar are scrolled down; the system back key leaves both without scrolling up.
 - back
 - extendedWaitUntil:

@@ -9,6 +9,15 @@ import { FirstGameIntro } from '@/features/games/FirstGameIntro';
 import { ClockPill, TeamScore } from '@/features/games/GameBits';
 import { RematchButton } from '@/features/games/RematchButton';
 import {
+  BOARD_LETTERS,
+  LetterBoard,
+  ObjectButton,
+  ObjectionResult,
+  ObjectionWindow,
+  PromptCard,
+  SaidButton,
+} from '@/features/games/say/Say';
+import {
   ClueOrder,
   GuessOptions,
   GuessWaiting,
@@ -266,7 +275,63 @@ function SahtekarSet() {
   );
 }
 
+const CLOSED = ['A', 'K', 'M', 'T', 'Z', 'Ş'];
+
+function SaySet() {
+  const [picked, setPicked] = useState<string | null>('F');
+  return (
+    <View className="gap-4">
+      <PreviewBlock title="Harf Kapmaca · PromptCard · LetterBoard">
+        <View className="gap-3" testID="preview-letters">
+          <PromptCard kind="category" prompt="Bir hayvan" compact />
+          <LetterBoard
+            letters={BOARD_LETTERS.map((letter) => ({ letter, closed: CLOSED.includes(letter) }))}
+            selected={picked}
+            onPick={setPicked}
+          />
+        </View>
+      </PreviewBlock>
+      <PreviewBlock title="Karşı masa · ObjectionWindow · ObjectButton">
+        <View className="gap-3" testID="preview-object">
+          <LetterBoard
+            letters={BOARD_LETTERS.map((letter) => ({
+              letter,
+              closed: [...CLOSED, 'F'].includes(letter),
+            }))}
+          />
+          <ObjectionWindow remainingMs={2000} left={2} />
+          <ObjectButton left={2} onPress={() => undefined} />
+        </View>
+      </PreviewBlock>
+      <PreviewBlock title="ObjectionResult">
+        <ObjectionResult detail="F açıldı · Yaratıcı Lokma +1" />
+      </PreviewBlock>
+      <PreviewBlock title="Şarkıda Geçsin · PromptCard · SaidButton">
+        <View style={{ height: STAGE }} className="gap-3" testID="preview-song">
+          <PromptCard kind="word" prompt="Yağmur" line={tr.say.sayLine} />
+          <SaidButton onPress={() => undefined} />
+        </View>
+      </PreviewBlock>
+      <PreviewBlock title="Şarkıda Geçsin · karşı masa">
+        <View className="gap-3" testID="preview-song-object">
+          <PromptCard kind="word" prompt="Yağmur" compact />
+          <ObjectionWindow remainingMs={1000} left={0} />
+          <View className="flex-row gap-2.5">
+            <View className="flex-1">
+              <ObjectButton left={0} onPress={() => undefined} />
+            </View>
+            <View className="flex-1">
+              <SaidButton onPress={() => undefined} />
+            </View>
+          </View>
+        </View>
+      </PreviewBlock>
+    </View>
+  );
+}
+
 export const PREVIEW_SETS: PreviewSet[] = [
   { key: 'games', label: 'Oyun', render: () => <GamesSet /> },
   { key: 'sahtekar', label: 'Sahtekar', render: () => <SahtekarSet /> },
+  { key: 'say', label: 'Harf · Şarkı', render: () => <SaySet /> },
 ];

@@ -636,6 +636,22 @@ export const tr = {
     ],
     introDone: 'Anladım, başlayalım',
   },
+  // Harf Kapmaca and Şarkıda Geçsin (docs/SPEC_V3.md §20.3–20.4): say, then the other table may
+  // object within 3 seconds; three objections per table.
+  say: {
+    category: 'Kategori',
+    word: 'Kelime',
+    letterClosed: (l: string) => `${l}, kapandı`,
+    said: 'Söyledik',
+    object: 'İtiraz',
+    objected: 'İtiraz!',
+    objectionsShort: (n: number) => `${n} hak`,
+    objectionsLeft: (n: number) => `${n} itiraz hakkı kaldı`,
+    window: (s: number) => `İtiraz penceresi · ${s} sn`,
+    windowLabel: (s: number) => `İtiraz için ${s} saniye`,
+    sayLine: 'Geçtiği bir şarkıdan bir dize söyleyin',
+    pickLetter: 'Kelimeyi söyle, baş harfine dokun.',
+  },
   // Sahtekar (docs/SPEC_V3.md §20.2): seats are game labels, never identities.
   sahtekar: {
     seatDone: (seat: string) => `${seat}, baktı`,
