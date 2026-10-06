@@ -2,6 +2,7 @@
 // here and apply the same rules as applyMark; the integration tests check that they agree.
 import type { SohbetState, SohbetTheme } from './sohbet.ts';
 import { SOHBET_THEMES } from './sohbet.ts';
+import { parseSahtekarLastGame, type SahtekarLastGame } from './sahtekar.ts';
 
 export const TABU = {
   turnSeconds: 60,
@@ -358,12 +359,14 @@ export function parseGameState(value: unknown): GameState | null {
 // result (docs/SPEC_V3.md §5.1): the concept, and for two-table Tabu both scores (refereed) or the
 // team's score (cooperative).
 export type LastGame = {
-  concept: 'tabu' | 'sohbet';
+  concept: 'tabu' | 'sohbet' | 'sahtekar';
   scores: Record<TableSide, number> | null;
   teamScore: number | null;
   // A two-table Tabu game ended with "Oyunu bitir" before its last turn (docs/SPEC_V3.md §19.1):
   // the turn it stopped in, for game_abandoned.
   abandoned: { turnNo: number; totalTurns: number } | null;
+  // A Sahtekar game: the counts for the rematch and the reveal (docs/SPEC_V3.md §20.2).
+  sahtekar: SahtekarLastGame | null;
 };
 export type BetweenGames = { gameNo: number; lastGame: LastGame | null };
 
@@ -371,7 +374,10 @@ export function parseBetweenGames(value: unknown): BetweenGames {
   const state = isRecord(value) ? value : {};
   const gameNo = num(state.gameNo) ? state.gameNo : 0;
   const last = state.lastGame;
-  if (!isRecord(last) || (last.concept !== 'tabu' && last.concept !== 'sohbet')) {
+  if (
+    !isRecord(last) ||
+    (last.concept !== 'tabu' && last.concept !== 'sohbet' && last.concept !== 'sahtekar')
+  ) {
     return { gameNo, lastGame: null };
   }
   const scores = last.scores;
@@ -388,6 +394,7 @@ export function parseBetweenGames(value: unknown): BetweenGames {
         last.abandoned === true && num(last.turnNo) && num(last.totalTurns)
           ? { turnNo: last.turnNo, totalTurns: last.totalTurns }
           : null,
+      sahtekar: parseSahtekarLastGame(last),
     },
   };
 }

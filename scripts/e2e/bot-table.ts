@@ -24,6 +24,7 @@ import {
 } from '../../supabase/functions/_shared/pure/consent.ts';
 import { isDevProjectUrl, isLocalUrl } from '../../supabase/functions/_shared/pure/devProject.ts';
 import { dmTypingChannel, TYPING_EVENT } from '../../supabase/functions/_shared/pure/rooms.ts';
+import { ownSeats, parseSahtekarState } from '../../supabase/functions/_shared/pure/sahtekar.ts';
 import { parseReadyTurn, type VoiceTabuState } from '../../supabase/functions/_shared/pure/tabu.ts';
 import { ANCHOR, offset, squareRing } from '../../supabase/tests/fixtures/venues.ts';
 
@@ -127,6 +128,81 @@ async function myRoom(): Promise<{ id: string; game_state: Json; status: string 
   const room = data?.[0];
   if (!room) throw new Error('the bot is in no open room');
   return room as { id: string; game_state: Json; status: string };
+}
+
+async function mySessionId(): Promise<string | undefined> {
+  const { data } = await me().from('table_sessions').select('id').eq('status', 'active').limit(1);
+  return data?.[0]?.id as string | undefined;
+}
+
+// The bot's part of a two-table Sahtekar game (docs/SPEC_V3.md §20.2), one step per call: it looks
+// at its seats' cards, says "Söyledi" on its own clue steps, votes with each of its seats for the
+// other table's first seat, guesses when it is caught (`guessWrong`, local only: a word that is not
+// the secret one) and moves a phase on when its time is up. `done` keeps what it already did.
+type SahtekarBot = { done: Set<string>; guessWrong: boolean };
+
+async function sahtekarStep(
+  room: { id: string; game_state: Json; owner_session_id?: string | null },
+  sessionId: string | undefined,
+  bot: SahtekarBot,
+): Promise<string | null> {
+  const state = parseSahtekarState(room.game_state);
+  if (!state) return null;
+  const side = room.owner_session_id === sessionId ? 'owner' : 'guest';
+  const mine = ownSeats(state.seats, side);
+  const deal = `${room.id}/${state.gameNo}/${state.dealNo}`;
+  if (Date.now() >= Date.parse(state.endsAt)) {
+    await call('sahtekar', { action: 'advance', roomId: room.id });
+    return 'advanced';
+  }
+  if (state.phase === 'viewing') {
+    for (const seat of mine) {
+      if (state.viewed.includes(seat) || bot.done.has(`${deal}/view/${seat}`)) continue;
+      bot.done.add(`${deal}/view/${seat}`);
+      await call('sahtekar', { action: 'view', roomId: room.id, seat });
+      return `looked at ${seat}`;
+    }
+  } else if (state.phase === 'clues') {
+    const speaking = state.order[state.step];
+    const key = `${deal}/said/${state.step}`;
+    if (speaking && mine.includes(speaking) && !bot.done.has(key)) {
+      bot.done.add(key);
+      await call('sahtekar', { action: 'said', roomId: room.id, step: state.step });
+      return `Söyledi for ${speaking}`;
+    }
+  } else if (state.phase === 'voting') {
+    const target = state.seats.find((s) => !mine.includes(s));
+    for (const voter of ownSeats(state.voters, side)) {
+      const key = `${deal}/vote/${voter}`;
+      if (!target || bot.done.has(key)) continue;
+      bot.done.add(key);
+      await call('sahtekar', { action: 'vote', roomId: room.id, voter, target });
+      return `${voter} voted for ${target}`;
+    }
+  } else if (state.phase === 'guess' && state.accused && mine.includes(state.accused)) {
+    const key = `${deal}/guess`;
+    if (bot.done.has(key)) return null;
+    bot.done.add(key);
+    const { options } = (await call('sahtekar', { action: 'options', roomId: room.id })) as {
+      options: string[];
+    };
+    let option = options[0] ?? '';
+    if (bot.guessWrong && isLocal) {
+      const sql = db();
+      try {
+        const [row] = await sql<{ word: string }[]>`
+          select secret ->> 'word' as word from public.game_secrets
+          where room_id = ${room.id} and game_no = ${state.gameNo}
+        `;
+        option = options.find((o) => o !== row?.word) ?? option;
+      } finally {
+        await sql.end();
+      }
+    }
+    await call('sahtekar', { action: 'guess', roomId: room.id, option });
+    return `guessed ${option}`;
+  }
+  return null;
 }
 
 export const actions: Record<string, (args: Json) => Promise<Json>> = {
@@ -274,13 +350,15 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
     });
   },
 
-  // "Oyun öner" in the bot's room (docs/SPEC_V3.md §5.3): `concept` tabu (default) or sohbet.
+  // "Oyun öner" in the bot's room (docs/SPEC_V3.md §5.3): `concept` tabu (default), sohbet or
+  // sahtekar; `players` the bot table's Sahtekar count (otherwise its check-in headcount).
   async 'propose-game'(args) {
     const room = await myRoom();
     return call('rooms', {
       action: 'propose-game',
       roomId: room.id,
-      concept: args.concept === 'sohbet' ? 'sohbet' : 'tabu',
+      concept: args.concept === 'sohbet' || args.concept === 'sahtekar' ? args.concept : 'tabu',
+      ...(typeof args.players === 'number' ? { players: args.players } : {}),
     });
   },
 
@@ -296,7 +374,57 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
       if (error) throw error;
       return data?.[0] ? found : null;
     });
-    return call('rooms', { action: 'answer-game', roomId: room.id, accept: args.accept !== false });
+    return call('rooms', {
+      action: 'answer-game',
+      roomId: room.id,
+      accept: args.accept !== false,
+      ...(typeof args.players === 'number' ? { players: args.players } : {}),
+    });
+  },
+
+  // Plays the bot table's part of the Sahtekar game now starting in its room, in the background
+  // until the game ends (the flow goes on meanwhile). Local only: `imposter` makes that seat the
+  // impostor before anyone looks; `guessWrong` makes a caught bot guess a wrong word.
+  async 'sahtekar-autoplay'(args) {
+    const room = await retryUntil('a Sahtekar game', async () => {
+      const r = await myRoom();
+      return parseSahtekarState(r.game_state) ? r : null;
+    });
+    if (typeof args.imposter === 'string') {
+      if (!isLocal) throw new Error('imposter is local only');
+      const sql = db();
+      try {
+        await sql`
+          update public.game_secrets s
+          set secret = jsonb_set(s.secret, '{imposter}', to_jsonb(${args.imposter}::text))
+          from public.rooms r
+          where r.id = s.room_id and s.room_id = ${room.id}
+            and s.game_no = (r.game_state ->> 'gameNo')::int
+        `;
+      } finally {
+        await sql.end();
+      }
+    }
+    const sessionId = await mySessionId();
+    const bot: SahtekarBot = { done: new Set(), guessWrong: args.guessWrong === true };
+    void (async () => {
+      for (;;) {
+        try {
+          const { data } = await me()
+            .from('rooms')
+            .select('id, game_state, owner_session_id')
+            .eq('id', room.id)
+            .single();
+          if (!data || !parseSahtekarState(data.game_state)) return;
+          const did = await sahtekarStep(data, sessionId, bot);
+          if (did) console.log(`bot-table sahtekar: ${did}`);
+        } catch (err) {
+          console.error(`bot-table sahtekar: ${String(err)}`);
+        }
+        await new Promise((resolve) => setTimeout(resolve, 1_500));
+      }
+    })();
+    return { ok: true };
   },
 
   async 'end-game'() {
@@ -523,6 +651,7 @@ async function opponent() {
   const firstSeen = new Map<string, number>();
   const proposed = new Set<string>();
   const accepted = new Set<string>();
+  const sahtekarBot: SahtekarBot = { done: new Set(), guessWrong: false };
 
   for (;;) {
     await quiet('tick', async () => {
@@ -594,6 +723,11 @@ async function opponent() {
             );
             say('proposed Sesli Tabu');
           }
+          return;
+        }
+        if (room.concept === 'sahtekar') {
+          const did = await sahtekarStep(room, sessionId, sahtekarBot);
+          if (did) say(`Sahtekar: ${did}`);
           return;
         }
         if (!state?.mode || state.phase !== 'playing') return;

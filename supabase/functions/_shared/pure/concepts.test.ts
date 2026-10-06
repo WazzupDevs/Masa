@@ -4,8 +4,9 @@ import { conceptMode } from './concepts.ts';
 import { CONCEPTS } from './rooms.ts';
 
 describe('conceptMode', () => {
-  it('plays Tabu by voice and Sohbet as text', () => {
+  it('plays Tabu and Sahtekar by voice and Sohbet as text', () => {
     expect(conceptMode('tabu')).toBe('voice');
+    expect(conceptMode('sahtekar')).toBe('voice');
     expect(conceptMode('sohbet')).toBe('text');
   });
 

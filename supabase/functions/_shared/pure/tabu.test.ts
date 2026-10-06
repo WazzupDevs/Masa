@@ -284,11 +284,18 @@ describe('parseBetweenGames', () => {
         scores: { owner: 4, guest: 3 },
         teamScore: null,
         abandoned: null,
+        sahtekar: null,
       },
     });
     expect(parseBetweenGames({ gameNo: 1, lastGame: { concept: 'sohbet' } })).toEqual({
       gameNo: 1,
-      lastGame: { concept: 'sohbet', scores: null, teamScore: null, abandoned: null },
+      lastGame: {
+        concept: 'sohbet',
+        scores: null,
+        teamScore: null,
+        abandoned: null,
+        sahtekar: null,
+      },
     });
   });
 
@@ -301,12 +308,12 @@ describe('parseBetweenGames', () => {
     });
     expect(
       parseBetweenGames({ lastGame: { concept: 'tabu', scores: { owner: '4' } } }).lastGame,
-    ).toEqual({ concept: 'tabu', scores: null, teamScore: null, abandoned: null });
+    ).toEqual({ concept: 'tabu', scores: null, teamScore: null, abandoned: null, sahtekar: null });
     expect(
       parseBetweenGames({ gameNo: 1, lastGame: { concept: 'tabu', scores: { team: 7 } } }),
     ).toEqual({
       gameNo: 1,
-      lastGame: { concept: 'tabu', scores: null, teamScore: 7, abandoned: null },
+      lastGame: { concept: 'tabu', scores: null, teamScore: 7, abandoned: null, sahtekar: null },
     });
   });
 
@@ -321,6 +328,7 @@ describe('parseBetweenGames', () => {
       scores: null,
       teamScore: null,
       abandoned: { turnNo: 3, totalTurns: 6 },
+      sahtekar: null,
     });
     expect(
       parseBetweenGames({ lastGame: { concept: 'tabu', abandoned: true, turnNo: '3' } }).lastGame

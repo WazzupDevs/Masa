@@ -26,7 +26,8 @@ export type AnalyticsEventProps = {
   // team's) and, v3, the Tabu mode (docs/SPEC_V3.md §15).
   game_completed: {
     concept: Concept;
-    score: number;
+    // Tabu only: Sahtekar has no score.
+    score?: number;
     mode: GameMode;
     tabu_mode?: TabuMode;
     // Sahtekar (docs/SPEC_V3.md §20.2): who won and how many played; never the seat or the word.

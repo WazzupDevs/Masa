@@ -1195,11 +1195,11 @@ Tasarımın bileşenleriyle:
 
 **Analitik:** `game_completed` + `outcome: 'imposter' | 'tables'`, `players: number` (toplam). Sahtekarın koltuğu ve kelime gitmez.
 
-**E2E:** cihaz 1 kişilik masa, bot 2 kişilik masa (toplam 3).
+**E2E (`09-sahtekar.yaml`):** cihaz 2 koltuklu masa (check-in sayısı), bot 1 koltuk (kabulde `players: 1`); toplam 3.
 
-- Cihaz kendi koltuğunun kartını basılı tutar.
-- Bot iki ipucu turunda "Söyledi"ye basar ve oy verir.
-- Cihaz oy verir; açılış ekranı görünür.
+- Bot (yalnızca yerelde) kendi koltuğunu sahtekar yapar; cihaz iki koltuğunun kartını sırayla basılı tutar.
+- Bot kendi ipucu sırasında "Söyledi"ye basar ve oy verir; cihaz kendi sıralarında basar.
+- Cihazın iki koltuğu bota oy verir; bot yakalanır, yanlış tahmin eder; açılış ekranında "Masalar kazandı!" görünür.
 - Entegrasyon testi: sahtekar olmayan masaya sahtekar bilgisi, sahtekara kelime gitmez.
 
 ### 20.2a Uygulamada netleşenler (7.1 sunucu)
@@ -1211,7 +1211,17 @@ Tasarımın bileşenleriyle:
 - **Deste:** `cards` satırı kelime başınadır. `theme` kategori anahtarı, `prompt` kategorinin adıdır. Uygulama desteyi okuyamaz (kart politikası yalnızca Sohbet destesini açar). Seçenekler kelimenin kendi kategorisindendir. Kelime oyun başlarken gösterilmiş sayılır (`room_used_cards`).
 - **Tek masalı oyun:** `sahtekar/start` odanın etkinliğini Sahtekar yapar (yerel Tabu gibi). Yanıt `{ category, word, options }`'tur. Oyunu telefon `pure/sahtekar.ts` → `reduceLocal` ile yürütür.
 - **İdempotentlik:** `sahtekar/advance` `IDEMPOTENT_CALLS`'tadır. Tekrar görme aynı yanıtı verir; ikinci oy ve eski adıma "Söyledi" yok sayılır.
-- **Analitik:** `game_completed`'e `outcome` (`imposter` | `tables`) ve `players` (toplam) eklendi. Gönderen kod ekranlarla gelir.
+- **Analitik:** `game_completed`'e `outcome` (`imposter` | `tables`) ve `players` (toplam) eklendi; `score` yalnızca Tabu'da. İki masalı oyunu sahip masanın telefonu `lastGame.reveal`'dan bir kez, tek masalı oyunu telefon oyun bitince gönderir.
+
+### 20.2b Uygulamada netleşenler (7.1 ekranlar)
+
+- **Öneri:** Sahtekar `CONCEPTS`'te; "Oyun öner" kutucukları tasarımın oyun ikonlarını (`GameIcon`, `GAME_TONES`) kullanır. Tasarımda kişi sayısı seçici yok: öneri ve kabul `players` göndermez, sunucu masaların check-in sayısını alır (en çok 4). Rövanş son oyunun sayısını gönderir. Seçici tasarıma girince eklenir.
+- **İki masalı ekran:** her masa kendi koltuklarını sırayla dolaştırır: "Telefonu A2'ye ver" → basılı tutulan kart → "Gördüm". Oylama da koltuk koltuk; hangi koltuğun oy verdiğini yalnızca o telefon bilir (sunucu ikinci oyu yok sayar). Süresi dolan aşamayı iki telefon da bir kez `advance` ile ilerletir.
+- **Son koltuğun kartı:** son koltuğun bakması ipucu turunu başlatır ve `view` artık `turn_over` döner. Bu yüzden kartı tutan koltuk "Gördüm"e basana kadar telefon son yanıtı bellekte tutar; kart yine yalnızca parmak ekrandayken görünür. Yeni dağıtım (`dealNo`) bunu bırakır.
+- **Yeniden dağıtım ve erken bitiş:** `dealNo > 1` iken görme ekranında "yeni kelime dağıtıldı" notu çıkar. `lastGame.endedBy = 'not_enough_players'` sohbet ekranında not olarak görünür; rövanş yoktur.
+- **Açılış:** oyun bitince oda sohbete döner; `ImposterReveal` son oyun kartının üstünde durur, iki masalı oyunda altında "Rövanş".
+- **Tek masalı oyun:** "Masanla oyna" kartında "Sahtekar başlat"; check-in sayısı 3'ten azsa düğme kapalı ve not görünür. Koltuk sayısı check-in sayısıdır.
+- **Aktiviteler:** Sahtekar kartı (anlatım ve "Nasıl oynanır" adımları) Sesli Tabu ile Sohbet kartları arasında. "Son oyunların"da Sahtekar puansız görünür.
 
 ### 20.3 Harf Kapmaca
 

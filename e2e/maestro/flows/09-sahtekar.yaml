@@ -1,0 +1,152 @@
+# Sahtekar (docs/SPEC_V3.md §20.2): this phone's table has 2 seats (A1, A2; check-in headcount 2),
+# the bot table 1 (B1). The bot is the impostor (set by the bot, local only), both of this phone's
+# seats vote for it, it is caught and guesses wrong: "Masalar kazandı!".
+appId: app.kabuk.mobile
+---
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: leave
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: checkin
+      BODY: '{"spot":"kutuphane","headcount":1}'
+- tapOn:
+    id: tab-venue
+- extendedWaitUntil:
+    visible: Oda kur
+    timeout: 15000
+- tapOn: Oda kur
+- extendedWaitUntil:
+    visible:
+      id: intent-none
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: Odayı kur
+    timeout: 10000
+- tapOn: Odayı kur
+- extendedWaitUntil:
+    visible:
+      id: solo-tabu
+    timeout: 15000
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: request-join
+- extendedWaitUntil:
+    visible: Katılma isteği
+    timeout: 20000
+- tapOn:
+    id: join-accept
+- extendedWaitUntil:
+    visible:
+      id: propose-sahtekar
+    timeout: 15000
+- takeScreenshot: 41-propose-sahtekar
+- tapOn:
+    id: propose-sahtekar
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: answer-game
+      BODY: '{"players":1}'
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: sahtekar-autoplay
+      BODY: '{"imposter":"B1","guessWrong":true}'
+# Seeing the word: the phone goes to A1, then A2; each holds the card.
+- extendedWaitUntil:
+    visible:
+      id: sahtekar-pass
+    timeout: 20000
+- takeScreenshot: 42-sahtekar-pass
+- tapOn:
+    id: sahtekar-ready
+- longPressOn:
+    id: sahtekar-hold
+- tapOn:
+    id: sahtekar-seen
+- extendedWaitUntil:
+    visible:
+      id: sahtekar-pass
+    timeout: 10000
+- tapOn:
+    id: sahtekar-ready
+- longPressOn:
+    id: sahtekar-hold
+- tapOn:
+    id: sahtekar-seen
+# Clues: A1, B1, A2, twice. This phone says for its seats; the bot for B1.
+- extendedWaitUntil:
+    visible:
+      id: sahtekar-clues
+    timeout: 30000
+- takeScreenshot: 43-sahtekar-clues
+- repeat:
+    while:
+      notVisible:
+        id: sahtekar-vote-submit
+    commands:
+      - runFlow:
+          when:
+            visible:
+              id: sahtekar-said
+          commands:
+            - tapOn:
+                id: sahtekar-said
+      - runFlow:
+          when:
+            visible:
+              id: sahtekar-pass
+          commands:
+            - tapOn:
+                id: sahtekar-ready
+      - waitForAnimationToEnd:
+          timeout: 1500
+# The vote: A1 and A2 both name B1.
+- tapOn:
+    id: sahtekar-vote-B1
+- takeScreenshot: 44-sahtekar-vote
+- tapOn:
+    id: sahtekar-vote-submit
+- extendedWaitUntil:
+    visible:
+      id: sahtekar-pass
+    timeout: 10000
+- tapOn:
+    id: sahtekar-ready
+- tapOn:
+    id: sahtekar-vote-B1
+- tapOn:
+    id: sahtekar-vote-submit
+# The bot is caught, guesses wrong; the room is back in chat with the reveal.
+- extendedWaitUntil:
+    visible:
+      id: sahtekar-reveal
+    timeout: 60000
+- assertVisible: Masalar kazandı!
+- takeScreenshot: 45-sahtekar-reveal
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: end-room
+- extendedWaitUntil:
+    visible: Tanışalım mı\?
+    timeout: 20000
+- tapOn:
+    id: reveal-no
+- extendedWaitUntil:
+    visible: Güzel oyundu.*
+    timeout: 15000
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: reveal
+      BODY: '{"yes":false}'
+- tapOn: Mekana dön
+- extendedWaitUntil:
+    visible: Oda kur
+    timeout: 15000
