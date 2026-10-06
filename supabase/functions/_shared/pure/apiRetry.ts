@@ -5,7 +5,7 @@
 // sent, a request created), so its 5xx is shown to the user instead.
 import type { CheckinRequest } from './api/checkin.ts';
 import type { DmRequest, FriendsRequest } from './api/friends.ts';
-import type { TabuRequest } from './api/games.ts';
+import type { SahtekarRequest, TabuRequest } from './api/games.ts';
 import type { ProfileRequest } from './api/profile.ts';
 import type { RevealRequest } from './api/reveal.ts';
 
@@ -17,6 +17,7 @@ type CallName =
   | `friends/${FriendsRequest['action']}`
   | `dm/${DmRequest['action']}`
   | `tabu/${TabuRequest['action']}`
+  | `sahtekar/${SahtekarRequest['action']}`
   | `reveal/${RevealRequest['action']}`;
 
 export const IDEMPOTENT_CALLS = [

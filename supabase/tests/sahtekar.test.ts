@@ -71,12 +71,9 @@ async function started(
   return { ...r, answered };
 }
 
-async function state(roomId: string) {
+async function state(roomId: string): Promise<Record<string, unknown>> {
   const [row] = await sql`select concept, game_state from public.rooms where id = ${roomId}`;
-  return {
-    concept: row?.concept as string | null,
-    ...(row?.game_state as Record<string, unknown>),
-  };
+  return { concept: row?.concept as string | null, ...(row?.game_state as object) };
 }
 
 async function secret(roomId: string) {
@@ -145,7 +142,7 @@ describe('sahtekar rules in SQL (pure/sahtekar.ts)', () => {
       expect(row?.ord).toEqual(clueOrder(seats));
     }
     for (const votes of [
-      { A1: 'B1', A2: 'B1', B1: 'A1' },
+      { A1: 'B1', A2: 'B1', B1: 'A1' } as Record<string, string>,
       { A1: 'B1', B1: 'A1' },
       { A1: 'B2', A2: 'B2', B1: 'A1', B2: 'A1' },
       { A1: 'A2' },
