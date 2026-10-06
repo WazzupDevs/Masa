@@ -1315,6 +1315,18 @@ Tasarımın bileşenleriyle:
 - Bot "Söyledik"e basar, cihaz itiraz eder; cihazın kalan itiraz hakkı 2 görünür.
 - Son iki kelimede süre 5 sn görünür. Sonuç görünür.
 
+### 20.4a Uygulamada netleşenler (7.2 sunucu)
+
+- **Ortak motor:** `pure/sayChallenge.ts` (`SAY_CONFIG`, `sayBegin`, `sayClaim`, `sayObject`, `sayAdvance`) ve SQL'de `public.say_*` (oyun türü parametreyle). İki Edge Function (`harf`, `sarki`) aynı işleyiciyi (`_shared/say.ts`) kullanır; Harf `claim { round, step, letter }`, Şarkı `said { round, step }` alır, diğerininkini 400 ile reddeder.
+- **Hazır durumu:** Harf'te her kategori hazır açılır, Şarkı'da yalnızca ilk kelime (10 sn, `SAY_CONFIG.readySeconds`). Başla: başlayan masa her an, iki masa da `readyEndsAt`'ten sonra.
+- **Son adım:** bütün harfler kapandığında ya da 8. dize söylendiğinde sıra kimseye geçmez; `endsAt` itiraz penceresinin sonuna çekilir. Pencere itirazsız biterse `advance` turu kapatır: Harf'te tahta son harfi kapatana, Şarkı'da puansız.
+- **Yok sayılanlar:** eski tur ya da adım, sırası olmayan masanın `claim`'i, kapalı harf, kendi iddiasına itiraz, pencere dışı itiraz: oda değişmeden `{ ok: true }`. Hakkı biten masanın itirazı `no_objections_left` (409).
+- **Bitiş:** iki hesaba `game_results` (`mode` = oyun türü, masa skoru, çok puan alan `won`), `game_completed` olayı, oda sohbete döner; `lastGame` skorları, son turu ve kalan itiraz haklarını taşır. "Oyunu bitir" `abandoned`, tur ve skorları yazar.
+- **Tek masalı oyun:** `harf/start`, `sarki/start` tur başına bir istem döner (`{ prompts }`: 5 kategori ya da 8 kelime) ve odanın etkinliğini o oyun yapar. Oyunu telefon `sayChallenge.ts` ile Takım A ve B için yürütür.
+- **Öneri:** `rooms/propose-game` `harf` ve `sarki`yı kabul eder (`PROPOSABLE_CONCEPTS`); uygulamanın düğmeleri ekranlarla gelir.
+- **İdempotentlik:** `harf/begin`, `harf/advance`, `sarki/begin`, `sarki/advance` `IDEMPOTENT_CALLS`'ta.
+- **İçerik:** `content/harf-categories.json` (173 kategori) ve `content/sarki-words.json` (498 kelime) proje sahibinin incelemesine taslaktır.
+
 ### 20.5 İbre
 
 **Kurallar.**
