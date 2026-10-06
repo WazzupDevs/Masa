@@ -1525,6 +1525,164 @@ export type Database = {
         Args: { target_history_id: string; target_user_id: string };
         Returns: string;
       };
+      ibre_advance: {
+        Args: { target_room_id: string; target_user_id: string };
+        Returns: {
+          closed_at: string | null;
+          concept: string | null;
+          created_at: string;
+          game_state: Json;
+          guest_alias: string | null;
+          guest_headcount: number | null;
+          guest_joined_at: string | null;
+          guest_profiled: boolean;
+          guest_session_id: string | null;
+          id: string;
+          intent: string | null;
+          last_activity_at: string;
+          owner_alias: string;
+          owner_headcount: number;
+          owner_profiled: boolean;
+          owner_session_id: string;
+          reveal_ends_at: string | null;
+          reveal_result: string | null;
+          reveal_token: Json | null;
+          spot_id: string | null;
+          status: string;
+          venue_id: string;
+          visibility: string;
+          waiting_since: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'rooms';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      ibre_begin: {
+        Args: { target_room_id: string; target_user_id: string };
+        Returns: {
+          closed_at: string | null;
+          concept: string | null;
+          created_at: string;
+          game_state: Json;
+          guest_alias: string | null;
+          guest_headcount: number | null;
+          guest_joined_at: string | null;
+          guest_profiled: boolean;
+          guest_session_id: string | null;
+          id: string;
+          intent: string | null;
+          last_activity_at: string;
+          owner_alias: string;
+          owner_headcount: number;
+          owner_profiled: boolean;
+          owner_session_id: string;
+          reveal_ends_at: string | null;
+          reveal_result: string | null;
+          reveal_token: Json | null;
+          spot_id: string | null;
+          status: string;
+          venue_id: string;
+          visibility: string;
+          waiting_since: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'rooms';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      ibre_local_deck: {
+        Args: { target_room_id: string; target_user_id: string };
+        Returns: Json;
+      };
+      ibre_lock: {
+        Args: {
+          round: number;
+          target_room_id: string;
+          target_user_id: string;
+          value: number;
+        };
+        Returns: {
+          closed_at: string | null;
+          concept: string | null;
+          created_at: string;
+          game_state: Json;
+          guest_alias: string | null;
+          guest_headcount: number | null;
+          guest_joined_at: string | null;
+          guest_profiled: boolean;
+          guest_session_id: string | null;
+          id: string;
+          intent: string | null;
+          last_activity_at: string;
+          owner_alias: string;
+          owner_headcount: number;
+          owner_profiled: boolean;
+          owner_session_id: string;
+          reveal_ends_at: string | null;
+          reveal_result: string | null;
+          reveal_token: Json | null;
+          spot_id: string | null;
+          status: string;
+          venue_id: string;
+          visibility: string;
+          waiting_since: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'rooms';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      ibre_side: {
+        Args: {
+          round: number;
+          side: string;
+          target_room_id: string;
+          target_user_id: string;
+        };
+        Returns: {
+          closed_at: string | null;
+          concept: string | null;
+          created_at: string;
+          game_state: Json;
+          guest_alias: string | null;
+          guest_headcount: number | null;
+          guest_joined_at: string | null;
+          guest_profiled: boolean;
+          guest_session_id: string | null;
+          id: string;
+          intent: string | null;
+          last_activity_at: string;
+          owner_alias: string;
+          owner_headcount: number;
+          owner_profiled: boolean;
+          owner_session_id: string;
+          reveal_ends_at: string | null;
+          reveal_result: string | null;
+          reveal_token: Json | null;
+          spot_id: string | null;
+          status: string;
+          venue_id: string;
+          visibility: string;
+          waiting_since: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'rooms';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      ibre_target: {
+        Args: { round: number; target_room_id: string; target_user_id: string };
+        Returns: Json;
+      };
       my_incoming_requests: {
         Args: never;
         Returns: {

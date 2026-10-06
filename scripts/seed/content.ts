@@ -406,3 +406,52 @@ export function parseSarkiWords(json: unknown, profanity: ProfanityList): SarkiW
   }
   return words;
 }
+
+// content/ibre-scales.json (docs/SPEC_V3.md §20.5): İbre's two-ended scales. At least 200, both ends
+// filled and different, no key twice, no pair twice (normalized, either way round), nothing on the
+// profanity list.
+export const IBRE_MIN_SCALES = 200;
+const IBRE_END_MAX = 40;
+
+export type IbreScaleEntry = { key: string; left: string; right: string };
+
+export function parseIbreScales(json: unknown, profanity: ProfanityList): IbreScaleEntry[] {
+  if (!isRecord(json) || !Array.isArray(json.scales)) {
+    throw new Error('ibre-scales.json needs scales');
+  }
+  const terms = prepareTerms(profanity.terms, profanity.wholeWords);
+  const keys = new Set<string>();
+  const pairs = new Set<string>();
+  const scales = json.scales.map((scale, i) => {
+    const at = `ibre scales[${i}]`;
+    if (!isRecord(scale)) throw new Error(`${at} must be an object`);
+    const { key, left, right } = scale;
+    if (typeof key !== 'string' || !SAY_KEY.test(key)) throw new Error(`${at}.key is invalid`);
+    for (const [name, end] of [
+      ['left', left],
+      ['right', right],
+    ] as const) {
+      if (typeof end !== 'string' || end.trim() === '')
+        throw new Error(`${at}.${name} is required`);
+      if (end.trim().length > IBRE_END_MAX) {
+        throw new Error(`${at}.${name} is longer than ${IBRE_END_MAX}`);
+      }
+      if (containsProfanity(end, terms)) {
+        throw new Error(`${at}: "${end}" is on the profanity list`);
+      }
+    }
+    const l = normalize(left as string);
+    const r = normalize(right as string);
+    if (l === r) throw new Error(`${at}: both ends are "${left as string}"`);
+    if (keys.has(key)) throw new Error(`${at}: key "${key}" twice`);
+    const pair = [l, r].sort().join('|');
+    if (pairs.has(pair)) throw new Error(`${at}: "${left as string} / ${right as string}" twice`);
+    keys.add(key);
+    pairs.add(pair);
+    return { key, left: (left as string).trim(), right: (right as string).trim() };
+  });
+  if (scales.length < IBRE_MIN_SCALES) {
+    throw new Error(`ibre-scales.json: ${scales.length} scales, at least ${IBRE_MIN_SCALES}`);
+  }
+  return scales;
+}

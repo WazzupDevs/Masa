@@ -57,3 +57,17 @@ export type SayRequest =
 export type HarfRequest = Exclude<SayRequest, { action: 'said' }>;
 export type SarkiRequest = Exclude<SayRequest, { action: 'claim' }>;
 export type SayStartResponse = { prompts: string[] };
+
+// `ibre` (docs/SPEC_V3.md §20.5). A two-table game starts from rooms/answer-game; begin, target and
+// advance are idempotent.
+export type IbreRequest =
+  // One-table room: one scale per round; the phone makes the targets and runs the game.
+  | { action: 'start'; roomId: string }
+  | { action: 'begin'; roomId: string }
+  // The describing table, while a clock runs on round `round`.
+  | { action: 'target'; roomId: string; round: number }
+  | { action: 'lock'; roomId: string; round: number; value: number }
+  | { action: 'side'; roomId: string; round: number; side: 'left' | 'right' }
+  | { action: 'advance'; roomId: string };
+export type IbreStartResponse = { scales: { left: string; right: string }[] };
+export type IbreTargetResponse = { roundNo: number; target: number };

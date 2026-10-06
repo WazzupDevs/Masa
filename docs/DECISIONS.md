@@ -673,3 +673,13 @@ Onaylandı (`docs/SPEC_V3.md` §20; cevaplar §20.8).
 | Son harf / 8. dize       | Sıra geçmez, tur itiraz penceresinin sonunda `advance` ile kapanır                                     | İtiraz son iddiaya da açık kalmalı; pencere bitmeden puan verilirse itiraz geri almayı gerektirirdi                                                                            |
 | Geçersiz iddia ve itiraz | Hata değil, sessizce yok sayılır; yalnızca hakkı bitmiş itiraz hata döner                              | Spec "aynı adıma ikinci claim ya da object yok sayılır" der; iki telefon aynı anda bastığında biri hata görmesin. Hakkın bitmesi spec'te adı geçen hata (`no_objections_left`) |
 | Tek masalı deste         | `start` bütün turların istemlerini bir kerede döner                                                    | Telefon oyunu ağ olmadan yürütür; Sahtekar'daki yeniden dağıtım gibi tur arası çağrı gerekmez                                                                                  |
+
+## v3 adım 7.4: İbre sunucusu
+
+| Soru                   | Seçim                                                                         | Gerekçe                                                                                                                  |
+| ---------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Anlatan masanın süresi | 60 sn (onaya açık)                                                            | Spec süre vermiyor; Sesli Tabu turuyla aynı, ipucu ve tartışmaya yeter. Tek sabit (`IBRE_CONFIG.clueSeconds` ve SQL eşi) |
+| Onaysız ibre           | Süre dolunca tur ibresiz kapanır, puan yok (onaya açık)                       | Sunucu canlı ibreyi bilmez; telefondaki son değeri kilitlemek istemciye güvenmek olur                                    |
+| Hedefin yeri           | `game_secrets` tek satır, her turda üzerine yazılır                           | Spec'teki tablo; geçmiş turların hedefi zaten `reveal`'da açık                                                           |
+| Kendiliğinden başlama  | `advance`, süreyi `readyEndsAt`'ten başlatır; "Başla" yalnızca anlatan masada | §20.1'in metni; geç gelen çağrı süreyi uzatmaz                                                                           |
+| Deste kolonları        | `prompt` = sol, `word` = sağ                                                  | Yeni kolon gerekmez; satır kısıtı ikisini zorunlu tutar                                                                  |

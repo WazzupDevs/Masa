@@ -5,6 +5,7 @@ import type {
   CampusVenue,
   ProfanityList,
   HarfCategory,
+  IbreScaleEntry,
   SahtekarCategory,
   SarkiWord,
   SohbetCard,
@@ -81,6 +82,7 @@ export function cardsSql(
   sahtekar: readonly SahtekarCategory[] = [],
   harf: readonly HarfCategory[] = [],
   sarki: readonly SarkiWord[] = [],
+  ibre: readonly IbreScaleEntry[] = [],
 ): string {
   const tabuRows = tabu.map(
     (c) =>
@@ -105,18 +107,24 @@ export function cardsSql(
   const sarkiRows = sarki.map(
     (w) => `('sarki', ${sqlLiteral(w.key)}, ${sqlLiteral(w.word)}, null, null, null)`,
   );
+  // İbre: one row per scale (prompt = the left end, word = the right end).
+  const ibreRows = ibre.map(
+    (c) =>
+      `('ibre', ${sqlLiteral(c.key)}, ${sqlLiteral(c.right)}, null, null, ${sqlLiteral(c.left)})`,
+  );
   const sources = [
     'content/tabu-cards.json',
     'content/sohbet-cards.json',
     ...(sahtekar.length > 0 ? ['content/sahtekar-words.json'] : []),
     ...(harf.length > 0 ? ['content/harf-categories.json'] : []),
     ...(sarki.length > 0 ? ['content/sarki-words.json'] : []),
+    ...(ibre.length > 0 ? ['content/ibre-scales.json'] : []),
   ];
   return [
     `-- ${sources.join(', ')}`,
     'update public.cards set is_active = false;',
     'insert into public.cards (deck, source_key, word, forbidden, theme, prompt) values',
-    `  ${[...tabuRows, ...sohbetRows, ...sahtekarRows, ...harfRows, ...sarkiRows].join(',\n  ')}`,
+    `  ${[...tabuRows, ...sohbetRows, ...sahtekarRows, ...harfRows, ...sarkiRows, ...ibreRows].join(',\n  ')}`,
     'on conflict (deck, source_key) do update set',
     '  word = excluded.word, forbidden = excluded.forbidden, theme = excluded.theme,',
     '  prompt = excluded.prompt, is_active = true;',
