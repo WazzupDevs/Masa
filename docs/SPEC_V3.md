@@ -1068,7 +1068,9 @@ Tasarımın "Aşama 5" PR'ı main'e girmeden başlamaz: `TabBar.tsx`, `profile/i
 | `sahtekar/options` / `sahtekar/guess { option }`       | Sahtekarın masası                       | `phase: 'guess'`                                        |
 | `sahtekar/advance`                                     | Herhangi bir masa                       | Süre dolunca; idempotent                                |
 
-- `game_state`: `phase`, `players`, `seats`, `viewed`, `order`, `step`, `endsAt`, `votesCast`; açılışta `reveal`.
+- `game_state`: `phase` (`viewing`, `clues`, `voting`, `guess`), `gameNo`, `players`, `seats`, `category` (açık bilgi; herkes, sahtekar dahil, kategoriyi görür), `viewed`, `order`, `step`, `voters` (kartını gören koltuklar), `votesCast`, `endsAt`; tahminde `accused`.
+- Oyun bitince oda sohbete döner (Sesli Tabu gibi): açılış `lastGame.reveal`'dadır (`imposter`, `word`, `category`, `votes`, `accused`, `guess`, `winner`). Boş alanlar (kimse yakalanmadıysa `accused`, tahmin yoksa `guess`) yazılmaz; istemci yok alanı boş sayar. `lastGame.players` rövanş içindir; "Oyunu bitir" de onu yazar.
+- Görmeyen koltuk ipucu ve oylamadan atlanır ama sahtekar seçimi görmeye bağlı değildir: sahtekar görmeyen bir koltuksa oyun yine oynanır.
 - Süreler `pure/sahtekar.ts` → `SAHTEKAR`: görme 120 sn, ipucu 15 sn, oylama 90 sn, tahmin 30 sn, 2 ipucu turu, 6 seçenek.
 - `game_results`: iki hesaba `won = null`, `score = null`, `mode = 'sahtekar'`. Oyun sayısı rozetlerine girer.
 
