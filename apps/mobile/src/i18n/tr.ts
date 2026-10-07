@@ -245,6 +245,7 @@ export const tr = {
       body: 'Kelimenin geçtiği bir şarkıdan bir dize söyleyin. Söyleyemeyen kaybeder.',
       steps: [
         `Masalar sırayla, ${SAY_CONFIG.sarki.turnSeconds} saniye içinde kelimenin geçtiği bir dize söyler ve "Söyledik"e basar.`,
+        'Kelimenin çekimli hâli de sayılır: "göz" için "gözlerin" geçen bir dize de olur.',
         `Diğer masa ${SAY_CONFIG.sarki.objectionSeconds} saniye içinde itiraz edebilir; itiraz alan ya da söyleyemeyen masanın rakibi 1 puan alır. Her masanın ${SAY_CONFIG.sarki.objections} itiraz hakkı var.`,
         `Bir kelimede en çok ${SAY_CONFIG.sarki.maxSteps} dize; sekizinci de geçerse kelime puansız biter.`,
         `${SAY_CONFIG.sarki.totalRounds} kelime oynanır; son iki kelimede süre ${SAY_CONFIG.sarki.shortSeconds} saniye.`,

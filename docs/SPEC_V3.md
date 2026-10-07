@@ -1281,6 +1281,7 @@ Tasarımın bileşenleriyle:
 **Kurallar.**
 
 - Telefon bir kelime gösterir. Bir kelimede masalar sırayla, her biri 10 sn içinde bu kelimenin geçtiği bir şarkıdan bir dize söyler ve "Söyledik"e basar.
+- Kelimenin çekimli hâli de sayılır ("göz" için "gözlerin" geçerli). Bu yüzden deste kök kelimelerden oluşur; zamir, bağlaç ve her şarkıda geçen sözcükler (ben, sen, bir, hiç…) destede yoktur (proje sahibi kararı).
 - Karşı masa 3 sn içinde itiraz edebilir. Söyleyemeyen ya da itiraz alan masanın rakibi 1 puan alır ve kelime biter (ilk başarısızlık).
 - Bir kelimede en fazla 8 dize söylenir; 8. dize de geçerse kelime puansız biter.
 - **İtiraz hakkı:** her masanın oyun boyunca 3 itiraz hakkı vardır (Harf Kapmaca'daki gibi); kalan hak `game_state`'te ve ekranda görünür.
@@ -1325,7 +1326,7 @@ Tasarımın bileşenleriyle:
 - **Tek masalı oyun:** `harf/start`, `sarki/start` tur başına bir istem döner (`{ prompts }`: 5 kategori ya da 8 kelime) ve odanın etkinliğini o oyun yapar. Oyunu telefon `sayChallenge.ts` ile Takım A ve B için yürütür.
 - **Öneri:** `rooms/propose-game` `harf` ve `sarki`yı kabul eder (`PROPOSABLE_CONCEPTS`); uygulamanın düğmeleri ekranlarla gelir.
 - **İdempotentlik:** `harf/begin`, `harf/advance`, `sarki/begin`, `sarki/advance` `IDEMPOTENT_CALLS`'ta.
-- **İçerik:** `content/harf-categories.json` (173 kategori) ve `content/sarki-words.json` (498 kelime) proje sahibinin incelemesine taslaktır.
+- **İçerik:** `content/harf-categories.json` (174 kategori) ve `content/sarki-words.json` (456 kelime), proje sahibinin incelemesiyle: siyaset, din, askerlik, savaş, argo ve hastalık kategorileri; alkol, sigara ve dini sözcükler; zamirler, bağlaçlar ve çekimli tekrarlar çıkarıldı (yerlerine gündelik ve kampüs kategorileri, somut kelimeler). Seed, JSON'dan çıkarılan kartı silmez, deste deste `is_active = false` yapar.
 
 ### 20.4b Uygulamada netleşenler (7.2 ekranlar)
 

@@ -138,7 +138,15 @@ describe('cardsSql', () => {
       [{ word: 'Deniz', forbidden: ['dalga', 'kum', 'mavi', 'tuz', 'yüzmek'] }],
       [{ theme: 'derin', prompt: 'Seni ne mutlu eder?' }],
     );
-    expect(sql).toContain('update public.cards set is_active = false;');
+    // Retired deck by deck, after the upsert: never a moment with a whole deck inactive.
+    expect(sql).not.toContain('update public.cards set is_active = false;');
+    expect(sql.indexOf('on conflict')).toBeLessThan(sql.indexOf('set is_active = false'));
+    expect(sql).toContain(
+      "update public.cards set is_active = false where deck = 'tabu' and is_active and source_key <> all (array['Deniz']::text[]);",
+    );
+    expect(sql).toContain(
+      "update public.cards set is_active = false where deck = 'sohbet' and is_active and source_key <> all (array['Seni ne mutlu eder?']::text[]);",
+    );
     expect(sql).toContain(
       "('tabu', 'Deniz', 'Deniz', array['dalga', 'kum', 'mavi', 'tuz', 'yüzmek']::text[], null, null)",
     );
