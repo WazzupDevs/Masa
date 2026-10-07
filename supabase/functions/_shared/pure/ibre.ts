@@ -11,7 +11,7 @@ export const IBRE_CONFIG = {
   totalRounds: 4,
   readySeconds: 10,
   // The describing table's clock: the target, the clue and the needle.
-  clueSeconds: 60,
+  clueSeconds: 90,
   // The other table's "Daha sol / Daha sağ".
   sideSeconds: 15,
   minLocalPlayers: 2,

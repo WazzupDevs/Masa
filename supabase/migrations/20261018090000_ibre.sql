@@ -64,7 +64,7 @@ immutable
 set search_path = ''
 as $$
   select jsonb_build_object(
-    'totalRounds', 4, 'readySeconds', 10, 'clueSeconds', 60, 'sideSeconds', 15,
+    'totalRounds', 4, 'readySeconds', 10, 'clueSeconds', 90, 'sideSeconds', 15,
     'minLocalPlayers', 2
   );
 $$;

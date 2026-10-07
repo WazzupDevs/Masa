@@ -212,7 +212,9 @@ describe('İbre, two tables', () => {
     expect(await t.call(t.owner, { action: 'begin' })).toEqual(OK);
     const first = (await state(t.roomId)).gs;
     expect(first).toMatchObject({ turnPhase: 'running', readyEndsAt: null });
-    expect(Math.abs(ms(first.endsAt) - (before + 60_000))).toBeLessThan(3_000);
+    expect(Math.abs(ms(first.endsAt) - (before + IBRE_CONFIG.clueSeconds * 1000))).toBeLessThan(
+      3_000,
+    );
     expect(await t.call(t.owner, { action: 'begin' })).toEqual(OK);
     expect(await t.call(t.guest, { action: 'begin' })).toEqual(OK);
     expect((await state(t.roomId)).gs.endsAt).toBe(first.endsAt);
@@ -233,7 +235,7 @@ describe('İbre, two tables', () => {
     expect(await u.call(u.guest, { action: 'advance' })).toEqual(OK);
     const late = (await state(u.roomId)).gs;
     expect(late.turnPhase).toBe('running');
-    expect(ms(late.endsAt)).toBe(ready + 60_000);
+    expect(ms(late.endsAt)).toBe(ready + IBRE_CONFIG.clueSeconds * 1000);
   });
 
   it('hands the target to the describing table only, while a clock runs, the same each time', async () => {

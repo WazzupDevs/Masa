@@ -46,6 +46,13 @@ describe('content/ibre-scales.json (docs/SPEC_V3.md §20.5)', () => {
     expect(() => parseIbreScales(listed, profanity)).toThrow('profanity list');
   });
 
+  it('counts the same two ends in reverse order as a repeat', () => {
+    const reversed = scales(210);
+    reversed.scales.push({ key: 'ucuz_pahali', left: 'Ucuz', right: 'Pahalı' });
+    reversed.scales.push({ key: 'pahali_ucuz', left: 'PAHALI', right: 'ucuz' });
+    expect(() => parseIbreScales(reversed, profanity)).toThrow('"PAHALI / ucuz" twice');
+  });
+
   it('seeds one card a scale: prompt the left end, word the right', () => {
     const sql = cardsSql(
       [],
