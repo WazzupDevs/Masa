@@ -224,6 +224,21 @@ function endRound(
   };
 }
 
+// The app locks the needle where it stands when the describing table has not by the last 3 seconds
+// of its clock (the owner's rule; the server still scores an unlocked needle 0). A phone in the
+// background sends nothing, so its round stays at 0.
+export const IBRE_AUTO_LOCK_SECONDS = 3;
+
+export function ibreAutoLockDue(game: IbreState, now: number): boolean {
+  return (
+    game.phase === 'playing' &&
+    game.turnPhase === 'running' &&
+    game.endsAt !== null &&
+    now >= game.endsAt - IBRE_AUTO_LOCK_SECONDS * 1000 &&
+    now < game.endsAt
+  );
+}
+
 export function ibreWinner(game: Pick<IbreState, 'scores'>): TableSide | null {
   const { owner, guest } = game.scores;
   return owner === guest ? null : owner > guest ? 'owner' : 'guest';

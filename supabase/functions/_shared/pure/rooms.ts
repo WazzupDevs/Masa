@@ -4,12 +4,12 @@ export const JOIN_REQUEST_TTL_SECONDS = 60;
 export const MAX_JOIN_REQUESTS_PER_HOUR = 10;
 export const ROOM_IDLE_MINUTES = 10;
 
-// The games (Sesli Tabu, Sohbet kartları, Sahtekar, Harf Kapmaca, Şarkıda Geçsin). rooms.concept is the running game; null is
+// The games (Sesli Tabu, Sohbet kartları, Sahtekar, Harf Kapmaca, Şarkıda Geçsin, İbre). rooms.concept is the running game; null is
 // chat (docs/SPEC_V3.md §5.1).
-export const CONCEPTS = ['tabu', 'sohbet', 'sahtekar', 'harf', 'sarki'] as const;
+export const CONCEPTS = ['tabu', 'sohbet', 'sahtekar', 'harf', 'sarki', 'ibre'] as const;
 // What rooms/propose-game accepts: CONCEPTS and the step 7 games whose screens are not in the app
 // yet (docs/SPEC_V3.md §20). A game moves into CONCEPTS with its screens.
-export const PROPOSABLE_CONCEPTS = [...CONCEPTS, 'ibre'] as const;
+export const PROPOSABLE_CONCEPTS = [...CONCEPTS] as const;
 export type ProposableConcept = (typeof PROPOSABLE_CONCEPTS)[number];
 export const VISIBILITIES = ['private', 'open'] as const;
 export type Concept = (typeof CONCEPTS)[number];

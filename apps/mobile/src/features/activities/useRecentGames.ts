@@ -6,7 +6,7 @@ const RECENT = 5;
 
 export type RecentGame = {
   id: string;
-  concept: 'tabu' | 'sohbet' | 'sahtekar' | 'harf' | 'sarki';
+  concept: 'tabu' | 'sohbet' | 'sahtekar' | 'harf' | 'sarki' | 'ibre';
   completedAt: string;
   score: number | null;
   won: boolean | null;
@@ -40,7 +40,8 @@ export function useRecentGames() {
       return data.map((g) => ({
         id: g.id,
         concept:
-          (['sohbet', 'sahtekar', 'harf', 'sarki'] as const).find((c) => c === g.concept) ?? 'tabu',
+          (['sohbet', 'sahtekar', 'harf', 'sarki', 'ibre'] as const).find((c) => c === g.concept) ??
+          'tabu',
         completedAt: g.completed_at,
         score: g.score,
         won: g.won,

@@ -10,6 +10,8 @@ import type {
   SahtekarStartResponse,
   SahtekarViewResponse,
   SayStartResponse,
+  IbreStartResponse,
+  IbreTargetResponse,
 } from '@shared/api/games.ts';
 import type {
   CreateRoomRequest,
@@ -252,6 +254,16 @@ export const gamesApi = {
     invoke<GameOkResponse>(kind, { action: 'object', roomId, round, step }),
   sayAdvance: (kind: SayKind, roomId: string) =>
     invoke<GameOkResponse>(kind, { action: 'advance', roomId }),
+  // İbre (docs/SPEC_V3.md §20.5).
+  ibreStart: (roomId: string) => invoke<IbreStartResponse>('ibre', { action: 'start', roomId }),
+  ibreBegin: (roomId: string) => invoke<GameOkResponse>('ibre', { action: 'begin', roomId }),
+  ibreTarget: (roomId: string, round: number) =>
+    invoke<IbreTargetResponse>('ibre', { action: 'target', roomId, round }),
+  ibreLock: (roomId: string, round: number, value: number) =>
+    invoke<GameOkResponse>('ibre', { action: 'lock', roomId, round, value }),
+  ibreSide: (roomId: string, round: number, side: 'left' | 'right') =>
+    invoke<GameOkResponse>('ibre', { action: 'side', roomId, round, side }),
+  ibreAdvance: (roomId: string) => invoke<GameOkResponse>('ibre', { action: 'advance', roomId }),
 };
 
 export const revealApi = {

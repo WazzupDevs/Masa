@@ -4,6 +4,7 @@ import type { SohbetState, SohbetTheme } from './sohbet.ts';
 import { SOHBET_THEMES } from './sohbet.ts';
 import { parseSahtekarLastGame, type SahtekarLastGame } from './sahtekar.ts';
 import { SAY_CONFIG } from './sayChallenge.ts';
+import { type IbreReveal, parseIbreReveal } from './ibre.ts';
 
 export const TABU = {
   turnSeconds: 60,
@@ -360,7 +361,7 @@ export function parseGameState(value: unknown): GameState | null {
 // result (docs/SPEC_V3.md §5.1): the concept, and for two-table Tabu both scores (refereed) or the
 // team's score (cooperative).
 export type LastGame = {
-  concept: 'tabu' | 'sohbet' | 'sahtekar' | 'harf' | 'sarki';
+  concept: 'tabu' | 'sohbet' | 'sahtekar' | 'harf' | 'sarki' | 'ibre';
   scores: Record<TableSide, number> | null;
   teamScore: number | null;
   // A two-table Tabu game ended with "Oyunu bitir" before its last turn (docs/SPEC_V3.md §19.1):
@@ -370,6 +371,8 @@ export type LastGame = {
   sahtekar: SahtekarLastGame | null;
   // Harf Kapmaca and Şarkıda Geçsin (§20.3–20.4): objections used and rounds lost on the clock.
   say: { objections: number; timeouts: number } | null;
+  // İbre (§20.5): the last round's reveal and the rounds each table scored 4.
+  ibre: { reveal: IbreReveal | null; bullseyes: Record<TableSide, number> } | null;
 };
 export type BetweenGames = { gameNo: number; lastGame: LastGame | null };
 
@@ -379,7 +382,7 @@ export function parseBetweenGames(value: unknown): BetweenGames {
   const last = state.lastGame;
   if (
     !isRecord(last) ||
-    !['tabu', 'sohbet', 'sahtekar', 'harf', 'sarki'].includes(String(last.concept))
+    !['tabu', 'sohbet', 'sahtekar', 'harf', 'sarki', 'ibre'].includes(String(last.concept))
   ) {
     return { gameNo, lastGame: null };
   }
@@ -410,6 +413,16 @@ export function parseBetweenGames(value: unknown): BetweenGames {
                 last.objectionsLeft.owner -
                 last.objectionsLeft.guest,
               timeouts: last.timeouts,
+            }
+          : null,
+      ibre:
+        last.concept === 'ibre' &&
+        isRecord(last.bullseyes) &&
+        num(last.bullseyes.owner) &&
+        num(last.bullseyes.guest)
+          ? {
+              reveal: parseIbreReveal(last.reveal),
+              bullseyes: { owner: last.bullseyes.owner, guest: last.bullseyes.guest },
             }
           : null,
     },

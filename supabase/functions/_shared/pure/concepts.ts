@@ -12,6 +12,7 @@ export const CONCEPT_MODES: Record<Concept, GameMode> = {
   sahtekar: 'voice',
   harf: 'voice',
   sarki: 'voice',
+  ibre: 'voice',
 };
 
 export function conceptMode(concept: Concept): GameMode {

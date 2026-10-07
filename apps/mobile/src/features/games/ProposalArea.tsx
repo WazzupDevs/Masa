@@ -141,6 +141,7 @@ const GLYPH: Record<Concept, GameGlyph> = {
   sahtekar: 'impostor',
   harf: 'letters',
   sarki: 'song',
+  ibre: 'needle',
 };
 
 function useGameColors(concept: Concept) {

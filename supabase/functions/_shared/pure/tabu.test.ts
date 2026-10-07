@@ -286,6 +286,7 @@ describe('parseBetweenGames', () => {
         abandoned: null,
         sahtekar: null,
         say: null,
+        ibre: null,
       },
     });
     expect(parseBetweenGames({ gameNo: 1, lastGame: { concept: 'sohbet' } })).toEqual({
@@ -297,8 +298,42 @@ describe('parseBetweenGames', () => {
         abandoned: null,
         sahtekar: null,
         say: null,
+        ibre: null,
       },
     });
+  });
+
+  it('reads an İbre game’s last reveal and bullseyes', () => {
+    const reveal = {
+      roundNo: 4,
+      scale: { left: 'Ucuz', right: 'Pahalı' },
+      table: 'guest',
+      target: 34,
+      needle: 41,
+      band: 3,
+      side: 'left',
+      sidePoint: true,
+    };
+    expect(
+      parseBetweenGames({
+        gameNo: 3,
+        lastGame: {
+          concept: 'ibre',
+          scores: { owner: 7, guest: 9 },
+          bullseyes: { owner: 1, guest: 0 },
+          reveal,
+        },
+      }).lastGame,
+    ).toMatchObject({
+      concept: 'ibre',
+      scores: { owner: 7, guest: 9 },
+      ibre: { reveal, bullseyes: { owner: 1, guest: 0 } },
+    });
+    expect(
+      parseBetweenGames({
+        lastGame: { concept: 'ibre', abandoned: true, turnNo: 2, totalTurns: 4 },
+      }).lastGame?.ibre,
+    ).toBeNull();
   });
 
   it('is empty for a fresh room or anything malformed', () => {
@@ -317,6 +352,7 @@ describe('parseBetweenGames', () => {
       abandoned: null,
       sahtekar: null,
       say: null,
+      ibre: null,
     });
     expect(
       parseBetweenGames({ gameNo: 1, lastGame: { concept: 'tabu', scores: { team: 7 } } }),
@@ -329,6 +365,7 @@ describe('parseBetweenGames', () => {
         abandoned: null,
         sahtekar: null,
         say: null,
+        ibre: null,
       },
     });
   });
@@ -346,6 +383,7 @@ describe('parseBetweenGames', () => {
       abandoned: { turnNo: 3, totalTurns: 6 },
       sahtekar: null,
       say: null,
+      ibre: null,
     });
     expect(
       parseBetweenGames({ lastGame: { concept: 'tabu', abandoned: true, turnNo: '3' } }).lastGame

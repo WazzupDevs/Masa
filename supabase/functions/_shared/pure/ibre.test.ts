@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   IBRE_CONFIG,
   ibreAdvance,
+  ibreAutoLockDue,
   ibreBand,
   ibreBegin,
   ibreLock,
@@ -151,6 +152,22 @@ describe('a round', () => {
       scores: { owner: 0, guest: 0 },
       reveal: { target: 34, needle: null, band: 0, side: null },
     });
+  });
+});
+
+describe('the automatic lock', () => {
+  it('is due in the last 3 seconds of the describing clock only', () => {
+    const ready = newIbreGame(scale, t0);
+    const running = ibreBegin(ready, 'owner', t0);
+    const end = running.endsAt ?? 0;
+    expect(ibreAutoLockDue(ready, t0)).toBe(false);
+    expect(ibreAutoLockDue(running, end - 3_001)).toBe(false);
+    expect(ibreAutoLockDue(running, end - 3_000)).toBe(true);
+    expect(ibreAutoLockDue(running, end - 1)).toBe(true);
+    expect(ibreAutoLockDue(running, end)).toBe(false);
+    const locked = ibreLock(running, 'owner', 1, 50, end - 2_000);
+    expect(locked.turnPhase).toBe('side');
+    expect(ibreAutoLockDue(locked, end - 1_000)).toBe(false);
   });
 });
 

@@ -23,6 +23,12 @@ import {
   CURRENT_TERMS_VERSION,
 } from '../../supabase/functions/_shared/pure/consent.ts';
 import { isDevProjectUrl, isLocalUrl } from '../../supabase/functions/_shared/pure/devProject.ts';
+import {
+  IBRE_MAX,
+  IBRE_MIN,
+  type IbreState,
+  parseIbreState,
+} from '../../supabase/functions/_shared/pure/ibre.ts';
 import { dmTypingChannel, TYPING_EVENT } from '../../supabase/functions/_shared/pure/rooms.ts';
 import { ownSeats, parseSahtekarState } from '../../supabase/functions/_shared/pure/sahtekar.ts';
 import {
@@ -205,6 +211,75 @@ async function sayStep(
         : { action: 'said', roomId: room.id, round: state.roundNo, step: state.step },
     );
     return state.kind === 'harf' ? `took ${letter}` : 'sang a line';
+  }
+  return null;
+}
+
+// The bot's open room with an İbre game, its side and the parsed state.
+async function ibreRoom(): Promise<{ id: string; side: 'owner' | 'guest'; state: IbreState }> {
+  const sessionId = await mySessionId();
+  return retryUntil('an İbre game', async () => {
+    const { data } = await me()
+      .from('rooms')
+      .select('id, game_state, owner_session_id')
+      .neq('status', 'closed')
+      .order('created_at', { ascending: false })
+      .limit(1);
+    const room = data?.[0];
+    const state = room ? parseIbreState(room.game_state) : null;
+    if (!room || !state) return null;
+    return {
+      id: room.id as string,
+      side: room.owner_session_id === sessionId ? 'owner' : 'guest',
+      state,
+    };
+  });
+}
+
+const clampNeedle = (v: number) => Math.max(IBRE_MIN, Math.min(IBRE_MAX, Math.round(v)));
+
+// One step of the bot table's part in İbre (opponent mode): Başla on its own ready round after a
+// few seconds, advance once a clock ran out; on its own round it asks for the target and locks the
+// needle near it after a few seconds; on the other table's round it picks a side after a few
+// seconds.
+async function ibreStep(
+  room: { id: string; game_state: Json; owner_session_id?: string | null },
+  sessionId: string | undefined,
+  seen: Map<string, number>,
+): Promise<string | null> {
+  const state = parseIbreState(room.game_state);
+  if (!state) return null;
+  const side = room.owner_session_id === sessionId ? 'owner' : 'guest';
+  const key = `${room.id}/ibre/${state.roundNo}/${state.turnPhase}`;
+  const since = seen.get(key) ?? Date.now();
+  seen.set(key, since);
+  const mine = state.turnTable === side;
+  const clock = state.turnPhase === 'ready' ? state.readyEndsAt : state.endsAt;
+  if (Date.now() >= (clock ?? Number.POSITIVE_INFINITY)) {
+    await call('ibre', { action: 'advance', roomId: room.id });
+    return 'advanced';
+  }
+  if (state.turnPhase === 'ready') {
+    if (mine && Date.now() - since > 3_000) {
+      await call('ibre', { action: 'begin', roomId: room.id });
+      return 'began';
+    }
+    return null;
+  }
+  if (state.turnPhase === 'running' && mine && Date.now() - since > 4_000) {
+    const { target } = (await call('ibre', {
+      action: 'target',
+      roomId: room.id,
+      round: state.roundNo,
+    })) as { target: number };
+    const value = clampNeedle(target + (Math.random() * 16 - 8));
+    await call('ibre', { action: 'lock', roomId: room.id, round: state.roundNo, value });
+    return `locked ${value}`;
+  }
+  if (state.turnPhase === 'side' && !mine && Date.now() - since > 3_000) {
+    const pick = Math.random() < 0.5 ? 'left' : 'right';
+    await call('ibre', { action: 'side', roomId: room.id, round: state.roundNo, side: pick });
+    return `said ${pick}`;
   }
   return null;
 }
@@ -543,6 +618,88 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
       await sql.end();
     }
     return { ok: true };
+  },
+
+  // İbre (docs/SPEC_V3.md §20.5). `ibre-begin`: Başla on the bot's ready round (a round already
+  // started from readyEndsAt by the device's advance is left as it is).
+  async 'ibre-begin'() {
+    const room = await retryUntil('the bot table’s round', async () => {
+      const r = await ibreRoom();
+      return r.state.turnTable === r.side && r.state.turnPhase !== 'side' ? r : null;
+    });
+    return call('ibre', { action: 'begin', roomId: room.id });
+  },
+
+  // The needle on the bot's running round: `value`, or near the target it asks for.
+  async 'ibre-lock'(args) {
+    const room = await retryUntil('the bot table’s running round', async () => {
+      const r = await ibreRoom();
+      return r.state.turnPhase === 'running' && r.state.turnTable === r.side ? r : null;
+    });
+    const round = room.state.roundNo;
+    const { target } = (await call('ibre', { action: 'target', roomId: room.id, round })) as {
+      target: number;
+    };
+    const value =
+      typeof args.value === 'number' ? clampNeedle(args.value) : clampNeedle(target + 5);
+    return call('ibre', { action: 'lock', roomId: room.id, round, value });
+  },
+
+  // "Daha sol / Daha sağ" (`side`, default right) on the device's locked needle.
+  async 'ibre-side'(args) {
+    const room = await retryUntil('a needle to judge', async () => {
+      const r = await ibreRoom();
+      return r.state.turnPhase === 'side' && r.state.turnTable !== r.side ? r : null;
+    });
+    return call('ibre', {
+      action: 'side',
+      roomId: room.id,
+      round: room.state.roundNo,
+      side: args.side === 'left' ? 'left' : 'right',
+    });
+  },
+
+  // Local only: pushes the running clock 60 seconds forward (see say-hold).
+  async 'ibre-hold'() {
+    if (!isLocal) throw new Error('ibre-hold is local only');
+    const room = await ibreRoom();
+    const sql = db();
+    try {
+      await sql`
+        update public.rooms
+        set game_state = game_state
+          || case when game_state ->> 'endsAt' is not null
+               then jsonb_build_object('endsAt', (game_state ->> 'endsAt')::timestamptz + interval '60 seconds')
+               else '{}'::jsonb end
+          || case when game_state ->> 'readyEndsAt' is not null
+               then jsonb_build_object('readyEndsAt', (game_state ->> 'readyEndsAt')::timestamptz + interval '60 seconds')
+               else '{}'::jsonb end
+        where id = ${room.id}
+      `;
+    } finally {
+      await sql.end();
+    }
+    return { ok: true };
+  },
+
+  // Local only: ends the game now: the last round, its clock run out without a needle.
+  async 'ibre-end'() {
+    if (!isLocal) throw new Error('ibre-end is local only');
+    const room = await ibreRoom();
+    const sql = db();
+    try {
+      await sql`
+        update public.rooms
+        set game_state = game_state || jsonb_build_object(
+          'roundNo', game_state -> 'totalRounds', 'turnPhase', 'running', 'readyEndsAt', null,
+          'endsAt', now() - interval '1 second'
+        )
+        where id = ${room.id}
+      `;
+    } finally {
+      await sql.end();
+    }
+    return call('ibre', { action: 'advance', roomId: room.id });
   },
 
   // Local only: runs the clock out now and moves the game on. `toRound` first jumps so the advance
@@ -915,6 +1072,11 @@ async function opponent() {
         if (room.concept === 'sahtekar') {
           const did = await sahtekarStep(room, sessionId, sahtekarBot);
           if (did) say(`Sahtekar: ${did}`);
+          return;
+        }
+        if (room.concept === 'ibre') {
+          const did = await ibreStep(room, sessionId, firstSeen);
+          if (did) say(`İbre: ${did}`);
           return;
         }
         if (room.concept === 'harf' || room.concept === 'sarki') {

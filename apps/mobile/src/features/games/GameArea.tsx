@@ -1,4 +1,5 @@
 import type { Concept } from '@shared/rooms.ts';
+import { IBRE_CONFIG, parseIbreState } from '@shared/ibre.ts';
 import { parseSahtekarState, SAHTEKAR } from '@shared/sahtekar.ts';
 import { parseSayState, SAY_CONFIG } from '@shared/sayChallenge.ts';
 import { parseBetweenGames, parseGameState, type TableSide } from '@shared/tabu.ts';
@@ -15,6 +16,8 @@ import { tr } from '@/i18n/tr';
 import { track, trackOnce } from '@/lib/analytics';
 import { gamesApi, roomsApi } from '@/lib/api';
 
+import { IbreGame, RoundReveal } from './ibre/IbreGame';
+import { LocalIbre } from './ibre/LocalIbre';
 import { LocalTabu } from './LocalTabu';
 import { ProposalArea } from './ProposalArea';
 import { RematchButton } from './RematchButton';
@@ -43,7 +46,7 @@ type Props = {
   onLocalGame: (game: LocalGame | null) => void;
 };
 
-export type LocalGame = 'tabu' | 'sahtekar' | 'harf' | 'sarki';
+export type LocalGame = 'tabu' | 'sahtekar' | 'harf' | 'sarki' | 'ibre';
 
 // Whether a game is running: the room screen shows it full screen (canvas: Aşama 6 · Oyunlar).
 export function isGameRunning(
@@ -109,7 +112,7 @@ export function GameArea({
   }, [isOwner, lastScore, last?.teamScore, roomId, between.gameNo]);
   // A Tabu game stopped with "Oyunu bitir" before its last turn (docs/SPEC_V3.md §19.1): each
   // phone counts it once for its own user.
-  // Harf Kapmaca and Şarkıda Geçsin too (their round and rounds).
+  // Harf Kapmaca, Şarkıda Geçsin and İbre too (their round and rounds).
   const abandoned = last?.abandoned ?? null;
   const abandonedConcept = last?.concept ?? 'tabu';
   useEffect(() => {
@@ -139,6 +142,21 @@ export function GameArea({
     }
   }, [isOwner, sayConcept, sayScore, sayLast, roomId, between.gameNo]);
 
+  // A finished two-table İbre counts once, from the owner's phone: the owner table's score and its
+  // 4-point rounds (never the scale or the target).
+  const ibreLast = last?.concept === 'ibre' && !last.abandoned ? (last.ibre ?? null) : null;
+  const ibreScore = ibreLast ? (last?.scores?.owner ?? null) : null;
+  useEffect(() => {
+    if (isOwner && ibreLast && ibreScore !== null) {
+      trackOnce(`game_completed:${roomId}:${between.gameNo}`, 'game_completed', {
+        concept: 'ibre',
+        mode: 'voice',
+        score: ibreScore,
+        bullseyes: ibreLast.bullseyes.owner,
+      });
+    }
+  }, [isOwner, ibreLast, ibreScore, roomId, between.gameNo]);
+
   // A finished two-table Sahtekar counts once, from the owner's phone: who won and how many played
   // (never the seat or the word).
   const sahtekarLast = last?.sahtekar ?? null;
@@ -160,7 +178,10 @@ export function GameArea({
   // "Rövanş" after a finished two-table game: the same game proposed again (§19.2); it starts when
   // the other table accepts. Sahtekar keeps this table's count from the last game (§20.1).
   const rematchConcept =
-    last?.concept === 'sahtekar' || last?.concept === 'harf' || last?.concept === 'sarki'
+    last?.concept === 'sahtekar' ||
+    last?.concept === 'harf' ||
+    last?.concept === 'sarki' ||
+    last?.concept === 'ibre'
       ? last.concept
       : 'tabu';
   const rematchPlayers = sahtekarLast?.players?.[side];
@@ -173,7 +194,8 @@ export function GameArea({
     hasGuest &&
     ((last?.concept === 'tabu' && !last.abandoned) ||
       (last?.concept === 'sahtekar' && !!revealed) ||
-      (!!sayConcept && !last?.abandoned));
+      (!!sayConcept && !last?.abandoned) ||
+      !!ibreLast);
 
   // The one-table game on this phone. A second table ends it (the room returns to chat), and so
   // does Sohbet kartları.
@@ -187,6 +209,10 @@ export function GameArea({
       <LocalSahtekar roomId={roomId} players={headcount} />
     ) : local === 'harf' || local === 'sarki' ? (
       <LocalSay roomId={roomId} kind={local} />
+    ) : local === 'ibre' ? (
+      <LocalIbre roomId={roomId} />
+    ) : concept === 'ibre' ? (
+      <IbreGame roomId={roomId} state={parseIbreState(gameState)} side={side} aliases={aliases} />
     ) : concept === 'harf' || concept === 'sarki' ? (
       <SayGame
         roomId={roomId}
@@ -219,6 +245,13 @@ export function GameArea({
           outcome={revealed.winner}
           votes={Object.entries(revealed.votes).map(([voter, target]) => ({ voter, target }))}
           brand={tr.games.gameBrand(tr.concepts.sahtekar)}
+        />
+      ) : null}
+      {ibreLast?.reveal ? (
+        <RoundReveal
+          reveal={ibreLast.reveal}
+          guesser={aliases[ibreLast.reveal.table === 'owner' ? 'guest' : 'owner']}
+          brand={tr.games.gameBrand(tr.concepts.ibre)}
         />
       ) : null}
       {last ? (
@@ -284,6 +317,13 @@ export function GameArea({
                 disabled={headcount < SAY_CONFIG[kind].minLocalPlayers}
               />
             ))}
+            <Button
+              variant="secondary"
+              testID="solo-ibre"
+              label={tr.games.start(tr.concepts.ibre)}
+              onPress={() => setLocalGame('ibre')}
+              disabled={headcount < IBRE_CONFIG.minLocalPlayers}
+            />
             {headcount < SAY_CONFIG.harf.minLocalPlayers ? (
               <Text variant="fine">{tr.say.needsTwo}</Text>
             ) : null}
