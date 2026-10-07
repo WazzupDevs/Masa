@@ -644,6 +644,51 @@ describe('locks', () => {
     expect(state).toEqual({ round: 2, scores: { owner: 1, guest: 0 } });
   });
 
+  // İbre (docs/SPEC_V3.md §20.5) holds the room, then the game's secret (the target).
+  it('takes an İbre side guess while the other table holds its session, and advances once from both phones', async () => {
+    const [owner, guest] = await threeTables();
+    const roomId = await createRoom(owner);
+    await requestJoin(guest, roomId);
+    const [requestId] = await pendingRequestIds(owner, roomId);
+    await rooms(owner, { action: 'respond', requestId, accept: true });
+    await rooms(guest, { action: 'propose-game', roomId, concept: 'ibre' });
+    expect((await rooms(owner, { action: 'answer-game', roomId, accept: true })).status).toBe(200);
+    expect((await invoke(owner, 'ibre', { action: 'begin', roomId })).status).toBe(200);
+    expect(
+      (await invoke(owner, 'ibre', { action: 'lock', roomId, round: 1, value: 50 })).status,
+    ).toBe(200);
+    // The guest's table guesses while the owner's session is held: the round is revealed.
+    const [ownerId, guestId] = await Promise.all([userIdOf(owner), userIdOf(guest)]);
+    const guessing = postgres(dbUrl, { max: 1, onnotice: () => {} });
+    try {
+      await sql.begin(async (tx) => {
+        await tx`select id from private.active_session_for_update(${ownerId})`;
+        const guessed = await guessing.begin(async (ctx) => {
+          await ctx`set local lock_timeout = '2s'`;
+          return ctx`
+            select (public.ibre_side(${guestId}, ${roomId}, 1, 'left')).game_state ->> 'roundNo' as round
+          `;
+        });
+        expect(guessed).toEqual([{ round: '2' }]);
+      });
+    } finally {
+      await guessing.end();
+    }
+    // Round 2: both phones once the ready clock and then the describing clock ran out: one round.
+    await sql`update public.rooms set game_state = jsonb_set(game_state, '{readyEndsAt}', to_jsonb(now() - interval '1 second')) where id = ${roomId}`;
+    await Promise.all([owner, guest].map((c) => invoke(c, 'ibre', { action: 'advance', roomId })));
+    await sql`update public.rooms set game_state = jsonb_set(game_state, '{endsAt}', to_jsonb(now() - interval '1 second')) where id = ${roomId}`;
+    const both = await Promise.all(
+      [owner, guest].map((c) => invoke(c, 'ibre', { action: 'advance', roomId })),
+    );
+    expect(both.map((r) => r.status)).toEqual([200, 200]);
+    const [state] = await sql`
+      select (game_state ->> 'roundNo')::int as round, game_state ->> 'turnPhase' as phase
+      from public.rooms where id = ${roomId}
+    `;
+    expect(state).toEqual({ round: 3, phase: 'ready' });
+  });
+
   it('takes a Sahtekar vote while the other table holds its session, and advances once from both phones', async () => {
     const [owner, guest] = await threeTables();
     const roomId = await createRoom(owner);

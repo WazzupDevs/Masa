@@ -5,7 +5,13 @@
 // sent, a request created), so its 5xx is shown to the user instead.
 import type { CheckinRequest } from './api/checkin.ts';
 import type { DmRequest, FriendsRequest } from './api/friends.ts';
-import type { HarfRequest, SahtekarRequest, SarkiRequest, TabuRequest } from './api/games.ts';
+import type {
+  HarfRequest,
+  IbreRequest,
+  SahtekarRequest,
+  SarkiRequest,
+  TabuRequest,
+} from './api/games.ts';
 import type { ProfileRequest } from './api/profile.ts';
 import type { RevealRequest } from './api/reveal.ts';
 
@@ -20,6 +26,7 @@ type CallName =
   | `sahtekar/${SahtekarRequest['action']}`
   | `harf/${HarfRequest['action']}`
   | `sarki/${SarkiRequest['action']}`
+  | `ibre/${IbreRequest['action']}`
   | `reveal/${RevealRequest['action']}`;
 
 export const IDEMPOTENT_CALLS = [
@@ -66,6 +73,15 @@ export const IDEMPOTENT_CALLS = [
   // say.test "Şarkıda Geçsin, two tables": "opens only the first word ready; the next word starts
   // at once with the other table"
   'sarki/advance',
+  // ibre.test "İbre, two tables": "starts the clock from the describing table, or from readyEndsAt
+  // on advance, once however often it is sent"
+  'ibre/begin',
+  // ibre.test "İbre, two tables": "hands the target to the describing table only, while a clock
+  // runs, the same each time"
+  'ibre/target',
+  // ibre.test "İbre, two tables": "ends the round without a side guess when the other table's
+  // clock runs out, once from both phones"
+  'ibre/advance',
   // reveal.test "reveal/finalize and cleanup": "does nothing before the window ends, then closes
   // with "none" for both"
   'reveal/finalize',

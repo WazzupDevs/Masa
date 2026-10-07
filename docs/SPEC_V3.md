@@ -1396,6 +1396,21 @@ Tasarımın bileşenleriyle:
 - Bot anlatan masa olur, cihaz taraf seçer.
 - Entegrasyon testi: hedef, karşı masaya ve odanın satırına açılıştan önce gitmez.
 
+### 20.5a Uygulamada netleşenler (7.4 sunucu)
+
+- **Anlatan masanın süresi:** 90 sn (`IBRE_CONFIG.clueSeconds`): hedefe bakma, ipucu ve masanın tartışması, ibreyi onaylama. Süre hazır ekranında "Başla"ya basılınca (ya da `readyEndsAt`'te) başlar (proje sahibi kararı).
+- **İbre onaylanmazsa:** süre dolunca `advance` turu ibresiz kapatır: anlatan masaya 0, taraf aşaması yok; açılış hedefi `needle: null` ile gösterir (proje sahibi kararı). Uygulama, ibre onaylanmamışsa son 3 sn'de ibrenin o anki değerini kendisi `ibre/lock` ile onaylar; elle onay da istemcinin gönderdiği değere dayandığı için güven düzeyi aynıdır. Telefon arka plandaysa onay gitmez, tur 0 kalır.
+- **Hazır durumu:** "Başla" yalnızca anlatan masadan. `readyEndsAt` geçince iki telefon da `advance` çağırır; süre çağrıdan değil `readyEndsAt`'ten başlar (§20.1). Geç basılan "Başla" da süreyi uzatmaz.
+- **Hedef:** sunucuda 0-100 tamsayı, eşit olasılıkla (`floor(random() * 101)`); `game_secrets.secret = { roundNo, target }`, her turda yenilenir. `ibre/target { round }` anlatan masaya süre işlerken (kendi süresi ve taraf süresi) döner; başka tur `turn_over`, oyun yoksa `no_game`.
+- **Yok sayılanlar:** hazır durumunda ya da diğer masadan `lock`, eski tur, ikinci `lock`, süre dışı; anlatan masadan ya da süre dışı `side`, ikinci `side`: oda değişmeden `{ ok: true }`. 0-100 dışı ya da kesirli değer 400.
+- **Açılış:** `game_state.reveal = { roundNo, scale, table, target, needle, band, side, sidePoint }` (ölçek o turunki; `game_state.scale` artık sonraki turun), sonraki turun hazır durumunda durur. Puanlar anlatan masaya bant, karşı masaya doğru taraf için 1. `bullseyes` (masa başına 4 puanlı tur) `game_completed`'ın `bullseyes` özelliği için tutulur.
+- **Bitiş:** iki hesaba `game_results` (`mode = 'ibre'`, masa skoru, çok puan alan `won`), `game_completed` olayı, oda sohbete döner; `lastGame = { concept, scores, bullseyes, reveal }`. "Oyunu bitir" `abandoned`, tur ve skorları yazar.
+- **Tek masalı oyun:** `ibre/start` 4 ölçek döner (`{ scales: [{ left, right }] }`) ve odanın etkinliğini İbre yapar; hedefleri ve oyunu telefon `pure/ibre.ts` ile yürütür.
+- **Deste:** `cards` satırı ölçek başına: `prompt` sol uç, `word` sağ uç. Seed boş ucu, iki ucu aynı olanı ve (iki yönde de) tekrar eden çifti reddeder; uç en çok 40 karakter.
+- **Öneri:** `rooms/propose-game` `ibre`yi kabul eder (`PROPOSABLE_CONCEPTS`); uygulamanın düğmeleri ekranlarla gelir.
+- **İdempotentlik:** `ibre/begin`, `ibre/target`, `ibre/advance` `IDEMPOTENT_CALLS`'ta.
+- **İçerik:** `content/ibre-scales.json` (225 ölçek), proje sahibinin incelemesiyle: "Kötü X | İyi X" kalıbı en çok 30, aynı kavramın tekrarı yok, Ucuz/Pahalı ve Kolay/Zor türevleri üçer. Seed iki ucun ters sırasını da tekrar sayar.
+
 ### 20.6 Uygulama sırası ve yayın
 
 | Adım               | Sunucu                                                                                          | İstemci                                           | Yayın                                   |
