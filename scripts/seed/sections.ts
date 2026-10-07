@@ -120,14 +120,28 @@ export function cardsSql(
     ...(sarki.length > 0 ? ['content/sarki-words.json'] : []),
     ...(ibre.length > 0 ? ['content/ibre-scales.json'] : []),
   ];
+  // Each deck's keys as the JSON lists them; a card of that deck not listed is retired below.
+  const decks: [string, string[]][] = [
+    ['tabu', tabu.map((c) => c.word)],
+    ['sohbet', sohbet.map((c) => c.prompt)],
+    ['sahtekar', sahtekar.flatMap((c) => c.words.map((w) => `${c.key}/${w}`))],
+    ['harf', harf.map((c) => c.key)],
+    ['sarki', sarki.map((w) => w.key)],
+    ['ibre', ibre.map((c) => c.key)],
+  ];
   return [
     `-- ${sources.join(', ')}`,
-    'update public.cards set is_active = false;',
     'insert into public.cards (deck, source_key, word, forbidden, theme, prompt) values',
     `  ${[...tabuRows, ...sohbetRows, ...sahtekarRows, ...harfRows, ...sarkiRows, ...ibreRows].join(',\n  ')}`,
     'on conflict (deck, source_key) do update set',
     '  word = excluded.word, forbidden = excluded.forbidden, theme = excluded.theme,',
     '  prompt = excluded.prompt, is_active = true;',
+    // A card no longer in its deck's JSON is retired, never deleted (past games and
+    // room_used_cards point at it). After the upsert, deck by deck: no moment without cards.
+    ...decks.map(
+      ([deck, keys]) =>
+        `update public.cards set is_active = false where deck = ${sqlLiteral(deck)} and is_active and source_key <> all (${sqlLiteral(keys)});`,
+    ),
     '',
   ].join('\n');
 }

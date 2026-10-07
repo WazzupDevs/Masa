@@ -305,10 +305,6 @@
       "name": "Taşıt parçası"
     },
     {
-      "key": "hastalik",
-      "name": "Hastalık"
-    },
-    {
       "key": "vucut_parcasi",
       "name": "Vücut parçası"
     },
@@ -505,18 +501,6 @@
       "name": "Hukukla ilgili"
     },
     {
-      "key": "siyasetle_ilgili",
-      "name": "Siyasetle ilgili"
-    },
-    {
-      "key": "askerlikle_ilgili",
-      "name": "Askerlikle ilgili"
-    },
-    {
-      "key": "dinle_ilgili",
-      "name": "Dinle ilgili"
-    },
-    {
       "key": "mitoloji",
       "name": "Mitoloji"
     },
@@ -535,10 +519,6 @@
     {
       "key": "tarihi_olay",
       "name": "Tarihi olay"
-    },
-    {
-      "key": "savas_ya_da_savasla_ilgili",
-      "name": "Savaş ya da savaşla ilgili"
     },
     {
       "key": "icat",
@@ -583,10 +563,6 @@
     {
       "key": "kisaltma",
       "name": "Kısaltma"
-    },
-    {
-      "key": "argo_ya_da_gunluk_soz",
-      "name": "Argo ya da günlük söz"
     },
     {
       "key": "atasozu_ilk_kelimesi",
@@ -691,6 +667,34 @@
     {
       "key": "toplanan_ya_da_biriktirilen",
       "name": "Toplanan ya da biriktirilen"
+    },
+    {
+      "key": "yurtta_bulunan",
+      "name": "Yurtta bulunan"
+    },
+    {
+      "key": "kantinde_satilan",
+      "name": "Kantinde satılan"
+    },
+    {
+      "key": "kutuphanede_bulunan",
+      "name": "Kütüphanede bulunan"
+    },
+    {
+      "key": "otobuste_gorulen",
+      "name": "Otobüste görülen"
+    },
+    {
+      "key": "hafta_sonu_yapilan",
+      "name": "Hafta sonu yapılan"
+    },
+    {
+      "key": "evden_cikarken_alinan",
+      "name": "Evden çıkarken alınan"
+    },
+    {
+      "key": "ogrenci_toplulugu_ya_da_kulup",
+      "name": "Öğrenci topluluğu ya da kulüp"
     }
   ]
 }
