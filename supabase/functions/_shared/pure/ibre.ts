@@ -5,6 +5,7 @@
 // that they agree with this file. The one-table game runs it on the phone for Takım A (owner) and
 // Takım B (guest), with the target made on the phone.
 
+import { GAME_CATALOG } from './gameCatalog.ts';
 import type { TableSide } from './tabu.ts';
 
 export const IBRE_CONFIG = {
@@ -14,7 +15,7 @@ export const IBRE_CONFIG = {
   clueSeconds: 90,
   // The other table's "Daha sol / Daha sağ".
   sideSeconds: 15,
-  minLocalPlayers: 2,
+  minLocalPlayers: GAME_CATALOG.ibre.onePhone.minPlayers,
 } as const;
 
 export const IBRE_MIN = 0;

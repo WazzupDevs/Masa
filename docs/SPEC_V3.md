@@ -1060,6 +1060,7 @@ Tasarımın bileşenleriyle:
 - Kurallar `pure/` altında testli bir reducer'dadır; telefon sırayı, süreyi ve puanı onunla tutar.
 - Tek masalı oyun sunucuya sonuç yazmaz (bugünkü yerel Tabu gibi); yalnızca analitik olayı gider.
 - Alt sınır: Sahtekar'da masada en az 3 kişi; Harf Kapmaca, Şarkıda Geçsin ve İbre'de en az 2 kişi (iki takım). Tek masalı sürümde sayıyı oyun başında telefon sorar, check-in sayısıyla dolu gelir.
+- **Oyun kataloğu (adım 9):** alt sınırların tek kaynağı `pure/gameCatalog.ts` → `GAME_CATALOG`. Tek telefonda: Sahtekar 3; Harf Kapmaca, Şarkıda Geçsin, İbre ve Sesli Tabu 2; Sohbet kartları 1. İki masada: Sahtekar toplam 3 (diğerlerinde iki masa zaten yeter). Oyun modülleri (`SAHTEKAR.minPlayers`, `SAY_CONFIG.*.minLocalPlayers`, `IBRE_CONFIG.minLocalPlayers`) değerlerini buradan okur. Odadaki ve Aktiviteler'deki oyun kartının soluk hâli ve nedeni `gameAvailability(concept, mode, players)`'tan gelir; kartlara bağlanması tasarımın Aşama 8 oyun kartı PR'ından sonra.
 
 **Sunucu otoriter (kural 3).**
 

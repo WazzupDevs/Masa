@@ -5,6 +5,7 @@
 // (private.say_config); integration tests check that they agree with this file. The one-table game
 // runs it on the phone for Takım A (owner) and Takım B (guest).
 
+import { GAME_CATALOG } from './gameCatalog.ts';
 import type { TableSide } from './tabu.ts';
 
 export type SayKind = 'harf' | 'sarki';
@@ -48,7 +49,7 @@ export const SAY_CONFIG = {
     // The ready state opens every round (each category), not only the first.
     readyEachRound: true,
     maxSteps: HARF_LETTERS.length,
-    minLocalPlayers: 2,
+    minLocalPlayers: GAME_CATALOG.harf.onePhone.minPlayers,
   },
   sarki: {
     totalRounds: 8,
@@ -62,7 +63,7 @@ export const SAY_CONFIG = {
     readyEachRound: false,
     // At most 8 lines a word; the 8th, if not objected to, ends the word without a point.
     maxSteps: 8,
-    minLocalPlayers: 2,
+    minLocalPlayers: GAME_CATALOG.sarki.onePhone.minPlayers,
   },
 } as const;
 
