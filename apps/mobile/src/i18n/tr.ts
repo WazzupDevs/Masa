@@ -760,7 +760,8 @@ export const tr = {
     round: (n: number, total: number) => `Tur ${n} / ${total}`,
     readyHint: `Başla'ya basınca ${IBRE_CONFIG.clueSeconds} saniye: hedefe bakın, tek ipucu verin, ibreyi onaylayın.`,
     readyWaitingHint: 'Karşı masa hedefe bakıp tek ipucu verecek. Dinleyin.',
-    clueHint: 'Anlatıcı hedefe baksın, sesli tek ipucu versin. Masası ibreyi ayarlayıp onaylasın.',
+    clueHint:
+      'Anlatıcı hedefe baksın, sesli tek ipucu versin. Masası ibreyi ayarlayıp onaylasın; son 3 saniyede ibre olduğu yerde onaylanır.',
     lock: 'İbreyi onayla',
     otherClue: (alias: string) => `${alias} ipucu veriyor. İbre onaylanınca taraf seçeceksiniz.`,
     sideTitle: 'Hedef ibrenin solunda mı, sağında mı?',

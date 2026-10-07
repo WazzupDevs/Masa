@@ -1,4 +1,10 @@
-import { IBRE_CONFIG, type IbreReveal, type IbreState, type IbreSide } from '@shared/ibre.ts';
+import {
+  IBRE_CONFIG,
+  ibreAutoLockDue,
+  type IbreReveal,
+  type IbreSide,
+  type IbreState,
+} from '@shared/ibre.ts';
 import type { TableSide } from '@shared/tabu.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
@@ -156,6 +162,18 @@ export function IbreGame({ roomId, state, side, aliases }: Props) {
     advanceNow();
   }, [now, clock, clockKey, state, advanceNow]);
 
+  // The describing table's needle, locked where it stands in the last 3 seconds unless locked by
+  // hand (docs/SPEC_V3.md §20.5a). Once per round; the server ignores a second lock.
+  const { mutate: lockNow } = lock;
+  const lockedRound = useRef<number | null>(null);
+  const autoValue = state && needle.round === state.roundNo ? needle.value : 50;
+  useEffect(() => {
+    if (!state || state.turnTable !== side || !ibreAutoLockDue(state, now)) return;
+    if (lockedRound.current === state.roundNo) return;
+    lockedRound.current = state.roundNo;
+    lockNow({ round: state.roundNo, value: autoValue });
+  }, [now, state, side, autoValue, lockNow]);
+
   if (!state) {
     return (
       <Text tone="muted" align="center">
@@ -241,7 +259,10 @@ export function IbreGame({ roomId, state, side, aliases }: Props) {
               testID="ibre-lock"
               size="lg"
               label={tr.ibre.lock}
-              onPress={() => lock.mutate({ round, value })}
+              onPress={() => {
+                lockedRound.current = round;
+                lock.mutate({ round, value });
+              }}
               loading={lock.isPending}
               disabled={lock.isPending}
             />

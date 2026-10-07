@@ -1,6 +1,7 @@
 import {
   IBRE_CONFIG,
   ibreAdvance,
+  ibreAutoLockDue,
   ibreBegin,
   ibreLock,
   type IbreScale,
@@ -77,6 +78,10 @@ export function LocalIbre({ roomId }: Props) {
     const { game } = local;
     if (game.endsAt !== null && now >= game.endsAt) {
       setLocal(next(local, ibreAdvance(game, local.target, nextFor(game), now)));
+    } else if (ibreAutoLockDue(game, now)) {
+      // The last 3 seconds: the needle is locked where it stands (docs/SPEC_V3.md §20.5a).
+      const at = needle.round === game.roundNo ? needle.value : 50;
+      setLocal({ ...local, game: ibreLock(game, game.turnTable, game.roundNo, at, now) });
     }
   }
 
