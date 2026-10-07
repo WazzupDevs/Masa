@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<testsuites>
+  <testsuite name="Test Suite" device="test" tests="1" failures="0" time="943.69" timestamp="2026-10-07T04:30:57">
+    <testcase id="P0 kritik yol" name="P0 kritik yol" classname="P0 kritik yol" file="e2e/maestro/p0.yaml" time="943.46" timestamp="2026-10-07T04:30:57" status="SUCCESS"/>
+  </testsuite>
+</testsuites>
