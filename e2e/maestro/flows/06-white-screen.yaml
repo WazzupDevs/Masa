@@ -99,10 +99,16 @@ appId: app.kabuk.mobile
 # "Oyunu bitir" asks first (canvas: Aşama 6 · Oyunlar).
 - tapOn:
     id: end-game-confirm
+# Back to the one-table games: up to the first, then down to Sohbet kartları (the list now runs
+# below the fold).
+- scrollUntilVisible:
+    element:
+      id: solo-tabu
+    direction: UP
+    timeout: 15000
 - scrollUntilVisible:
     element:
       id: solo-sohbet
-    direction: UP
     timeout: 15000
 - scrollUntilVisible:
     element:
