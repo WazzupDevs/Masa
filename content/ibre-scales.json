@@ -186,11 +186,6 @@
       "right": "Yabancı"
     },
     {
-      "key": "ayip_normal",
-      "left": "Ayıp",
-      "right": "Normal"
-    },
-    {
       "key": "unutulur_akilda_kalir",
       "left": "Unutulur",
       "right": "Akılda kalır"
@@ -236,11 +231,6 @@
       "right": "Tehlikeli"
     },
     {
-      "key": "ucuz_hediye_pahali_hediye",
-      "left": "Ucuz hediye",
-      "right": "Pahalı hediye"
-    },
-    {
       "key": "kotu_ilk_bulusma_iyi_ilk_bulusma",
       "left": "Kötü ilk buluşma",
       "right": "İyi ilk buluşma"
@@ -254,11 +244,6 @@
       "key": "kotu_oda_arkadasi_huyu_iyi_oda_arkadasi_huyu",
       "left": "Kötü oda arkadaşı huyu",
       "right": "İyi oda arkadaşı huyu"
-    },
-    {
-      "key": "kotu_ders_iyi_ders",
-      "left": "Kötü ders",
-      "right": "İyi ders"
     },
     {
       "key": "kotu_film_iyi_film",
@@ -286,11 +271,6 @@
       "right": "İyi alışkanlık"
     },
     {
-      "key": "kotu_meslek_iyi_meslek",
-      "left": "Kötü meslek",
-      "right": "İyi meslek"
-    },
-    {
       "key": "kotu_atistirmalik_iyi_atistirmalik",
       "left": "Kötü atıştırmalık",
       "right": "İyi atıştırmalık"
@@ -311,19 +291,9 @@
       "right": "İyi bahane"
     },
     {
-      "key": "kotu_uygulama_iyi_uygulama",
-      "left": "Kötü uygulama",
-      "right": "İyi uygulama"
-    },
-    {
       "key": "kotu_icat_iyi_icat",
       "left": "Kötü icat",
       "right": "İyi icat"
-    },
-    {
-      "key": "kotu_sinav_taktigi_iyi_sinav_taktigi",
-      "left": "Kötü sınav taktiği",
-      "right": "İyi sınav taktiği"
     },
     {
       "key": "kotu_evcil_hayvan_iyi_evcil_hayvan",
@@ -331,69 +301,14 @@
       "right": "İyi evcil hayvan"
     },
     {
-      "key": "kotu_hobi_iyi_hobi",
-      "left": "Kötü hobi",
-      "right": "İyi hobi"
-    },
-    {
       "key": "kotu_takim_adi_iyi_takim_adi",
       "left": "Kötü takım adı",
       "right": "İyi takım adı"
     },
     {
-      "key": "kotu_kafe_iyi_kafe",
-      "left": "Kötü kafe",
-      "right": "İyi kafe"
-    },
-    {
-      "key": "kotu_sokak_lezzeti_iyi_sokak_lezzeti",
-      "left": "Kötü sokak lezzeti",
-      "right": "İyi sokak lezzeti"
-    },
-    {
-      "key": "kotu_cay_arkadasi_iyi_cay_arkadasi",
-      "left": "Kötü çay arkadaşı",
-      "right": "İyi çay arkadaşı"
-    },
-    {
-      "key": "kotu_ilk_is_gunu_iyi_ilk_is_gunu",
-      "left": "Kötü ilk iş günü",
-      "right": "İyi ilk iş günü"
-    },
-    {
-      "key": "kotu_yagmur_aktivitesi_iyi_yagmur_aktivitesi",
-      "left": "Kötü yağmur aktivitesi",
-      "right": "İyi yağmur aktivitesi"
-    },
-    {
-      "key": "kotu_kafe_muzigi_iyi_kafe_muzigi",
-      "left": "Kötü kafe müziği",
-      "right": "İyi kafe müziği"
-    },
-    {
-      "key": "kotu_misafirlik_iyi_misafirlik",
-      "left": "Kötü misafirlik",
-      "right": "İyi misafirlik"
-    },
-    {
       "key": "kotu_grup_odevi_arkadasi_iyi_grup_odevi_arkadasi",
       "left": "Kötü grup ödevi arkadaşı",
       "right": "İyi grup ödevi arkadaşı"
-    },
-    {
-      "key": "kotu_telefon_zil_sesi_iyi_telefon_zil_sesi",
-      "left": "Kötü telefon zil sesi",
-      "right": "İyi telefon zil sesi"
-    },
-    {
-      "key": "kotu_kamp_malzemesi_iyi_kamp_malzemesi",
-      "left": "Kötü kamp malzemesi",
-      "right": "İyi kamp malzemesi"
-    },
-    {
-      "key": "kotu_tost_malzemesi_iyi_tost_malzemesi",
-      "left": "Kötü tost malzemesi",
-      "right": "İyi tost malzemesi"
     },
     {
       "key": "kotu_sabah_rutini_iyi_sabah_rutini",
@@ -406,11 +321,6 @@
       "right": "İyi yolculuk arkadaşı"
     },
     {
-      "key": "kotu_cizgi_film_iyi_cizgi_film",
-      "left": "Kötü çizgi film",
-      "right": "İyi çizgi film"
-    },
-    {
       "key": "kotu_masa_oyunu_iyi_masa_oyunu",
       "left": "Kötü masa oyunu",
       "right": "İyi masa oyunu"
@@ -421,24 +331,9 @@
       "right": "İyi dondurma çeşidi"
     },
     {
-      "key": "kotu_otobus_koltugu_iyi_otobus_koltugu",
-      "left": "Kötü otobüs koltuğu",
-      "right": "İyi otobüs koltuğu"
-    },
-    {
-      "key": "kotu_komsu_iyi_komsu",
-      "left": "Kötü komşu",
-      "right": "İyi komşu"
-    },
-    {
       "key": "kotu_kantin_yemegi_iyi_kantin_yemegi",
       "left": "Kötü kantin yemeği",
       "right": "İyi kantin yemeği"
-    },
-    {
-      "key": "kotu_yurt_kurali_iyi_yurt_kurali",
-      "left": "Kötü yurt kuralı",
-      "right": "İyi yurt kuralı"
     },
     {
       "key": "kotu_sunum_iyi_sunum",
@@ -446,19 +341,9 @@
       "right": "İyi sunum"
     },
     {
-      "key": "kotu_kulup_etkinligi_iyi_kulup_etkinligi",
-      "left": "Kötü kulüp etkinliği",
-      "right": "İyi kulüp etkinliği"
-    },
-    {
       "key": "kotu_hafta_sonu_plani_iyi_hafta_sonu_plani",
       "left": "Kötü hafta sonu planı",
       "right": "İyi hafta sonu planı"
-    },
-    {
-      "key": "kotu_mesaj_cevabi_iyi_mesaj_cevabi",
-      "left": "Kötü mesaj cevabı",
-      "right": "İyi mesaj cevabı"
     },
     {
       "key": "kotu_emoji_iyi_emoji",
@@ -466,29 +351,9 @@
       "right": "İyi emoji"
     },
     {
-      "key": "kotu_kahve_iyi_kahve",
-      "left": "Kötü kahve",
-      "right": "İyi kahve"
-    },
-    {
       "key": "kotu_simit_eslikcisi_iyi_simit_eslikcisi",
       "left": "Kötü simit eşlikçisi",
       "right": "İyi simit eşlikçisi"
-    },
-    {
-      "key": "kotu_kis_giysisi_iyi_kis_giysisi",
-      "left": "Kötü kış giysisi",
-      "right": "İyi kış giysisi"
-    },
-    {
-      "key": "kotu_yaz_giysisi_iyi_yaz_giysisi",
-      "left": "Kötü yaz giysisi",
-      "right": "İyi yaz giysisi"
-    },
-    {
-      "key": "kotu_ayakkabi_iyi_ayakkabi",
-      "left": "Kötü ayakkabı",
-      "right": "İyi ayakkabı"
     },
     {
       "key": "kotu_sac_modeli_iyi_sac_modeli",
@@ -496,24 +361,9 @@
       "right": "İyi saç modeli"
     },
     {
-      "key": "kotu_renk_iyi_renk",
-      "left": "Kötü renk",
-      "right": "İyi renk"
-    },
-    {
-      "key": "kotu_spor_iyi_spor",
-      "left": "Kötü spor",
-      "right": "İyi spor"
-    },
-    {
       "key": "kotu_video_oyunu_iyi_video_oyunu",
       "left": "Kötü video oyunu",
       "right": "İyi video oyunu"
-    },
-    {
-      "key": "kotu_super_kahraman_iyi_super_kahraman",
-      "left": "Kötü süper kahraman",
-      "right": "İyi süper kahraman"
     },
     {
       "key": "kotu_kotu_karakter_iyi_kotu_karakter",
@@ -521,89 +371,9 @@
       "right": "İyi kötü karakter"
     },
     {
-      "key": "kotu_masal_iyi_masal",
-      "left": "Kötü masal",
-      "right": "İyi masal"
-    },
-    {
       "key": "kotu_dizi_finali_iyi_dizi_finali",
       "left": "Kötü dizi finali",
       "right": "İyi dizi finali"
-    },
-    {
-      "key": "kotu_fotograf_pozu_iyi_fotograf_pozu",
-      "left": "Kötü fotoğraf pozu",
-      "right": "İyi fotoğraf pozu"
-    },
-    {
-      "key": "kotu_bilgi_yarismasi_sorusu_iyi_bilgi_yarismasi_sorusu",
-      "left": "Kötü bilgi yarışması sorusu",
-      "right": "İyi bilgi yarışması sorusu"
-    },
-    {
-      "key": "kotu_corba_iyi_corba",
-      "left": "Kötü çorba",
-      "right": "İyi çorba"
-    },
-    {
-      "key": "kotu_meyve_iyi_meyve",
-      "left": "Kötü meyve",
-      "right": "İyi meyve"
-    },
-    {
-      "key": "kotu_sebze_iyi_sebze",
-      "left": "Kötü sebze",
-      "right": "İyi sebze"
-    },
-    {
-      "key": "kotu_tatli_iyi_tatli",
-      "left": "Kötü tatlı",
-      "right": "İyi tatlı"
-    },
-    {
-      "key": "kotu_sandvic_iyi_sandvic",
-      "left": "Kötü sandviç",
-      "right": "İyi sandviç"
-    },
-    {
-      "key": "kotu_kahvaltilik_iyi_kahvaltilik",
-      "left": "Kötü kahvaltılık",
-      "right": "İyi kahvaltılık"
-    },
-    {
-      "key": "kotu_icecek_iyi_icecek",
-      "left": "Kötü içecek",
-      "right": "İyi içecek"
-    },
-    {
-      "key": "kotu_cikolata_iyi_cikolata",
-      "left": "Kötü çikolata",
-      "right": "İyi çikolata"
-    },
-    {
-      "key": "kotu_biskuvi_iyi_biskuvi",
-      "left": "Kötü bisküvi",
-      "right": "İyi bisküvi"
-    },
-    {
-      "key": "kotu_cips_cesidi_iyi_cips_cesidi",
-      "left": "Kötü cips çeşidi",
-      "right": "İyi cips çeşidi"
-    },
-    {
-      "key": "kotu_kahve_yani_iyi_kahve_yani",
-      "left": "Kötü kahve yanı",
-      "right": "İyi kahve yanı"
-    },
-    {
-      "key": "unutulmaz_hemen_unutulur",
-      "left": "Unutulmaz",
-      "right": "Hemen unutulur"
-    },
-    {
-      "key": "mutfakta_kolay_mutfakta_zor",
-      "left": "Mutfakta kolay",
-      "right": "Mutfakta zor"
     },
     {
       "key": "sinav_haftasi_tatil_haftasi",
@@ -684,11 +454,6 @@
       "key": "az_zaman_alir_cok_zaman_alir",
       "left": "Az zaman alır",
       "right": "Çok zaman alır"
-    },
-    {
-      "key": "az_para_cok_para",
-      "left": "Az para",
-      "right": "Çok para"
     },
     {
       "key": "egitici_eglendirici",
@@ -786,11 +551,6 @@
       "right": "Profesyonel"
     },
     {
-      "key": "normal_fiyat_kazik_fiyat",
-      "left": "Normal fiyat",
-      "right": "Kazık fiyat"
-    },
-    {
       "key": "kampuse_yakin_kampuse_uzak",
       "left": "Kampüse yakın",
       "right": "Kampüse uzak"
@@ -849,11 +609,6 @@
       "key": "zararsiz_bocek_korkunc_bocek",
       "left": "Zararsız böcek",
       "right": "Korkunç böcek"
-    },
-    {
-      "key": "sagliksiz_yemek_saglikli_yemek",
-      "left": "Sağlıksız yemek",
-      "right": "Sağlıklı yemek"
     },
     {
       "key": "ucuz_yemek_pahali_yemek",
@@ -916,11 +671,6 @@
       "right": "Kullanışlı"
     },
     {
-      "key": "sesli_sessiz",
-      "left": "Sesli",
-      "right": "Sessiz"
-    },
-    {
       "key": "tasinabilir_tasinamaz",
       "left": "Taşınabilir",
       "right": "Taşınamaz"
@@ -961,16 +711,6 @@
       "right": "Kalıcı tutku"
     },
     {
-      "key": "kolay_hobi_zor_hobi",
-      "left": "Kolay hobi",
-      "right": "Zor hobi"
-    },
-    {
-      "key": "ucuz_hobi_pahali_hobi",
-      "left": "Ucuz hobi",
-      "right": "Pahalı hobi"
-    },
-    {
       "key": "evde_yapilan_disarida_yapilan",
       "left": "Evde yapılan",
       "right": "Dışarıda yapılan"
@@ -1001,11 +741,6 @@
       "right": "Strateji oyunu"
     },
     {
-      "key": "kolay_ogrenilir_zor_ogrenilir",
-      "left": "Kolay öğrenilir",
-      "right": "Zor öğrenilir"
-    },
-    {
       "key": "erken_yasta_ileri_yasta",
       "left": "Erken yaşta",
       "right": "İleri yaşta"
@@ -1029,11 +764,6 @@
       "key": "kalabalik_sehir_sakin_kasaba",
       "left": "Kalabalık şehir",
       "right": "Sakin kasaba"
-    },
-    {
-      "key": "sabah_gece",
-      "left": "Sabah",
-      "right": "Gece"
     },
     {
       "key": "kisa_yolculuk_uzun_yolculuk",
@@ -1151,11 +881,6 @@
       "right": "Büyük başarı"
     },
     {
-      "key": "kolay_ders_zor_ders",
-      "left": "Kolay ders",
-      "right": "Zor ders"
-    },
-    {
       "key": "erken_ders_gec_ders",
       "left": "Erken ders",
       "right": "Geç ders"
@@ -1169,11 +894,6 @@
       "key": "sikici_konu_ilginc_konu",
       "left": "Sıkıcı konu",
       "right": "İlginç konu"
-    },
-    {
-      "key": "kolay_sinav_zor_sinav",
-      "left": "Kolay sınav",
-      "right": "Zor sınav"
     },
     {
       "key": "ezber_anlama",
@@ -1204,6 +924,206 @@
       "key": "kotu_hoca_huyu_iyi_hoca_huyu",
       "left": "Kötü hoca huyu",
       "right": "İyi hoca huyu"
+    },
+    {
+      "key": "kutuphanede_yapilir_kantinde_yapilir",
+      "left": "Kütüphanede yapılır",
+      "right": "Kantinde yapılır"
+    },
+    {
+      "key": "rahat_donem_yogun_donem",
+      "left": "Rahat dönem",
+      "right": "Yoğun dönem"
+    },
+    {
+      "key": "dakik_hep_gec_kalan",
+      "left": "Dakik",
+      "right": "Hep geç kalan"
+    },
+    {
+      "key": "siradan_ogrenci_hikayesi_kampus_efsanesi",
+      "left": "Sıradan öğrenci hikâyesi",
+      "right": "Kampüs efsanesi"
+    },
+    {
+      "key": "toplu_tasimada_rahat_toplu_tasimada_cile",
+      "left": "Toplu taşımada rahat",
+      "right": "Toplu taşımada çile"
+    },
+    {
+      "key": "trafikte_sakin_trafikte_sinirli",
+      "left": "Trafikte sakin",
+      "right": "Trafikte sinirli"
+    },
+    {
+      "key": "mahalle_esnafi_zincir_magaza",
+      "left": "Mahalle esnafı",
+      "right": "Zincir mağaza"
+    },
+    {
+      "key": "semt_pazari_alisveris_merkezi",
+      "left": "Semt pazarı",
+      "right": "Alışveriş merkezi"
+    },
+    {
+      "key": "son_otobuse_yetisir_son_otobusu_kacirir",
+      "left": "Son otobüse yetişir",
+      "right": "Son otobüsü kaçırır"
+    },
+    {
+      "key": "annenin_onayladigi_annenin_onaylamadigi",
+      "left": "Annenin onayladığı",
+      "right": "Annenin onaylamadığı"
+    },
+    {
+      "key": "herkesin_sevdigi_kimsenin_sevmedigi",
+      "left": "Herkesin sevdiği",
+      "right": "Kimsenin sevmediği"
+    },
+    {
+      "key": "hikayeye_konur_kimseye_gosterilmez",
+      "left": "Hikâyeye konur",
+      "right": "Kimseye gösterilmez"
+    },
+    {
+      "key": "grup_sohbetinde_hic_yazmayan_grup_sohbetinde_hic_susmayan",
+      "left": "Grup sohbetinde hiç yazmayan",
+      "right": "Grup sohbetinde hiç susmayan"
+    },
+    {
+      "key": "sinavdan_haftalar_once_calisan_sinav_sabahi_calisan",
+      "left": "Sınavdan haftalar önce çalışan",
+      "right": "Sınav sabahı çalışan"
+    },
+    {
+      "key": "kimseyi_guldurmeyen_espri_herkesi_gulduren_espri",
+      "left": "Kimseyi güldürmeyen espri",
+      "right": "Herkesi güldüren espri"
+    },
+    {
+      "key": "hafta_ici_hafta_sonu",
+      "left": "Hafta içi",
+      "right": "Hafta sonu"
+    },
+    {
+      "key": "mahallede_bilinir_dunyada_bilinir",
+      "left": "Mahallede bilinir",
+      "right": "Dünyada bilinir"
+    },
+    {
+      "key": "yeni_tanisilan_eski_dost",
+      "left": "Yeni tanışılan",
+      "right": "Eski dost"
+    },
+    {
+      "key": "bir_kere_denenir_her_gun_yapilir",
+      "left": "Bir kere denenir",
+      "right": "Her gün yapılır"
+    },
+    {
+      "key": "ilk_dakikada_sikar_saatlerce_oyalar",
+      "left": "İlk dakikada sıkar",
+      "right": "Saatlerce oyalar"
+    },
+    {
+      "key": "sabah_kahvesinden_once_sabah_kahvesinden_sonra",
+      "left": "Sabah kahvesinden önce",
+      "right": "Sabah kahvesinden sonra"
+    },
+    {
+      "key": "cebe_sigar_bagaja_zor_sigar",
+      "left": "Cebe sığar",
+      "right": "Bagaja zor sığar"
+    },
+    {
+      "key": "kuyrugu_kisa_kuyrugu_uzun",
+      "left": "Kuyruğu kısa",
+      "right": "Kuyruğu uzun"
+    },
+    {
+      "key": "kaybolmak_imkansiz_kaybolmak_garanti",
+      "left": "Kaybolmak imkânsız",
+      "right": "Kaybolmak garanti"
+    },
+    {
+      "key": "fark_edilmez_herkesin_gozune_batar",
+      "left": "Fark edilmez",
+      "right": "Herkesin gözüne batar"
+    },
+    {
+      "key": "kendi_kendine_ogrenilir_kurs_gerektirir",
+      "left": "Kendi kendine öğrenilir",
+      "right": "Kurs gerektirir"
+    },
+    {
+      "key": "geceyi_kurtarir_geceyi_mahveder",
+      "left": "Geceyi kurtarır",
+      "right": "Geceyi mahveder"
+    },
+    {
+      "key": "ogrenci_dostu_ogrenci_dusmani",
+      "left": "Öğrenci dostu",
+      "right": "Öğrenci düşmanı"
+    },
+    {
+      "key": "duz_yol_dik_yokus",
+      "left": "Düz yol",
+      "right": "Dik yokuş"
+    },
+    {
+      "key": "ayni_gun_biter_aylarca_surer",
+      "left": "Aynı gün biter",
+      "right": "Aylarca sürer"
+    },
+    {
+      "key": "sik_degisir_hic_degismez",
+      "left": "Sık değişir",
+      "right": "Hiç değişmez"
+    },
+    {
+      "key": "komsuya_sorulur_internete_sorulur",
+      "left": "Komşuya sorulur",
+      "right": "İnternete sorulur"
+    },
+    {
+      "key": "yagmurda_iptal_yagmurda_da_olur",
+      "left": "Yağmurda iptal",
+      "right": "Yağmurda da olur"
+    },
+    {
+      "key": "elle_yapilir_makineyle_yapilir",
+      "left": "Elle yapılır",
+      "right": "Makineyle yapılır"
+    },
+    {
+      "key": "usengec_isi_azim_isi",
+      "left": "Üşengeç işi",
+      "right": "Azim işi"
+    },
+    {
+      "key": "hemen_kurulur_saatlerce_kurulur",
+      "left": "Hemen kurulur",
+      "right": "Saatlerce kurulur"
+    },
+    {
+      "key": "not_ortalamasini_dusurur_not_ortalamasini_yukseltir",
+      "left": "Not ortalamasını düşürür",
+      "right": "Not ortalamasını yükseltir"
+    },
+    {
+      "key": "sehrin_merkezi_sehrin_ucu",
+      "left": "Şehrin merkezi",
+      "right": "Şehrin ucu"
+    },
+    {
+      "key": "ogrenci_evi_aile_evi",
+      "left": "Öğrenci evi",
+      "right": "Aile evi"
+    },
+    {
+      "key": "dolmus_soforu_onaylar_dolmus_soforu_kizar",
+      "left": "Dolmuş şoförü onaylar",
+      "right": "Dolmuş şoförü kızar"
     }
   ]
 }
