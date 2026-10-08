@@ -20,7 +20,12 @@ import { Sheet } from '@/components/Sheet';
 import { useHideTabBar } from '@/components/TabBar';
 import { ReportModal } from '@/features/chat/ReportModal';
 import { ConfirmWithReport } from '@/features/friends/ConfirmWithReport';
-import { friendKeys, useDmMessages, useFriends } from '@/features/friends/queries';
+import {
+  friendKeys,
+  useDmMessages,
+  useFriends,
+  useMarkThreadRead,
+} from '@/features/friends/queries';
 import { useDmTyping } from '@/features/friends/useDmTyping';
 import { useBroadcast } from '@/features/rooms/useBroadcast';
 import { tr } from '@/i18n/tr';
@@ -55,10 +60,11 @@ export default function DmScreen() {
   const [outbox, dispatch] = useReducer(outboxReducer, []);
   const { typing, notifyTyping, clearTyping } = useDmTyping(threadId);
 
+  const markRead = useMarkThreadRead(threadId);
   const refetch = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: friendKeys.dm(threadId) });
-    void dmApi.read(threadId).catch(() => undefined);
-  }, [queryClient, threadId]);
+    markRead();
+  }, [queryClient, threadId, markRead]);
   useBroadcast(dmChannel(threadId), BROADCAST.dmMessage, refetch);
   // A tick moved (delivered or read): only the page is read again.
   const rereadPage = useCallback(
@@ -77,11 +83,8 @@ export default function DmScreen() {
   }, [newestFromThem, clearTyping]);
 
   useEffect(() => {
-    void dmApi
-      .read(threadId)
-      .then(() => queryClient.invalidateQueries({ queryKey: friendKeys.list }))
-      .catch(() => undefined);
-  }, [queryClient, threadId]);
+    markRead();
+  }, [markRead]);
 
   const body = prepareDm(draft);
   // Sending is optimistic, as in the room chat (@shared/chatOutbox.ts): the message shows at once

@@ -22,6 +22,7 @@ import {
   TYPING_EVENT,
 } from '../functions/_shared/pure/rooms.ts';
 import { DM_MIN_INTERVAL_MS } from '../functions/_shared/pure/friends.ts';
+import { totalUnread } from '../functions/_shared/pure/dmInbox.ts';
 import { deleteFixtureVenues, insertFixtureVenues } from './fixtures/venues.ts';
 import {
   checkInAt,
@@ -1009,9 +1010,11 @@ describe('DM ticks', () => {
     expect(await dm(a, { action: 'send', threadId, body: 'iki' })).toEqual(OK);
     expect((await page(a, threadId)).map((m) => m.status)).toEqual(['sent', 'delivered']);
 
-    // Read: both.
+    // Read: both. b's Mesajlar badge counts nothing after it (step 9: the badge stayed red).
+    expect((await inboxOf(b))[0]?.unreadCount).toBe(2);
     expect(await dm(b, { action: 'read', threadId })).toEqual(OK);
     expect((await page(a, threadId)).map((m) => m.status)).toEqual(['read', 'read']);
+    expect(totalUnread(await inboxOf(b))).toBe(0);
     expect(await dm(b, { action: 'read', threadId })).toEqual(OK);
     await quiet();
     expect(dmA.events.filter((e) => e === BROADCAST.dmStatus)).toHaveLength(2);
