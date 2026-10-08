@@ -3,7 +3,9 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { aliasColor, AVATAR_COLORS, initials } from './avatar';
+import { TABLE_AVATAR_ICONS } from '../../../../supabase/functions/_shared/pure/tableAvatar.ts';
+
+import { initials, TABLE_AVATAR_COLORS, TABLE_AVATAR_INK, tableAvatarOf } from './avatar';
 import { contrastRatio } from './contrast';
 import { THEME } from './theme';
 
@@ -28,16 +30,22 @@ describe('snail colours', () => {
   });
 });
 
-describe('anonymous avatar', () => {
-  it('gives one alias one colour', () => {
-    expect(aliasColor('Mor Baykuş')).toBe(aliasColor('Mor Baykuş'));
-    expect(AVATAR_COLORS).toContain(aliasColor('Sarı Tilki'));
+describe('table avatar', () => {
+  it('gives one seed one icon and one colour', () => {
+    expect(tableAvatarOf('3f2a9c1e-77b4-4e0a-9a61-5d2c8e4b1f70')).toEqual(
+      tableAvatarOf('3f2a9c1e-77b4-4e0a-9a61-5d2c8e4b1f70'),
+    );
+    const { icon, color } = tableAvatarOf('Sarı Tilki');
+    expect(TABLE_AVATAR_COLORS).toContain(color);
+    expect(icon).toBeLessThan(TABLE_AVATAR_ICONS);
   });
 
-  it('has eight distinct colours the ink outline reads on (3:1)', () => {
-    expect(new Set(AVATAR_COLORS).size).toBe(8);
-    for (const c of AVATAR_COLORS) {
-      expect(contrastRatio(c, THEME.palettes.light.border)).toBeGreaterThanOrEqual(3);
+  it('has eight distinct discs the ink icon is AA on, that stand out from white cards', () => {
+    expect(new Set(TABLE_AVATAR_COLORS).size).toBe(8);
+    for (const c of TABLE_AVATAR_COLORS) {
+      expect(contrastRatio(TABLE_AVATAR_INK, c)).toBeGreaterThanOrEqual(4.5);
+      // Luminance alone: the saturated lime is the closest to white and still reads as a colour.
+      expect(contrastRatio(c, THEME.palettes.light.surface)).toBeGreaterThanOrEqual(1.2);
     }
   });
 });

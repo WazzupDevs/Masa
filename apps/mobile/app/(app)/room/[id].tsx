@@ -136,7 +136,11 @@ export default function RoomScreen() {
       roomId={r.id}
       title={title}
       subtitle={tr.rooms.roomEyebrow(concept)}
-      aliases={r.guest_alias ? [r.owner_alias, r.guest_alias] : [r.owner_alias]}
+      faces={[
+        // The own table's face comes from its session (Avatar → seed), the other's from its alias.
+        { alias: r.owner_alias, seed: isOwner ? sessionId : undefined },
+        ...(r.guest_alias ? [{ alias: r.guest_alias, seed: isOwner ? undefined : sessionId }] : []),
+      ]}
       guestSessionId={r.guest_session_id}
       hasOtherTable={hasOtherTable}
       onEnd={() => exit.mutate()}
@@ -281,7 +285,7 @@ function RoomTopBar({
   roomId,
   title,
   subtitle,
-  aliases,
+  faces,
   guestSessionId,
   hasOtherTable,
   onEnd,
@@ -291,7 +295,7 @@ function RoomTopBar({
   roomId: string;
   title: string;
   subtitle: string;
-  aliases: readonly string[];
+  faces: readonly TableFace[];
   guestSessionId: string | null;
   hasOtherTable: boolean;
   onEnd: () => void;
@@ -309,7 +313,7 @@ function RoomTopBar({
         onBack={onClose}
         title={title}
         subtitle={subtitle}
-        leading={<TableFaces aliases={aliases} />}
+        leading={<TableFaces faces={faces} />}
         onPressTitle={
           publicId
             ? () => router.push({ pathname: '/people/[publicId]', params: { publicId } })
@@ -368,12 +372,14 @@ function RoomTopBar({
   );
 }
 
+type TableFace = { alias: string; seed?: string };
+
 // The tables in the room, the second a little over the first.
-function TableFaces({ aliases }: { aliases: readonly string[] }) {
+function TableFaces({ faces }: { faces: readonly TableFace[] }) {
   const { colors, shape } = useTheme();
   return (
     <View className="flex-row">
-      {aliases.map((alias, i) => (
+      {faces.map(({ alias, seed }, i) => (
         <View
           key={alias}
           style={
@@ -388,7 +394,7 @@ function TableFaces({ aliases }: { aliases: readonly string[] }) {
               : undefined
           }
         >
-          <Avatar kind="table" alias={alias} size="md" />
+          <Avatar kind="table" alias={alias} seed={seed} size="md" />
         </View>
       ))}
     </View>

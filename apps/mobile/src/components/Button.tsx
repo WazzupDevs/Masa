@@ -23,7 +23,7 @@ type Props = {
   disabled?: boolean;
   loading?: boolean;
   variant?: ButtonVariant;
-  // sm: a header button ("Masadan ayrıl"), 40 high with the touch area grown to 48.
+  // sm: a header button ("Mekandan ayrıl"), 40 high with the touch area grown to 48.
   size?: 'sm' | 'md' | 'lg';
   icon?: IconName;
   // A short addition after the label ("+1", "2 hak").

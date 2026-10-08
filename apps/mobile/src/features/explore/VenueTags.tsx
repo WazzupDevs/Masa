@@ -1,14 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { type ActivityBucket, describeEventTime } from '@shared/explore.ts';
+import type { VenueKind } from '@shared/venueKind.ts';
 import { View } from 'react-native';
 
+import { KindIcon } from '@/components/Glyph';
 import { ListRow } from '@/components/ListRow';
-import { SnailLineIcon } from '@/components/Snail';
+import { LiveDot } from '@/components/LiveDot';
 import { Tag, type TagVariant } from '@/components/Tag';
 import { tr } from '@/i18n/tr';
 import { useNow } from '@/lib/useNow';
 import { useTheme } from '@/theme/ThemeProvider';
-import { ICON, SPACING, TOUCH } from '@/theme/tokens';
+import { ICON, type PaletteKey, SPACING, TOUCH } from '@/theme/tokens';
 
 import type { ExploreEvent, ExploreVenue } from './useExploreVenues';
 
@@ -36,15 +38,32 @@ export function EventTag({ event }: { event: NonNullable<ExploreVenue['event']> 
   );
 }
 
-// A venue's picture in the list: the snail on a tile in its bucket's colours.
-export function VenueTile({ bucket }: { bucket: ActivityBucket }) {
+// How lively a venue is, as a beating dot on the Keşfet list (canvas: Aşama 8 · Saha → Keşfet):
+// calm blue and slow, lively green, buzzing red and fast. The reader hears the bucket's name.
+const LIVENESS: Record<ActivityBucket, { tone: PaletteKey; periodMs: number }> = {
+  calm: { tone: 'read', periodMs: 2400 },
+  lively: { tone: 'success', periodMs: 1400 },
+  buzzing: { tone: 'danger', periodMs: 800 },
+};
+
+export function LivenessDot({ bucket }: { bucket: ActivityBucket }) {
+  const { tone, periodMs } = LIVENESS[bucket];
+  return (
+    <LiveDot
+      tone={tone}
+      periodMs={periodMs}
+      size={SPACING[2.5]}
+      accessibilityLabel={tr.explore.buckets[bucket]}
+    />
+  );
+}
+
+// A venue's picture in the list: its kind (a cup, a faculty building; the map marker drawings) on a
+// tile.
+export function VenueTile({ kind }: { kind: VenueKind }) {
   const { colors, shape } = useTheme();
-  const tone = BUCKET_TAG[bucket];
-  const fill = {
-    calm: [colors.calm, colors.onCalm],
-    lively: [colors.lively, colors.onLively],
-    buzz: [colors.buzz, colors.onBuzz],
-  }[tone];
+  const [bg, fg] =
+    kind === 'campus' ? [colors.calm, colors.onCalm] : [colors.surface2, colors.text];
   return (
     <View
       className="items-center justify-center"
@@ -52,10 +71,10 @@ export function VenueTile({ bucket }: { bucket: ActivityBucket }) {
         width: SPACING[14],
         height: SPACING[14],
         borderRadius: shape.radius.md,
-        backgroundColor: fill[0],
+        backgroundColor: bg,
       }}
     >
-      <SnailLineIcon size={SPACING[8]} color={fill[1] ?? colors.text} />
+      <KindIcon kind={kind} color={fg} size={SPACING[8]} />
     </View>
   );
 }

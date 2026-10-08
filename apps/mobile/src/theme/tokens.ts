@@ -156,7 +156,7 @@ export type TypeVariant =
   | 'button'
   | 'buttonLarge' // the Tabu judge buttons
   | 'buttonDetail'
-  | 'buttonSmall' // a small button in a header ("Masadan ayrıl", "Odayı bitir")
+  | 'buttonSmall' // a small button in a header ("Mekandan ayrıl", "Odayı bitir")
   | 'tag'
   | 'caption' // tab labels, small counters
   | 'overline' // "Söylenmeyecekler"

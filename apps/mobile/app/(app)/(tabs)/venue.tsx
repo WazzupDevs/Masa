@@ -8,6 +8,7 @@ import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { ListRow } from '@/components/ListRow';
+import { LiveDot } from '@/components/LiveDot';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Tag } from '@/components/Tag';
@@ -17,7 +18,6 @@ import { useActiveTable } from '@/features/checkin/useActiveTable';
 import { Lobby } from '@/features/rooms/Lobby';
 import { useCurrentRoom } from '@/features/rooms/queries';
 import { useCreateSolo } from '@/features/rooms/useCreateSolo';
-import { NotificationsBell } from '@/features/notifications/Bell';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { sessionDurationMinutes } from '@shared/analytics.ts';
@@ -28,6 +28,9 @@ import { callLeave, callRerollAlias } from '@/lib/api';
 import { useNow } from '@/lib/useNow';
 import { useTheme } from '@/theme/ThemeProvider';
 import { ICON, TOUCH } from '@/theme/tokens';
+
+// The venue chat row's live dot beats at a calm pace.
+const VENUE_CHAT_BEAT_MS = 1600;
 
 function endSession(tableId: string, startedAt: string) {
   trackOnce(`session_ended:${tableId}`, 'session_ended', {
@@ -100,15 +103,30 @@ export default function VenueScreen() {
 
   return (
     <Screen edges={['top']}>
+      {/* Aşama 8 · Saha: no bell here; leaving the table is the small red button on the right. */}
       <ScreenHeader
         eyebrow={tr.venue.here}
         eyebrowIcon="location-outline"
         title={table.data.venue?.name ?? ''}
-        trailing={<NotificationsBell />}
+        trailing={
+          <Button
+            size="sm"
+            variant="danger"
+            testID="venue-leave"
+            label={tr.venue.leave}
+            onPress={confirmLeave}
+            loading={leave.isPending}
+          />
+        }
       />
+      {leave.isError ? (
+        <Text variant="fine" tone="danger">
+          {errorMessage(leave.error)}
+        </Text>
+      ) : null}
       <Card tone="feature" className="mt-3">
-        <View className="flex-row items-center gap-3.5">
-          <Avatar kind="table" alias={table.data.alias} size="xl" />
+        <View className="flex-row items-center gap-4">
+          <Avatar kind="table" alias={table.data.alias} seed={table.data.id} size="lg" />
           <View className="flex-1 gap-1">
             <Text variant="overline" tone="muted">
               {tr.venue.yourTable}
@@ -192,6 +210,7 @@ export default function VenueScreen() {
           title={tr.venueChat.open}
           meta={tr.venueChat.title(table.data.venue?.name ?? '')}
           onPress={() => router.push('/venue-chat')}
+          trailing={<LiveDot tone="success" periodMs={VENUE_CHAT_BEAT_MS} />}
           leading={
             <View
               className="items-center justify-center"
@@ -215,20 +234,6 @@ export default function VenueScreen() {
         mySpotId={table.data.spot_id}
         venueHasSpots={venueHasSpots}
       />
-
-      <View className="mt-auto gap-3 pt-8">
-        {leave.isError ? (
-          <Text variant="fine" tone="danger">
-            {errorMessage(leave.error)}
-          </Text>
-        ) : null}
-        <Button
-          variant="dangerText"
-          label={tr.venue.leave}
-          onPress={confirmLeave}
-          loading={leave.isPending}
-        />
-      </View>
     </Screen>
   );
 }

@@ -265,7 +265,14 @@ export function TabBar({ state, descriptors, navigation, insets, raised }: Props
               }}
             >
               {glyph}
-              <Text variant="caption" tone={focused ? 'text' : 'muted'} numberOfLines={1}>
+              {/* One line; a long name ("Aktiviteler") shrinks a little on a narrow phone. */}
+              <Text
+                variant="caption"
+                tone={focused ? 'text' : 'muted'}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
                 {label}
               </Text>
             </Pressable>

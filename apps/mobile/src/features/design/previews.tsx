@@ -103,7 +103,7 @@ function ButtonsBlock() {
           </View>
         </View>
         <View className="flex-row flex-wrap items-center gap-3">
-          <Button size="sm" variant="danger" label="Masadan ayrıl" onPress={() => undefined} />
+          <Button size="sm" variant="danger" label="Mekandan ayrıl" onPress={() => undefined} />
           <Button size="sm" variant="neutral" label="Değiştir" onPress={() => undefined} />
         </View>
         <View className="flex-row gap-3">
