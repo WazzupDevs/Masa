@@ -104,7 +104,6 @@ export function ChatBubble({
         if (e.nativeEvent.actionName === 'react') setPicking(true);
       }}
       onLongPress={onReact ? () => setPicking((p) => !p) : undefined}
-      disabled={!onReact}
       style={{ maxWidth: '100%' }}
     >
       <View
