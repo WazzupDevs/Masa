@@ -92,6 +92,8 @@ export default defineConfig([
         BODY: 'readonly',
         BOT_PORT: 'readonly',
         EXPECT_DM: 'readonly',
+        EXPECT_REPLY: 'readonly',
+        EXPECT_REACTION: 'readonly',
       },
     },
   },
