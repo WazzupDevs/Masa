@@ -149,7 +149,12 @@ export default function ActivitiesScreen() {
             testID={`activities-create-${open.game}`}
           />
         ) : null}
-        <Button variant="ghost" label={tr.common.close} onPress={() => setOpen(null)} />
+        <Button
+          variant="ghost"
+          label={tr.common.close}
+          onPress={() => setOpen(null)}
+          testID="activities-sheet-close"
+        />
       </Sheet>
     </Screen>
   );

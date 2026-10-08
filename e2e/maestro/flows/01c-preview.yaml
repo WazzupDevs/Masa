@@ -222,18 +222,27 @@ appId: app.kabuk.mobile
       id: activities-solo-card-tabu
     timeout: 10000
 - takeScreenshot: 04h-activities
+# Centred: under the floating tab bar a tap would land on the bar.
 - scrollUntilVisible:
     element:
       id: activities-room-card-sahtekar
+    centerElement: true
     timeout: 30000
 - tapOn:
     id: activities-room-card-sahtekar
-- extendedWaitUntil:
-    visible:
+# On the 320 dp screen the game's text is taller than the sheet: its action is scrolled to.
+- scrollUntilVisible:
+    element:
       id: activities-venue-sahtekar
-    timeout: 10000
+    centerElement: true
+    timeout: 30000
 - takeScreenshot: 04h-activities-sheet
-- tapOn: Kapat
+- scrollUntilVisible:
+    element:
+      id: activities-sheet-close
+    timeout: 30000
+- tapOn:
+    id: activities-sheet-close
 - tapOn:
     id: tab-explore
 - extendedWaitUntil:

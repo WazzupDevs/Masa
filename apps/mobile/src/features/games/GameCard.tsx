@@ -40,7 +40,8 @@ const ART: Record<GameGlyph, ImageSourcePropType> = {
 };
 
 const CARD_HEIGHT = TOUCH.large + SPACING[7];
-const ART_SIZE = SPACING[14] + SPACING[1.5];
+// Under the name's two lines (canvas: Aşama 8 · Saha → Oyun listesi).
+const ART_SIZE = SPACING[12] + SPACING[1];
 
 type Props = {
   concept: Concept;
@@ -102,8 +103,9 @@ export function GameCard({
               height: ART_SIZE,
             }}
           />
-          <View style={{ padding: SPACING[2.5], paddingRight: SPACING[10] }}>
-            <Text variant="heading" color={colors[fg]} numberOfLines={2}>
+          {/* The whole width: a narrower box breaks "Sahtekar" inside the word at 320 dp. */}
+          <View style={{ padding: SPACING[2.5] }}>
+            <Text variant="gameName" color={colors[fg]} numberOfLines={2}>
               {name}
             </Text>
           </View>
