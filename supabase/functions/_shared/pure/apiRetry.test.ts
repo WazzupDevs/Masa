@@ -29,6 +29,7 @@ describe('IDEMPOTENT_CALLS', () => {
         'tabu/end-turn',
         'tabu/mark',
         'tabu/turn-cards',
+        'venue-chat/page',
       ].sort(),
     );
   });

@@ -1,15 +1,21 @@
 // Venue chat room (docs/SPEC_V3.md §7): one group chat per venue for the accounts with a live table
 // there. Length and profanity are checked here; the table, the rate limit and the write in
 // venue_chat_send. Others learn of a new message from a data-free broadcast on
-// venue_chat:{venue_id} and read it with venue_chat_page. No push.
+// venue_chat:{venue_id} and read it with `page`, which signs the photos of profiled messages
+// (§7.2; venue_chat_page_for). No push.
 import { requireUser, serviceClient } from '../_shared/auth.ts';
 import { inBackground } from '../_shared/background.ts';
 import { broadcast } from '../_shared/broadcast.ts';
 import { dbError } from '../_shared/db.ts';
 import { z } from '../_shared/deps.ts';
 import { handle } from '../_shared/http.ts';
+import { signPhotos } from '../_shared/photos.ts';
 import { loadProfanity } from '../_shared/profanity.ts';
-import type { VenueChatRequest, VenueChatResponse } from '../_shared/pure/api/venueChat.ts';
+import type {
+  VenueChatPageResponse,
+  VenueChatRequest,
+  VenueChatResponse,
+} from '../_shared/pure/api/venueChat.ts';
 import { AppError } from '../_shared/pure/errors.ts';
 import { containsProfanity } from '../_shared/pure/profanity.ts';
 import {
@@ -19,19 +25,58 @@ import {
   venueChatChannel,
 } from '../_shared/pure/venueChat.ts';
 
-const Body: z.ZodType<VenueChatRequest> = z.object({
-  action: z.literal('send'),
-  venueId: z.uuid(),
-  body: z.string().max(1000),
-  profiled: z.boolean(),
-});
+const Body: z.ZodType<VenueChatRequest> = z.discriminatedUnion('action', [
+  z.object({
+    action: z.literal('send'),
+    venueId: z.uuid(),
+    body: z.string().max(1000),
+    profiled: z.boolean(),
+  }),
+  z.object({
+    action: z.literal('page'),
+    venueId: z.uuid(),
+    before: z.iso.datetime({ offset: true }).optional(),
+  }),
+]);
 
 const db = serviceClient();
 
+// Empty without a live table at the venue. Only profiled messages have a path (never an anonymous
+// one, never a hidden photo); each distinct path is signed once.
+async function page(
+  userId: string,
+  venueId: string,
+  before?: string,
+): Promise<VenueChatPageResponse> {
+  const { data, error } = await db.rpc('venue_chat_page_for', {
+    target_user_id: userId,
+    target_venue_id: venueId,
+    ...(before ? { before } : {}),
+    page_size: VENUE_CHAT.pageSize,
+  });
+  if (error) throw dbError('venue_chat_page_for', error);
+  const urls = await signPhotos(db, [
+    ...new Set(data.map((m) => m.photo_path).filter((p): p is string => !!p)),
+  ]);
+  return {
+    messages: data.map((m) => ({
+      id: m.id,
+      profiled: m.profiled,
+      senderAlias: m.sender_alias,
+      displayName: m.display_name,
+      photoUrl: m.photo_path ? (urls.get(m.photo_path) ?? null) : null,
+      body: m.body,
+      createdAt: m.created_at,
+      fromMe: m.from_me,
+    })),
+  };
+}
+
 Deno.serve(
-  handle(async (req, raw): Promise<VenueChatResponse> => {
+  handle(async (req, raw): Promise<VenueChatResponse | VenueChatPageResponse> => {
     const body = Body.parse(raw);
     const user = await requireUser(req, db);
+    if (body.action === 'page') return page(user.id, body.venueId, body.before);
 
     const text = prepareVenueMessage(body.body);
     if (text === null) {

@@ -41,7 +41,7 @@ import type {
   ProfileUploadUrl,
   ProfileView,
 } from '@shared/api/profile.ts';
-import type { VenueChatResponse } from '@shared/api/venueChat.ts';
+import type { VenueChatPageResponse, VenueChatResponse } from '@shared/api/venueChat.ts';
 import type { ReportReason } from '@shared/chat.ts';
 import type { Concept } from '@shared/rooms.ts';
 import type { SayKind } from '@shared/sayChallenge.ts';
@@ -307,6 +307,8 @@ export const friendsApi = {
 export const venueChatApi = {
   send: (venueId: string, body: string, profiled: boolean) =>
     invoke<VenueChatResponse>('venue-chat', { action: 'send', venueId, body, profiled }),
+  page: (venueId: string) =>
+    invoke<VenueChatPageResponse>('venue-chat', { action: 'page', venueId }),
 };
 
 export const dmApi = {
