@@ -27,6 +27,16 @@ describe('outboxReducer', () => {
     });
   });
 
+  it('keeps the answered message through a failure and a retry', () => {
+    const reply = outboxReducer([], { type: 'send', localId: 'r', body: 'olur', replyTo: 'm1' });
+    const failed = outboxReducer(reply, { type: 'failed', localId: 'r', errorCode: null });
+    expect(outboxReducer(failed, { type: 'retry', localId: 'r' })[0]).toMatchObject({
+      replyTo: 'm1',
+      status: 'sending',
+    });
+    expect(sending[0]).not.toHaveProperty('replyTo');
+  });
+
   it('removes a message on request', () => {
     expect(outboxReducer(sending, { type: 'remove', localId: 'a' })).toEqual([]);
   });

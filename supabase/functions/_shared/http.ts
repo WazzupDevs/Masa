@@ -47,6 +47,7 @@ const STATUS: Record<ErrorCode, number> = {
   no_cards: 500,
   reveal_closed: 409,
   not_found: 404,
+  reply_unavailable: 409,
   display_name_required: 409,
   display_name_invalid: 422,
   bio_invalid: 422,

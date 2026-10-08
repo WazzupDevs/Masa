@@ -2,6 +2,7 @@ import type { ReportReason } from '@shared/chat.ts';
 import { DM_MAX_LENGTH, prepareDm } from '@shared/friends.ts';
 import { canRetry, type OutboxMessage, outboxReducer } from '@shared/chatOutbox.ts';
 import { toRuns } from '@shared/chatRuns.ts';
+import { parseDmReactions, parseQuote } from '@shared/messageExtras.ts';
 import { BROADCAST, dmChannel } from '@shared/rooms.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -18,11 +19,13 @@ import { EmptyState } from '@/components/EmptyState';
 import { IconButton } from '@/components/IconButton';
 import { Sheet } from '@/components/Sheet';
 import { useHideTabBar } from '@/components/TabBar';
+import { toChatQuote, useReplyTarget } from '@/features/chat/messageExtras';
 import { ReportModal } from '@/features/chat/ReportModal';
 import { ConfirmWithReport } from '@/features/friends/ConfirmWithReport';
 import {
   friendKeys,
   useDmMessages,
+  useDmReactions,
   useFriends,
   useMarkThreadRead,
   useSendDm,
@@ -63,6 +66,9 @@ export default function DmScreen() {
 
   const markRead = useMarkThreadRead(threadId);
   const sendDm = useSendDm(threadId);
+  // docs/SPEC_V3.md §21: swipe a message to answer it, long press it for a reaction.
+  const reply = useReplyTarget();
+  const reactions = useDmReactions(threadId);
   const refetch = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: friendKeys.dm(threadId) });
     markRead();
@@ -74,6 +80,8 @@ export default function DmScreen() {
     [queryClient, threadId],
   );
   useBroadcast(dmChannel(threadId), BROADCAST.dmStatus, rereadPage);
+  // A reaction moved: the page again.
+  useBroadcast(dmChannel(threadId), BROADCAST.dmReaction, rereadPage);
 
   // The other side's newest message: when it changes, their typing dots go.
   const newestFromThem = messages.data?.find((m) => !m.from_me)?.id;
@@ -91,8 +99,14 @@ export default function DmScreen() {
   const body = prepareDm(draft);
   // Sending is optimistic, as in the room chat (@shared/chatOutbox.ts): the message shows at once
   // with the waiting state and is replaced by the server's copy on the reply, with the sent tick.
-  const deliver = (localId: string, text: string) => {
-    sendDm(text)
+  // The answered message from the loaded page, for the quote shown at once.
+  const replyOf = (id: string | undefined) => {
+    if (!id) return undefined;
+    const m = messages.data?.find((x) => x.id === id);
+    return m ? { id, body: m.body, fromMe: m.from_me } : { id, body: '', fromMe: false };
+  };
+  const deliver = (localId: string, text: string, replyTo?: string) => {
+    sendDm(text, replyOf(replyTo))
       .then(() => {
         track('dm_sent', {});
         dispatch({ type: 'sent', localId });
@@ -105,13 +119,19 @@ export default function DmScreen() {
     if (!body) return;
     nextLocalId += 1;
     const localId = `dm-${nextLocalId}`;
-    dispatch({ type: 'send', localId, body });
+    const replyTo = reply.target?.id;
+    dispatch({ type: 'send', localId, body, ...(replyTo ? { replyTo } : {}) });
     setDraft('');
-    deliver(localId, body);
+    reply.clear();
+    deliver(localId, body, replyTo);
   };
   const retry = (m: OutboxMessage) => {
     dispatch({ type: 'retry', localId: m.localId });
-    deliver(m.localId, m.body);
+    deliver(m.localId, m.body, m.replyTo);
+  };
+  const outboxQuote = (id: string | undefined) => {
+    const r = replyOf(id);
+    return r ? toChatQuote({ gone: false, ...r, name: null }, name) : undefined;
   };
   const onChangeDraft = (text: string) => {
     setDraft(text);
@@ -186,6 +206,8 @@ export default function DmScreen() {
           maxLength={DM_MAX_LENGTH}
           sendDisabled={!body}
           onSend={submit}
+          replyTo={reply.target?.quote}
+          onCancelReply={reply.clear}
         />
       }
     >
@@ -194,32 +216,46 @@ export default function DmScreen() {
           <EmptyState snail body={tr.friends.noMessagesYet} />
         </View>
       ) : null}
-      {runs.map(({ item: m, first, last, day }) => (
-        <View key={m.id} className={first ? 'mt-1.5 gap-2' : 'gap-2'}>
-          {day ? <DayLine label={dayLabel(day)} /> : null}
-          <ChatBubble
-            text={m.body}
-            mine={m.from_me}
-            first={first}
-            last={last}
-            time={tr.chat.time(m.created_at)}
-            delivery={m.from_me && isDelivery(m.status) ? m.status : undefined}
-            name={m.from_me ? undefined : name}
-            avatar={
-              m.from_me ? undefined : (
-                <Avatar kind="profile" name={name} size="sm" photoUrl={photoUrl} />
-              )
-            }
-            // The photo opens the profile ("Profili gör" left the menu).
-            onPressSender={m.from_me ? undefined : openProfile}
-          />
-        </View>
-      ))}
+      {runs.map(({ item: m, first, last, day }) => {
+        const counts = parseDmReactions(m.reactions);
+        return (
+          <View key={m.id} className={first ? 'mt-1.5 gap-2' : 'gap-2'}>
+            {day ? <DayLine label={dayLabel(day)} /> : null}
+            <ChatBubble
+              text={m.body}
+              mine={m.from_me}
+              quote={toChatQuote(parseQuote(m.reply_to), name)}
+              reactions={reactions.view(m.id, counts)}
+              onToggleReaction={(emoji) => reactions.pick(m.id, counts, emoji)}
+              onReact={(emoji) => reactions.pick(m.id, counts, emoji)}
+              onReply={() =>
+                reply.setTarget({
+                  id: m.id,
+                  quote: { name: m.from_me ? tr.chat.you : name, text: m.body },
+                })
+              }
+              first={first}
+              last={last}
+              time={tr.chat.time(m.created_at)}
+              delivery={m.from_me && isDelivery(m.status) ? m.status : undefined}
+              name={m.from_me ? undefined : name}
+              avatar={
+                m.from_me ? undefined : (
+                  <Avatar kind="profile" name={name} size="sm" photoUrl={photoUrl} />
+                )
+              }
+              // The photo opens the profile ("Profili gör" left the menu).
+              onPressSender={m.from_me ? undefined : openProfile}
+            />
+          </View>
+        );
+      })}
       {outbox.map((m) => (
         <ChatBubble
           key={m.localId}
           text={m.body}
           mine
+          quote={outboxQuote(m.replyTo)}
           state={m.status === 'sending' ? 'sending' : 'failed'}
           failedText={m.status === 'failed' && m.errorCode ? tr.errors[m.errorCode] : undefined}
           onRetry={m.status === 'failed' && canRetry(m) ? () => retry(m) : undefined}

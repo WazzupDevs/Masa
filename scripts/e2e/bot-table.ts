@@ -925,9 +925,48 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
     if (!threadId) return { body: null };
     const { data, error } = await me().rpc('dm_messages_page', { target_thread_id: threadId });
     if (error) throw error;
-    const rows = (data ?? []) as { body: string; created_at: string }[];
+    const rows = (data ?? []) as {
+      body: string;
+      created_at: string;
+      reply_to: { body?: string } | null;
+      reactions: { emoji: string }[];
+    }[];
     rows.sort((a, b) => b.created_at.localeCompare(a.created_at));
-    return { body: rows[0]?.body ?? null };
+    const newest = rows[0];
+    // docs/SPEC_V3.md §21: the quote and the reactions of the newest message, too.
+    return {
+      body: newest?.body ?? null,
+      replyTo: newest?.reply_to?.body ?? null,
+      reactions: (newest?.reactions ?? []).map((r) => r.emoji),
+    };
+  },
+
+  // The room chat (docs/SPEC_V3.md §21): a message from the bot's table.
+  async 'chat-send'(args) {
+    const room = await myRoom();
+    return call('chat', { action: 'send', roomId: room.id, body: String(args.body ?? 'Selam') });
+  },
+
+  // The reactions on the bot table's newest room chat message (as `reactions`, emojis).
+  async 'chat-reactions'() {
+    const room = await myRoom();
+    const sessionId = await mySessionId();
+    const { data: own, error } = await me()
+      .from('messages')
+      .select('id')
+      .eq('room_id', room.id)
+      .eq('session_id', sessionId ?? '')
+      .order('created_at', { ascending: false })
+      .limit(1);
+    if (error) throw error;
+    const { data: extras, error: extrasError } = await me().rpc('room_chat_extras', {
+      target_room_id: room.id,
+    });
+    if (extrasError) throw extrasError;
+    const row = ((extras ?? []) as { message_id: string; reactions: { emoji: string }[] }[]).find(
+      (x) => x.message_id === own?.[0]?.id,
+    );
+    return { reactions: (row?.reactions ?? []).map((r) => r.emoji) };
   },
 
   async leave() {

@@ -1,4 +1,5 @@
 import type { ReportReason } from '../chat.ts';
+import type { Reaction } from '../reactions.ts';
 
 // `friends` and `dm` Edge Functions (docs/SPEC_V2.md §6, §9), shared with the mobile app. No
 // response before a friendship carries a public_id.
@@ -41,7 +42,10 @@ export type FriendsIncomingResponse = { requests: VenueChatIncoming[] };
 export type FriendsOkResponse = { ok: true };
 
 export type DmRequest =
-  | { action: 'send'; threadId: string; body: string }
+  // replyTo: a message of the same conversation (docs/SPEC_V3.md §21.1).
+  | { action: 'send'; threadId: string; body: string; replyTo?: string }
+  // The caller's one reaction on a message; null takes it back (§21.2).
+  | { action: 'react'; messageId: string; emoji: Reaction | null }
   | { action: 'read'; threadId: string }
   // Mesajlar (docs/SPEC_V3.md §18.2): one row per friend, newest conversation first.
   | { action: 'inbox' }

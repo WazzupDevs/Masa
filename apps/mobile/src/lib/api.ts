@@ -1,6 +1,7 @@
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import type { AccountRequest, AccountResponse } from '@shared/api/account.ts';
-import type { ChatResponse, SafetyResponse } from '@shared/api/chat.ts';
+import type { ChatResponse, ReactResponse, SafetyResponse } from '@shared/api/chat.ts';
+import type { Reaction } from '@shared/reactions.ts';
 import type { RevealResponse } from '@shared/api/reveal.ts';
 import type {
   GameOkResponse,
@@ -163,8 +164,11 @@ export const roomsApi = {
 };
 
 export const chatApi = {
-  send: (roomId: string, body: string) =>
-    invoke<ChatResponse>('chat', { action: 'send', roomId, body }),
+  send: (roomId: string, body: string, replyTo?: string) =>
+    invoke<ChatResponse>('chat', { action: 'send', roomId, body, ...(replyTo ? { replyTo } : {}) }),
+  // docs/SPEC_V3.md §21.2: the table's one reaction; null takes it back.
+  react: (messageId: string, emoji: Reaction | null) =>
+    invoke<ReactResponse>('chat', { action: 'react', messageId, emoji }),
 };
 
 export const safetyApi = {
@@ -308,13 +312,25 @@ export const friendsApi = {
 export const venueChatApi = {
   send: (venueId: string, body: string, profiled: boolean) =>
     invoke<VenueChatResponse>('venue-chat', { action: 'send', venueId, body, profiled }),
+  reply: (venueId: string, body: string, profiled: boolean, replyTo: string) =>
+    invoke<VenueChatResponse>('venue-chat', { action: 'send', venueId, body, profiled, replyTo }),
+  // At most 10 per 10 seconds; over it rate_limited, which the app ignores (§21.2).
+  react: (messageId: string, emoji: Reaction | null) =>
+    invoke<ReactResponse>('venue-chat', { action: 'react', messageId, emoji }),
   page: (venueId: string) =>
     invoke<VenueChatPageResponse>('venue-chat', { action: 'page', venueId }),
 };
 
 export const dmApi = {
-  send: (threadId: string, body: string) =>
-    invoke<DmSendResponse>('dm', { action: 'send', threadId, body }),
+  send: (threadId: string, body: string, replyTo?: string) =>
+    invoke<DmSendResponse>('dm', {
+      action: 'send',
+      threadId,
+      body,
+      ...(replyTo ? { replyTo } : {}),
+    }),
+  react: (messageId: string, emoji: Reaction | null) =>
+    invoke<ReactResponse>('dm', { action: 'react', messageId, emoji }),
   read: (threadId: string) => invoke<DmOkResponse>('dm', { action: 'read', threadId }),
   // Mesajlar (docs/SPEC_V3.md §18.2): one row per friend, photos signed by the function.
   inbox: () => invoke<DmInboxResponse>('dm', { action: 'inbox' }),

@@ -31,7 +31,8 @@ import { Toggle } from '@/components/Toggle';
 import { ReportModal } from '@/features/chat/ReportModal';
 import { useActiveTable } from '@/features/checkin/useActiveTable';
 import { ConfirmWithReport } from '@/features/friends/ConfirmWithReport';
-import { useVenueChat, venueChatKeys } from '@/features/venueChat/queries';
+import { toChatQuote, useReplyTarget } from '@/features/chat/messageExtras';
+import { useVenueChat, useVenueChatReactions, venueChatKeys } from '@/features/venueChat/queries';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { track } from '@/lib/analytics';
@@ -58,6 +59,9 @@ export default function VenueChatScreen() {
   const [menuFor, setMenuFor] = useState<VenueChatMessage | null>(null);
   const [reporting, setReporting] = useState<VenueChatMessage | null>(null);
   const [blocking, setBlocking] = useState<VenueChatMessage | null>(null);
+  // docs/SPEC_V3.md §21: swipe a message to answer it, long press it for a reaction.
+  const reply = useReplyTarget();
+  const reactions = useVenueChatReactions(venueId);
 
   useEffect(() => {
     AsyncStorage.getItem(AS_PROFILE_KEY)
@@ -74,9 +78,13 @@ export default function VenueChatScreen() {
     if (venueId) void queryClient.invalidateQueries({ queryKey: venueChatKeys.messages(venueId) });
   };
   const send = useMutation({
-    mutationFn: (text: string) => venueChatApi.send(venueId ?? '', text, asProfile),
+    mutationFn: (text: string) =>
+      reply.target
+        ? venueChatApi.reply(venueId ?? '', text, asProfile, reply.target.id)
+        : venueChatApi.send(venueId ?? '', text, asProfile),
     onSuccess: () => {
       setDraft('');
+      reply.clear();
       track('venue_chat_sent', { profiled: asProfile });
       refresh();
     },
@@ -163,6 +171,8 @@ export default function VenueChatScreen() {
           sendDisabled={!body}
           sending={send.isPending}
           onSend={() => body && send.mutate(body)}
+          replyTo={reply.target?.quote}
+          onCancelReply={reply.clear}
           counter={draft ? tr.chat.counter([...draft].length, VENUE_CHAT.maxLength) : undefined}
           above={
             <View>
@@ -205,6 +215,16 @@ export default function VenueChatScreen() {
               testID={m.fromMe ? 'venue-chat-mine' : 'venue-chat-theirs'}
               text={m.body}
               mine={m.fromMe}
+              quote={toChatQuote(m.replyTo)}
+              reactions={reactions.view(m.id, m.reactions)}
+              onToggleReaction={(emoji) => reactions.pick(m.id, m.reactions, emoji)}
+              onReact={(emoji) => reactions.pick(m.id, m.reactions, emoji)}
+              onReply={() =>
+                reply.setTarget({
+                  id: m.id,
+                  quote: { name: m.fromMe ? tr.chat.you : senderLabel(m), text: m.body },
+                })
+              }
               first={first}
               last={last}
               time={tr.chat.time(m.createdAt)}

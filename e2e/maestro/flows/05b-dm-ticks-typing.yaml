@@ -1,5 +1,6 @@
 # F3b (docs/SPEC_V3.md §18.3): ticks and "yazıyor" in a DM. The device writes, the bot reads (the
-# tick turns to read), the bot types (the dots show) and answers (the dots go).
+# tick turns to read), the bot types (the dots show) and answers (the dots go). §21: the device
+# reacts to the answer with a long press and replies to it with a swipe; the bot sees both.
 appId: app.kabuk.mobile
 ---
 - tapOn:
@@ -53,6 +54,48 @@ appId: app.kabuk.mobile
       id: dm-typing
     timeout: 10000
 - takeScreenshot: 27d-dm-answer
+# §21.2: a long press opens the six reactions; 👍 (the first) shows under the bubble.
+- longPressOn: Okudum
+- extendedWaitUntil:
+    visible:
+      id: reaction-bar
+    timeout: 10000
+- takeScreenshot: 27f-dm-reaction-bar
+- tapOn:
+    id: react-0
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: dm-last
+      EXPECT_DM: Okudum
+      EXPECT_REACTION: 👍
+# §21.1: a swipe to the right answers the message; the quote shows over the bar, then in the bubble.
+- swipe:
+    from:
+      text: Okudum
+    direction: RIGHT
+    duration: 600
+- extendedWaitUntil:
+    visible:
+      id: reply-strip
+    timeout: 10000
+- takeScreenshot: 27g-dm-reply-strip
+- tapOn:
+    id: dm-input
+- inputText: Harika
+- hideKeyboard
+- tapOn:
+    id: dm-send
+- extendedWaitUntil:
+    visible: Harika
+    timeout: 10000
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: dm-last
+      EXPECT_DM: Harika
+      EXPECT_REPLY: Okudum
+- takeScreenshot: 27h-dm-reply
 - tapOn:
     id: chat-back
     optional: true

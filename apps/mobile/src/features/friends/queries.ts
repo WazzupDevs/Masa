@@ -7,6 +7,7 @@ import { AppState } from 'react-native';
 
 import { useSessionStore } from '@/features/auth/session';
 import { useBroadcast } from '@/features/rooms/useBroadcast';
+import { useReactions } from '@/features/chat/messageExtras';
 import { dmApi, friendsApi } from '@/lib/api';
 import { stablePhoto } from '@/lib/photoUrls';
 import { supabase } from '@/lib/supabase';
@@ -170,14 +171,24 @@ export function useDmMessages(threadId: string) {
 // Sends a DM. On the reply the message goes into the cached page with the 'sent' tick (adım 9.1:
 // the clock used to wait for the page to be read again); the caller drops its waiting bubble then.
 // A failure rejects with the ApiError, for "Tekrar dene".
-export function useSendDm(threadId: string): (body: string) => Promise<void> {
+export function useSendDm(
+  threadId: string,
+): (body: string, reply?: { id: string; body: string; fromMe: boolean }) => Promise<void> {
   const queryClient = useQueryClient();
   return useCallback(
-    async (body: string) => {
-      const sent = await dmApi.send(threadId, body);
+    async (body: string, reply?: { id: string; body: string; fromMe: boolean }) => {
+      const sent = await dmApi.send(threadId, body, reply?.id);
       if (sent.messageId) {
         queryClient.setQueryData<DmPageRow[]>(friendKeys.dm(threadId), (page) =>
-          withSentDm(page ?? [], { id: sent.messageId, body, created_at: sent.createdAt }),
+          withSentDm(page ?? [], {
+            id: sent.messageId,
+            body,
+            created_at: sent.createdAt,
+            // The quote as the page will send it (docs/SPEC_V3.md §21.1).
+            ...(reply
+              ? { reply_to: { id: reply.id, body: reply.body.slice(0, 80), from_me: reply.fromMe } }
+              : {}),
+          }),
         );
       } else {
         // A function from before this answer carried the message.
@@ -186,6 +197,15 @@ export function useSendDm(threadId: string): (body: string) => Promise<void> {
       refreshInboxSoon(queryClient);
     },
     [queryClient, threadId],
+  );
+}
+
+// docs/SPEC_V3.md §21.2: the reader's reaction shows at once; the page is read again after the
+// server took it (and on the dm_reaction broadcast).
+export function useDmReactions(threadId: string) {
+  const queryClient = useQueryClient();
+  return useReactions(dmApi.react, () =>
+    queryClient.invalidateQueries({ queryKey: friendKeys.dm(threadId) }),
   );
 }
 

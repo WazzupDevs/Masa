@@ -1,6 +1,7 @@
 // Venue chat room (docs/SPEC_V3.md §7). One fixed group chat per venue, for the accounts with an
 // active table there. The numbers here are the only source: the Edge Functions pass them to SQL.
 import { MAX_MESSAGE_LENGTH, prepareMessage } from './chat.ts';
+import type { Quote, ReactionCount } from './messageExtras.ts';
 
 export const VENUE_CHAT = {
   maxLength: MAX_MESSAGE_LENGTH,
@@ -18,6 +19,9 @@ export const VENUE_CHAT = {
   dailyFriendRequests: 10,
   // One page of messages.
   pageSize: 50,
+  // Reactions (docs/SPEC_V3.md §21.2): per account, at most this many requests per window.
+  reactionWindowSeconds: 10,
+  reactionWindowMax: 10,
 } as const;
 
 // The same trimming and length rule as the room chat.
@@ -61,6 +65,9 @@ export type VenueChatMessage = {
   body: string;
   createdAt: string;
   fromMe: boolean;
+  // §21: the answered message (by its own label rule) and the counts per emoji, never who.
+  replyTo: Quote | null;
+  reactions: ReactionCount[];
 };
 
 // The name to show above a message.
@@ -75,3 +82,5 @@ export function venueChatChannel(venueId: string): string {
 }
 
 export const VENUE_CHAT_BROADCAST = 'venue_chat' as const;
+// A reaction moved (§21.3); no data, the reader reads the page again.
+export const VENUE_CHAT_REACTION_BROADCAST = 'venue_chat_reaction' as const;

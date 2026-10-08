@@ -30,6 +30,7 @@ import {
   errorBody,
   onboarded,
   PHONES,
+  waitForBroadcast,
   waitUntilBlocked,
 } from './helpers.ts';
 import {
@@ -887,6 +888,8 @@ describe('DMs', () => {
       'created_at',
       'from_me',
       'id',
+      'reactions',
+      'reply_to',
       'status',
     ]);
     expect((await friendList(b))[0]?.unread).toBe(true);
@@ -1268,6 +1271,114 @@ describe('account deletion', () => {
   });
 });
 
+describe('DM replies and reactions (docs/SPEC_V3.md §21)', () => {
+  // The DM limit is one message per second per account; tests step the clock back instead.
+  const spaced = () =>
+    sql`update public.dm_messages set created_at = created_at - interval '2 seconds'`;
+  const page = async (client: Client, threadId: string) => {
+    const { data, error } = await client.rpc('dm_messages_page', { target_thread_id: threadId });
+    expect(error).toBeNull();
+    return data ?? [];
+  };
+  const react = (client: Client, messageId: string, emoji: string | null) =>
+    dm(client, { action: 'react', messageId, emoji });
+
+  it('quotes a message of the same conversation, and nothing from outside it', async () => {
+    const { a, b, historyA } = await metOnce();
+    await becomeFriends(a, b, historyA);
+    const threadId = (await friendList(a))[0]?.threadId ?? '';
+    const first = await dm(a, { action: 'send', threadId, body: 'Yarın aynı yerde mi?' });
+    const firstId = (first.body as { messageId: string }).messageId;
+    await spaced();
+    expect(await dm(b, { action: 'send', threadId, body: 'Olur', replyTo: firstId })).toEqual(SENT);
+
+    const [reply] = await page(a, threadId);
+    expect(reply).toMatchObject({
+      body: 'Olur',
+      reply_to: { id: firstId, body: 'Yarın aynı yerde mi?', from_me: true },
+    });
+    expect((await page(b, threadId))[0]?.reply_to).toEqual({
+      id: firstId,
+      body: 'Yarın aynı yerde mi?',
+      from_me: false,
+    });
+    expect((await page(b, threadId))[1]?.reply_to).toBeNull();
+
+    // A message that does not exist, or one of another conversation: nothing is written.
+    await spaced();
+    const unavailable = { status: 409, body: errorBody('reply_unavailable') };
+    expect(await dm(b, { action: 'send', threadId, body: 'x', replyTo: randomUUID() })).toEqual(
+      unavailable,
+    );
+    // Another conversation of a (with a third account): its message cannot be quoted here.
+    const c = await onboarded(PHONES[2]);
+    const [x = '', y = ''] = [await userIdOf(a), await userIdOf(c)].sort();
+    await sql`insert into public.friendships (user_a, user_b, source) values (${x}, ${y}, 'request')`;
+    const [other] = await sql`
+      insert into public.dm_threads (user_a, user_b) values (${x}, ${y}) returning id
+    `;
+    const [foreign] = await sql`
+      insert into public.dm_messages (thread_id, sender_user_id, body)
+      values (${other?.id}, ${await userIdOf(a)}, 'başka') returning id
+    `;
+    expect(await dm(b, { action: 'send', threadId, body: 'x', replyTo: foreign?.id })).toEqual(
+      unavailable,
+    );
+    expect(await page(b, threadId)).toHaveLength(2);
+
+    // The quoted message deleted: the reply says only that it is gone.
+    await sql`delete from public.dm_messages where id = ${firstId}`;
+    expect((await page(a, threadId))[0]?.reply_to).toEqual({ gone: true });
+  });
+
+  it('keeps one reaction per account: set, change, take back, and the same twice', async () => {
+    const { a, b, historyA } = await metOnce();
+    await becomeFriends(a, b, historyA);
+    const threadId = (await friendList(a))[0]?.threadId ?? '';
+    const sentA = await dm(a, { action: 'send', threadId, body: 'selam' });
+    const messageId = (sentA.body as { messageId: string }).messageId;
+
+    const heard = waitForBroadcast(b, dmChannel(threadId), BROADCAST.dmReaction);
+    await heard.subscribed;
+    expect(await react(b, messageId, '👍')).toEqual(OK);
+    await heard.received;
+    await heard.close();
+    expect(await react(b, messageId, '👍')).toEqual(OK);
+    // Own messages take reactions too.
+    expect(await react(a, messageId, '🔥')).toEqual(OK);
+    expect((await page(a, threadId))[0]?.reactions).toEqual([
+      { emoji: '👍', from_me: false },
+      { emoji: '🔥', from_me: true },
+    ]);
+    expect(await react(b, messageId, '🔥')).toEqual(OK);
+    expect(await react(a, messageId, null)).toEqual(OK);
+    expect(await react(a, messageId, null)).toEqual(OK);
+    expect((await page(b, threadId))[0]?.reactions).toEqual([{ emoji: '🔥', from_me: true }]);
+    expect(await sql`select count(*)::int as n from public.dm_reactions`).toEqual([{ n: 1 }]);
+
+    // Only the six; only the two members; a reaction leaves the unread count alone.
+    expect(await react(b, messageId, '💩')).toEqual({
+      status: 400,
+      body: errorBody('bad_request'),
+    });
+    const stranger = await onboarded(PHONES[2]);
+    expect(await react(stranger, messageId, '👍')).toEqual({
+      status: 404,
+      body: errorBody('not_found'),
+    });
+    expect(await react(b, randomUUID(), '👍')).toEqual({
+      status: 404,
+      body: errorBody('not_found'),
+    });
+    const inbox = (await dm(a, { action: 'inbox' })).body as DmInboxResponse;
+    expect(totalUnread(inbox.threads)).toBe(0);
+
+    // The message goes, its reactions with it.
+    await sql`delete from public.dm_messages where id = ${messageId}`;
+    expect(await sql`select count(*)::int as n from public.dm_reactions`).toEqual([{ n: 0 }]);
+  });
+});
+
 describe('locks', () => {
   // friends_respond locked the request, then the pair. Completing a friendship takes the pair, then
   // updates the pair's requests (make_friends): one account answering while the other completes the
@@ -1306,6 +1417,37 @@ describe('locks', () => {
       expect(await answered).toEqual([{ outcome: 'friendship_created' }]);
     } finally {
       await Promise.all([pair.end(), answering.end()]);
+    }
+  });
+  // dm_react (docs/SPEC_V3.md §21.3): the thread, then the message's reactions.
+  it('reacts only after taking the thread', async () => {
+    const { a, b, historyA } = await metOnce();
+    await becomeFriends(a, b, historyA);
+    const threadId = (await friendList(a))[0]?.threadId ?? '';
+    const sentA = await dm(a, { action: 'send', threadId, body: 'selam' });
+    const messageId = (sentA.body as { messageId: string }).messageId;
+    expect(await dm(b, { action: 'react', messageId, emoji: '👍' })).toEqual(OK);
+    const bId = await userIdOf(b);
+
+    const holder = postgres(dbUrl, { max: 1, onnotice: () => {} });
+    const reacting = postgres(dbUrl, { max: 1, onnotice: () => {} });
+    try {
+      let reacted: Promise<unknown> = Promise.resolve();
+      await holder.begin(async (tx) => {
+        await tx`select id from public.dm_threads where id = ${threadId} for update`;
+        reacted = reacting`select changed from public.dm_react(${bId}, ${messageId}, '🔥')`
+          .execute()
+          .catch((err: unknown) => err);
+        await waitUntilBlocked('dm_react');
+        await tx`set local lock_timeout = '2s'`;
+        const held = await tx`
+          select emoji from public.dm_reactions where message_id = ${messageId} for update
+        `;
+        expect(held).toHaveLength(1);
+      });
+      expect(await reacted).toEqual([{ changed: true }]);
+    } finally {
+      await Promise.all([holder.end(), reacting.end()]);
     }
   });
 });

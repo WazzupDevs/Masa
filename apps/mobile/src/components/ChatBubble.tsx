@@ -94,7 +94,11 @@ export function ChatBubble({
   const bubble = (
     <Pressable
       testID={testID}
-      accessibilityLabel={quote ? `${tr.chat.quoteLabel(quote.name, quote.text)}. ${text}` : text}
+      accessibilityLabel={
+        quote
+          ? `${quote.text ? tr.chat.quoteLabel(quote.name, quote.text) : quote.name}. ${text}`
+          : text
+      }
       accessibilityActions={[
         ...(onReply ? [{ name: 'reply', label: tr.chat.reply }] : []),
         ...(onReact ? [{ name: 'react', label: tr.chat.react }] : []),
@@ -245,9 +249,11 @@ function QuoteBlock({ quote, mine }: { quote: ChatQuote; mine: boolean }) {
       <Text variant="label" color={mine ? colors.onAccent : colors.violet} numberOfLines={1}>
         {quote.name}
       </Text>
-      <Text variant="fine" color={mine ? colors.onAccent : colors.text} numberOfLines={1}>
-        {quote.text}
-      </Text>
+      {quote.text ? (
+        <Text variant="fine" color={mine ? colors.onAccent : colors.text} numberOfLines={1}>
+          {quote.text}
+        </Text>
+      ) : null}
     </View>
   );
 }

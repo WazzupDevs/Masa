@@ -9,9 +9,11 @@ describe('IDEMPOTENT_CALLS', () => {
     // Changing this list changes which failures the app sends twice: each entry names its test.
     expect([...IDEMPOTENT_CALLS].sort()).toEqual(
       [
+        'chat/react',
         'checkin/leave',
         'dm/delivered',
         'dm/inbox',
+        'dm/react',
         'dm/read',
         'friends/list',
         'harf/advance',

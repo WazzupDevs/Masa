@@ -42,12 +42,24 @@ export function withThreadRead<T extends { threadId: string | null; unreadCount:
 // The caller's message as dm/send wrote it (adım 9.1), put into the cached page (newest first) so
 // its bubble shows the 'sent' tick on the reply, without reading the page again. A page that
 // already has it (read meanwhile) stays as it is.
-export type SentDm = { id: string; body: string; created_at: string };
-export type DmPageRow = SentDm & { from_me: boolean; status: string | null };
+// reply_to and reactions as dm_messages_page sends them (pure/messageExtras.ts reads them).
+export type SentDm = { id: string; body: string; created_at: string; reply_to?: unknown };
+export type DmPageRow = SentDm & {
+  from_me: boolean;
+  status: string | null;
+  reply_to: unknown;
+  reactions: unknown;
+};
 
 export function withSentDm(page: readonly DmPageRow[], sent: SentDm): DmPageRow[] {
   if (page.some((m) => m.id === sent.id)) return [...page];
-  const row: DmPageRow = { ...sent, from_me: true, status: 'sent' };
+  const row: DmPageRow = {
+    ...sent,
+    from_me: true,
+    status: 'sent',
+    reply_to: sent.reply_to ?? null,
+    reactions: [],
+  };
   const at = page.findIndex((m) => m.created_at <= sent.created_at);
   return at === -1 ? [...page, row] : [...page.slice(0, at), row, ...page.slice(at)];
 }

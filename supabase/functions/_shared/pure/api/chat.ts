@@ -1,8 +1,14 @@
 import type { ReportReason } from '../chat.ts';
+import type { Reaction } from '../reactions.ts';
 
 // `chat` and `safety` Edge Functions, shared with the mobile app.
-export type ChatRequest = { action: 'send'; roomId: string; body: string };
+export type ChatRequest =
+  // replyTo: a message of the same room the sender can read (docs/SPEC_V3.md §21.1).
+  | { action: 'send'; roomId: string; body: string; replyTo?: string }
+  // The caller's table's one reaction on a message; null takes it back (§21.2).
+  | { action: 'react'; messageId: string; emoji: Reaction | null };
 export type ChatResponse = { messageId: string };
+export type ReactResponse = { ok: true };
 
 export type SafetyRequest =
   | { action: 'report'; target?: 'room'; roomId: string; reason: ReportReason }

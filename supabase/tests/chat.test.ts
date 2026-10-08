@@ -1,8 +1,20 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { deleteFixtureVenues, insertFixtureVenues } from './fixtures/venues.ts';
-import { checkInAt, errorBody, onboarded, PHONES } from './helpers.ts';
-import { type Client, deleteUserByPhone, invoke, sql, userIdOf } from './local.ts';
+import { randomUUID } from 'node:crypto';
+
+import postgres from 'postgres';
+
+import { BROADCAST, messagesChannel } from '../functions/_shared/pure/rooms.ts';
+import {
+  checkInAt,
+  errorBody,
+  onboarded,
+  PHONES,
+  waitForBroadcast,
+  waitUntilBlocked,
+} from './helpers.ts';
+import { type Client, dbUrl, deleteUserByPhone, invoke, sql, userIdOf } from './local.ts';
 
 let venue: Record<string, string> = {};
 const V = 'at-anchor';
@@ -158,6 +170,141 @@ describe('chat/send', () => {
       await invoke(third, 'rooms', { action: 'request-join', roomId, profiled: false }),
     ).toEqual({ status: 409, body: errorBody('room_not_available') });
     expect(await messages(third, roomId)).toEqual([]);
+  });
+});
+
+describe('room chat replies and reactions (docs/SPEC_V3.md §21)', () => {
+  const OK = { status: 200, body: { ok: true } };
+  const sendReply = (client: Client, roomId: string, body: string, replyTo: string) =>
+    invoke(client, 'chat', { action: 'send', roomId, body, replyTo });
+  const react = (client: Client, messageId: string, emoji: string | null) =>
+    invoke(client, 'chat', { action: 'react', messageId, emoji });
+  const extras = async (client: Client, roomId: string) => {
+    const { data, error } = await client.rpc('room_chat_extras', { target_room_id: roomId });
+    expect(error).toBeNull();
+    return Object.fromEntries((data ?? []).map((r) => [r.message_id, r]));
+  };
+  const aliases = async (roomId: string) => {
+    const [room] =
+      await sql`select owner_alias, guest_alias from public.rooms where id = ${roomId}`;
+    return { owner: room?.owner_alias as string, guest: room?.guest_alias as string };
+  };
+
+  it('quotes a message of the room by its table alias; nothing from outside the room', async () => {
+    const { owner, guest, third, roomId } = await roomWithGuest();
+    const names = await aliases(roomId);
+    const first = await send(owner, roomId, 'Yarın aynı yerde mi?');
+    const firstId = (first.body as { messageId: string }).messageId;
+    const reply = await sendReply(guest, roomId, 'Olur', firstId);
+    expect(reply.status).toBe(200);
+    const replyId = (reply.body as { messageId: string }).messageId;
+
+    const quote = { id: firstId, body: 'Yarın aynı yerde mi?', name: names.owner };
+    expect((await extras(owner, roomId))[replyId]?.reply_to).toEqual({ ...quote, from_me: true });
+    expect((await extras(guest, roomId))[replyId]?.reply_to).toEqual({ ...quote, from_me: false });
+    // The messages carry the reply too (RLS read), and nobody outside the room gets extras.
+    const { data: rows } = await owner
+      .from('messages')
+      .select('reply_to_id, replied')
+      .eq('id', replyId);
+    expect(rows).toEqual([{ reply_to_id: firstId, replied: true }]);
+    expect(await extras(third, roomId)).toEqual({});
+
+    await sleep(1100);
+    const unavailable = { status: 409, body: errorBody('reply_unavailable') };
+    expect(await sendReply(owner, roomId, 'x', randomUUID())).toEqual(unavailable);
+    // A message from before the guest joined: the guest cannot quote it, and sees a reply to it
+    // as gone.
+    const [old] = await sql`
+      insert into public.messages (room_id, session_id, sender_alias, body, created_at)
+      select ${roomId}, owner_session_id, owner_alias, 'eski', guest_joined_at - interval '1 minute'
+      from public.rooms where id = ${roomId}
+      returning id
+    `;
+    expect(await sendReply(guest, roomId, 'x', old?.id)).toEqual(unavailable);
+    const toOld = await sendReply(owner, roomId, 'hatırladın mı', old?.id);
+    const toOldId = (toOld.body as { messageId: string }).messageId;
+    expect((await extras(guest, roomId))[toOldId]?.reply_to).toEqual({ gone: true });
+    expect((await extras(owner, roomId))[toOldId]?.reply_to).toMatchObject({ body: 'eski' });
+
+    // The quoted message deleted.
+    await sql`delete from public.messages where id = ${firstId}`;
+    expect((await extras(owner, roomId))[replyId]?.reply_to).toEqual({ gone: true });
+  });
+
+  it('keeps one reaction per table, named by the table aliases, the same when sent twice', async () => {
+    const { owner, guest, third, roomId } = await roomWithGuest();
+    const names = await aliases(roomId);
+    const sentOwner = await send(owner, roomId, 'selam');
+    const messageId = (sentOwner.body as { messageId: string }).messageId;
+
+    const heard = waitForBroadcast(owner, messagesChannel(roomId), BROADCAST.reaction);
+    await heard.subscribed;
+    expect(await react(guest, messageId, '👍')).toEqual(OK);
+    await heard.received;
+    await heard.close();
+    expect(await react(guest, messageId, '👍')).toEqual(OK);
+    expect(await react(owner, messageId, '👍')).toEqual(OK);
+    expect((await extras(owner, roomId))[messageId]?.reactions).toEqual([
+      { emoji: '👍', count: 2, aliases: [names.guest, names.owner], mine: true },
+    ]);
+    expect(await react(guest, messageId, '🔥')).toEqual(OK);
+    expect(await react(owner, messageId, null)).toEqual(OK);
+    expect((await extras(owner, roomId))[messageId]?.reactions).toEqual([
+      { emoji: '🔥', count: 1, aliases: [names.guest], mine: false },
+    ]);
+    expect((await extras(guest, roomId))[messageId]?.reactions).toEqual([
+      { emoji: '🔥', count: 1, aliases: [names.guest], mine: true },
+    ]);
+
+    expect(await react(guest, messageId, '💩')).toEqual({
+      status: 400,
+      body: errorBody('bad_request'),
+    });
+    expect(await react(third, messageId, '👍')).toEqual({
+      status: 403,
+      body: errorBody('not_in_room'),
+    });
+    expect(await react(guest, randomUUID(), '👍')).toEqual({
+      status: 404,
+      body: errorBody('not_found'),
+    });
+    // No account id anywhere in what a table reads.
+    const seen = JSON.stringify(await extras(owner, roomId));
+    expect(seen).not.toContain(await userIdOf(guest));
+
+    await sql`delete from public.messages where id = ${messageId}`;
+    expect(await sql`select count(*)::int as n from public.message_reactions`).toEqual([{ n: 0 }]);
+  });
+
+  // chat_react (docs/SPEC_V3.md §21.3): the table and the room, then the message's reactions.
+  it('reacts only after taking the room', async () => {
+    const { owner, guest, roomId } = await roomWithGuest();
+    const sentOwner = await send(owner, roomId, 'selam');
+    const messageId = (sentOwner.body as { messageId: string }).messageId;
+    expect(await react(guest, messageId, '👍')).toEqual(OK);
+    const guestId = await userIdOf(guest);
+
+    const holder = postgres(dbUrl, { max: 1, onnotice: () => {} });
+    const reacting = postgres(dbUrl, { max: 1, onnotice: () => {} });
+    try {
+      let reacted: Promise<unknown> = Promise.resolve();
+      await holder.begin(async (tx) => {
+        await tx`select id from public.rooms where id = ${roomId} for update`;
+        reacted = reacting`select changed from public.chat_react(${guestId}, ${messageId}, '🔥')`
+          .execute()
+          .catch((err: unknown) => err);
+        await waitUntilBlocked('chat_react');
+        await tx`set local lock_timeout = '2s'`;
+        const held = await tx`
+          select emoji from public.message_reactions where message_id = ${messageId} for update
+        `;
+        expect(held).toHaveLength(1);
+      });
+      expect(await reacted).toEqual([{ changed: true }]);
+    } finally {
+      await Promise.all([holder.end(), reacting.end()]);
+    }
   });
 });
 

@@ -1,5 +1,6 @@
 import {
   VENUE_CHAT_BROADCAST,
+  VENUE_CHAT_REACTION_BROADCAST,
   type VenueChatMessage,
   venueChatChannel,
 } from '@shared/venueChat.ts';
@@ -7,6 +8,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
 import { useBroadcast } from '@/features/rooms/useBroadcast';
+import { useReactions } from '@/features/chat/messageExtras';
 import { profileApi, venueChatApi } from '@/lib/api';
 import { stablePhoto } from '@/lib/photoUrls';
 
@@ -24,6 +26,8 @@ export function useVenueChat(venueId: string | undefined) {
     if (venueId) void queryClient.invalidateQueries({ queryKey: venueChatKeys.messages(venueId) });
   }, [queryClient, venueId]);
   useBroadcast(venueId ? venueChatChannel(venueId) : null, VENUE_CHAT_BROADCAST, refetch);
+  // A reaction moved (docs/SPEC_V3.md §21.3): the page again.
+  useBroadcast(venueId ? venueChatChannel(venueId) : null, VENUE_CHAT_REACTION_BROADCAST, refetch);
 
   return useQuery({
     queryKey: venueChatKeys.messages(venueId ?? ''),
@@ -43,4 +47,13 @@ export function useVenueChatProfile(messageId: string | undefined) {
     retry: false,
     queryFn: () => profileApi.getFromVenueChat(messageId ?? ''),
   });
+}
+
+// The reader's reactions (docs/SPEC_V3.md §21.2): shown at once; over the limit (10 per 10
+// seconds) the server answers rate_limited and the bubble quietly goes back to the page.
+export function useVenueChatReactions(venueId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useReactions(venueChatApi.react, () =>
+    queryClient.invalidateQueries({ queryKey: venueChatKeys.messages(venueId ?? '') }),
+  );
 }

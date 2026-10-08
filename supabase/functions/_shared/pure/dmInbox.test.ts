@@ -62,15 +62,19 @@ describe('withSentDm', () => {
     created_at: '2026-10-08T10:00:00.000Z',
     from_me: false,
     status: null,
+    reply_to: null,
+    reactions: [],
   };
   const sent = { id: 'm2', body: 'merhaba', created_at: '2026-10-08T10:00:05.000Z' };
 
   it('puts the sent message first with the sent tick', () => {
     expect(withSentDm([theirs], sent)).toEqual([
-      { ...sent, from_me: true, status: 'sent' },
+      { ...sent, from_me: true, status: 'sent', reply_to: null, reactions: [] },
       theirs,
     ]);
-    expect(withSentDm([], sent)).toEqual([{ ...sent, from_me: true, status: 'sent' }]);
+    expect(withSentDm([], sent)).toEqual([
+      { ...sent, from_me: true, status: 'sent', reply_to: null, reactions: [] },
+    ]);
   });
 
   it('keeps the order by time when a newer message arrived first', () => {
@@ -78,8 +82,16 @@ describe('withSentDm', () => {
     expect(withSentDm([newer, theirs], sent).map((m) => m.id)).toEqual(['m3', 'm2', 'm1']);
   });
 
+  it('carries the quote of a reply', () => {
+    const quote = { id: 'm1', body: 'selam', from_me: false };
+    expect(withSentDm([theirs], { ...sent, reply_to: quote })[0]).toMatchObject({
+      reply_to: quote,
+      reactions: [],
+    });
+  });
+
   it('leaves a page that already has the message as it is (read meanwhile, status moved)', () => {
-    const read = { ...sent, from_me: true, status: 'read' };
+    const read = { ...sent, from_me: true, status: 'read', reply_to: null, reactions: [] };
     expect(withSentDm([read, theirs], sent)).toEqual([read, theirs]);
   });
 });

@@ -547,6 +547,10 @@ export const tr = {
     react: 'Tepki ver',
     replyingTo: (name: string) => `Yanıtlanan: ${name}`,
     cancelReply: 'Yanıtı kaldır',
+    // A reply whose message was deleted or cannot be seen (docs/SPEC_V3.md §21.1).
+    quoteGone: 'Mesaj artık yok',
+    // The quoted message is the reader's own.
+    you: 'Sen',
     quoteLabel: (name: string, text: string) => `${name} mesajına yanıt: ${text}`,
     reactionChip: (emoji: string, n: number, mine: boolean) =>
       `${emoji} ${n}${mine ? ', sizin tepkiniz' : ''}`,
@@ -970,6 +974,7 @@ export const tr = {
     no_cards: 'Kart kalmadı.',
     reveal_closed: 'Süre doldu.',
     not_found: 'Bulunamadı.',
+    reply_unavailable: 'Yanıtladığın mesaj artık yok.',
     already_friends: 'Zaten arkadaşsınız.',
     not_friends: 'Artık arkadaş değilsiniz.',
     not_judge: 'Bu turda hakem diğer masa.',

@@ -44,6 +44,7 @@ export type ErrorCode =
   | 'no_cards'
   | 'reveal_closed'
   | 'not_found'
+  | 'reply_unavailable'
   | 'display_name_required'
   | 'display_name_invalid'
   | 'bio_invalid'
@@ -121,6 +122,9 @@ export const DOMAIN_ERROR_CODES: readonly ErrorCode[] = [
   'reveal_closed',
   'not_friends',
   'not_judge',
+  // Replies and reactions (docs/SPEC_V3.md §21): a quoted message out of reach, a reacted one gone.
+  'reply_unavailable',
+  'not_found',
 ];
 
 export function isDomainErrorCode(value: string): value is ErrorCode {

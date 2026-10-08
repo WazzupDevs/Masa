@@ -2,6 +2,8 @@
 // Broadcasts carry no data (clients reread through dm_messages_page); the push says only
 // "Yeni bir mesajın var". v3 step 6 (docs/SPEC_V3.md §18.2): the Mesajlar list and the ticks; a
 // status that really moves (delivered, read) is announced on dm:{thread_id} as dm_status.
+// docs/SPEC_V3.md §21: a reply names a message of the same conversation; a reaction is the
+// caller's one per message, announced on dm:{thread_id} as dm_reaction (no push, no unread).
 import { requireUser, serviceClient } from '../_shared/auth.ts';
 import { inBackground } from '../_shared/background.ts';
 import { broadcast } from '../_shared/broadcast.ts';
@@ -22,10 +24,21 @@ import { AppError } from '../_shared/pure/errors.ts';
 import { DM_MIN_INTERVAL_MS, prepareDm } from '../_shared/pure/friends.ts';
 import { containsProfanity } from '../_shared/pure/profanity.ts';
 import { dmPush } from '../_shared/pure/push.ts';
+import { isReaction, type Reaction } from '../_shared/pure/reactions.ts';
 import { BROADCAST, dmChannel } from '../_shared/pure/rooms.ts';
 
 const Body: z.ZodType<DmRequest> = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('send'), threadId: z.uuid(), body: z.string().max(2000) }),
+  z.object({
+    action: z.literal('send'),
+    threadId: z.uuid(),
+    body: z.string().max(2000),
+    replyTo: z.uuid().optional(),
+  }),
+  z.object({
+    action: z.literal('react'),
+    messageId: z.uuid(),
+    emoji: z.custom<Reaction>(isReaction).nullable(),
+  }),
   z.object({ action: z.literal('read'), threadId: z.uuid() }),
   z.object({ action: z.literal('inbox') }),
   z.object({ action: z.literal('delivered') }),
@@ -76,6 +89,7 @@ Deno.serve(
           target_thread_id: body.threadId,
           new_body: text,
           min_interval_ms: DM_MIN_INTERVAL_MS,
+          ...(body.replyTo ? { reply_to: body.replyTo } : {}),
         });
         if (error) throw dbError('dm_send_message', error);
         const sent = data[0];
@@ -84,6 +98,21 @@ Deno.serve(
         notifyInbox([sent.other_user_id], BROADCAST.dm);
         pushIfAllowed(db, sent.other_user_id, 'notify_dm', dmPush());
         return { ok: true, messageId: sent.message_id, createdAt: sent.created_at };
+      }
+
+      case 'react': {
+        const { data, error } = await db.rpc('dm_react', {
+          target_user_id: user.id,
+          target_message_id: body.messageId,
+          // null removes it; the generated argument type leaves out null.
+          new_emoji: body.emoji as string,
+        });
+        if (error) throw dbError('dm_react', error);
+        const row = data[0];
+        if (row?.changed) {
+          inBackground(broadcast(dmChannel(row.thread_id), BROADCAST.dmReaction));
+        }
+        return { ok: true };
       }
 
       case 'read': {

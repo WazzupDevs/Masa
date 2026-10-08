@@ -3,13 +3,27 @@
 // blocks, the profile and friend requests go through the message, never a profile or account id.
 import { randomUUID } from 'node:crypto';
 
+import postgres from 'postgres';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { VENUE_CHAT, venueChatChannel } from '../functions/_shared/pure/venueChat.ts';
+import {
+  VENUE_CHAT,
+  VENUE_CHAT_REACTION_BROADCAST,
+  venueChatChannel,
+} from '../functions/_shared/pure/venueChat.ts';
 import { deleteFixtureVenues, insertFixtureVenues } from './fixtures/venues.ts';
 import type { VenueChatPageResponse } from '../functions/_shared/pure/api/venueChat.ts';
-import { checkInAt, errorBody, onboarded, PHONES, setTestPhoto, TEST_AGE } from './helpers.ts';
-import { type Client, deleteUserByPhone, invoke, sql, userIdOf } from './local.ts';
+import {
+  checkInAt,
+  errorBody,
+  onboarded,
+  PHONES,
+  setTestPhoto,
+  TEST_AGE,
+  waitForBroadcast,
+  waitUntilBlocked,
+} from './helpers.ts';
+import { type Client, dbUrl, deleteUserByPhone, invoke, sql, userIdOf } from './local.ts';
 
 let venue: Record<string, string> = {};
 const V = 'at-anchor';
@@ -275,6 +289,8 @@ describe('venue chat: photos (venue-chat/page)', () => {
         body: 'adımla yazıyorum',
         createdAt: expect.any(String),
         fromMe: false,
+        replyTo: null,
+        reactions: [],
       },
       {
         id: expect.any(String),
@@ -285,6 +301,8 @@ describe('venue chat: photos (venue-chat/page)', () => {
         body: 'anonim yazıyorum',
         createdAt: expect.any(String),
         fromMe: false,
+        replyTo: null,
+        reactions: [],
       },
     ]);
     // Nothing of the photo rides on the anonymous message.
@@ -350,6 +368,166 @@ describe('venue chat: profile through the message', () => {
     const profiled = (await send(a, 'profilli', true)).body.messageId;
     await invoke(b, 'checkin', { action: 'leave' });
     await same(b, profiled);
+  });
+});
+
+describe('venue chat replies and reactions (docs/SPEC_V3.md §21)', () => {
+  const reply = async (client: Client, body: string, replyTo: string, profiled = false) => {
+    await sql`update public.venue_chat_rate set last_sent_at = '-infinity'`;
+    return invoke(client, 'venue-chat', {
+      action: 'send',
+      venueId: venue[V],
+      body,
+      profiled,
+      replyTo,
+    });
+  };
+  const react = (client: Client, messageId: string, emoji: string | null) =>
+    invoke(client, 'venue-chat', { action: 'react', messageId, emoji });
+  const byBody = async (client: Client) =>
+    Object.fromEntries((await fnPage(client)).map((m) => [m.body, m]));
+
+  it('quotes by the message’s own label rule, never an alias of a profiled sender', async () => {
+    const { a, b, c, aliases } = await threeAtVenue();
+    const anon = (await send(a, 'anonim')).body.messageId;
+    const named = (await send(a, 'adımla', true)).body.messageId;
+    expect((await reply(b, 'cevap 1', anon)).status).toBe(200);
+    expect((await reply(b, 'cevap 2', named)).status).toBe(200);
+
+    const seenByC = await byBody(c);
+    expect(seenByC['cevap 1']?.replyTo).toEqual({
+      gone: false,
+      id: anon,
+      body: 'anonim',
+      fromMe: false,
+      name: aliases[0],
+    });
+    expect(seenByC['cevap 2']?.replyTo).toEqual({
+      gone: false,
+      id: named,
+      body: 'adımla',
+      fromMe: false,
+      name: 'Ayşe',
+    });
+    expect((await byBody(a))['cevap 2']?.replyTo).toMatchObject({ fromMe: true });
+    expect(JSON.stringify(seenByC['cevap 2'])).not.toContain(aliases[0]);
+
+    // Out of reach: unknown, hidden or another venue's message; nothing is written.
+    const unavailable = { status: 409, body: errorBody('reply_unavailable') };
+    expect(await reply(b, 'x', randomUUID())).toEqual(unavailable);
+    const hidden = (await send(c, 'gizlenecek')).body.messageId;
+    await sql`update public.venue_chat_messages set hidden_at = now() where id = ${hidden}`;
+    expect(await reply(b, 'x', hidden)).toEqual(unavailable);
+    expect(Object.keys(await byBody(b))).not.toContain('x');
+
+    // Hidden after the reply: gone for the others, still the sender's own for the sender.
+    await sql`update public.venue_chat_messages set hidden_at = now() where id = ${named}`;
+    expect((await byBody(c))['cevap 2']?.replyTo).toEqual({ gone: true });
+    expect((await byBody(a))['cevap 2']?.replyTo).toMatchObject({ gone: false, id: named });
+    // Blocked: gone for the blocker.
+    expect(await invoke(c, 'safety', { action: 'block', venueChatMessageId: anon })).toEqual(OK);
+    expect((await byBody(c))['cevap 1']?.replyTo).toEqual({ gone: true });
+  });
+
+  it('shows how many per emoji and never who, one per account, 10 per 10 seconds', async () => {
+    const { a, b, c, aliases } = await threeAtVenue();
+    const messageId = (await send(a, 'merhaba', true)).body.messageId;
+
+    const heard = waitForBroadcast(
+      c,
+      venueChatChannel(venue[V] ?? ''),
+      VENUE_CHAT_REACTION_BROADCAST,
+    );
+    await heard.subscribed;
+    expect(await react(b, messageId, '👍')).toEqual(OK);
+    await heard.received;
+    await heard.close();
+    expect(await react(b, messageId, '👍')).toEqual(OK);
+    expect(await react(c, messageId, '👍')).toEqual(OK);
+    expect(await react(a, messageId, '🔥')).toEqual(OK);
+    const forC = (await byBody(c)).merhaba;
+    expect(forC?.reactions).toEqual([
+      { emoji: '👍', count: 2, mine: true },
+      { emoji: '🔥', count: 1, mine: false },
+    ]);
+    const [ids, names] = [
+      await Promise.all([a, b, c].map((x) => userIdOf(x))),
+      [...aliases, 'Ayşe', 'Burak', 'Cem'],
+    ];
+    const seen = JSON.stringify(forC?.reactions);
+    for (const value of [...ids, ...names]) expect(seen).not.toContain(value);
+
+    expect(await react(c, messageId, null)).toEqual(OK);
+    expect((await byBody(b)).merhaba?.reactions).toEqual([
+      { emoji: '👍', count: 1, mine: true },
+      { emoji: '🔥', count: 1, mine: false },
+    ]);
+
+    // The limit: b has sent 2 so far; 8 more pass, the 11th is rate_limited and changes nothing.
+    await sql`delete from public.venue_chat_reaction_rate`;
+    for (let i = 0; i < VENUE_CHAT.reactionWindowMax; i += 1) {
+      expect(await react(b, messageId, i % 2 ? '😂' : '👍')).toEqual(OK);
+    }
+    expect(await react(b, messageId, '🔥')).toEqual({
+      status: 429,
+      body: errorBody('rate_limited'),
+    });
+    expect((await byBody(b)).merhaba?.reactions).toContainEqual({
+      emoji: '😂',
+      count: 1,
+      mine: true,
+    });
+
+    // Hidden, gone or out of reach: not_found; no table at the venue: not_found.
+    const notFound = { status: 404, body: errorBody('not_found') };
+    await sql`update public.venue_chat_messages set hidden_at = now() where id = ${messageId}`;
+    expect(await react(a, messageId, '👍')).toEqual(notFound);
+    expect(await react(c, randomUUID(), '👍')).toEqual(notFound);
+
+    // Deleted after 24 hours with the message.
+    await sql`update public.venue_chat_messages set created_at = now() - interval '25 hours'`;
+    await sql`select private.delete_old_venue_chat(${VENUE_CHAT.keepHours})`;
+    expect(await sql`select count(*)::int as n from public.venue_chat_reactions`).toEqual([
+      { n: 0 },
+    ]);
+  });
+
+  // venue_chat_react (docs/SPEC_V3.md §21.3): the table, then the reaction limit, then reactions.
+  it('reacts only after taking the table', async () => {
+    const { a, b } = await threeAtVenue();
+    const messageId = (await send(a, 'merhaba')).body.messageId;
+    expect(await react(b, messageId, '👍')).toEqual(OK);
+    const bId = await userIdOf(b);
+
+    const holder = postgres(dbUrl, { max: 1, onnotice: () => {} });
+    const reacting = postgres(dbUrl, { max: 1, onnotice: () => {} });
+    try {
+      let reacted: Promise<unknown> = Promise.resolve();
+      await holder.begin(async (tx) => {
+        await tx`
+          select id from public.table_sessions
+          where user_id = ${bId} and status = 'active' for no key update
+        `;
+        reacted = reacting`
+          select changed from public.venue_chat_react(${bId}, ${messageId}, '🔥', 10, 10)
+        `
+          .execute()
+          .catch((err: unknown) => err);
+        await waitUntilBlocked('venue_chat_react');
+        await tx`set local lock_timeout = '2s'`;
+        expect(
+          await tx`select 1 from public.venue_chat_reaction_rate where user_id = ${bId} for update`,
+        ).toHaveLength(1);
+        expect(
+          await tx`
+            select emoji from public.venue_chat_reactions where message_id = ${messageId} for update
+          `,
+        ).toHaveLength(1);
+      });
+      expect(await reacted).toEqual([{ changed: true }]);
+    } finally {
+      await Promise.all([holder.end(), reacting.end()]);
+    }
   });
 });
 

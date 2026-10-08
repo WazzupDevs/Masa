@@ -100,6 +100,29 @@ appId: app.kabuk.mobile
       id: propose-tabu
     timeout: 15000
 - takeScreenshot: 16-room-two-tables
+# docs/SPEC_V3.md §21: the bot table writes in the room chat; this table reacts with ❤️ (the second
+# of the six) and the bot sees it.
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: chat-send
+      BODY: '{"body":"Selam masa"}'
+- extendedWaitUntil:
+    visible: Selam masa
+    timeout: 15000
+- longPressOn: Selam masa
+- extendedWaitUntil:
+    visible:
+      id: reaction-bar
+    timeout: 10000
+- tapOn:
+    id: react-1
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: chat-reactions
+      EXPECT_REACTION: ❤️
+- takeScreenshot: 16a-room-reaction
 # The bot table proposes Sesli Tabu; the game starts when this table accepts.
 - runScript:
     file: ../scripts/bot.js

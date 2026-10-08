@@ -3,6 +3,7 @@
 // twice leaves the same state and answer as sending it once, and an integration test sends it twice
 // to show that (named next to each entry). Anything else may already have taken effect (a message
 // sent, a request created), so its 5xx is shown to the user instead.
+import type { ChatRequest } from './api/chat.ts';
 import type { CheckinRequest } from './api/checkin.ts';
 import type { DmRequest, FriendsRequest } from './api/friends.ts';
 import type {
@@ -20,6 +21,7 @@ import type { VenueChatRequest } from './api/venueChat.ts';
 type CallName =
   | 'ping'
   | `checkin/${CheckinRequest['action']}`
+  | `chat/${ChatRequest['action']}`
   | `profile/${ProfileRequest['action']}`
   | `friends/${FriendsRequest['action']}`
   | `dm/${DmRequest['action']}`
@@ -89,6 +91,12 @@ export const IDEMPOTENT_CALLS = [
   'reveal/finalize',
   // checkin.test "checkin/leave and expiry": "ends the active table and is idempotent"
   'checkin/leave',
+  // friends.test "DM replies and reactions (docs/SPEC_V3.md §21)": "keeps one reaction per
+  // account: set, change, take back, and the same twice"
+  'dm/react',
+  // chat.test "room chat replies and reactions (docs/SPEC_V3.md §21)": "keeps one reaction per
+  // table, named by the table aliases, the same when sent twice"
+  'chat/react',
   // venueChat.test "venue chat: photos (venue-chat/page)": "signs the photo of a profiled message
   // and never gives an anonymous one a photo path"
   'venue-chat/page',

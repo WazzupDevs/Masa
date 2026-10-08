@@ -90,6 +90,8 @@ export const dmChannel = (threadId: string): string => `dm:${threadId}`;
 // v3 step 6 (docs/SPEC_V3.md §18.2): the two members send here themselves, event TYPING with an
 // empty payload that the receiver never reads.
 export const dmTypingChannel = (threadId: string): string => `dm_typing:${threadId}`;
+// The room chat's channel: Postgres Changes on messages, and the server's `reaction` broadcast.
+export const messagesChannel = (roomId: string): string => `messages:${roomId}`;
 export const TYPING_EVENT = 'typing' as const;
 
 export const BROADCAST = {
@@ -104,6 +106,9 @@ export const BROADCAST = {
   dmMessage: 'dm_message',
   // dm:{thread_id}: a status of the sender's messages moved (delivered or read); no data.
   dmStatus: 'dm_status',
+  // docs/SPEC_V3.md §21.3: a reaction moved; no data. dm:{thread_id} and messages:{room_id}.
+  dmReaction: 'dm_reaction',
+  reaction: 'reaction',
 } as const;
 
 // The room screen's status check (apps/mobile/src/features/rooms/queries.ts): Realtime delivers a

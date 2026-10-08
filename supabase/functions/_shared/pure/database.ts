@@ -120,6 +120,8 @@ export type Database = {
           body: string;
           created_at: string;
           id: string;
+          replied: boolean;
+          reply_to_id: string | null;
           sender_user_id: string;
           thread_id: string;
         };
@@ -127,6 +129,8 @@ export type Database = {
           body: string;
           created_at?: string;
           id?: string;
+          replied?: boolean;
+          reply_to_id?: string | null;
           sender_user_id: string;
           thread_id: string;
         };
@@ -134,15 +138,53 @@ export type Database = {
           body?: string;
           created_at?: string;
           id?: string;
+          replied?: boolean;
+          reply_to_id?: string | null;
           sender_user_id?: string;
           thread_id?: string;
         };
         Relationships: [
           {
+            foreignKeyName: 'dm_messages_reply_to_id_fkey';
+            columns: ['reply_to_id'];
+            isOneToOne: false;
+            referencedRelation: 'dm_messages';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'dm_messages_thread_id_fkey';
             columns: ['thread_id'];
             isOneToOne: false;
             referencedRelation: 'dm_threads';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      dm_reactions: {
+        Row: {
+          created_at: string;
+          emoji: string;
+          message_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          emoji: string;
+          message_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          emoji?: string;
+          message_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'dm_reactions_message_id_fkey';
+            columns: ['message_id'];
+            isOneToOne: false;
+            referencedRelation: 'dm_messages';
             referencedColumns: ['id'];
           },
         ];
@@ -486,11 +528,49 @@ export type Database = {
           },
         ];
       };
+      message_reactions: {
+        Row: {
+          created_at: string;
+          emoji: string;
+          message_id: string;
+          session_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          emoji: string;
+          message_id: string;
+          session_id: string;
+        };
+        Update: {
+          created_at?: string;
+          emoji?: string;
+          message_id?: string;
+          session_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'message_reactions_message_id_fkey';
+            columns: ['message_id'];
+            isOneToOne: false;
+            referencedRelation: 'messages';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'message_reactions_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'table_sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       messages: {
         Row: {
           body: string;
           created_at: string;
           id: string;
+          replied: boolean;
+          reply_to_id: string | null;
           room_id: string;
           sender_alias: string;
           session_id: string;
@@ -499,6 +579,8 @@ export type Database = {
           body: string;
           created_at?: string;
           id?: string;
+          replied?: boolean;
+          reply_to_id?: string | null;
           room_id: string;
           sender_alias: string;
           session_id: string;
@@ -507,11 +589,20 @@ export type Database = {
           body?: string;
           created_at?: string;
           id?: string;
+          replied?: boolean;
+          reply_to_id?: string | null;
           room_id?: string;
           sender_alias?: string;
           session_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'messages_reply_to_id_fkey';
+            columns: ['reply_to_id'];
+            isOneToOne: false;
+            referencedRelation: 'messages';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'messages_room_id_fkey';
             columns: ['room_id'];
@@ -1133,6 +1224,8 @@ export type Database = {
           hidden_at: string | null;
           id: string;
           profiled: boolean;
+          replied: boolean;
+          reply_to_id: string | null;
           sender_alias: string;
           sender_user_id: string;
           session_id: string;
@@ -1144,6 +1237,8 @@ export type Database = {
           hidden_at?: string | null;
           id?: string;
           profiled: boolean;
+          replied?: boolean;
+          reply_to_id?: string | null;
           sender_alias: string;
           sender_user_id: string;
           session_id: string;
@@ -1155,12 +1250,21 @@ export type Database = {
           hidden_at?: string | null;
           id?: string;
           profiled?: boolean;
+          replied?: boolean;
+          reply_to_id?: string | null;
           sender_alias?: string;
           sender_user_id?: string;
           session_id?: string;
           venue_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'venue_chat_messages_reply_to_id_fkey';
+            columns: ['reply_to_id'];
+            isOneToOne: false;
+            referencedRelation: 'venue_chat_messages';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'venue_chat_messages_session_id_fkey';
             columns: ['session_id'];
@@ -1197,6 +1301,53 @@ export type Database = {
           window_started_at?: string;
         };
         Relationships: [];
+      };
+      venue_chat_reaction_rate: {
+        Row: {
+          count: number;
+          user_id: string;
+          window_started_at: string;
+        };
+        Insert: {
+          count: number;
+          user_id: string;
+          window_started_at: string;
+        };
+        Update: {
+          count?: number;
+          user_id?: string;
+          window_started_at?: string;
+        };
+        Relationships: [];
+      };
+      venue_chat_reactions: {
+        Row: {
+          created_at: string;
+          emoji: string;
+          message_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          emoji: string;
+          message_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          emoji?: string;
+          message_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'venue_chat_reactions_message_id_fkey';
+            columns: ['message_id'];
+            isOneToOne: false;
+            referencedRelation: 'venue_chat_messages';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       venue_chat_reports: {
         Row: {
@@ -1379,10 +1530,22 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      chat_react: {
+        Args: {
+          new_emoji: string;
+          target_message_id: string;
+          target_user_id: string;
+        };
+        Returns: {
+          changed: boolean;
+          room_id: string;
+        }[];
+      };
       chat_send: {
         Args: {
           min_interval_ms: number;
           new_body: string;
+          reply_to?: string;
           target_room_id: string;
           target_user_id: string;
         };
@@ -1390,6 +1553,8 @@ export type Database = {
           body: string;
           created_at: string;
           id: string;
+          replied: boolean;
+          reply_to_id: string | null;
           room_id: string;
           sender_alias: string;
           session_id: string;
@@ -1427,13 +1592,27 @@ export type Database = {
           created_at: string;
           from_me: boolean;
           id: string;
+          reactions: Json;
+          reply_to: Json;
           status: string;
+        }[];
+      };
+      dm_react: {
+        Args: {
+          new_emoji: string;
+          target_message_id: string;
+          target_user_id: string;
+        };
+        Returns: {
+          changed: boolean;
+          thread_id: string;
         }[];
       };
       dm_send: {
         Args: {
           min_interval_ms: number;
           new_body: string;
+          reply_to?: string;
           target_thread_id: string;
           target_user_id: string;
         };
@@ -1443,6 +1622,7 @@ export type Database = {
         Args: {
           min_interval_ms: number;
           new_body: string;
+          reply_to?: string;
           target_thread_id: string;
           target_user_id: string;
         };
@@ -1820,6 +2000,14 @@ export type Database = {
       reveal_finalize: {
         Args: { target_room_id: string; target_user_id: string };
         Returns: string;
+      };
+      room_chat_extras: {
+        Args: { target_room_id: string };
+        Returns: {
+          message_id: string;
+          reactions: Json;
+          reply_to: Json;
+        }[];
       };
       room_member_profile: { Args: { target_room_id: string }; Returns: string };
       rooms_answer_game: {
@@ -2754,6 +2942,8 @@ export type Database = {
           id: string;
           photo_path: string;
           profiled: boolean;
+          reactions: Json;
+          reply_to: Json;
           sender_alias: string;
         }[];
       };
@@ -2761,11 +2951,25 @@ export type Database = {
         Args: { target_message_id: string; target_user_id: string };
         Returns: string;
       };
+      venue_chat_react: {
+        Args: {
+          new_emoji: string;
+          target_message_id: string;
+          target_user_id: string;
+          window_max: number;
+          window_seconds: number;
+        };
+        Returns: {
+          changed: boolean;
+          venue_id: string;
+        }[];
+      };
       venue_chat_send: {
         Args: {
           min_interval_ms: number;
           new_body: string;
           profiled: boolean;
+          reply_to?: string;
           target_user_id: string;
           target_venue_id: string;
           window_max: number;
@@ -2777,6 +2981,8 @@ export type Database = {
           hidden_at: string | null;
           id: string;
           profiled: boolean;
+          replied: boolean;
+          reply_to_id: string | null;
           sender_alias: string;
           sender_user_id: string;
           session_id: string;
