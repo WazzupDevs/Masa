@@ -208,7 +208,7 @@ export default function VenueChatScreen() {
               name={m.fromMe ? tr.venueChat.you : senderLabel(m)}
               avatar={
                 m.fromMe ? undefined : m.profiled ? (
-                  <Avatar kind="profile" name={senderLabel(m)} size="sm" />
+                  <Avatar kind="profile" name={senderLabel(m)} photoUrl={m.photoUrl} size="sm" />
                 ) : (
                   <Avatar kind="table" alias={senderLabel(m)} size="sm" />
                 )

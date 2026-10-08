@@ -14,6 +14,7 @@ import type {
 } from './api/games.ts';
 import type { ProfileRequest } from './api/profile.ts';
 import type { RevealRequest } from './api/reveal.ts';
+import type { VenueChatRequest } from './api/venueChat.ts';
 
 // Every call the list below may name; a misspelled entry does not compile.
 type CallName =
@@ -27,7 +28,8 @@ type CallName =
   | `harf/${HarfRequest['action']}`
   | `sarki/${SarkiRequest['action']}`
   | `ibre/${IbreRequest['action']}`
-  | `reveal/${RevealRequest['action']}`;
+  | `reveal/${RevealRequest['action']}`
+  | `venue-chat/${VenueChatRequest['action']}`;
 
 export const IDEMPOTENT_CALLS = [
   // updateGate.test "update gate, open": "answers the launch and foreground ping without a user"
@@ -87,6 +89,9 @@ export const IDEMPOTENT_CALLS = [
   'reveal/finalize',
   // checkin.test "checkin/leave and expiry": "ends the active table and is idempotent"
   'checkin/leave',
+  // venueChat.test "venue chat: photos (venue-chat/page)": "signs the photo of a profiled message
+  // and never gives an anonymous one a photo path"
+  'venue-chat/page',
 ] as const satisfies readonly CallName[];
 
 export const RETRY_DELAY_MS = 500;

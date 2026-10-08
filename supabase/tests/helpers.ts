@@ -2,11 +2,13 @@
 import { expect } from 'vitest';
 
 import { ageOn, istanbulToday } from '../functions/_shared/pure/age.ts';
+import type { ProfileUploadUrl } from '../functions/_shared/pure/api/profile.ts';
 import {
   CURRENT_KVKK_VERSION,
   CURRENT_LOCATION_CONSENT_VERSION,
   CURRENT_TERMS_VERSION,
 } from '../functions/_shared/pure/consent.ts';
+import { PHOTO_BUCKET } from '../functions/_shared/pure/profile.ts';
 import { ANCHOR, FIXTURE_VENUES, offset } from './fixtures/venues.ts';
 import { type Client, invoke, signIn, sql } from './local.ts';
 
@@ -63,6 +65,49 @@ export async function checkInAt(
   });
   expect(res.status, JSON.stringify(res.body)).toBe(200);
   return res.body as { sessionId: string; alias: string };
+}
+
+// A profile photo through the app's own path (upload URL, then commit): a minimal JPEG without
+// metadata. Returns the stored path.
+const TEST_JPEG = new Uint8Array([
+  0xff,
+  0xd8,
+  0xff,
+  0xdb,
+  0x00,
+  0x43,
+  0x00,
+  ...Array.from({ length: 64 }, (_, i) => (i % 50) + 1),
+  0xff,
+  0xda,
+  0x00,
+  0x08,
+  0x01,
+  0x01,
+  0x00,
+  0x00,
+  0x3f,
+  0x00,
+  0x12,
+  0xff,
+  0x00,
+  0x34,
+  0x56,
+  0xff,
+  0xd9,
+]);
+
+export async function setTestPhoto(client: Client): Promise<string> {
+  const res = await invoke(client, 'profile', { action: 'photo-upload-url' });
+  expect(res.status, JSON.stringify(res.body)).toBe(200);
+  const { path, token } = res.body as ProfileUploadUrl;
+  const { error } = await client.storage
+    .from(PHOTO_BUCKET)
+    .uploadToSignedUrl(path, token, TEST_JPEG, { contentType: 'image/jpeg' });
+  expect(error).toBeNull();
+  const commit = await invoke(client, 'profile', { action: 'photo-commit', path });
+  expect(commit, JSON.stringify(commit.body)).toEqual({ status: 200, body: { ok: true } });
+  return path;
 }
 
 export function errorBody(code: string) {

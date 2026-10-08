@@ -408,13 +408,14 @@ Gerekçeler `docs/DECISIONS.md` → "Tabu modları (v3 adım 4)".
   - `sender_alias`, `profiled boolean`, `body` (1–200), `created_at`, `hidden_at timestamptz null`.
 - **`venue_chat_reports`:** `message_id` → `venue_chat_messages` on delete cascade, `reporter_user_id` (istemciye kapalı), `created_at`; primary key `(message_id, reporter_user_id)`.
 - **Silme:** Mesajlar 24 saatte silinir (saatlik cron). Şikayet kopyası `reports`'ta 30 gün kalır (bugünkü cron).
-- **Okuma:** Tablo okumasıyla değil, `venue_chat_page(venue_id, before?)` RPC'siyle. Security definer, yalnızca okur, `set search_path = ''`. Her mesaj için döner:
-  - `id`, `profiled`, `sender_alias` (**yalnızca anonim mesajda**), `display_name` (yalnızca profilli mesajda), `body`, `created_at`, `from_me`.
-  - **Profilli mesajda masa adı gitmez** (proje sahibi düzeltmesi): ad, fotoğraf ve masa adı birlikte giderse lobideki nokta başlığıyla kişinin kampüsteki yeri ortaya çıkar. `sender_alias` kolonu tabloda durur (şikayet kopyası, yalnızca sunucu), RPC profilli mesajda `null` döner. Entegrasyon testi bunu `venue_chat_page`, `venue_chat:` yükleri ve `profile/get` yanıtları üzerinden doğrular.
+- **Okuma:** Tablo okumasıyla değil, `venue-chat/page { venueId, before? }` ile (adım 9, saha testi: profilli mesajda fotoğraf görünmüyordu). Fonksiyon service role'e kapalı `venue_chat_page_for(user, venue_id, before?)` RPC'sini çağırır, profilli mesajların fotoğraflarını imzalar (1 saat, `dm/inbox` gibi) ve yolu değil imzalı URL'i döner. Eski build'ler için `venue_chat_page(venue_id, before?)` (security definer, yalnızca okur, `set search_path = ''`, fotoğrafsız) durur. Her mesaj için döner:
+  - `id`, `profiled`, `senderAlias` (**yalnızca anonim mesajda**), `displayName` ve `photoUrl` (yalnızca profilli mesajda; fotoğraf yoksa ya da gizlenmişse `null`), `body`, `createdAt`, `fromMe`.
+  - **Fotoğraf:** profilli mesajın görünen adını gören kitleye, yani o an mekanda aktif masası olanlara gider (kural 4: profil mesaj üzerinden aynı kitleye açılır). **Anonim mesajda fotoğraf asla gitmez:** RPC anonim mesajda `photo_path` döndürmez; entegrasyon testi hem RPC'yi hem fonksiyon yanıtını denetler.
+  - **Profilli mesajda masa adı gitmez** (proje sahibi düzeltmesi): ad, fotoğraf ve masa adı birlikte giderse lobideki nokta başlığıyla kişinin kampüsteki yeri ortaya çıkar. `sender_alias` kolonu tabloda durur (şikayet kopyası, yalnızca sunucu), RPC profilli mesajda `null` döner. Entegrasyon testi bunu `venue_chat_page`, `venue-chat/page`, `venue_chat:` yükleri ve `profile/get` yanıtları üzerinden doğrular.
   - Aktif masası o mekanda olmayana boş döner.
   - İki yönlü engel varsa mesaj dönmez.
   - `hidden_at` dolu mesaj dönmez; gönderenin kendisine döner (kendi mesajının gizlendiğini ayırt edemez).
-  - `public_id`, hesap id'si ve fotoğraf dönmez. Profil `profile/get { venueChatMessageId }` ile açılır (§7.5).
+  - `public_id` ve hesap id'si dönmez. Profil `profile/get { venueChatMessageId }` ile açılır (§7.5).
 
 ### 7.3 Anonim ya da profilli
 
@@ -567,7 +568,7 @@ Genel testler yeni RPC'lerin de hesap id'si ve arkadaşlık öncesi `public_id` 
 | Topic                                            | Kim abone olur                          | Kim yayın yapar           | Olaylar                                                              |
 | ------------------------------------------------ | --------------------------------------- | ------------------------- | -------------------------------------------------------------------- |
 | `venue:{venue_id}`                               | Mekanda aktif masası olanlar (değişmez) | Sunucu                    | `lobby_changed`                                                      |
-| `venue_chat:{venue_id}` (yeni)                   | Mekanda aktif masası olanlar            | Yalnızca sunucu           | `venue_chat` (veri içermez; istemci `venue_chat_page` okur)          |
+| `venue_chat:{venue_id}` (yeni)                   | Mekanda aktif masası olanlar            | Yalnızca sunucu           | `venue_chat` (veri içermez; istemci `venue-chat/page` okur)          |
 | `session:{session_id}`                           | O masa (değişmez)                       | Sunucu                    | `join_request`, `join_accepted`                                      |
 | `room:` `messages:` `game:` `presence:{room_id}` | Odanın iki masası (değişmez)            | Üyeler (presence), sunucu | `game_proposals` değişiklikleri `room:` Postgres Changes'ına eklenir |
 | `inbox:{user_id}`, `dm:{thread_id}`              | Değişmez                                | Sunucu                    | Değişmez; adım 6'dan itibaren `dm:` üzerinde `dm_status` da (§18.2)  |

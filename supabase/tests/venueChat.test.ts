@@ -7,7 +7,8 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { VENUE_CHAT, venueChatChannel } from '../functions/_shared/pure/venueChat.ts';
 import { deleteFixtureVenues, insertFixtureVenues } from './fixtures/venues.ts';
-import { checkInAt, errorBody, onboarded, PHONES, TEST_AGE } from './helpers.ts';
+import type { VenueChatPageResponse } from '../functions/_shared/pure/api/venueChat.ts';
+import { checkInAt, errorBody, onboarded, PHONES, setTestPhoto, TEST_AGE } from './helpers.ts';
 import { type Client, deleteUserByPhone, invoke, sql, userIdOf } from './local.ts';
 
 let venue: Record<string, string> = {};
@@ -55,6 +56,17 @@ async function page(client: Client) {
   const { data, error } = await client.rpc('venue_chat_page', { target_venue_id: venue[V] ?? '' });
   if (error) throw error;
   return data;
+}
+
+// The page as the app reads it (docs/SPEC_V3.md §7.2): through the function, photos signed.
+async function fnPage(client: Client, before?: string) {
+  const res = await invoke(client, 'venue-chat', {
+    action: 'page',
+    venueId: venue[V],
+    ...(before ? { before } : {}),
+  });
+  expect(res.status, JSON.stringify(res.body)).toBe(200);
+  return (res.body as VenueChatPageResponse).messages;
 }
 
 const report = (client: Client, messageId: string) =>
@@ -232,6 +244,71 @@ describe('venue chat: anonymous and profiled messages', () => {
     expect(seen).not.toContain(own?.public_id ?? 'missing');
     // The broadcast carries no data.
     expect(payloads).toEqual([expect.objectContaining({ event: 'venue_chat', payload: {} })]);
+  });
+});
+
+describe('venue chat: photos (venue-chat/page)', () => {
+  it('signs the photo of a profiled message and never gives an anonymous one a photo path', async () => {
+    const { a, b, aliases } = await threeAtVenue();
+    const path = await setTestPhoto(a);
+    await send(a, 'anonim yazıyorum');
+    await send(a, 'adımla yazıyorum', true);
+
+    // The RPC behind the function: a path only on the profiled message.
+    const rows = await sql`
+      select body, photo_path, sender_alias
+      from public.venue_chat_page_for(${await userIdOf(b)}, ${venue[V] ?? ''})
+    `;
+    expect(rows).toEqual([
+      { body: 'adımla yazıyorum', photo_path: path, sender_alias: null },
+      { body: 'anonim yazıyorum', photo_path: null, sender_alias: aliases[0] },
+    ]);
+
+    const seen = await fnPage(b);
+    expect(seen).toEqual([
+      {
+        id: expect.any(String),
+        profiled: true,
+        senderAlias: null,
+        displayName: 'Ayşe',
+        photoUrl: expect.stringContaining('token='),
+        body: 'adımla yazıyorum',
+        createdAt: expect.any(String),
+        fromMe: false,
+      },
+      {
+        id: expect.any(String),
+        profiled: false,
+        senderAlias: aliases[0],
+        displayName: null,
+        photoUrl: null,
+        body: 'anonim yazıyorum',
+        createdAt: expect.any(String),
+        fromMe: false,
+      },
+    ]);
+    // Nothing of the photo rides on the anonymous message.
+    expect(JSON.stringify(seen[1])).not.toContain(path);
+    // Older messages: before the newest one's time.
+    expect((await fnPage(b, seen[0]?.createdAt)).map((m) => m.body)).toEqual(['anonim yazıyorum']);
+    // The same page however often it is read (apiRetry: venue-chat/page).
+    const again = await fnPage(b);
+    expect(again.map(({ photoUrl, ...m }) => ({ ...m, photo: photoUrl !== null }))).toEqual(
+      seen.map(({ photoUrl, ...m }) => ({ ...m, photo: photoUrl !== null })),
+    );
+  });
+
+  it('gives no photo while it is hidden, and nothing without a live table at the venue', async () => {
+    const { a, b } = await threeAtVenue();
+    await setTestPhoto(a);
+    await send(a, 'adımla yazıyorum', true);
+    await sql`update public.profiles set photo_hidden_at = now() where id = ${await userIdOf(a)}`;
+    expect(await fnPage(b)).toEqual([
+      expect.objectContaining({ displayName: 'Ayşe', photoUrl: null }),
+    ]);
+
+    expect(await invoke(b, 'checkin', { action: 'leave' })).toEqual(OK);
+    expect(await fnPage(b)).toEqual([]);
   });
 });
 

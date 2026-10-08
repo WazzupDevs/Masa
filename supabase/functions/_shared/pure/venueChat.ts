@@ -50,13 +50,14 @@ export function shouldHide(reporters: readonly string[], senderId: string): bool
   return new Set(reporters.filter((r) => r !== senderId)).size >= VENUE_CHAT.hideAfterReports;
 }
 
-// One message as venue_chat_page returns it: a profiled message carries the display name and no
-// table alias; an anonymous one the alias and no name.
+// One message as venue-chat/page returns it: a profiled message carries the display name, the
+// photo (signed, if any) and no table alias; an anonymous one the alias, no name and no photo.
 export type VenueChatMessage = {
   id: string;
   profiled: boolean;
   senderAlias: string | null;
   displayName: string | null;
+  photoUrl: string | null;
   body: string;
   createdAt: string;
   fromMe: boolean;

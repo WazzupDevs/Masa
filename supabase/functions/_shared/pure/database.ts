@@ -2726,6 +2726,24 @@ export type Database = {
           sender_alias: string;
         }[];
       };
+      venue_chat_page_for: {
+        Args: {
+          before?: string;
+          page_size?: number;
+          target_user_id: string;
+          target_venue_id: string;
+        };
+        Returns: {
+          body: string;
+          created_at: string;
+          display_name: string;
+          from_me: boolean;
+          id: string;
+          photo_path: string;
+          profiled: boolean;
+          sender_alias: string;
+        }[];
+      };
       venue_chat_profile_owner: {
         Args: { target_message_id: string; target_user_id: string };
         Returns: string;
