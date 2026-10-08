@@ -3,7 +3,7 @@ import { parseGameState } from '@shared/tabu.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, useWindowDimensions, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
@@ -36,7 +36,7 @@ import { track, trackOnce } from '@/lib/analytics';
 import { roomsApi } from '@/lib/api';
 import { useKeepAwakeWhile } from '@/lib/keepAwake';
 import { useTheme } from '@/theme/ThemeProvider';
-import { SPACING } from '@/theme/tokens';
+import { NARROW_SCREEN, SPACING } from '@/theme/tokens';
 
 export default function RoomScreen() {
   const { colors } = useTheme();
@@ -136,11 +136,7 @@ export default function RoomScreen() {
       roomId={r.id}
       title={title}
       subtitle={tr.rooms.roomEyebrow(concept)}
-      faces={[
-        // The own table's face comes from its session (Avatar → seed), the other's from its alias.
-        { alias: r.owner_alias, seed: isOwner ? sessionId : undefined },
-        ...(r.guest_alias ? [{ alias: r.guest_alias, seed: isOwner ? undefined : sessionId }] : []),
-      ]}
+      aliases={[r.owner_alias, ...(r.guest_alias ? [r.guest_alias] : [])]}
       guestSessionId={r.guest_session_id}
       hasOtherTable={hasOtherTable}
       onEnd={() => exit.mutate()}
@@ -309,7 +305,7 @@ function RoomTopBar({
   roomId,
   title,
   subtitle,
-  faces,
+  aliases,
   guestSessionId,
   hasOtherTable,
   onEnd,
@@ -319,7 +315,7 @@ function RoomTopBar({
   roomId: string;
   title: string;
   subtitle: string;
-  faces: readonly TableFace[];
+  aliases: readonly string[];
   guestSessionId: string | null;
   hasOtherTable: boolean;
   onEnd: () => void;
@@ -331,13 +327,16 @@ function RoomTopBar({
   const safety = useRoomSafety(roomId);
   const member = useRoomMemberProfile(roomId, guestSessionId);
   const publicId = member.data;
+  // On a narrow screen "Odayı bitir" is an icon: the label left the tables' names a letter.
+  const { width, fontScale } = useWindowDimensions();
+  const narrow = width < NARROW_SCREEN * Math.max(1, fontScale);
   return (
     <>
       <ChatTopBar
         onBack={onClose}
         title={title}
         subtitle={subtitle}
-        leading={<TableFaces faces={faces} />}
+        leading={<TableFaces aliases={aliases} />}
         onPressTitle={
           publicId
             ? () => router.push({ pathname: '/people/[publicId]', params: { publicId } })
@@ -351,6 +350,8 @@ function RoomTopBar({
               size="sm"
               testID="end-room"
               label={tr.rooms.end}
+              icon={narrow ? 'exit-outline' : undefined}
+              iconOnly={narrow}
               onPress={onEnd}
               disabled={ending}
             />
@@ -395,14 +396,12 @@ function RoomTopBar({
   );
 }
 
-type TableFace = { alias: string; seed?: string };
-
 // The tables in the room, the second a little over the first.
-function TableFaces({ faces }: { faces: readonly TableFace[] }) {
+function TableFaces({ aliases }: { aliases: readonly string[] }) {
   const { colors, shape } = useTheme();
   return (
     <View className="flex-row">
-      {faces.map(({ alias, seed }, i) => (
+      {aliases.map((alias, i) => (
         <View
           key={alias}
           style={
@@ -417,7 +416,7 @@ function TableFaces({ faces }: { faces: readonly TableFace[] }) {
               : undefined
           }
         >
-          <Avatar kind="table" alias={alias} seed={seed} size="md" />
+          <Avatar kind="table" alias={alias} size="md" />
         </View>
       ))}
     </View>

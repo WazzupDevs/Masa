@@ -22,10 +22,10 @@ type Size = keyof typeof AVATAR_SIZE;
 const ICON_SHARE = 0.56;
 
 type Props =
-  // An anonymous table: a game-night icon on a coloured disc. `seed` picks them: the table session
-  // id for the viewer's own table (the face stays for the whole check-in, a new name keeps it),
-  // otherwise the alias. Never tappable (no profile).
-  | { kind: 'table'; alias: string; seed?: string; size?: Size }
+  // An anonymous table: a game-night icon on a coloured disc, picked from the alias, so every phone
+  // shows a table with the same face (its own one too); a new name brings a new face. Never
+  // tappable (no profile).
+  | { kind: 'table'; alias: string; size?: Size }
   // A profile: the photo, or the display name's initials. Tappable when it opens the profile card.
   | {
       kind: 'profile';
@@ -53,7 +53,7 @@ export function Avatar(props: Props) {
   };
 
   if (props.kind === 'table') {
-    const face = tableAvatarOf(props.seed ?? props.alias);
+    const face = tableAvatarOf(props.alias);
     const icon = Math.round(side * ICON_SHARE);
     return (
       <View

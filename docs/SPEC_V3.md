@@ -1474,3 +1474,68 @@ Tasarımın bileşenleriyle:
 12. **Tek masalı sürümler:** Harf Kapmaca, Şarkıda Geçsin ve İbre'de en az 2 kişi.
 
 Ek kararlar: oyuncu sayısı yalnızca Sahtekar'da ve öneri/kabulle (§20.1); itiraz hakkı masa başına 3 (§20.3, §20.4); süreli her yeni oyunda 10 sn'lik hazır durumu (§20.1).
+
+## 21. Adım 9: Yanıt ve tepki
+
+Üç sohbette de (DM, oda sohbeti, mekan sohbeti) WhatsApp'taki gibi bir mesaja yanıt verilir ve tepki bırakılır. Kapsam bilerek dar: düzenleme, silme, iletme, birden çok tepki ve tepki bildirimi yok. Görsel parçalar (alıntı şeridi, kaydırma, tepki seçici, tepki çipleri) tasarımın Aşama 8 sohbet PR'ından gelir; bu bölüm veri, API ve kuralları tanımlar.
+
+### 21.1 Yanıt
+
+- **Hareket:** balon sağa kaydırılınca yazma alanının üstünde alıntı şeridi açılır (alıntılanan kişi ya da masa, metnin başı, kapatma düğmesi). Gönderilen mesaj alıntılanan mesajın kimliğini taşır.
+- **Veri:** her mesaj tablosuna `reply_to_id uuid null` (`messages.reply_to_id → messages`, `dm_messages.reply_to_id → dm_messages`, `venue_chat_messages.reply_to_id → venue_chat_messages`), hepsi `on delete set null`. Alıntının metni kopyalanmaz; okumada sunucu birleştirir.
+- **Gönderme:** `chat/send`, `dm/send` ve `venue-chat/send` isteğe bağlı `replyTo` alır. Sunucu alıntılanan mesajın aynı odada, aynı konuşmada ya da aynı mekanda olduğunu ve gönderenin onu o an görebildiğini doğrular; değilse `reply_unavailable` (409) döner ve mesaj yazılmaz.
+- **Okuma:** sayfa her mesajla birlikte `replyTo` döner: `{ id, body (en çok 80 karakter), from_me }` ve gönderenin o sohbetteki etiketi.
+  - Oda sohbeti: masa takma adı.
+  - DM: etiket yok, `from_me` yeter.
+  - Mekan sohbeti: mesajın kendi kuralıyla, yani anonimse masa takma adı, profilliyse görünen ad (§7.2). Profil kimliği, fotoğraf ve hesap kimliği alıntıda da gitmez.
+- **"Mesaj artık yok":** alıntılanan mesaj silinmişse (`reply_to_id` boş kalır), gizlenmişse (mekan sohbetinde `hidden_at`), iki yönlü engel yüzünden okuyana görünmüyorsa ya da okuyanın göremeyeceği bir zamandaysa `replyTo` `{ gone: true }` döner; balonda "Mesaj artık yok" yazar. Hangisinin olduğu ayırt edilmez (kural 5'in ruhu).
+- Alıntıya dokununca liste alıntılanan mesaja kayar; mesaj yüklenmiş sayfada yoksa hiçbir şey olmaz.
+
+### 21.2 Tepki
+
+- **Hareket:** balona uzun basınca 6 sabit emojiden biri seçilir. Liste tek kaynaktır: `pure/reactions.ts` → `REACTIONS` (6 emoji, onaylı; tasarımın tepki çubuğu ve sunucu aynı listeyi okur). Başka emoji sunucuda reddedilir (400).
+- **Kural:** kişi başına mesaj başına tek tepki. Aynı emojiye yeniden basmak tepkiyi geri alır, başka emoji seçmek değiştirir. Kendi mesajına da tepki verilebilir (onaylı).
+- **Hız sınırı (yalnızca mekan sohbeti, onaylı):** hesap başına 10 saniyede en çok 10 tepki isteği (koyma, değiştirme, kaldırma). Aşılırsa mesajlardaki gibi `rate_limited` (429) döner; uygulama bunu sessizce yok sayar (balon eski hâlinde kalır, hata gösterilmez). Sayaç `venue_chat_reaction_rate`'te, mesaj sınırından (`venue_chat_rate`) ayrı tutulur. DM ve oda sohbetinde sınır yok.
+- **Kim "kişi":** DM'de hesap. Oda sohbetinde masa oturumu (odada her masa tek telefondur, gösterilen ad masa takma adıdır). Mekan sohbetinde hesap.
+- **API:** `dm/react { messageId, emoji | null }`, `chat/react { messageId, emoji | null }`, `venue-chat/react { messageId, emoji | null }`. `null` tepkiyi kaldırır. İdempotenttir: aynı istek iki kez gönderilince bir kez gönderilmiş gibi aynı durum (`IDEMPOTENT_CALLS`'a testiyle girer). Yetki gönderme yetkisiyle aynıdır: DM'de arkadaşlık ve engel yokluğu, oda sohbetinde odanın üyesi olmak, mekan sohbetinde o mekanda aktif masa. Gizlenmiş mesaja tepki verilemez (`not_found`, var olmayan mesajla aynı).
+- **Okuma:** sayfa her mesajla birlikte tepkileri döner.
+  - DM: `[{ emoji, from_me }]`, en çok iki satır; kişi `from_me` ile ayrılır, hesap ya da profil kimliği gitmez.
+  - Oda sohbeti: emoji başına `{ emoji, count, aliases, mine }`; `aliases` tepki veren masaların takma adları.
+  - Mekan sohbeti: emoji başına yalnızca `{ emoji, count, mine }`. **Kimin verdiği gitmez** (kural 4): masa takma adı da görünen ad da yok; `mine` yalnızca çağıranın kendi tepkisidir.
+- Tepki bildirim ve push üretmez; okunmamış sayacını ve Mesajlar'daki önizlemeyi değiştirmez.
+
+### 21.3 Veri, kilit, Realtime, silme
+
+- **Yeni tablolar** (her biri politikalarıyla aynı migration'da, kural 2; istemci yazamaz, kural 1):
+  - `dm_reactions (message_id → dm_messages on delete cascade, user_id → auth.users on delete cascade, emoji, created_at)`, birincil anahtar `(message_id, user_id)`. RLS açık, politika yok; okuma `dm_messages_page` üzerinden.
+  - `message_reactions (message_id → messages on delete cascade, session_id → table_sessions on delete cascade, emoji, created_at)`, birincil anahtar `(message_id, session_id)`. RLS açık, politika yok. Oda sohbeti mesajları bugün tablo okumasıyla (RLS) ve Postgres Changes ile alır; bu değişmez. Tepkiler ve alıntı özetleri yeni, yalnızca okuyan `room_chat_extras(room_id)` RPC'siyle okunur (security definer, `set search_path = ''`, yalnızca odanın üyesine; masa oturum kimliği ve takma ad döner, hesap kimliği dönmez).
+  - `venue_chat_reactions (message_id → venue_chat_messages on delete cascade, user_id → auth.users on delete cascade, emoji, created_at)`, birincil anahtar `(message_id, user_id)`. RLS açık, politika yok; `user_id` istemciye hiç gitmez.
+  - `venue_chat_reaction_rate (user_id → auth.users on delete cascade, window_started_at, count)`: mekan sohbeti tepki sınırı (§21.2). RLS açık, politika yok.
+- **Kilit sırası (kural 10):** tepki tablosu kendi mesaj tablosundan hemen sonra gelir.
+  - Oda: `… messages` → `message_reactions` → `game_events`, `play_history`.
+  - İki hesap: `… dm_threads` → `dm_messages` → `dm_reactions`, `dm_reads`.
+  - Mekan sohbeti: `table_sessions` → `venue_chat_rate` → `venue_chat_reaction_rate` → `venue_chat_messages` → `venue_chat_reactions` → `venue_chat_reports`.
+  - Yanıt yeni kilit almaz: alıntılanan mesaj kilitsiz okunur.
+- **Realtime (kural 9):** yeni kanal yok. Tepki değişince mesajın kanalına veri içermeyen yayın gider: `dm:{thread_id}` → `dm_reaction`, oda kanalı → `reaction`, `venue_chat:{venue_id}` → `venue_chat_reaction`. Alıcı yalnızca o sayfayı yeniden okur. Yükte emoji, mesaj kimliği ya da kişi yoktur. Oda sohbetinin tepkileri de yayınla gelir; `message_reactions` Postgres Changes ile dinlenmez.
+- **Silme:** tepkiler mesajla birlikte silinir (cascade): mekan sohbetinde mesajlar 24 saatte silindiği için tepkileri de 24 saatte gider; oda mesajları oda kapandıktan 24 saat sonra silinir. Şikayet kopyası (`reports.messages_snapshot`) tepki ve alıntı içermez.
+- **Hesap silme ve ban:** `user_id` ve `session_id` cascade ile tepkileri siler.
+
+### 21.4 Kabul
+
+- Entegrasyon testleri:
+  - yanıt aynı sohbet dışından ya da görünmeyen mesaja `reply_unavailable`;
+  - silinen, gizlenen ya da engelli mesaja yanıt "Mesaj artık yok" (`gone`);
+  - kişi başına tek tepki, değiştirme, geri alma ve iki kez gönderilince aynı sonuç;
+  - mekan sohbetinde tepki verenin kimliği, takma adı ya da görünen adı sayfada ve Realtime yüklerinde yok;
+  - mesaj silinince tepkiler gidiyor;
+  - yeni yollar için `locks` testi.
+- Birim testleri: `pure/reactions.ts` (liste, geçerlilik, emoji başına sayım).
+- E2E: DM'de yanıt ve tepki, oda sohbetinde tepki; görsel parçalar Aşama 8 sohbet PR'ı birleştikten sonra.
+- Yayın: migration + üç fonksiyonun deploy'u (`chat`, `dm`, `venue-chat`), sonra OTA.
+
+### 21.5 Kararlar (proje sahibi onayı)
+
+1. 6 sabit emoji uygun; liste `pure/reactions.ts` → `REACTIONS`.
+2. Kendi mesajına tepki verilebilir.
+3. Mekan sohbetinde tepkiye hız sınırı: hesap başına 10 sn'de 10; aşılırsa `rate_limited`, arayüz sessizce yok sayar (§21.2).
+4. Oda sohbetinde tepki verenler masa takma adıyla görünür; oda bittiğinde oyun geçmişindeki oda sohbeti kapanır, tepki de görünmez kalır.
