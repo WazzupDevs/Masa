@@ -2,15 +2,65 @@ import { describe, expect, it } from 'vitest';
 
 import { TABLE_AVATAR_ICONS, tableAvatar } from './tableAvatar.ts';
 
-const ids = Array.from(
-  { length: 600 },
-  (_, i) =>
-    `${(0x1f3a5c7e + i * 7919).toString(16).padStart(8, '0')}-4a1b-4c2d-8e3f-${i.toString(16).padStart(12, '0')}`,
-);
+// Aliases as the server makes them (pure/alias.ts): an adjective and a noun, 25 × 24 of them.
+const ADJECTIVES = [
+  'Mor',
+  'Mavi',
+  'Yeşil',
+  'Sarı',
+  'Turuncu',
+  'Kırmızı',
+  'Beyaz',
+  'Gri',
+  'Lacivert',
+  'Turkuaz',
+  'Altın',
+  'Gümüş',
+  'Bakır',
+  'Bordo',
+  'Lila',
+  'Eflatun',
+  'Zümrüt',
+  'Mercan',
+  'Fildişi',
+  'Neşeli',
+  'Cesur',
+  'Bilge',
+  'Zarif',
+  'Parlak',
+  'Sakin',
+];
+const NOUNS = [
+  'Aslan',
+  'Kaplan',
+  'Vaşak',
+  'Kurt',
+  'Kedi',
+  'Tavşan',
+  'Sincap',
+  'Kirpi',
+  'Kunduz',
+  'Rakun',
+  'Panda',
+  'Koala',
+  'Suricat',
+  'Yunus',
+  'Penguen',
+  'Kartal',
+  'Baykuş',
+  'Kuğu',
+  'Martı',
+  'Flamingo',
+  'Turna',
+  'Leylek',
+  'Bülbül',
+  'Serçe',
+];
+const ids = ADJECTIVES.flatMap((a) => NOUNS.map((n) => `${a} ${n}`));
 
 describe('tableAvatar', () => {
-  it('gives the same session the same icon and colour', () => {
-    const id = '3f2a9c1e-77b4-4e0a-9a61-5d2c8e4b1f70';
+  it('gives the same alias the same icon and colour', () => {
+    const id = 'Meraklı Orman';
     expect(tableAvatar(id, 8)).toEqual(tableAvatar(id, 8));
   });
 
@@ -25,18 +75,18 @@ describe('tableAvatar', () => {
     }
   });
 
-  it('uses every icon and every colour across many sessions', () => {
+  it('uses every icon and every colour across many aliases', () => {
     const icons = new Set(ids.map((id) => tableAvatar(id, 8).icon));
     const colors = new Set(ids.map((id) => tableAvatar(id, 8).color));
     expect(icons.size).toBe(TABLE_AVATAR_ICONS);
     expect(colors.size).toBe(8);
   });
 
-  it('spreads sessions over the icons', () => {
+  it('spreads aliases over the icons', () => {
     const counts = new Array<number>(TABLE_AVATAR_ICONS).fill(0);
     for (const id of ids)
       counts[tableAvatar(id, 8).icon] = (counts[tableAvatar(id, 8).icon] ?? 0) + 1;
-    // 600 sessions over 12 icons: about 50 each.
+    // 600 aliases over 12 icons: about 50 each.
     for (const n of counts) expect(n).toBeGreaterThan(20);
   });
 
@@ -45,7 +95,7 @@ describe('tableAvatar', () => {
     expect(pairs.size).toBeGreaterThan(70);
   });
 
-  it('does not depend on anything but the id', () => {
+  it('does not depend on anything but the alias', () => {
     expect(tableAvatar('a', 8)).toEqual({
       icon: tableAvatar('a', 8).icon,
       color: tableAvatar('a', 8).color,

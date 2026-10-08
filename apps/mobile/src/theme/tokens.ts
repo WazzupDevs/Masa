@@ -221,6 +221,10 @@ export const ICON = { xs: 12, sm: 16, md: 20, lg: 24, xl: 28 } as const;
 // Minimum touch target (WCAG 2.5.8 is 24; the mockups and Android guidance use 44–48).
 export const TOUCH = { min: 44, button: 48, tab: 56, large: 64 } as const;
 
+// Narrower than this (in dp, times the font scale: large text needs the room too) a header gives
+// its text buttons up for icons (the room's "Odayı bitir" at 320 dp).
+export const NARROW_SCREEN = 360;
+
 // Keşfet map pins, drawn by MapLibre GL layers (sizes in points). Placeholder until the design
 // session's pin image; colours come from the palette. MAP_FONTS must be font stacks served by the
 // map style's glyph server (OpenFreeMap "liberty" serves Noto Sans), not the app's fonts.

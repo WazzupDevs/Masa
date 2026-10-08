@@ -20,10 +20,10 @@ export const TABLE_AVATAR_COLORS = [
 // The icon's ink on every disc (the light scheme's text colour).
 export const TABLE_AVATAR_INK = THEME.palettes.light.text;
 
-// A table's avatar: icon and disc colour from the table session id (own table) or the alias
-// (other tables, whose session id never reaches the lobby or the venue chat).
-export function tableAvatarOf(seed: string): { icon: number; color: string } {
-  const { icon, color } = tableAvatar(seed, TABLE_AVATAR_COLORS.length);
+// A table's avatar: icon and disc colour from its alias, the same on every phone (the session id
+// never reaches the lobby or the venue chat, and one table must not wear two faces).
+export function tableAvatarOf(alias: string): { icon: number; color: string } {
+  const { icon, color } = tableAvatar(alias, TABLE_AVATAR_COLORS.length);
   return { icon, color: TABLE_AVATAR_COLORS[color] ?? TABLE_AVATAR_COLORS[0] };
 }
 

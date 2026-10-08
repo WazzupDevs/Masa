@@ -38,6 +38,9 @@ type Props = {
   stack?: boolean;
   // Half a row ("Oda kur" | "Masanla oyna"): tighter padding and the label kept on one line.
   tight?: boolean;
+  // Only `icon`, in a round button as high as the size; the label is what screen readers say. For a
+  // header button on a narrow screen ("Odayı bitir" at 320 dp).
+  iconOnly?: boolean;
 };
 
 const SMALL_HEIGHT = SPACING[10];
@@ -57,6 +60,7 @@ export function Button({
   flush,
   stack,
   tight,
+  iconOnly,
 }: Props) {
   const { colors, shape } = useTheme();
   const quiet = useQuiet();
@@ -110,6 +114,10 @@ export function Button({
     borderRadius: shape.radius.pill,
     backgroundColor: bg,
   };
+  if (iconOnly) {
+    style.width = style.minHeight;
+    style.paddingHorizontal = 0;
+  }
 
   const oneLine = !!detail || !!tight || small || !/\s/.test(label.trim());
   // The 3D depth on every filled button; text-only and reveal-signal buttons have none.
@@ -137,6 +145,8 @@ export function Button({
         >
           {loading ? (
             <ActivityIndicator color={fg} />
+          ) : iconOnly && icon ? (
+            <Ionicons name={icon} size={ICON.md} color={fg} />
           ) : (
             <>
               {icon ? <Ionicons name={icon} size={ICON.md} color={fg} /> : null}
