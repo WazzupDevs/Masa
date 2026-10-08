@@ -3,7 +3,7 @@
     "name": "Kabuk",
     "slug": "masa",
     "scheme": "masa",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "platforms": ["android", "ios"],
