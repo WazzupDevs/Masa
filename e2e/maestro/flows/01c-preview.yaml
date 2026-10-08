@@ -213,6 +213,27 @@ appId: app.kabuk.mobile
       id: preview-open
     timeout: 10000
 - back
+# Aşama 8 · Saha: Aktiviteler's game cards and a game's sheet (no table yet: "Oynamak için mekana
+# gir").
+- tapOn:
+    id: tab-activities
+- extendedWaitUntil:
+    visible:
+      id: activities-solo-card-tabu
+    timeout: 10000
+- takeScreenshot: 04h-activities
+- scrollUntilVisible:
+    element:
+      id: activities-room-card-sahtekar
+    timeout: 30000
+- tapOn:
+    id: activities-room-card-sahtekar
+- extendedWaitUntil:
+    visible:
+      id: activities-venue-sahtekar
+    timeout: 10000
+- takeScreenshot: 04h-activities-sheet
+- tapOn: Kapat
 - tapOn:
     id: tab-explore
 - extendedWaitUntil:

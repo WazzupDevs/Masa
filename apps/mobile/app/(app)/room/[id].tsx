@@ -323,9 +323,8 @@ function RoomTopBar({
         actions={
           <>
             <Button
-              variant="ghost"
-              flush
-              tight
+              variant="danger"
+              size="sm"
               testID="end-room"
               label={tr.rooms.end}
               onPress={onEnd}

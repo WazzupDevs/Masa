@@ -204,6 +204,8 @@ export const tr = {
   // Aktiviteler: the game hub (docs/SPEC_V3.md §18.3). Same games and rules as the room.
   activities: {
     howTo: 'Nasıl oynanır',
+    oneTable: 'Tek telefonla',
+    twoTables: 'İki masayla',
     createWith: 'Bu oyunla oda kur',
     goToVenue: 'Oynamak için mekana gir',
     recent: 'Son oyunların',
@@ -622,6 +624,8 @@ export const tr = {
     notAccepted: 'Öneri kabul edilmedi.',
     // One table: the games start at once.
     soloTitle: 'Masanla oyna',
+    soloHint: (n: number) => `Tek telefonla, masada elden ele. ${n} kişisiniz.`,
+    minPlayers: (n: number) => `En az ${n} kişi`,
     start: (game: string) => `${game} başlat`,
     endGame: 'Oyunu bitir',
     lastGameTabu: (owner: string, ownerScore: number, guest: string, guestScore: number) =>
@@ -736,7 +740,6 @@ export const tr = {
     roundNoPoint: 'Sekiz dize söylendi; puan yok.',
     readyHint: (s: number) => `Başlayınca her sıra ${s} saniye. İstem ekranda.`,
     readyWaitingHint: 'Onlar başlayınca ya da süre dolunca tur başlar.',
-    needsTwo: 'Bu oyun için masada en az 2 kişi olmalı.',
     pickLetter: 'Kelimeyi söyle, baş harfine dokun.',
   },
   // İbre (docs/SPEC_V3.md §20.5): a two-ended scale, values 0–100.
@@ -837,7 +840,6 @@ export const tr = {
     dealing: 'Yeni kelime geliyor…',
     votesDone: 'Masanızın oyları verildi. Diğer masa bekleniyor.',
     notEnough: 'Kartına bakmayanlar oyundan çıktı; 3 kişi kalmadı. Oyun bitti.',
-    needsThree: `Sahtekar için masada en az ${SAHTEKAR.minPlayers} kişi olmalı.`,
   },
   reveal: {
     question: 'Tanışalım mı?',

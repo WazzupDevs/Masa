@@ -7,12 +7,11 @@ import {
 } from '@shared/rooms.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
-import { GAME_TONES, GameDisc, type GameGlyph, GameIcon } from '@/components/Glyph';
-import { usePressScale } from '@/components/motion';
+import { GameDisc } from '@/components/Glyph';
 import { Text } from '@/components/Text';
 import { roomKeys, useGameProposal } from '@/features/rooms/queries';
 import { errorMessage } from '@/i18n/errors';
@@ -20,8 +19,9 @@ import { tr } from '@/i18n/tr';
 import { track } from '@/lib/analytics';
 import { roomsApi } from '@/lib/api';
 import { useNow } from '@/lib/useNow';
-import { useTheme } from '@/theme/ThemeProvider';
-import { ICON, SPACING, TOUCH } from '@/theme/tokens';
+import { TOUCH } from '@/theme/tokens';
+
+import { GAME_GLYPH, GAME_ORDER, GameCard, GameCell, GameGrid } from './GameCard';
 
 // How long "Öneri kabul edilmedi" stays on the proposer's screen.
 const NOT_ACCEPTED_MS = 6000;
@@ -113,16 +113,19 @@ export function ProposalArea({ roomId, sessionId, gameRunning }: Props) {
               <Text variant="fine">{tr.games.proposeHint}</Text>
             )}
           </View>
-          <View className="flex-row flex-wrap gap-2.5">
-            {CONCEPTS.map((concept) => (
-              <GameTile
-                key={concept}
-                concept={concept}
-                onPress={() => propose.mutate(concept)}
-                disabled={propose.isPending}
-              />
+          <GameGrid>
+            {GAME_ORDER.filter((c) => CONCEPTS.includes(c)).map((concept) => (
+              <GameCell key={concept}>
+                <GameCard
+                  concept={concept}
+                  testID={`propose-${concept}`}
+                  accessibilityLabel={tr.games.propose(tr.concepts[concept])}
+                  onPress={() => propose.mutate(concept)}
+                  disabled={propose.isPending}
+                />
+              </GameCell>
             ))}
-          </View>
+          </GameGrid>
         </View>
       )}
       {error ? (
@@ -134,70 +137,6 @@ export function ProposalArea({ roomId, sessionId, gameRunning }: Props) {
   );
 }
 
-// Each game's icon and colour pair (canvas: Aşama 6 · Oyunlar → Oyun ikonları).
-const GLYPH: Record<Concept, GameGlyph> = {
-  tabu: 'tabu',
-  sohbet: 'sohbet',
-  sahtekar: 'impostor',
-  harf: 'letters',
-  sarki: 'song',
-  ibre: 'needle',
-};
-
-function useGameColors(concept: Concept) {
-  const { colors } = useTheme();
-  const [bg, fg] = GAME_TONES[GLYPH[concept]];
-  return { bg: colors[bg], fg: colors[fg], glyph: GLYPH[concept] };
-}
-
 function ConceptDisc({ concept }: { concept: Concept }) {
-  return <GameDisc name={GLYPH[concept]} size={TOUCH.button} />;
-}
-
-// A game to propose: a colour tile with its icon and name. Canvas: the bar is titled "Oyun öner";
-// each tile names only the game, the reader still hears the whole action.
-function GameTile({
-  concept,
-  onPress,
-  disabled,
-}: {
-  concept: Concept;
-  onPress: () => void;
-  disabled: boolean;
-}) {
-  const { shape } = useTheme();
-  const pressScale = usePressScale();
-  const c = useGameColors(concept);
-  return (
-    <Pressable
-      testID={`propose-${concept}`}
-      accessibilityRole="button"
-      accessibilityLabel={tr.games.propose(tr.concepts[concept])}
-      accessibilityState={{ disabled }}
-      disabled={disabled}
-      onPress={onPress}
-      style={{ flexBasis: '30%', flexGrow: 1 }}
-    >
-      {({ pressed }) => (
-        <View
-          className="gap-2.5"
-          style={[
-            {
-              minHeight: TOUCH.large + SPACING[6],
-              padding: SPACING[3] + SPACING[0.5],
-              borderRadius: shape.radius.lg,
-              backgroundColor: c.bg,
-              opacity: disabled ? 0.6 : 1,
-            },
-            pressScale(pressed),
-          ]}
-        >
-          <GameIcon name={c.glyph} color={c.fg} size={ICON.lg} />
-          <Text variant="heading" color={c.fg} numberOfLines={2}>
-            {tr.concepts[concept]}
-          </Text>
-        </View>
-      )}
-    </Pressable>
-  );
+  return <GameDisc name={GAME_GLYPH[concept]} size={TOUCH.button} />;
 }
