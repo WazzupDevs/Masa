@@ -141,6 +141,7 @@ export type TypeVariant =
   | 'display' // screen title (h1)
   | 'title' // sheet title (h2)
   | 'heading' // section title (h3)
+  | 'gameName' // a game's name on its card (two lines fit a 320 dp screen's half)
   | 'alias' // table alias, profile name
   | 'word' // the Tabu card word
   | 'forbidden' // the Tabu card's forbidden words
@@ -250,6 +251,7 @@ export function baseTypography(overrides: Partial<Typography> = {}): Typography 
     display: { font: 'display', size: 30, lineHeight: 34, letterSpacing: -0.3 },
     title: { font: 'display', size: 23, lineHeight: 28 },
     heading: { font: 'display', size: 18, lineHeight: 24 },
+    gameName: { font: 'display', size: 16, lineHeight: 19 },
     alias: { font: 'display', size: 26, lineHeight: 32 },
     word: { font: 'display', size: 38, lineHeight: 42, letterSpacing: 0.8 },
     forbidden: { font: 'semibold', size: 18, lineHeight: 24 },

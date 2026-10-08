@@ -98,14 +98,14 @@ export function IbreHeader({
       </View>
       <View className="flex-row gap-2.5">
         {(['owner', 'guest'] as const).map((side) => (
-          <View key={side} className="flex-1">
-            <TeamScore
-              name={names[side]}
-              note={side === mine ? tr.games.you : ''}
-              score={state.scores[side]}
-              active={side === state.turnTable}
-            />
-          </View>
+          // Straight in the row: TeamScore fills its half (a wrapper collapsed it to a strip).
+          <TeamScore
+            key={side}
+            name={names[side]}
+            note={side === mine ? tr.games.you : ''}
+            score={state.scores[side]}
+            active={side === state.turnTable}
+          />
         ))}
       </View>
     </>

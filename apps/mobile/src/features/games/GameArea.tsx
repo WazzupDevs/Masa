@@ -7,7 +7,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { View } from 'react-native';
 
-import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Text } from '@/components/Text';
 import { roomKeys } from '@/features/rooms/queries';
@@ -18,6 +17,7 @@ import { gamesApi, roomsApi } from '@/lib/api';
 
 import { IbreGame, RoundReveal } from './ibre/IbreGame';
 import { LocalIbre } from './ibre/LocalIbre';
+import { GAME_ORDER, GameCard, GameCell, GameGrid } from './GameCard';
 import { LocalTabu } from './LocalTabu';
 import { ProposalArea } from './ProposalArea';
 import { RematchButton } from './RematchButton';
@@ -28,6 +28,14 @@ import { LocalSay } from './say/LocalSay';
 import { SayGame } from './say/SayGame';
 import { SohbetCard } from './SohbetCard';
 import { VoiceTabu, VoiceTabuResult } from './VoiceTabu';
+
+// The fewest players a one-table game takes (the games' own rules).
+function soloMinPlayers(game: Concept): number {
+  if (game === 'sahtekar') return SAHTEKAR.minPlayers;
+  if (game === 'harf' || game === 'sarki') return SAY_CONFIG[game].minLocalPlayers;
+  if (game === 'ibre') return IBRE_CONFIG.minLocalPlayers;
+  return 1;
+}
 
 type Props = {
   roomId: string;
@@ -286,54 +294,36 @@ export function GameArea({
       {hasGuest ? (
         <ProposalArea roomId={roomId} sessionId={sessionId} gameRunning={concept !== null} />
       ) : (
+        // One table: the games as cards (canvas: Aşama 8 · Saha → Oyun listesi). A game the
+        // headcount does not allow is faded with its reason.
         <Card>
           <View className="gap-3">
-            <Text variant="label" accessibilityRole="header">
-              {tr.games.soloTitle}
-            </Text>
-            <Text variant="fine">{tr.games.localIntro}</Text>
-            <Button
-              testID="solo-tabu"
-              label={tr.games.start(tr.concepts.tabu)}
-              onPress={() => setLocalGame('tabu')}
-            />
-            <Button
-              variant="neutral"
-              testID="solo-sahtekar"
-              label={tr.games.start(tr.concepts.sahtekar)}
-              onPress={() => setLocalGame('sahtekar')}
-              disabled={headcount < SAHTEKAR.minPlayers}
-            />
-            {headcount < SAHTEKAR.minPlayers ? (
-              <Text variant="fine">{tr.sahtekar.needsThree}</Text>
-            ) : null}
-            {(['harf', 'sarki'] as const).map((kind) => (
-              <Button
-                key={kind}
-                variant="neutral"
-                testID={`solo-${kind}`}
-                label={tr.games.start(tr.concepts[kind])}
-                onPress={() => setLocalGame(kind)}
-                disabled={headcount < SAY_CONFIG[kind].minLocalPlayers}
-              />
-            ))}
-            <Button
-              variant="neutral"
-              testID="solo-ibre"
-              label={tr.games.start(tr.concepts.ibre)}
-              onPress={() => setLocalGame('ibre')}
-              disabled={headcount < IBRE_CONFIG.minLocalPlayers}
-            />
-            {headcount < SAY_CONFIG.harf.minLocalPlayers ? (
-              <Text variant="fine">{tr.say.needsTwo}</Text>
-            ) : null}
-            <Button
-              variant="neutral"
-              testID="solo-sohbet"
-              label={tr.games.start(tr.concepts.sohbet)}
-              onPress={() => startSohbet.mutate()}
-              loading={startSohbet.isPending}
-            />
+            <View className="gap-0.5">
+              <Text variant="heading" accessibilityRole="header">
+                {tr.games.soloTitle}
+              </Text>
+              <Text variant="fine">{tr.games.soloHint(headcount)}</Text>
+            </View>
+            <GameGrid>
+              {GAME_ORDER.map((game) => {
+                const min = soloMinPlayers(game);
+                const short = headcount < min;
+                return (
+                  <GameCell key={game}>
+                    <GameCard
+                      concept={game}
+                      testID={`solo-${game}`}
+                      accessibilityLabel={tr.games.start(tr.concepts[game])}
+                      disabled={short || (game === 'sohbet' && startSohbet.isPending)}
+                      reason={short ? tr.games.minPlayers(min) : undefined}
+                      onPress={() =>
+                        game === 'sohbet' ? startSohbet.mutate() : setLocalGame(game)
+                      }
+                    />
+                  </GameCell>
+                );
+              })}
+            </GameGrid>
             {startSohbet.isError ? (
               <Text variant="fine" tone="danger">
                 {errorMessage(startSohbet.error)}

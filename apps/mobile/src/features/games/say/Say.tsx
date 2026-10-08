@@ -81,7 +81,16 @@ export function PromptCard({
       <Text variant="overline" color={fg}>
         {kind === 'category' ? tr.say.category : tr.say.word}
       </Text>
-      <Text variant={compact ? 'title' : 'hero'} color={fg} align="center">
+      {/* A single word stays on one line and shrinks ("öğretmen" broke as "öğretme / n" at 320 dp
+          and pushed İtiraz off the screen); a longer category takes two. */}
+      <Text
+        variant={compact ? 'title' : 'hero'}
+        color={fg}
+        align="center"
+        numberOfLines={/\s/.test(prompt.trim()) ? 2 : 1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.5}
+      >
         {prompt}
       </Text>
       {line ? (

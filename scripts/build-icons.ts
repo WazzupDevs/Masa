@@ -35,12 +35,14 @@ import {
   TABLE_AVATARS,
   tabSvg,
 } from './icon/glyphs.ts';
+import { ART_BOX, artSvg } from './icon/art.ts';
 import { previewHtml } from './icon/preview.ts';
 
 const root = resolve(import.meta.dirname, '..');
 const assets = resolve(root, 'apps/mobile/assets/icon');
 const brand = resolve(root, 'apps/mobile/assets/brand');
 const glyph = resolve(root, 'apps/mobile/assets/glyph');
+const art = resolve(root, 'apps/mobile/assets/art');
 const preview = resolve(root, 'dist/icon-preview');
 const tokens = JSON.parse(readFileSync(resolve(assets, 'tokens.json'), 'utf8')) as IconTokens;
 
@@ -55,6 +57,7 @@ async function png(svg: string, dir: string, file: string, opaque = false): Prom
 mkdirSync(assets, { recursive: true });
 mkdirSync(brand, { recursive: true });
 mkdirSync(glyph, { recursive: true });
+mkdirSync(art, { recursive: true });
 // Source drawing, for designers and the store.
 writeFileSync(resolve(assets, 'snail.svg'), `${foregroundSvg(tokens, 1024)}\n`);
 
@@ -128,6 +131,12 @@ await glyphPngs(
   'halo',
   HALO_DP,
 );
+// The games' pictures on the game cards (src/features/games/GameCard.tsx), in colour, not tinted:
+// 64 dp at 1×, 2× and 3×.
+for (const id of Object.keys(GAME_GLYPHS) as GameGlyph[]) {
+  for (const d of DENSITIES)
+    await png(artSvg(id, ART_BOX * d), art, d === 1 ? `${id}.png` : `${id}@${d}x.png`);
+}
 // The tab bar's fade (src/components/TabBar.tsx): white, transparent at the top, opaque at the
 // bottom, eased; tinted with the canvas colour and stretched to the band.
 await sharp({
