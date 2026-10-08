@@ -63,6 +63,52 @@ export const MARKER_IMAGES = {
 
 export const FADE_IMAGE: ImageSourcePropType = require('../../assets/glyph/fade.png');
 
+// The live dot's blurred halo (src/components/LiveDot.tsx), white, tinted by the app.
+export const HALO_IMAGE: ImageSourcePropType = require('../../assets/glyph/halo.png');
+
+// A venue's kind on the Keşfet list (the map marker drawings, solid).
+export type KindGlyph = 'cafe' | 'campus';
+const KIND: Record<KindGlyph, ImageSourcePropType> = {
+  cafe: require('../../assets/glyph/kind-cafe.png'),
+  campus: require('../../assets/glyph/kind-campus.png'),
+};
+
+export function KindIcon({
+  kind,
+  color,
+  size = ICON.xl,
+}: {
+  kind: KindGlyph;
+  color: string;
+  size?: number;
+}) {
+  return (
+    <Image
+      source={KIND[kind]}
+      accessible={false}
+      style={{ width: size, height: size, tintColor: color }}
+      resizeMode="contain"
+    />
+  );
+}
+
+// A table's avatar icon (canvas: Aşama 8 · Saha → Masa avatarları), in the order of
+// scripts/icon/glyphs.ts → TABLE_AVATARS (scripts/icon/avatars.test.ts checks it).
+export const TABLE_AVATAR_IMAGES: readonly ImageSourcePropType[] = [
+  require('../../assets/glyph/avatar-dice.png'),
+  require('../../assets/glyph/avatar-card.png'),
+  require('../../assets/glyph/avatar-crown.png'),
+  require('../../assets/glyph/avatar-star.png'),
+  require('../../assets/glyph/avatar-bolt.png'),
+  require('../../assets/glyph/avatar-heart.png'),
+  require('../../assets/glyph/avatar-flame.png'),
+  require('../../assets/glyph/avatar-rocket.png'),
+  require('../../assets/glyph/avatar-moon.png'),
+  require('../../assets/glyph/avatar-pawn.png'),
+  require('../../assets/glyph/avatar-gamepad.png'),
+  require('../../assets/glyph/avatar-party.png'),
+];
+
 // The games' icons (canvas: Aşama 6 · Oyunlar → Oyun ikonları): Aktiviteler cards and "Oyun öner".
 // Each game has its own colour pair from the palette.
 export type GameGlyph = 'tabu' | 'sohbet' | 'impostor' | 'letters' | 'song' | 'needle';

@@ -21,7 +21,13 @@ import { useActiveTable } from '@/features/checkin/useActiveTable';
 import { NotificationsBell } from '@/features/notifications/Bell';
 import { ExploreMap } from '@/features/explore/ExploreMap';
 import { type ExploreVenue, useExploreVenues } from '@/features/explore/useExploreVenues';
-import { BucketBadge, EventRow, EventTag, VenueTile } from '@/features/explore/VenueTags';
+import {
+  BucketBadge,
+  EventRow,
+  EventTag,
+  LivenessDot,
+  VenueTile,
+} from '@/features/explore/VenueTags';
 import { tr } from '@/i18n/tr';
 import { track } from '@/lib/analytics';
 import { useNow } from '@/lib/useNow';
@@ -86,7 +92,10 @@ export default function ExploreScreen() {
             trailing={
               <View className="flex-row items-center gap-2">
                 {layout === 'single' ? null : (
+                  // Icons only, so "Keşfet", the switch and the bell share one row; the reader
+                  // still hears "Liste" and "Harita".
                   <Segmented
+                    iconOnly
                     accessibilityLabel={tr.explore.viewSwitch}
                     value={view}
                     onChange={setView}
@@ -129,8 +138,8 @@ export default function ExploreScreen() {
   );
 }
 
-// The venues as cards on the canvas: a colour tile in the venue's bucket, the name and district,
-// the bucket chip; an event shows under the name.
+// The venues as cards on the canvas: the venue's kind on a tile, the name and district, a beating
+// dot for how lively it is; an event shows under the name.
 function VenueList({
   venues,
   bottomSpace,
@@ -161,7 +170,7 @@ function VenueList({
             onPress={() =>
               router.push({ pathname: '/explore/[venueId]', params: { venueId: v.id } })
             }
-            leading={<VenueTile bucket={v.bucket} />}
+            leading={<VenueTile kind={v.kind} />}
             below={
               v.event ? (
                 <View className="mt-1 flex-row">
@@ -169,7 +178,7 @@ function VenueList({
                 </View>
               ) : null
             }
-            trailing={<BucketBadge bucket={v.bucket} />}
+            trailing={<LivenessDot bucket={v.bucket} />}
           />
         </Rise>
       ))}

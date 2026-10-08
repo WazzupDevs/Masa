@@ -1,26 +1,30 @@
+import { tableAvatar } from '../../../../supabase/functions/_shared/pure/tableAvatar.ts';
+
 import { THEME } from './theme';
 
-// An anonymous table's avatar: the snail on a disc. Its colour comes from the table alias, so the
-// tables in a chat tell apart and one alias looks the same everywhere. Eight light colours the
-// ink-outlined snail reads on, in both schemes (the disc is an object, not a surface). Fixed values:
-// a palette change must not recolour every table.
-const L = THEME.palettes.light;
-export const AVATAR_COLORS = [
-  '#FFE3F1',
-  '#E4F4FF',
-  '#FFF0CC',
+// An anonymous table's face (canvas: Aşama 8 · Saha → Masa avatarları): one of twelve game-night
+// icons (scripts/icon/glyphs.ts → TABLE_AVATARS) on one of eight discs.
+// Aşama 8 · Saha: the discs of the icon avatars (src/components/Avatar.tsx). Stronger than the old
+// set so a disc reads on a white card; the ink icon is AA on each (brand.test.ts). Fixed values,
+// the same in both schemes: the disc is an object, not a surface.
+export const TABLE_AVATAR_COLORS = [
   '#FF8B75',
   '#7FE08F',
-  '#DDD5EA',
   '#A98BFF',
-  '#FFFFFF',
+  '#D7F75B',
+  '#FFD24D',
+  '#8FD3FF',
+  '#FF9ACB',
+  '#FFB570',
 ] as const;
+// The icon's ink on every disc (the light scheme's text colour).
+export const TABLE_AVATAR_INK = THEME.palettes.light.text;
 
-// Sum of the alias's UTF-16 code units, mod the colour count (the canvas's rule).
-export function aliasColor(alias: string): string {
-  let sum = 0;
-  for (let i = 0; i < alias.length; i++) sum += alias.charCodeAt(i);
-  return AVATAR_COLORS[sum % AVATAR_COLORS.length] ?? L.surface;
+// A table's avatar: icon and disc colour from the table session id (own table) or the alias
+// (other tables, whose session id never reaches the lobby or the venue chat).
+export function tableAvatarOf(seed: string): { icon: number; color: string } {
+  const { icon, color } = tableAvatar(seed, TABLE_AVATAR_COLORS.length);
+  return { icon, color: TABLE_AVATAR_COLORS[color] ?? TABLE_AVATAR_COLORS[0] };
 }
 
 // A profile's initials: the first letters of its first two words, upper-cased the Turkish way.

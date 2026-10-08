@@ -25,12 +25,14 @@ import {
   GAME_GLYPHS,
   type GameGlyph,
   glyphSvg,
+  KIND_GLYPHS,
   LOCK,
   MARKERS,
   type MarkerKind,
   signedDistanceField,
   TAB_A,
   TAB_ICONS,
+  TABLE_AVATARS,
   tabSvg,
 } from './icon/glyphs.ts';
 import { previewHtml } from './icon/preview.ts';
@@ -107,6 +109,25 @@ for (const id of Object.keys(GAME_GLYPHS) as GameGlyph[]) {
   const g = GAME_GLYPHS[id];
   await glyphPngs((px) => glyphSvg(g.solid, px, { cut: g.cut }), `game-${id}`, 32);
 }
+// Table avatars (src/components/Avatar.tsx): the icon on its disc, up to 40 dp (the 72 dp hero
+// avatar draws it at 56 %). Kinds for the Keşfet list (src/features/explore/VenueTags.tsx): 32 dp.
+for (const a of TABLE_AVATARS) {
+  await glyphPngs((px) => glyphSvg(a.solid, px, { cut: a.cut }), `avatar-${a.id}`, 40);
+}
+for (const kind of Object.keys(KIND_GLYPHS) as MarkerKind[]) {
+  await glyphPngs((px) => glyphSvg(KIND_GLYPHS[kind], px), `kind-${kind}`, 32);
+}
+// The live dot's halo (src/components/LiveDot.tsx): a blurred white disc, tinted by the app (no
+// native blur module). 36 dp: three times the 12 dp dot.
+const HALO_DP = 36;
+await glyphPngs(
+  (px) =>
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${px}" height="${px}" viewBox="0 0 ${HALO_DP} ${HALO_DP}">` +
+    `<defs><filter id="b" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${HALO_DP / 9}"/></filter></defs>` +
+    `<circle cx="${HALO_DP / 2}" cy="${HALO_DP / 2}" r="${HALO_DP / 4}" fill="#fff" filter="url(#b)"/></svg>`,
+  'halo',
+  HALO_DP,
+);
 // The tab bar's fade (src/components/TabBar.tsx): white, transparent at the top, opaque at the
 // bottom, eased; tinted with the canvas colour and stretched to the band.
 await sharp({
