@@ -1493,8 +1493,9 @@ Ek kararlar: oyuncu sayısı yalnızca Sahtekar'da ve öneri/kabulle (§20.1); i
 
 ### 21.2 Tepki
 
-- **Hareket:** balona uzun basınca 6 sabit emojiden biri seçilir. Liste tek kaynaktır: `pure/reactions.ts` → `REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '👏']` (onaya açık). Başka emoji sunucuda reddedilir (400).
-- **Kural:** kişi başına mesaj başına tek tepki. Aynı emojiye yeniden basmak tepkiyi geri alır, başka emoji seçmek değiştirir. Kendi mesajına da tepki verilebilir.
+- **Hareket:** balona uzun basınca 6 sabit emojiden biri seçilir. Liste tek kaynaktır: `pure/reactions.ts` → `REACTIONS` (6 emoji, onaylı; tasarımın tepki çubuğu ve sunucu aynı listeyi okur). Başka emoji sunucuda reddedilir (400).
+- **Kural:** kişi başına mesaj başına tek tepki. Aynı emojiye yeniden basmak tepkiyi geri alır, başka emoji seçmek değiştirir. Kendi mesajına da tepki verilebilir (onaylı).
+- **Hız sınırı (yalnızca mekan sohbeti, onaylı):** hesap başına 10 saniyede en çok 10 tepki isteği (koyma, değiştirme, kaldırma). Aşılırsa mesajlardaki gibi `rate_limited` (429) döner; uygulama bunu sessizce yok sayar (balon eski hâlinde kalır, hata gösterilmez). Sayaç `venue_chat_reaction_rate`'te, mesaj sınırından (`venue_chat_rate`) ayrı tutulur. DM ve oda sohbetinde sınır yok.
 - **Kim "kişi":** DM'de hesap. Oda sohbetinde masa oturumu (odada her masa tek telefondur, gösterilen ad masa takma adıdır). Mekan sohbetinde hesap.
 - **API:** `dm/react { messageId, emoji | null }`, `chat/react { messageId, emoji | null }`, `venue-chat/react { messageId, emoji | null }`. `null` tepkiyi kaldırır. İdempotenttir: aynı istek iki kez gönderilince bir kez gönderilmiş gibi aynı durum (`IDEMPOTENT_CALLS`'a testiyle girer). Yetki gönderme yetkisiyle aynıdır: DM'de arkadaşlık ve engel yokluğu, oda sohbetinde odanın üyesi olmak, mekan sohbetinde o mekanda aktif masa. Gizlenmiş mesaja tepki verilemez (`not_found`, var olmayan mesajla aynı).
 - **Okuma:** sayfa her mesajla birlikte tepkileri döner.
@@ -1509,10 +1510,11 @@ Ek kararlar: oyuncu sayısı yalnızca Sahtekar'da ve öneri/kabulle (§20.1); i
   - `dm_reactions (message_id → dm_messages on delete cascade, user_id → auth.users on delete cascade, emoji, created_at)`, birincil anahtar `(message_id, user_id)`. RLS açık, politika yok; okuma `dm_messages_page` üzerinden.
   - `message_reactions (message_id → messages on delete cascade, session_id → table_sessions on delete cascade, emoji, created_at)`, birincil anahtar `(message_id, session_id)`. RLS açık, politika yok. Oda sohbeti mesajları bugün tablo okumasıyla (RLS) ve Postgres Changes ile alır; bu değişmez. Tepkiler ve alıntı özetleri yeni, yalnızca okuyan `room_chat_extras(room_id)` RPC'siyle okunur (security definer, `set search_path = ''`, yalnızca odanın üyesine; masa oturum kimliği ve takma ad döner, hesap kimliği dönmez).
   - `venue_chat_reactions (message_id → venue_chat_messages on delete cascade, user_id → auth.users on delete cascade, emoji, created_at)`, birincil anahtar `(message_id, user_id)`. RLS açık, politika yok; `user_id` istemciye hiç gitmez.
+  - `venue_chat_reaction_rate (user_id → auth.users on delete cascade, window_started_at, count)`: mekan sohbeti tepki sınırı (§21.2). RLS açık, politika yok.
 - **Kilit sırası (kural 10):** tepki tablosu kendi mesaj tablosundan hemen sonra gelir.
   - Oda: `… messages` → `message_reactions` → `game_events`, `play_history`.
   - İki hesap: `… dm_threads` → `dm_messages` → `dm_reactions`, `dm_reads`.
-  - Mekan sohbeti: `table_sessions` → `venue_chat_rate` → `venue_chat_messages` → `venue_chat_reactions` → `venue_chat_reports`.
+  - Mekan sohbeti: `table_sessions` → `venue_chat_rate` → `venue_chat_reaction_rate` → `venue_chat_messages` → `venue_chat_reactions` → `venue_chat_reports`.
   - Yanıt yeni kilit almaz: alıntılanan mesaj kilitsiz okunur.
 - **Realtime (kural 9):** yeni kanal yok. Tepki değişince mesajın kanalına veri içermeyen yayın gider: `dm:{thread_id}` → `dm_reaction`, oda kanalı → `reaction`, `venue_chat:{venue_id}` → `venue_chat_reaction`. Alıcı yalnızca o sayfayı yeniden okur. Yükte emoji, mesaj kimliği ya da kişi yoktur. Oda sohbetinin tepkileri de yayınla gelir; `message_reactions` Postgres Changes ile dinlenmez.
 - **Silme:** tepkiler mesajla birlikte silinir (cascade): mekan sohbetinde mesajlar 24 saatte silindiği için tepkileri de 24 saatte gider; oda mesajları oda kapandıktan 24 saat sonra silinir. Şikayet kopyası (`reports.messages_snapshot`) tepki ve alıntı içermez.
@@ -1531,9 +1533,9 @@ Ek kararlar: oyuncu sayısı yalnızca Sahtekar'da ve öneri/kabulle (§20.1); i
 - E2E: DM'de yanıt ve tepki, oda sohbetinde tepki; görsel parçalar Aşama 8 sohbet PR'ı birleştikten sonra.
 - Yayın: migration + üç fonksiyonun deploy'u (`chat`, `dm`, `venue-chat`), sonra OTA.
 
-### 21.5 Onaya açık sorular
+### 21.5 Kararlar (proje sahibi onayı)
 
-1. 6 emoji: `👍 ❤️ 😂 😮 😢 👏` uygun mu?
-2. Kendi mesajına tepki verilebilsin mi (öneri: evet, WhatsApp gibi)?
-3. Mekan sohbetinde tepkiye hız sınırı: tepki kişi başına tek ve idempotent olduğu için öneri yok; değiştirme-geri alma döngüsü yayın üretir, gerekirse mesaj gönderme sınırına benzer bir sınır (ör. 10 sn'de 10) eklenir.
-4. Oda sohbetinde tepki verenler masa takma adıyla görünür (istediğin gibi); oda bittiğinde oyun geçmişindeki oda sohbeti kapanır, tepki de görünmez kalır.
+1. 6 sabit emoji uygun; liste `pure/reactions.ts` → `REACTIONS`.
+2. Kendi mesajına tepki verilebilir.
+3. Mekan sohbetinde tepkiye hız sınırı: hesap başına 10 sn'de 10; aşılırsa `rate_limited`, arayüz sessizce yok sayar (§21.2).
+4. Oda sohbetinde tepki verenler masa takma adıyla görünür; oda bittiğinde oyun geçmişindeki oda sohbeti kapanır, tepki de görünmez kalır.
