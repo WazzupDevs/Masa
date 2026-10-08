@@ -21,7 +21,7 @@ export function ReportModal({ visible, pending, error, onReport, onClose }: Prop
       {REPORT_REASONS.map((reason) => (
         <Button
           key={reason}
-          variant="secondary"
+          variant="neutral"
           label={tr.safety.reasons[reason]}
           onPress={() => onReport(reason)}
           disabled={pending}

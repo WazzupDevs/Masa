@@ -338,7 +338,7 @@ function RoomTopBar({
       <Sheet visible={menu} onClose={() => setMenu(false)} title={tr.friends.more}>
         {hasOtherTable ? <Text variant="fine">{tr.rooms.endHint}</Text> : null}
         <Button
-          variant="secondary"
+          variant="neutral"
           label={tr.safety.report}
           onPress={() => {
             setMenu(false);
@@ -347,7 +347,7 @@ function RoomTopBar({
         />
         {hasOtherTable ? (
           <Button
-            variant="secondary"
+            variant="neutral"
             label={tr.safety.block}
             onPress={() => {
               setMenu(false);

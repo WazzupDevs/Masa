@@ -1,10 +1,11 @@
 import { baseTypography, type ThemeDefinition } from './tokens';
 
 // The app's one theme, "Oyun Gecesi": cream ground (dark: neutral near-black), a purple accent
-// (dark: lemon), lemon and orange stickers, soft cards, ink outline and hard shadow only on the
-// primary button and the featured card; Bricolage Grotesque 800 headings over Nunito. Visual source: the
-// Claude Design canvas (Aşama 1 · Son → Palet, Tipografi, Bileşenler). Every text/ground pair is
-// AA (contrast.test.ts). Trust surfaces (sheets, `Quiet`) drop the outlines and hard shadows.
+// (dark: lemon), lemon and orange stickers, soft cards, ink outline and hard shadow on every button
+// and game control (Aşama 8 · Saha) and on the featured card; Bricolage Grotesque 800 headings
+// over Nunito. Visual source: the Claude Design canvas (Aşama 1 · Son → Palet, Tipografi,
+// Bileşenler). Every text/ground pair is AA (contrast.test.ts). Trust surfaces (sheets, `Quiet`)
+// drop the outlines and hard shadows.
 export const THEME: ThemeDefinition = {
   defaultScheme: 'system',
   palettes: {
@@ -82,22 +83,21 @@ export const THEME: ThemeDefinition = {
   },
   shape: {
     radius: { sm: 12, md: 18, lg: 24, pill: 999 },
-    // Stage 4: outlines and hard shadows only on the primary button and the one featured card;
-    // other cards are soft (the shadow barely shows on the dark ground, the surface tone carries
-    // them there).
+    // Stage 4: outlines and hard shadows only on the one featured card; other cards are soft (the
+    // shadow barely shows on the dark ground, the surface tone carries them there). Aşama 8: every
+    // button and game control has the depth (outline and hard shadow).
     stroke: { card: 0, feature: 2, control: 2, tag: 0, hairline: 1, venueRing: 2 },
     shadow: {
       card: '0px 10px 28px -12px rgba(27, 20, 51, 0.22)',
       feature: '3px 3px 0px {border}',
-      primaryButton: '3px 3px 0px {border}',
-      button: null,
-      venueButton: null,
+      depth: '3px 3px 0px {border}',
       raised: '0px 2px 6px -2px rgba(27, 20, 51, 0.2)',
       pin: '0px 4px 10px rgba(0, 0, 0, 0.25)',
       // The floating tab bar: wide, soft, low opacity (no outline on its top edge).
       tabBar: '0px 14px 36px -8px rgba(0, 0, 0, 0.24)',
       focus: '3px 3px 0px {accent}',
     },
+    depth: { stroke: 2, offset: 3 },
     selectedTeam: 'fill',
     screenPadding: 20,
   },

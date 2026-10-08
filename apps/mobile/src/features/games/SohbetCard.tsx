@@ -40,7 +40,7 @@ export function SohbetCard({
   return (
     <View className="items-center gap-4">
       {state ? (
-        <Card className="self-stretch">
+        <Card tone="feature" className="self-stretch">
           <View className="items-center gap-3 py-2">
             <Text variant="eyebrow">{tr.games.themes[state.theme]}</Text>
             <Text variant="title" align="center">

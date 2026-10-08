@@ -21,7 +21,7 @@ export function RouteError({ error, retry }: ErrorBoundaryProps) {
         <EmptyState snail title={tr.errorScreen.title} body={tr.errorScreen.body} />
         <Button label={tr.errorScreen.retry} onPress={() => void retry()} />
         <Button
-          variant="secondary"
+          variant="neutral"
           label={tr.errorScreen.home}
           onPress={() => {
             router.replace('/');

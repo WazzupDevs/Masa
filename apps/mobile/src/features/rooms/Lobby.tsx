@@ -169,7 +169,7 @@ export function Lobby({ venueId, sessionId, since, mySpotId, venueHasSpots }: Pr
                       ) : null}
                       {group.mine ? (
                         <Button
-                          variant="secondary"
+                          variant="neutral"
                           label={tr.rooms.requestJoin}
                           onPress={() => {
                             setParticipation('anonymous');
@@ -179,7 +179,7 @@ export function Lobby({ venueId, sessionId, since, mySpotId, venueHasSpots }: Pr
                         />
                       ) : spotId !== null ? (
                         <Button
-                          variant="secondary"
+                          variant="neutral"
                           testID="spot-here"
                           icon="location-outline"
                           label={tr.rooms.spotHere}

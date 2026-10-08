@@ -8,7 +8,7 @@ type Props = { word: string; forbidden: readonly string[]; testID?: string };
 
 export function TabuCardView({ word, forbidden, testID }: Props) {
   return (
-    <Card testID={testID}>
+    <Card tone="feature" testID={testID}>
       <View className="items-center py-1">
         <Text variant="word" align="center">
           {word.toLocaleUpperCase('tr-TR')}

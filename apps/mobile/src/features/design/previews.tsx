@@ -2,6 +2,7 @@ import { type ReactNode, useState } from 'react';
 import { View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { ChoiceChip } from '@/components/ChoiceChip';
 import { ConfirmSheet } from '@/components/ConfirmSheet';
 import { GameDisc, type GameGlyph } from '@/components/Glyph';
 import { Text } from '@/components/Text';
@@ -70,12 +71,63 @@ export function PreviewBlock({ title, children }: { title: string; children: Rea
   );
 }
 
+// Aşama 8 · Saha: the button roles with the 3D depth, a disabled one, the small header size and
+// the choice chips (the chosen one stays pressed in).
+function ButtonsBlock() {
+  const [chip, setChip] = useState(1);
+  return (
+    <PreviewBlock title="Button · 3D">
+      <View className="gap-3" testID="preview-buttons">
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <Button tight label="Oda kur" onPress={() => undefined} />
+          </View>
+          <View className="flex-1">
+            <Button tight variant="secondary" label="Masanla oyna" onPress={() => undefined} />
+          </View>
+        </View>
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <Button tight variant="positive" label="Arkadaşlar" onPress={() => undefined} />
+          </View>
+          <View className="flex-1">
+            <Button tight variant="danger" label="Odayı bitir" onPress={() => undefined} />
+          </View>
+        </View>
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <Button tight variant="neutral" label="Vazgeç" onPress={() => undefined} />
+          </View>
+          <View className="flex-1">
+            <Button tight label="Oda kur" disabled onPress={() => undefined} />
+          </View>
+        </View>
+        <View className="flex-row flex-wrap items-center gap-3">
+          <Button size="sm" variant="danger" label="Masadan ayrıl" onPress={() => undefined} />
+          <Button size="sm" variant="neutral" label="Değiştir" onPress={() => undefined} />
+        </View>
+        <View className="flex-row gap-3">
+          {['1', '2', '3', '4+'].map((label, i) => (
+            <ChoiceChip
+              key={label}
+              label={label}
+              selected={chip === i}
+              onPress={() => setChip(i)}
+            />
+          ))}
+        </View>
+      </View>
+    </PreviewBlock>
+  );
+}
+
 function GamesSet() {
   const [score, setScore] = useState(8);
   const [intro, setIntro] = useState(false);
   const [confirm, setConfirm] = useState(false);
   return (
     <View className="gap-4">
+      <ButtonsBlock />
       <PreviewBlock title="GameDisc">
         <View className="flex-row flex-wrap gap-3">
           {GAMES.map((g) => (
@@ -93,7 +145,7 @@ function GamesSet() {
           <TeamScore name="Yaratıcı Lokma" note="anlatıyor" score={score} active />
         </View>
         <Button
-          variant="secondary"
+          variant="neutral"
           testID="preview-score"
           label="+1"
           onPress={() => setScore((s) => s + 1)}
@@ -135,13 +187,13 @@ function GamesSet() {
       <PreviewBlock title="RematchButton · ConfirmSheet · FirstGameIntro">
         <RematchButton onPress={() => undefined} />
         <Button
-          variant="secondary"
+          variant="neutral"
           testID="preview-confirm"
           label={tr.games.endGame}
           onPress={() => setConfirm(true)}
         />
         <Button
-          variant="secondary"
+          variant="neutral"
           testID="preview-intro"
           label={tr.games.introTitle}
           onPress={() => setIntro(true)}

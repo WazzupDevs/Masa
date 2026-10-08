@@ -6,7 +6,7 @@ import { ICON, type PaletteKey } from '@/theme/tokens';
 // The app's own icon family (canvas: Aşama 5 · Geri bildirim → İkonlar A): drawn in
 // scripts/icon/glyphs.ts, rasterised white by `pnpm icons` (1×/2×/3×) and tinted here, since
 // react-native-svg is a native module the installed builds do not have.
-export type TabGlyph = 'explore' | 'activities' | 'messages' | 'profile' | 'bell';
+export type TabGlyph = 'explore' | 'activities' | 'venue' | 'messages' | 'profile' | 'bell';
 
 const TAB: Record<TabGlyph, { line: ImageSourcePropType; solid: ImageSourcePropType }> = {
   explore: {
@@ -16,6 +16,10 @@ const TAB: Record<TabGlyph, { line: ImageSourcePropType; solid: ImageSourcePropT
   activities: {
     line: require('../../assets/glyph/tab-activities.png'),
     solid: require('../../assets/glyph/tab-activities-active.png'),
+  },
+  venue: {
+    line: require('../../assets/glyph/tab-venue.png'),
+    solid: require('../../assets/glyph/tab-venue-active.png'),
   },
   messages: {
     line: require('../../assets/glyph/tab-messages.png'),

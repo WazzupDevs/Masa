@@ -5,12 +5,16 @@ import { ActivityIndicator, Pressable, View, type ViewStyle } from 'react-native
 import { useTheme } from '@/theme/ThemeProvider';
 import { ICON, SPACING, TOUCH } from '@/theme/tokens';
 
-import { usePressScale } from './motion';
+import { useDepth } from './Depth';
 import { useQuiet } from './Quiet';
 import { Text } from './Text';
 
-// `dangerText`: a text-only button in the danger colour (Hesabımı sil).
-export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'success' | 'ghost' | 'dangerText';
+// Roles (canvas: Aşama 8 · Saha → 3D düğme sistemi): primary purple ("Oda kur"), secondary orange
+// ("Masanla oyna"), positive green ("Doğru", "Arkadaşlar"), danger red ("Odayı bitir"), neutral
+// white (everything else that acts). All five have the 3D depth. `ghost` and `dangerText` are
+// text-only (a link-like action; "Hesabımı sil").
+export type ButtonVariant =
+  'primary' | 'secondary' | 'positive' | 'danger' | 'neutral' | 'ghost' | 'dangerText';
 export type IconName = ComponentProps<typeof Ionicons>['name'];
 
 type Props = {
@@ -19,7 +23,8 @@ type Props = {
   disabled?: boolean;
   loading?: boolean;
   variant?: ButtonVariant;
-  size?: 'md' | 'lg';
+  // sm: a header button ("Masadan ayrıl"), 40 high with the touch area grown to 48.
+  size?: 'sm' | 'md' | 'lg';
   icon?: IconName;
   // A short addition after the label ("+1", "2 hak").
   detail?: string;
@@ -34,6 +39,8 @@ type Props = {
   // Half a row ("Oda kur" | "Masanla oyna"): tighter padding and the label kept on one line.
   tight?: boolean;
 };
+
+const SMALL_HEIGHT = SPACING[10];
 
 export function Button({
   label,
@@ -51,75 +58,62 @@ export function Button({
   stack,
   tight,
 }: Props) {
-  const theme = useTheme();
+  const { colors, shape } = useTheme();
   const quiet = useQuiet();
-  const pressScale = usePressScale();
-  const { colors, shape } = theme;
+  const depth = useDepth();
   const inactive = disabled || loading;
 
   const fills: Record<ButtonVariant, { bg: string; fg: string }> = {
-    primary: { bg: colors.accent, fg: colors.onAccent },
-    secondary: { bg: colors.raised, fg: colors.text },
+    primary: { bg: colors.violet, fg: colors.onViolet },
+    secondary: { bg: colors.event, fg: colors.onEvent },
+    positive: { bg: colors.success, fg: colors.onSuccess },
     danger: { bg: colors.danger, fg: colors.onDanger },
-    success: { bg: colors.success, fg: colors.onSuccess },
+    neutral: { bg: colors.raised, fg: colors.text },
     ghost: { bg: 'transparent', fg: colors.muted },
     dangerText: { bg: 'transparent', fg: colors.danger },
   };
   const textOnly = variant === 'ghost' || variant === 'dangerText';
   let { bg, fg } = fills[variant];
-  // Only the primary button carries the outline and the hard shadow; the secondary one is a soft
-  // pill lifted off the ground. Trust screens keep a hairline on the secondary button only.
-  let borderWidth = 0;
-  let borderColor = 'transparent';
-  if (variant === 'secondary' && quiet) {
-    borderWidth = shape.stroke.hairline;
-    borderColor = colors.divider;
-  } else if (variant === 'primary' && !quiet) {
-    borderWidth = shape.stroke.feature;
-    borderColor = colors.border;
+  if (inactive && !tint) {
+    bg = textOnly ? 'transparent' : colors.surface2;
+    fg = colors.muted;
   }
-  let shadow =
-    quiet || textOnly
-      ? undefined
-      : variant === 'primary'
-        ? shape.shadow.primaryButton
-        : variant === 'secondary'
-          ? shape.shadow.card
-          : shape.shadow.button;
+  // Trust screens keep a hairline on the neutral button only; everything else is flat there.
+  const quietEdge: ViewStyle =
+    quiet && variant === 'neutral'
+      ? { borderWidth: shape.stroke.hairline, borderColor: colors.divider }
+      : {};
+  const outline: ViewStyle | undefined = tint?.outline
+    ? { borderWidth: shape.stroke.control, borderColor: tint.background }
+    : undefined;
   if (tint) {
     bg = tint.outline ? 'transparent' : tint.background;
     fg = tint.outline ? tint.background : tint.foreground;
-    borderWidth = tint.outline ? shape.stroke.control : 0;
-    borderColor = tint.outline ? tint.background : 'transparent';
-    shadow = undefined;
   }
+  const small = size === 'sm';
 
   const style: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
     // With a detail ("Doğru +1" in half a row) the label needs the room more than the padding.
-    gap: detail ? SPACING[1.5] : SPACING[2],
-    paddingHorizontal: flush ? 0 : detail || tight ? SPACING[3] : SPACING[5],
+    gap: detail || small ? SPACING[1.5] : SPACING[2],
+    paddingHorizontal: flush
+      ? 0
+      : small
+        ? SPACING[3] + SPACING[0.5]
+        : detail || tight
+          ? SPACING[3]
+          : SPACING[5],
     justifyContent: flush ? 'flex-start' : 'center',
-    paddingVertical: SPACING[2],
-    minHeight: size === 'lg' ? TOUCH.large : TOUCH.button,
+    paddingVertical: small ? SPACING[1] : SPACING[2],
+    minHeight: small ? SMALL_HEIGHT : size === 'lg' ? TOUCH.large : TOUCH.button,
     borderRadius: shape.radius.pill,
     backgroundColor: bg,
-    borderWidth,
-    borderColor,
-    boxShadow: shadow,
   };
 
-  // Pressed: the primary button's hard shadow goes and the button moves into its place; the others
-  // shrink a little. Disabled: a quiet fill, muted text, no shadow.
-  const oneLine = !!detail || !!tight || !/\s/.test(label.trim());
-  const hard = variant === 'primary' && !!shadow;
-  const pressOffset = hard ? shape.stroke.feature + 1 : 0;
-  if (inactive && !tint) {
-    bg = textOnly ? 'transparent' : colors.surface2;
-    fg = colors.muted;
-    borderColor = textOnly ? 'transparent' : colors.muted;
-  }
+  const oneLine = !!detail || !!tight || small || !/\s/.test(label.trim());
+  // The 3D depth on every filled button; text-only and reveal-signal buttons have none.
+  const raised = !textOnly && !tint;
 
   return (
     <Pressable
@@ -129,22 +123,16 @@ export function Button({
       accessibilityState={{ disabled: !!inactive, busy: !!loading }}
       disabled={inactive}
       onPress={onPress}
+      // The small button's face is 40 high; its touch area is 48.
+      hitSlop={small ? (TOUCH.button - SMALL_HEIGHT) / 2 : undefined}
     >
       {({ pressed }) => (
         <View
           style={[
             style,
-            { backgroundColor: bg, borderColor },
-            inactive
-              ? { boxShadow: undefined, opacity: tint ? 0.4 : 1 }
-              : pressed
-                ? hard
-                  ? {
-                      boxShadow: undefined,
-                      transform: [{ translateX: pressOffset }, { translateY: pressOffset }],
-                    }
-                  : [{ boxShadow: undefined, opacity: textOnly ? 0.7 : 1 }, pressScale(true)]
-                : null,
+            raised ? (quiet ? quietEdge : depth({ pressed, inactive })) : outline,
+            tint && inactive ? { opacity: 0.4 } : null,
+            textOnly && pressed ? { opacity: 0.7 } : null,
           ]}
         >
           {loading ? (
@@ -156,7 +144,7 @@ export function Button({
                 className={stack ? 'shrink items-center' : 'shrink flex-row items-baseline gap-1'}
               >
                 <Text
-                  variant={size === 'lg' ? 'buttonLarge' : 'button'}
+                  variant={small ? 'buttonSmall' : size === 'lg' ? 'buttonLarge' : 'button'}
                   color={fg}
                   align="center"
                   // A single word or a label with a detail ("Doğru +1") stays on one line and

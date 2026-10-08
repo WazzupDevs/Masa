@@ -298,7 +298,7 @@ export function GameArea({
               onPress={() => setLocalGame('tabu')}
             />
             <Button
-              variant="secondary"
+              variant="neutral"
               testID="solo-sahtekar"
               label={tr.games.start(tr.concepts.sahtekar)}
               onPress={() => setLocalGame('sahtekar')}
@@ -310,7 +310,7 @@ export function GameArea({
             {(['harf', 'sarki'] as const).map((kind) => (
               <Button
                 key={kind}
-                variant="secondary"
+                variant="neutral"
                 testID={`solo-${kind}`}
                 label={tr.games.start(tr.concepts[kind])}
                 onPress={() => setLocalGame(kind)}
@@ -318,7 +318,7 @@ export function GameArea({
               />
             ))}
             <Button
-              variant="secondary"
+              variant="neutral"
               testID="solo-ibre"
               label={tr.games.start(tr.concepts.ibre)}
               onPress={() => setLocalGame('ibre')}
@@ -328,7 +328,7 @@ export function GameArea({
               <Text variant="fine">{tr.say.needsTwo}</Text>
             ) : null}
             <Button
-              variant="secondary"
+              variant="neutral"
               testID="solo-sohbet"
               label={tr.games.start(tr.concepts.sohbet)}
               onPress={() => startSohbet.mutate()}

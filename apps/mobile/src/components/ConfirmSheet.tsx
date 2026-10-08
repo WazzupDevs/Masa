@@ -39,7 +39,7 @@ export function ConfirmSheet({
       <View className="flex-row gap-2.5">
         <View className="flex-1">
           <Button
-            variant="secondary"
+            variant="neutral"
             testID={testID ? `${testID}-cancel` : undefined}
             label={cancelLabel}
             onPress={onCancel}

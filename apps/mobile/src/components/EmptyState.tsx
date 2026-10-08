@@ -61,7 +61,7 @@ export function EmptyState({ icon, snail, title, body, action }: Props) {
       </Text>
       {action ? (
         <View className="mt-2 self-stretch">
-          <Button variant="secondary" label={action.label} onPress={action.onPress} />
+          <Button variant="neutral" label={action.label} onPress={action.onPress} />
         </View>
       ) : null}
     </View>

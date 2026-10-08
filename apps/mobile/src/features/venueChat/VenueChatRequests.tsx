@@ -59,7 +59,7 @@ export function VenueChatRequests({ requests }: { requests: VenueChatIncoming[] 
             <View className="flex-row gap-2.5">
               <View className="flex-1">
                 <Button
-                  variant="secondary"
+                  variant="neutral"
                   label={tr.friends.decline}
                   disabled={respond.isPending}
                   onPress={() => respond.mutate({ requestId: r.requestId, accept: false })}

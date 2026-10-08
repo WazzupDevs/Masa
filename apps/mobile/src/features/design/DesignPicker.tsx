@@ -41,7 +41,7 @@ export function DesignPicker() {
       />
       <View className="mt-2">
         <Button
-          variant="secondary"
+          variant="neutral"
           testID="preview-open"
           label={tr.design.previewOpen}
           onPress={() => router.push('/design-preview')}

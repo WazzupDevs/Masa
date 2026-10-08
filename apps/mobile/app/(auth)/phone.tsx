@@ -54,7 +54,7 @@ export default function PhoneScreen() {
         </View>
         <View className="pt-8">
           <Button
-            variant="secondary"
+            variant="neutral"
             label={tr.common.close}
             onPress={() => useOnboardingStore.setState({ underAge: false })}
           />

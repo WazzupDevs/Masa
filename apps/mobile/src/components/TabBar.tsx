@@ -7,32 +7,38 @@ import { create } from 'zustand';
 
 import { useReduceMotion } from '@/lib/useReduceMotion';
 import { useTheme } from '@/theme/ThemeProvider';
-import { ICON, SPACING, TOUCH } from '@/theme/tokens';
+import { ICON, type PaletteKey, SPACING, TAB_TONES, TOUCH, VENUE_TAB_TONE } from '@/theme/tokens';
 
 import { FADE_IMAGE, type TabGlyph, TabIcon } from './Glyph';
-import { Snail, SnailLineIcon } from './Snail';
 import { Text } from './Text';
 
 // The floating capsule (canvas: Aşama 1 · Son → Sekme çubuğu, option 1): 16 in from the screen
 // edges, 8 above the safe area, fully rounded; an opaque surface with a soft shadow and no top
 // line. Content scrolls behind it and fades into the canvas (one stretched, tinted gradient image:
 // no native gradient module); over the Keşfet map there is no fade. The Mekan disc sits inside it.
+// Aşama 8 · Saha: five icons of one family at one size; the selected tab's icon is solid and in its
+// own colour, the others are line icons in one colour; the halo wraps only the icon, so a long
+// label ("Aktiviteler") never spills out of it.
 export const TAB_BAR_HEIGHT = TOUCH.large;
 const INSET = SPACING[4];
 const GAP = SPACING[2];
-const PILL = { width: 76, height: 52 } as const;
 const VENUE_DISC = SPACING[10];
+const PILL = { width: SPACING[12] + SPACING[1], height: SPACING[8] } as const;
+const LABEL_HEIGHT = SPACING[4];
+// The icon row is as high as the Mekan disc, so every label sits on the same line; the halo is
+// centred on the icon.
+const PILL_TOP = (TAB_BAR_HEIGHT - VENUE_DISC - LABEL_HEIGHT) / 2 + (VENUE_DISC - PILL.height) / 2;
 const BADGE = 18;
 const FADE_HEIGHT = 128;
 
-// The tab icon of each route; the Arkadaşlar tab uses the Mesajlar icon. Other routes fall back to
-// their `tabBarIcon` option.
-const ROUTE_GLYPH: Partial<Record<string, TabGlyph>> = {
-  explore: 'explore',
-  activities: 'activities',
-  friends: 'messages',
-  messages: 'messages',
-  profile: 'profile',
+// The tab icon and colour of each route; the Arkadaşlar tab uses the Mesajlar icon. Other routes
+// fall back to their `tabBarIcon` option.
+const ROUTE_GLYPH: Partial<Record<string, { glyph: TabGlyph; tone: PaletteKey }>> = {
+  explore: { glyph: 'explore', tone: TAB_TONES.explore },
+  activities: { glyph: 'activities', tone: TAB_TONES.activities },
+  friends: { glyph: 'messages', tone: TAB_TONES.messages },
+  messages: { glyph: 'messages', tone: TAB_TONES.messages },
+  profile: { glyph: 'profile', tone: TAB_TONES.profile },
 };
 
 // Screens that change the bar while focused: a DM hides it (its message bar sits at the bottom),
@@ -155,7 +161,7 @@ export function TabBar({ state, descriptors, navigation, insets, raised }: Props
             pointerEvents="none"
             style={{
               position: 'absolute',
-              top: (TAB_BAR_HEIGHT - PILL.height) / 2,
+              top: PILL_TOP,
               left: 0,
               width: PILL.width,
               height: PILL.height,
@@ -174,8 +180,8 @@ export function TabBar({ state, descriptors, navigation, insets, raised }: Props
           const label = options.title ?? route.name;
           const badge = options.tabBarBadge;
           const isVenue = route.name === raised;
-          const color = focused ? colors.text : colors.muted;
-          const routeGlyph = ROUTE_GLYPH[route.name];
+          const tabGlyph = ROUTE_GLYPH[route.name];
+          const color = focused && tabGlyph ? colors[tabGlyph.tone] : colors.muted;
 
           const onPress = () => {
             const event = navigation.emit({
@@ -188,6 +194,7 @@ export function TabBar({ state, descriptors, navigation, insets, raised }: Props
 
           let glyph: ReactNode;
           if (isVenue) {
+            // The raised Mekan disc: filled with its colour when selected.
             glyph = (
               <View
                 className="items-center justify-center"
@@ -195,24 +202,24 @@ export function TabBar({ state, descriptors, navigation, insets, raised }: Props
                   width: VENUE_DISC,
                   height: VENUE_DISC,
                   borderRadius: shape.radius.pill,
-                  backgroundColor: focused ? colors.buzz : colors.surface2,
+                  backgroundColor: focused ? colors[VENUE_TAB_TONE.fill] : colors.surface2,
                   borderWidth: shape.stroke.venueRing,
                   borderColor: focused ? colors.border : 'transparent',
                 }}
               >
-                {focused ? (
-                  <Snail variant="small" height={VENUE_DISC * 0.45} />
-                ) : (
-                  <SnailLineIcon size={ICON.lg} color={colors.text} />
-                )}
+                <TabIcon
+                  name="venue"
+                  active={focused}
+                  color={focused ? colors[VENUE_TAB_TONE.icon] : colors.muted}
+                />
               </View>
             );
           } else {
             // As high as the Mekan disc, so every label sits on the same line.
             glyph = (
               <View style={{ height: VENUE_DISC, justifyContent: 'center' }}>
-                {routeGlyph ? (
-                  <TabIcon name={routeGlyph} active={focused} color={color} />
+                {tabGlyph ? (
+                  <TabIcon name={tabGlyph.glyph} active={focused} color={color} />
                 ) : (
                   options.tabBarIcon?.({ focused, color, size: ICON.lg })
                 )}
@@ -258,7 +265,7 @@ export function TabBar({ state, descriptors, navigation, insets, raised }: Props
               }}
             >
               {glyph}
-              <Text variant="caption" tone={focused ? 'text' : 'muted'}>
+              <Text variant="caption" tone={focused ? 'text' : 'muted'} numberOfLines={1}>
                 {label}
               </Text>
             </Pressable>

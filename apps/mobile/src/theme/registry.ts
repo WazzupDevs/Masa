@@ -50,9 +50,7 @@ export function resolveShadows(
   return {
     card: resolveShadow(set.card, palette),
     feature: resolveShadow(set.feature, palette),
-    primaryButton: resolveShadow(set.primaryButton, palette),
-    button: resolveShadow(set.button, palette),
-    venueButton: resolveShadow(set.venueButton, palette),
+    depth: resolveShadow(set.depth, palette),
     raised: resolveShadow(set.raised, palette),
     pin: resolveShadow(set.pin, palette),
     tabBar: resolveShadow(set.tabBar, palette),
