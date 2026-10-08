@@ -188,6 +188,7 @@ export const tr = {
     empty: 'Henüz mesajın yok.',
     emptyHint: 'Arkadaş olduğun kişilerle burada yazışırsın.',
     noMessage: 'Henüz mesaj yok',
+    typing: 'yazıyor…',
     yesterday: 'Dün',
     stamp: (iso: string, stamp: InboxStamp) =>
       stamp.kind === 'time'
@@ -349,7 +350,6 @@ export const tr = {
     removeConfirm: 'Çıkar',
     removeHint: 'Konuşmanız silinir. Karşı tarafa bildirilmez.',
     friendMenuTitle: 'Arkadaşlık',
-    viewProfile: 'Profili gör',
     done: 'Tamam',
     back: 'Geri',
   },
@@ -539,6 +539,19 @@ export const tr = {
       const d = new Date(iso);
       return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     },
+    // Aşama 8 · Saha: following the newest message, replies and reactions.
+    newMessages: (n: number) => (n > 1 ? `Yeni mesaj · ${n}` : 'Yeni mesaj'),
+    newMessagesLabel: (n: number) =>
+      n > 1 ? `${n} yeni mesaj, en alta in` : 'Yeni mesaj, en alta in',
+    reply: 'Yanıtla',
+    react: 'Tepki ver',
+    replyingTo: (name: string) => `Yanıtlanan: ${name}`,
+    cancelReply: 'Yanıtı kaldır',
+    quoteLabel: (name: string, text: string) => `${name} mesajına yanıt: ${text}`,
+    reactionChip: (emoji: string, n: number, mine: boolean) =>
+      `${emoji} ${n}${mine ? ', sizin tepkiniz' : ''}`,
+    reactWith: (emoji: string) => `${emoji} ile tepki ver`,
+    openProfile: (name: string) => `${name}, profili aç`,
   },
   // Mekan sohbet odası (docs/SPEC_V3.md §7).
   venueChat: {
@@ -554,7 +567,6 @@ export const tr = {
     profiled: 'profilli',
     you: 'Sen',
     messageMenu: 'Mesaj',
-    seeProfile: 'Profili gör',
     sendRequest: 'Arkadaşlık isteği gönder',
     requestConfirmTitle: 'İstek gönderilsin mi?',
     requestConfirmBody: 'İstek gönderirsen profilin ona görünür: adın, yaşın ve fotoğrafın.',
@@ -886,6 +898,7 @@ export const tr = {
     schemes: { light: 'Açık', dark: 'Koyu', system: 'Sistem' },
     previewTitle: 'Bileşen önizleme',
     previewOpen: 'Bileşen önizlemesini aç',
+    previewIncoming: 'Mesaj gelsin',
   },
   settings: {
     title: 'Ayarlar',
