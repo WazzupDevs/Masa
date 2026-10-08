@@ -905,6 +905,14 @@ Tasarımın "Aşama 5" PR'ı main'e girmeden başlamaz: `TabBar.tsx`, `profile/i
 - **Analitik:** yeni olay yok; Aktiviteler'den başlayan oda ve oyunlar mevcut olaylarla (`room_created`, oyun olayları) sayılır.
 - **Dev projesinde SMS yok** (proje sahibi düzeltmesi): giriş yalnızca panele girilen test numaralarıyla; Twilio kutularında sahte değerler. Gerçek SMS yalnızca pilot projesinde Netgsm kancasıyla (§2.3). S14'teki "dev projesi Twilio Verify ile çalışır" bununla değişir.
 
+### 18.3b Gecikme (adım 9, saha testi)
+
+Ölçüm: `pnpm latency` (`scripts/latency/measure.ts`; iki test hesabı, adım adım: istemci çağrısı, yayın, alıcının okuması). Bulgu: her DM yayını bütün `friends/*` sorgularını yeniden çağırıyordu (konuşma açıkken sayfayla birlikte 5 çağrı, ikisi fotoğraf imzalayan fonksiyon); gönderende tik sayfa yeniden okunana kadar bekliyordu.
+
+- **`dm/send` yanıtı mesajı taşır:** `{ ok, messageId, createdAt }` (`dm_send_message`). Uygulama mesajı önbellekteki sayfaya `sent` tikiyle koyar; saat yanıtla tike döner, sayfa yeniden okunmaz. Hata "Tekrar dene" ile kalır.
+- **Alıcı:** açık konuşma yalnızca kendi sayfasını okur (`dm:{thread_id}`). `inbox:` üzerindeki DM yayını `dm/inbox` ve `friends/list`'i en fazla saniyede bir çağırır (konuşmanın `dm/read`'i de aynı zamanlayıcıyı kullanır); diğer konuşmaların sayfaları yalnızca bayat işaretlenir, açılınca okunur. İstek ve arkadaşlık yayınları bütün `friends/*`'i yeniler (seyrek).
+- **İmzalı fotoğraf URL'leri** süresi dolmadan yeniden kullanılır (`pure/photoUrlCache.ts`): fonksiyon aynı yolu yarım saat aynı URL'le döner (Storage çağrısı yok), uygulama bir dosyanın ilk URL'ini 25 dakika tutar (fotoğraf yeniden inmez). Kimin hangi fotoğrafı göreceğine yine her okumada sunucu karar verir: URL yalnızca o okuma yolu yeniden verdiğinde kullanılır.
+
 ### 18.4 Kabul
 
 - **PR 1:** Seed sonrası kampüs `campus`, diğer mekanlar `cafe`. Eksik ya da yanlış tür `pnpm seed`'i durdurur. `explore_venues` türü döndürür.

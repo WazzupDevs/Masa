@@ -25,12 +25,13 @@ import {
   useDmMessages,
   useFriends,
   useMarkThreadRead,
+  useSendDm,
 } from '@/features/friends/queries';
 import { useDmTyping } from '@/features/friends/useDmTyping';
 import { useBroadcast } from '@/features/rooms/useBroadcast';
 import { tr } from '@/i18n/tr';
 import { track } from '@/lib/analytics';
-import { ApiError, dmApi, friendsApi, safetyApi } from '@/lib/api';
+import { ApiError, friendsApi, safetyApi } from '@/lib/api';
 
 type Params = { threadId: string; publicId: string; name: string };
 
@@ -61,6 +62,7 @@ export default function DmScreen() {
   const { typing, notifyTyping, clearTyping } = useDmTyping(threadId);
 
   const markRead = useMarkThreadRead(threadId);
+  const sendDm = useSendDm(threadId);
   const refetch = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: friendKeys.dm(threadId) });
     markRead();
@@ -88,13 +90,11 @@ export default function DmScreen() {
 
   const body = prepareDm(draft);
   // Sending is optimistic, as in the room chat (@shared/chatOutbox.ts): the message shows at once
-  // with the waiting state and is replaced by the server's copy.
+  // with the waiting state and is replaced by the server's copy on the reply, with the sent tick.
   const deliver = (localId: string, text: string) => {
-    dmApi
-      .send(threadId, text)
-      .then(async () => {
+    sendDm(text)
+      .then(() => {
         track('dm_sent', {});
-        await queryClient.invalidateQueries({ queryKey: friendKeys.dm(threadId) });
         dispatch({ type: 'sent', localId });
       })
       .catch((err: unknown) =>

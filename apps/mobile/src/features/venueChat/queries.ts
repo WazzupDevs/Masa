@@ -8,6 +8,7 @@ import { useCallback } from 'react';
 
 import { useBroadcast } from '@/features/rooms/useBroadcast';
 import { profileApi, venueChatApi } from '@/lib/api';
+import { stablePhoto } from '@/lib/photoUrls';
 
 export const venueChatKeys = {
   messages: (venueId: string) => ['venueChat', venueId] as const,
@@ -28,7 +29,9 @@ export function useVenueChat(venueId: string | undefined) {
     queryKey: venueChatKeys.messages(venueId ?? ''),
     enabled: venueId !== undefined,
     queryFn: async (): Promise<VenueChatMessage[]> =>
-      (await venueChatApi.page(venueId ?? '')).messages.reverse(),
+      (await venueChatApi.page(venueId ?? '')).messages
+        .map((m) => ({ ...m, photoUrl: stablePhoto(m.photoUrl) }))
+        .reverse(),
   });
 }
 

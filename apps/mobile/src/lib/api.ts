@@ -31,6 +31,7 @@ import type {
 import type {
   DmInboxResponse,
   DmOkResponse,
+  DmSendResponse,
   FriendsIncomingResponse,
   FriendsListResponse,
   FriendsOkResponse,
@@ -313,7 +314,7 @@ export const venueChatApi = {
 
 export const dmApi = {
   send: (threadId: string, body: string) =>
-    invoke<DmOkResponse>('dm', { action: 'send', threadId, body }),
+    invoke<DmSendResponse>('dm', { action: 'send', threadId, body }),
   read: (threadId: string) => invoke<DmOkResponse>('dm', { action: 'read', threadId }),
   // Mesajlar (docs/SPEC_V3.md §18.2): one row per friend, photos signed by the function.
   inbox: () => invoke<DmInboxResponse>('dm', { action: 'inbox' }),
