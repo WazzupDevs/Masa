@@ -125,14 +125,14 @@ function PhotoEditor({ publicId, hasName }: { publicId: string; hasName: boolean
       >
         <Text variant="fine">{tr.profile.photoPrivacy}</Text>
         <Button
-          variant="secondary"
+          variant="neutral"
           label={tr.profile.photoFromLibrary}
           onPress={() => setPhoto.mutate('library')}
           loading={setPhoto.isPending && setPhoto.variables === 'library'}
           disabled={setPhoto.isPending || removePhoto.isPending}
         />
         <Button
-          variant="secondary"
+          variant="neutral"
           label={tr.profile.photoFromCamera}
           onPress={() => setPhoto.mutate('camera')}
           loading={setPhoto.isPending && setPhoto.variables === 'camera'}
@@ -154,7 +154,7 @@ function PhotoEditor({ publicId, hasName }: { publicId: string; hasName: boolean
             </Text>
             {setPhoto.error instanceof PhotoError && setPhoto.error.reason === 'permission' ? (
               <Button
-                variant="secondary"
+                variant="neutral"
                 label={tr.checkin.openSettings}
                 onPress={() => void Linking.openSettings()}
               />

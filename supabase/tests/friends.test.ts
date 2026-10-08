@@ -22,6 +22,7 @@ import {
   TYPING_EVENT,
 } from '../functions/_shared/pure/rooms.ts';
 import { DM_MIN_INTERVAL_MS } from '../functions/_shared/pure/friends.ts';
+import { totalUnread } from '../functions/_shared/pure/dmInbox.ts';
 import { deleteFixtureVenues, insertFixtureVenues } from './fixtures/venues.ts';
 import {
   checkInAt,
@@ -77,6 +78,11 @@ afterAll(async () => {
 
 type Mode = 'anonymous' | 'profile';
 const OK = { status: 200, body: { ok: true } };
+// dm/send answers with the message as written (adım 9.1).
+const SENT = {
+  status: 200,
+  body: { ok: true, messageId: expect.any(String), createdAt: expect.any(String) },
+};
 const quiet = () => new Promise((resolve) => setTimeout(resolve, QUIET_MS));
 
 const friends = (client: Client, body: Record<string, unknown>) => invoke(client, 'friends', body);
@@ -653,7 +659,9 @@ describe('ending a friendship', () => {
     await becomeFriends(a, b, historyA);
     const threadId = (await friendList(a))[0]?.threadId ?? '';
     for (let i = 1; i <= 3; i++) {
-      expect(await dm(i % 2 ? a : b, { action: 'send', threadId, body: `mesaj ${i}` })).toEqual(OK);
+      expect(await dm(i % 2 ? a : b, { action: 'send', threadId, body: `mesaj ${i}` })).toEqual(
+        SENT,
+      );
       await sql`update public.dm_messages set created_at = created_at - interval '2 seconds'`;
     }
     return { a, b, threadId, historyB };
@@ -852,7 +860,8 @@ describe('DMs', () => {
     await becomeFriends(a, b, historyA);
     const threadId = (await friendList(a))[0]?.threadId ?? '';
 
-    expect(await dm(a, { action: 'send', threadId, body: '  Selam! ' })).toEqual(OK);
+    const sent = await dm(a, { action: 'send', threadId, body: '  Selam! ' });
+    expect(sent).toEqual(SENT);
     expect(await dm(a, { action: 'send', threadId, body: 'ikinci' })).toEqual({
       status: 429,
       body: errorBody('rate_limited'),
@@ -868,6 +877,11 @@ describe('DMs', () => {
 
     const { data: page } = await b.rpc('dm_messages_page', { target_thread_id: threadId });
     expect(page).toEqual([expect.objectContaining({ body: 'Selam!', from_me: false })]);
+    // The reply names the row the page holds, so the app can put it in at once with its tick.
+    const { data: own } = await a.rpc('dm_messages_page', { target_thread_id: threadId });
+    const written = sent.body as { messageId: string; createdAt: string };
+    expect(own?.[0]).toMatchObject({ id: written.messageId, from_me: true, status: 'sent' });
+    expect(Date.parse(own?.[0]?.created_at ?? '')).toBe(Date.parse(written.createdAt));
     expect(Object.keys(page?.[0] ?? {}).sort()).toEqual([
       'body',
       'created_at',
@@ -987,7 +1001,7 @@ describe('DM ticks', () => {
     const dmA = await join(a, dmChannel(threadId));
     expect(dmA.status).toBe('SUBSCRIBED');
 
-    expect(await dm(a, { action: 'send', threadId, body: 'bir' })).toEqual(OK);
+    expect(await dm(a, { action: 'send', threadId, body: 'bir' })).toEqual(SENT);
     expect((await page(a, threadId)).map((m) => m.status)).toEqual(['sent']);
     // The other member's messages carry no status.
     expect((await page(b, threadId)).map((m) => m.status)).toEqual([null]);
@@ -1006,12 +1020,14 @@ describe('DM ticks', () => {
 
     // A newer message is sent, not delivered.
     await afterRateLimit();
-    expect(await dm(a, { action: 'send', threadId, body: 'iki' })).toEqual(OK);
+    expect(await dm(a, { action: 'send', threadId, body: 'iki' })).toEqual(SENT);
     expect((await page(a, threadId)).map((m) => m.status)).toEqual(['sent', 'delivered']);
 
-    // Read: both.
+    // Read: both. b's Mesajlar badge counts nothing after it (step 9: the badge stayed red).
+    expect((await inboxOf(b))[0]?.unreadCount).toBe(2);
     expect(await dm(b, { action: 'read', threadId })).toEqual(OK);
     expect((await page(a, threadId)).map((m) => m.status)).toEqual(['read', 'read']);
+    expect(totalUnread(await inboxOf(b))).toBe(0);
     expect(await dm(b, { action: 'read', threadId })).toEqual(OK);
     await quiet();
     expect(dmA.events.filter((e) => e === BROADCAST.dmStatus)).toHaveLength(2);
@@ -1045,7 +1061,7 @@ describe('DM ticks', () => {
     await becomeFriends(a, b, historyA);
     const threadId = (await friendList(a))[0]?.threadId ?? '';
     expect(await dm(a, { action: 'delivered' })).toEqual(OK);
-    expect(await dm(b, { action: 'send', threadId, body: 'selam' })).toEqual(OK);
+    expect(await dm(b, { action: 'send', threadId, body: 'selam' })).toEqual(SENT);
     expect((await page(b, threadId)).map((m) => m.status)).toEqual(['sent']);
   });
 });
@@ -1069,9 +1085,9 @@ describe('Mesajlar (dm/inbox)', () => {
     ]);
 
     const long = 'ç'.repeat(90);
-    expect(await dm(b, { action: 'send', threadId, body: 'selam' })).toEqual(OK);
+    expect(await dm(b, { action: 'send', threadId, body: 'selam' })).toEqual(SENT);
     await afterRateLimit();
-    expect(await dm(b, { action: 'send', threadId, body: long })).toEqual(OK);
+    expect(await dm(b, { action: 'send', threadId, body: long })).toEqual(SENT);
     const [first, second] = await inboxOf(a);
     expect(first).toMatchObject({
       threadId,
@@ -1085,7 +1101,7 @@ describe('Mesajlar (dm/inbox)', () => {
     expect(second).toMatchObject({ displayName: 'Cem', lastBody: null, unreadCount: 0 });
 
     // a answers: the newest message is a's, with its status; nothing unread for a.
-    expect(await dm(a, { action: 'send', threadId, body: 'merhaba' })).toEqual(OK);
+    expect(await dm(a, { action: 'send', threadId, body: 'merhaba' })).toEqual(SENT);
     expect((await inboxOf(a))[0]).toMatchObject({
       lastBody: 'merhaba',
       lastFromMe: true,

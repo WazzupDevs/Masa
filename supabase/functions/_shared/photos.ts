@@ -1,4 +1,5 @@
 import type { Db } from './auth.ts';
+import { cachedUrl, type PhotoUrlCache, remember, SERVER_REUSE_MS } from './pure/photoUrlCache.ts';
 import { PHOTO_BUCKET, PHOTO_URL_SECONDS } from './pure/profile.ts';
 
 // Deletes every profile photo of an account (account deletion and ban): Storage objects are not
@@ -26,14 +27,27 @@ export async function photoCopyHex(db: Db, path: string | null): Promise<string 
 }
 
 // Profile photo URLs for the given paths, signed for an hour (photos are private; only Edge
-// Functions sign them). Keyed by path.
+// Functions sign them). Keyed by path. A path signed in this isolate during the last half hour is
+// answered with the same URL (pure/photoUrlCache.ts): no Storage call, and the phone does not
+// download the photo again. The caller has already decided that the reader may see each path.
+const signedUrls: PhotoUrlCache = new Map();
+
 export async function signPhotos(db: Db, paths: readonly string[]): Promise<Map<string, string>> {
   const urls = new Map<string, string>();
-  if (paths.length === 0) return urls;
-  const signed = await db.storage
-    .from(PHOTO_BUCKET)
-    .createSignedUrls([...paths], PHOTO_URL_SECONDS);
+  const now = Date.now();
+  const missing: string[] = [];
+  for (const path of new Set(paths)) {
+    const hit = cachedUrl(signedUrls, path, now);
+    if (hit) urls.set(path, hit);
+    else missing.push(path);
+  }
+  if (missing.length === 0) return urls;
+  const signed = await db.storage.from(PHOTO_BUCKET).createSignedUrls(missing, PHOTO_URL_SECONDS);
   if (signed.error) throw new Error(`storage sign failed (${signed.error.message})`);
-  for (const s of signed.data) if (s.path && s.signedUrl) urls.set(s.path, s.signedUrl);
+  for (const s of signed.data) {
+    if (!s.path || !s.signedUrl) continue;
+    urls.set(s.path, s.signedUrl);
+    remember(signedUrls, s.path, s.signedUrl, now, SERVER_REUSE_MS);
+  }
   return urls;
 }

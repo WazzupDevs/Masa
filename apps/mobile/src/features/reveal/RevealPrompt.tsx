@@ -111,7 +111,7 @@ export function RevealPrompt({ roomId, isOwner, revealEndsAt, score }: Props) {
             <View className="mt-1 flex-row gap-2.5 self-stretch">
               <View className="flex-1">
                 <Button
-                  variant="secondary"
+                  variant="neutral"
                   testID="reveal-no"
                   label={tr.reveal.no}
                   onPress={() => decide.mutate(false)}

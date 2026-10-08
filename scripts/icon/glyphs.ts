@@ -21,6 +21,10 @@ const dot = (cx: number, cy: number, r: number) =>
 // ------------------------------------------------------------------ set A: "Kabuk" (soft, curled)
 // The chosen set: rounded forms that curl like the shell, a spiral where an icon has a mark.
 const SPIRAL_MARK = spiral(13.2, 12.4, 3, 2, 3);
+// The Mekan awning: a sloped top over four scallops.
+const AWNING =
+  'M 5.6 4.4 H 18.4 L 19.8 9.2 C 19.8 11.2 15.9 11.2 15.9 9.2 C 15.9 11.2 12 11.2 12 9.2 ' +
+  'C 12 11.2 8.1 11.2 8.1 9.2 C 8.1 11.2 4.2 11.2 4.2 9.2 Z';
 
 export const TAB_A: Record<TabIcon, Glyph> = {
   explore: {
@@ -56,6 +60,18 @@ export const TAB_A: Record<TabIcon, Glyph> = {
     solid:
       '<circle cx="12" cy="8.5" r="4.6" stroke="none"/>' +
       '<path d="M 4.1 20.9 C 4.6 15.4 8 13 12 13 C 16 13 19.4 15.4 19.9 20.9 Z" stroke="none"/>',
+  },
+  // Mekan: a shop front under a striped, scalloped awning (Aşama 8: the snail left the tab bar).
+  venue: {
+    line:
+      `<path d="${AWNING}"/>` +
+      '<path d="M 9 4.4 L 8.1 9.2 M 15 4.4 L 15.9 9.2"/>' +
+      '<path d="M 5.6 12.6 V 19.8 H 18.4 V 12.6"/>' +
+      '<path d="M 10.2 19.8 V 15.6 C 10.2 15 10.6 14.6 11.2 14.6 H 12.8 C 13.4 14.6 13.8 15 13.8 15.6 V 19.8"/>',
+    solid: `<path d="${AWNING}"/>` + '<path d="M 5 12.5 H 19 V 20.6 H 5 Z" stroke="none"/>',
+    cut:
+      '<path d="M 9 4.4 L 8.1 9.2 M 15 4.4 L 15.9 9.2" fill="none" stroke-width="1.5"/>' +
+      '<path d="M 10.2 21 V 15.6 C 10.2 15 10.6 14.6 11.2 14.6 H 12.8 C 13.4 14.6 13.8 15 13.8 15.6 V 21 Z" stroke="none"/>',
   },
   bell: {
     line:
@@ -102,6 +118,11 @@ export const TAB_B: Record<TabIcon, Glyph> = {
     solid: '<rect x="2.6" y="2.6" width="18.8" height="18.8" rx="5.9" stroke="none"/>',
     cut: '<circle cx="12" cy="10" r="3"/><path d="M 7.2 18.4 C 8 15.9 9.8 14.7 12 14.7 C 14.2 14.7 16 15.9 16.8 18.4 Z"/>',
   },
+  venue: {
+    line: '<rect x="4" y="9" width="16" height="11" rx="2.5"/><path d="M 3.5 9 L 6 4.5 H 18 L 20.5 9"/>',
+    solid:
+      '<rect x="3.1" y="8.1" width="17.8" height="12.8" rx="3.4" stroke="none"/><path d="M 3.5 9 L 6 4.5 H 18 L 20.5 9 Z"/>',
+  },
   bell: {
     line: '<path d="M 7 17 V 11.5 A 5 5 0 0 1 17 11.5 V 17"/><path d="M 4.5 17 H 19.5"/><path d="M 10.5 20.3 H 13.5"/>',
     solid:
@@ -110,10 +131,11 @@ export const TAB_B: Record<TabIcon, Glyph> = {
   },
 };
 
-export type TabIcon = 'explore' | 'activities' | 'messages' | 'profile' | 'bell';
+export type TabIcon = 'explore' | 'activities' | 'venue' | 'messages' | 'profile' | 'bell';
 export const TAB_ICONS: readonly TabIcon[] = [
   'explore',
   'activities',
+  'venue',
   'messages',
   'profile',
   'bell',
@@ -203,6 +225,110 @@ export const GAME_GLYPHS: Record<GameGlyph, { solid: string; cut?: string }> = {
       '<path d="M 6.2 6.6 L 7.2 8 M 12 4.4 V 6.2 M 17.8 6.6 L 16.8 8" fill="none" stroke-width="1.6"/>',
   },
 };
+
+// ------------------------------------------------------------------ table avatars (solid)
+// Aşama 8: an anonymous table's face is one of twelve game-night things on a coloured disc, picked
+// from the table session (supabase/functions/_shared/pure/tableAvatar.ts). Solid, details cut out.
+const star = (cx: number, cy: number, outer: number, inner: number) =>
+  'M ' +
+  Array.from({ length: 10 }, (_, i) => {
+    const a = -Math.PI / 2 + (i * Math.PI) / 5;
+    const r = i % 2 === 0 ? outer : inner;
+    return `${(cx + r * Math.cos(a)).toFixed(2)} ${(cy + r * Math.sin(a)).toFixed(2)}`;
+  }).join(' L ') +
+  ' Z';
+
+export const TABLE_AVATARS: readonly { id: string; solid: string; cut?: string }[] = [
+  // Zar: a die showing five.
+  {
+    id: 'dice',
+    solid: '<rect x="3.6" y="3.6" width="16.8" height="16.8" rx="4.4" stroke="none"/>',
+    cut: [
+      [8.2, 8.2],
+      [15.8, 8.2],
+      [12, 12],
+      [8.2, 15.8],
+      [15.8, 15.8],
+    ]
+      .map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.55" stroke="none"/>`)
+      .join(''),
+  },
+  // Kart: a playing card with a spade.
+  {
+    id: 'card',
+    solid: '<rect x="5.2" y="2.8" width="13.6" height="18.4" rx="3" stroke="none"/>',
+    cut: '<path d="M 12 6.8 C 12 6.8 7.8 9.9 7.8 12.6 C 7.8 14.4 9.8 15.4 11.3 14.3 L 10.6 17.2 H 13.4 L 12.7 14.3 C 14.2 15.4 16.2 14.4 16.2 12.6 C 16.2 9.9 12 6.8 12 6.8 Z" stroke="none"/>',
+  },
+  // Taç: a crown.
+  {
+    id: 'crown',
+    solid:
+      '<path d="M 3.4 7.6 L 7.8 11.4 L 12 4.6 L 16.2 11.4 L 20.6 7.6 L 18.8 17.4 H 5.2 Z"/>' +
+      '<path d="M 5.4 20.4 H 18.6"/>',
+    cut: '<circle cx="12" cy="14.2" r="1.5" stroke="none"/>',
+  },
+  // Yıldız.
+  { id: 'star', solid: `<path d="${star(12, 12.6, 9.6, 4.3)}"/>` },
+  // Şimşek.
+  { id: 'bolt', solid: '<path d="M 13.8 2.6 L 5.2 13.6 H 11 L 9.8 21.4 L 18.8 10.2 H 12.8 Z"/>' },
+  // Kalp.
+  {
+    id: 'heart',
+    solid:
+      '<path d="M 12 20.2 C 12 20.2 3.4 15 3.4 9.2 C 3.4 6.4 5.6 4.4 8.2 4.4 C 9.8 4.4 11.2 5.2 12 6.6 C 12.8 5.2 14.2 4.4 15.8 4.4 C 18.4 4.4 20.6 6.4 20.6 9.2 C 20.6 15 12 20.2 12 20.2 Z"/>',
+  },
+  // Alev: a flame with a hollow core.
+  {
+    id: 'flame',
+    solid:
+      '<path d="M 12 21.4 C 8 21.4 5.4 18.6 5.4 15 C 5.4 11 9 9.2 9.6 3.8 C 12.8 5.8 13.8 8.8 13.4 11.2 C 14.6 10.6 15.4 9.4 15.6 8 C 17.6 9.8 18.6 12.4 18.6 15 C 18.6 18.6 16 21.4 12 21.4 Z" stroke="none"/>',
+    cut: '<path d="M 12 19.2 C 10.4 19.2 9.4 18 9.4 16.6 C 9.4 15 10.8 14.2 11.2 12.6 C 12.6 13.6 13.2 14.8 13.2 15.6 C 13.8 15.4 14.2 15 14.4 14.4 C 14.8 15.1 14.8 16 14.6 16.6 C 14.4 18.1 13.4 19.2 12 19.2 Z" stroke="none"/>',
+  },
+  // Roket.
+  {
+    id: 'rocket',
+    solid:
+      '<path d="M 12 2.4 C 15.6 4.8 17 9 16.4 15 H 7.6 C 7 9 8.4 4.8 12 2.4 Z"/>' +
+      '<path d="M 7.8 10.8 L 4.4 14.8 V 18 L 7.8 16 Z M 16.2 10.8 L 19.6 14.8 V 18 L 16.2 16 Z"/>' +
+      '<path d="M 10.2 17.2 H 13.8 L 12 21.4 Z"/>',
+    cut: '<circle cx="12" cy="9.2" r="2" stroke="none"/>',
+  },
+  // Ay: a crescent and a spark.
+  {
+    id: 'moon',
+    solid:
+      '<path d="M 14.8 3.6 C 10.8 4.8 8.2 8.4 8.2 12.4 C 8.2 16.4 10.8 19.8 14.8 21 C 13.9 21.3 12.9 21.4 11.9 21.4 C 6.9 21.4 3 17.4 3 12.4 C 3 7.4 6.9 3.4 11.9 3.4 C 12.9 3.4 13.9 3.4 14.8 3.6 Z"/>' +
+      `<path d="${star(17.6, 9.2, 3.4, 1.3)}"/>`,
+  },
+  // Piyon.
+  {
+    id: 'pawn',
+    solid:
+      '<circle cx="12" cy="6.4" r="3.2"/>' +
+      '<path d="M 9.2 10.6 H 14.8 L 14 12.8 C 15.6 14.2 16.6 16 16.8 18 H 7.2 C 7.4 16 8.4 14.2 10 12.8 Z"/>' +
+      '<rect x="5.4" y="18.4" width="13.2" height="2.6" rx="1.3"/>',
+  },
+  // Oyun kolu.
+  {
+    id: 'gamepad',
+    solid:
+      '<path d="M 7.4 7.2 H 16.6 C 19.4 7.2 21.2 9.8 21.4 13.2 C 21.6 16.4 20.4 18.4 18.6 18.4 C 17.2 18.4 16.4 17.4 15.6 16.2 H 8.4 C 7.6 17.4 6.8 18.4 5.4 18.4 C 3.6 18.4 2.4 16.4 2.6 13.2 C 2.8 9.8 4.6 7.2 7.4 7.2 Z" stroke="none"/>',
+    cut:
+      '<path d="M 7.6 9.9 V 14.1 M 5.5 12 H 9.7" fill="none" stroke-width="1.7"/>' +
+      '<circle cx="15.6" cy="10.8" r="1.25" stroke="none"/><circle cx="17.8" cy="13.2" r="1.25" stroke="none"/>',
+  },
+  // Parti şapkası.
+  {
+    id: 'party',
+    solid:
+      '<path d="M 12 4.6 L 18.6 19 C 14.6 20.6 9.4 20.6 5.4 19 Z"/>' +
+      '<circle cx="12" cy="3.4" r="1.9" stroke="none"/>',
+    cut: '<path d="M 9.6 10 L 14.2 13 M 8 14.2 L 15.8 18.4" fill="none" stroke-width="1.4"/>',
+  },
+];
+
+// The venue kinds as solid glyphs for the Keşfet list (the map marker drawings, tinted in the app).
+export const KIND_GLYPHS = MARKERS;
 
 // A small padlock for locked badges.
 export const LOCK =

@@ -3,12 +3,12 @@ import { parseGameState } from '@shared/tabu.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
-import { ChatScreen } from '@/components/ChatScreen';
+import { ChatScreen, ChatScroll } from '@/components/ChatScreen';
 import { ChatTopBar } from '@/components/ChatTopBar';
 import { IconButton } from '@/components/IconButton';
 import { Screen } from '@/components/Screen';
@@ -136,7 +136,11 @@ export default function RoomScreen() {
       roomId={r.id}
       title={title}
       subtitle={tr.rooms.roomEyebrow(concept)}
-      aliases={r.guest_alias ? [r.owner_alias, r.guest_alias] : [r.owner_alias]}
+      faces={[
+        // The own table's face comes from its session (Avatar → seed), the other's from its alias.
+        { alias: r.owner_alias, seed: isOwner ? sessionId : undefined },
+        ...(r.guest_alias ? [{ alias: r.guest_alias, seed: isOwner ? undefined : sessionId }] : []),
+      ]}
       guestSessionId={r.guest_session_id}
       hasOtherTable={hasOtherTable}
       onEnd={() => exit.mutate()}
@@ -185,6 +189,14 @@ export default function RoomScreen() {
     );
   }
 
+  // The newest message, for following it (ChatScroll): one on its way, else the newest read.
+  const newestOut = chat.outbox[chat.outbox.length - 1];
+  const newestIn = (chat.messages.data ?? []).at(-1);
+  const newest = {
+    key: newestOut?.localId ?? newestIn?.id,
+    mine: newestOut ? true : newestIn?.session_id === sessionId,
+  };
+
   // A running game takes the whole screen; the chat folds into a button (canvas: Aşama 6 · Oyunlar).
   if (isGameRunning(concept, hasOtherTable, localGame)) {
     const others = (chat.messages.data ?? []).filter((m) => m.session_id !== sessionId);
@@ -224,13 +236,19 @@ export default function RoomScreen() {
         chat={
           <>
             {topBar(() => toggleChat(false))}
-            <ScrollView
-              className="flex-1"
+            <ChatScroll
+              startAtEnd
+              newestKey={newest.key}
+              newestMine={newest.mine}
               contentContainerStyle={{ padding: SPACING[4], gap: SPACING[2] }}
-              keyboardShouldPersistTaps="handled"
             >
-              <RoomMessages chat={chat} sessionId={sessionId} />
-            </ScrollView>
+              <RoomMessages
+                chat={chat}
+                sessionId={sessionId}
+                roomId={r.id}
+                guestSessionId={r.guest_session_id}
+              />
+            </ChatScroll>
             <RoomComposer chat={chat} />
           </>
         }
@@ -252,7 +270,12 @@ export default function RoomScreen() {
   }
 
   return (
-    <ChatScreen top={topBar()} composer={<RoomComposer chat={chat} />}>
+    <ChatScreen
+      top={topBar()}
+      composer={<RoomComposer chat={chat} />}
+      newestKey={newest.key}
+      newestMine={newest.mine}
+    >
       {exit.isError ? (
         <Text variant="fine" tone="danger">
           {errorMessage(exit.error)}
@@ -266,7 +289,12 @@ export default function RoomScreen() {
       ) : null}
       {hasOtherTable ? <OtherTableStatus roomId={r.id} isOwner={isOwner} /> : null}
 
-      <RoomMessages chat={chat} sessionId={sessionId} />
+      <RoomMessages
+        chat={chat}
+        sessionId={sessionId}
+        roomId={r.id}
+        guestSessionId={r.guest_session_id}
+      />
 
       {isOwner ? <IncomingRequest roomId={r.id} ownerSessionId={r.owner_session_id} /> : null}
     </ChatScreen>
@@ -281,7 +309,7 @@ function RoomTopBar({
   roomId,
   title,
   subtitle,
-  aliases,
+  faces,
   guestSessionId,
   hasOtherTable,
   onEnd,
@@ -291,7 +319,7 @@ function RoomTopBar({
   roomId: string;
   title: string;
   subtitle: string;
-  aliases: readonly string[];
+  faces: readonly TableFace[];
   guestSessionId: string | null;
   hasOtherTable: boolean;
   onEnd: () => void;
@@ -309,7 +337,7 @@ function RoomTopBar({
         onBack={onClose}
         title={title}
         subtitle={subtitle}
-        leading={<TableFaces aliases={aliases} />}
+        leading={<TableFaces faces={faces} />}
         onPressTitle={
           publicId
             ? () => router.push({ pathname: '/people/[publicId]', params: { publicId } })
@@ -319,9 +347,8 @@ function RoomTopBar({
         actions={
           <>
             <Button
-              variant="ghost"
-              flush
-              tight
+              variant="danger"
+              size="sm"
               testID="end-room"
               label={tr.rooms.end}
               onPress={onEnd}
@@ -338,7 +365,7 @@ function RoomTopBar({
       <Sheet visible={menu} onClose={() => setMenu(false)} title={tr.friends.more}>
         {hasOtherTable ? <Text variant="fine">{tr.rooms.endHint}</Text> : null}
         <Button
-          variant="secondary"
+          variant="neutral"
           label={tr.safety.report}
           onPress={() => {
             setMenu(false);
@@ -347,7 +374,7 @@ function RoomTopBar({
         />
         {hasOtherTable ? (
           <Button
-            variant="secondary"
+            variant="neutral"
             label={tr.safety.block}
             onPress={() => {
               setMenu(false);
@@ -368,12 +395,14 @@ function RoomTopBar({
   );
 }
 
+type TableFace = { alias: string; seed?: string };
+
 // The tables in the room, the second a little over the first.
-function TableFaces({ aliases }: { aliases: readonly string[] }) {
+function TableFaces({ faces }: { faces: readonly TableFace[] }) {
   const { colors, shape } = useTheme();
   return (
     <View className="flex-row">
-      {aliases.map((alias, i) => (
+      {faces.map(({ alias, seed }, i) => (
         <View
           key={alias}
           style={
@@ -388,7 +417,7 @@ function TableFaces({ aliases }: { aliases: readonly string[] }) {
               : undefined
           }
         >
-          <Avatar kind="table" alias={alias} size="md" />
+          <Avatar kind="table" alias={alias} seed={seed} size="md" />
         </View>
       ))}
     </View>

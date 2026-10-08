@@ -15,6 +15,7 @@ import type {
   DmInboxResponse,
   DmOkResponse,
   DmRequest,
+  DmSendResponse,
   DmStatus,
 } from '../_shared/pure/api/friends.ts';
 import { AppError } from '../_shared/pure/errors.ts';
@@ -58,7 +59,7 @@ async function inbox(userId: string): Promise<DmInboxResponse> {
 }
 
 Deno.serve(
-  handle(async (req, raw): Promise<DmOkResponse | DmInboxResponse> => {
+  handle(async (req, raw): Promise<DmOkResponse | DmSendResponse | DmInboxResponse> => {
     const body = Body.parse(raw);
     const user = await requireUser(req, db);
 
@@ -70,17 +71,19 @@ Deno.serve(
         if (containsProfanity(text, await loadProfanity(db))) {
           throw new AppError('profanity_rejected', 'Message rejected.');
         }
-        const { data: other, error } = await db.rpc('dm_send', {
+        const { data, error } = await db.rpc('dm_send_message', {
           target_user_id: user.id,
           target_thread_id: body.threadId,
           new_body: text,
           min_interval_ms: DM_MIN_INTERVAL_MS,
         });
-        if (error) throw dbError('dm_send', error);
+        if (error) throw dbError('dm_send_message', error);
+        const sent = data[0];
+        if (!sent) throw new Error('dm_send_message returned no row');
         inBackground(broadcast(dmChannel(body.threadId), BROADCAST.dmMessage));
-        notifyInbox([other], BROADCAST.dm);
-        pushIfAllowed(db, other, 'notify_dm', dmPush());
-        return { ok: true };
+        notifyInbox([sent.other_user_id], BROADCAST.dm);
+        pushIfAllowed(db, sent.other_user_id, 'notify_dm', dmPush());
+        return { ok: true, messageId: sent.message_id, createdAt: sent.created_at };
       }
 
       case 'read': {

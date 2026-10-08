@@ -47,7 +47,7 @@ export function BlockedList() {
           meta={tr.safety.blockedSince(new Date(b.created_at).toLocaleDateString('tr-TR'))}
           trailing={
             <Button
-              variant="secondary"
+              variant="neutral"
               label={tr.safety.unblock}
               onPress={() => unblock.mutate(b.id)}
               disabled={unblock.isPending}

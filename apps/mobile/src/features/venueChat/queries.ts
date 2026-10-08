@@ -1,5 +1,4 @@
 import {
-  VENUE_CHAT,
   VENUE_CHAT_BROADCAST,
   type VenueChatMessage,
   venueChatChannel,
@@ -8,16 +7,17 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
 import { useBroadcast } from '@/features/rooms/useBroadcast';
-import { profileApi } from '@/lib/api';
-import { supabase } from '@/lib/supabase';
+import { profileApi, venueChatApi } from '@/lib/api';
+import { stablePhoto } from '@/lib/photoUrls';
 
 export const venueChatKeys = {
   messages: (venueId: string) => ['venueChat', venueId] as const,
   profile: (messageId: string) => ['venueChatProfile', messageId] as const,
 };
 
-// The venue chat, oldest first for the screen (venue_chat_page returns newest first). Refetched
-// on the data-free `venue_chat` broadcast; empty without a live table at the venue.
+// The venue chat, oldest first for the screen (venue-chat/page returns newest first, with the
+// photos of profiled messages signed). Refetched on the data-free `venue_chat` broadcast; empty
+// without a live table at the venue.
 export function useVenueChat(venueId: string | undefined) {
   const queryClient = useQueryClient();
   const refetch = useCallback(() => {
@@ -28,24 +28,10 @@ export function useVenueChat(venueId: string | undefined) {
   return useQuery({
     queryKey: venueChatKeys.messages(venueId ?? ''),
     enabled: venueId !== undefined,
-    queryFn: async (): Promise<VenueChatMessage[]> => {
-      const { data, error } = await supabase.rpc('venue_chat_page', {
-        target_venue_id: venueId ?? '',
-        page_size: VENUE_CHAT.pageSize,
-      });
-      if (error) throw error;
-      return data
-        .map((m) => ({
-          id: m.id,
-          profiled: m.profiled,
-          senderAlias: m.sender_alias,
-          displayName: m.display_name,
-          body: m.body,
-          createdAt: m.created_at,
-          fromMe: m.from_me,
-        }))
-        .reverse();
-    },
+    queryFn: async (): Promise<VenueChatMessage[]> =>
+      (await venueChatApi.page(venueId ?? '')).messages
+        .map((m) => ({ ...m, photoUrl: stablePhoto(m.photoUrl) }))
+        .reverse(),
   });
 }
 

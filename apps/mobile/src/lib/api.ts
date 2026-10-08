@@ -31,6 +31,7 @@ import type {
 import type {
   DmInboxResponse,
   DmOkResponse,
+  DmSendResponse,
   FriendsIncomingResponse,
   FriendsListResponse,
   FriendsOkResponse,
@@ -41,7 +42,7 @@ import type {
   ProfileUploadUrl,
   ProfileView,
 } from '@shared/api/profile.ts';
-import type { VenueChatResponse } from '@shared/api/venueChat.ts';
+import type { VenueChatPageResponse, VenueChatResponse } from '@shared/api/venueChat.ts';
 import type { ReportReason } from '@shared/chat.ts';
 import type { Concept } from '@shared/rooms.ts';
 import type { SayKind } from '@shared/sayChallenge.ts';
@@ -307,11 +308,13 @@ export const friendsApi = {
 export const venueChatApi = {
   send: (venueId: string, body: string, profiled: boolean) =>
     invoke<VenueChatResponse>('venue-chat', { action: 'send', venueId, body, profiled }),
+  page: (venueId: string) =>
+    invoke<VenueChatPageResponse>('venue-chat', { action: 'page', venueId }),
 };
 
 export const dmApi = {
   send: (threadId: string, body: string) =>
-    invoke<DmOkResponse>('dm', { action: 'send', threadId, body }),
+    invoke<DmSendResponse>('dm', { action: 'send', threadId, body }),
   read: (threadId: string) => invoke<DmOkResponse>('dm', { action: 'read', threadId }),
   // Mesajlar (docs/SPEC_V3.md §18.2): one row per friend, photos signed by the function.
   inbox: () => invoke<DmInboxResponse>('dm', { action: 'inbox' }),

@@ -2,9 +2,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { forwardRef, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, TextInput, View } from 'react-native';
 
+import { tr } from '@/i18n/tr';
 import { typeStyle, useTheme } from '@/theme/ThemeProvider';
 import { ICON, SPACING, TOUCH } from '@/theme/tokens';
 
+import type { ChatQuote } from './ChatBubble';
+import { IconButton } from './IconButton';
 import { usePressScale } from './motion';
 import { Text } from './Text';
 
@@ -22,6 +25,9 @@ type Props = {
   counter?: string;
   // A compact row over the field: the venue chat's "Profilimle yaz" switch.
   above?: ReactNode;
+  // Aşama 8 · Saha: the message being answered, as a strip over the field, with a ×.
+  replyTo?: ChatQuote;
+  onCancelReply?: () => void;
   inputTestID?: string;
   sendTestID?: string;
 };
@@ -40,6 +46,8 @@ export const Composer = forwardRef<TextInput, Props>(function Composer(
     sending,
     counter,
     above,
+    replyTo,
+    onCancelReply,
     inputTestID,
     sendTestID,
   },
@@ -62,6 +70,7 @@ export const Composer = forwardRef<TextInput, Props>(function Composer(
       }}
     >
       {above}
+      {replyTo ? <ReplyStrip quote={replyTo} onCancel={onCancelReply} /> : null}
       <View className="flex-row items-end gap-2.5">
         <View
           className="flex-1 justify-center"
@@ -133,3 +142,39 @@ export const Composer = forwardRef<TextInput, Props>(function Composer(
     </View>
   );
 });
+
+// The message being answered, over the message bar: a bar on the left, the name and one line.
+function ReplyStrip({ quote, onCancel }: { quote: ChatQuote; onCancel?: () => void }) {
+  const { colors, shape } = useTheme();
+  return (
+    <View
+      testID="reply-strip"
+      className="flex-row items-center"
+      style={{
+        gap: SPACING[2],
+        paddingLeft: SPACING[3],
+        borderRadius: shape.radius.md,
+        borderLeftWidth: SPACING[1],
+        borderLeftColor: colors.violet,
+        backgroundColor: colors.raised,
+      }}
+    >
+      <View className="flex-1" style={{ paddingVertical: SPACING[1.5] }}>
+        <Text variant="label" color={colors.violet} numberOfLines={1}>
+          {tr.chat.replyingTo(quote.name)}
+        </Text>
+        <Text variant="fine" tone="text" numberOfLines={1}>
+          {quote.text}
+        </Text>
+      </View>
+      {onCancel ? (
+        <IconButton
+          icon="close"
+          label={tr.chat.cancelReply}
+          onPress={onCancel}
+          testID="reply-cancel"
+        />
+      ) : null}
+    </View>
+  );
+}

@@ -116,7 +116,7 @@ export default function LocationScreen() {
             {tr.checkin.permissionDenied}
           </Text>
           <Button
-            variant="secondary"
+            variant="neutral"
             label={tr.checkin.openSettings}
             onPress={() => void Linking.openSettings()}
           />

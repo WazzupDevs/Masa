@@ -60,3 +60,14 @@ appId: app.kabuk.mobile
     visible:
       id: tab-messages
     timeout: 10000
+# Aşama 8 · Saha → Mesajlar: "yazıyor…" in the conversation's row too.
+- runScript:
+    file: ../scripts/bot.js
+    env:
+      ACTION: dm-typing
+      BODY: '{"seconds":10}'
+- extendedWaitUntil:
+    visible:
+      id: inbox-typing
+    timeout: 10000
+- takeScreenshot: 27e-inbox-typing

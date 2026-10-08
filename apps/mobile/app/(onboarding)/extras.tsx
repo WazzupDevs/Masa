@@ -68,14 +68,14 @@ export default function ExtrasScreen() {
             />
             <View className="flex-1 gap-3">
               <Button
-                variant="secondary"
+                variant="neutral"
                 icon="image-outline"
                 label={tr.profile.photoFromLibrary}
                 onPress={() => photo.mutate('library')}
                 disabled={photo.isPending}
               />
               <Button
-                variant="secondary"
+                variant="neutral"
                 icon="camera-outline"
                 label={tr.profile.photoFromCamera}
                 onPress={() => photo.mutate('camera')}

@@ -20,12 +20,18 @@ import { Sheet } from '@/components/Sheet';
 import { useHideTabBar } from '@/components/TabBar';
 import { ReportModal } from '@/features/chat/ReportModal';
 import { ConfirmWithReport } from '@/features/friends/ConfirmWithReport';
-import { friendKeys, useDmMessages, useFriends } from '@/features/friends/queries';
+import {
+  friendKeys,
+  useDmMessages,
+  useFriends,
+  useMarkThreadRead,
+  useSendDm,
+} from '@/features/friends/queries';
 import { useDmTyping } from '@/features/friends/useDmTyping';
 import { useBroadcast } from '@/features/rooms/useBroadcast';
 import { tr } from '@/i18n/tr';
 import { track } from '@/lib/analytics';
-import { ApiError, dmApi, friendsApi, safetyApi } from '@/lib/api';
+import { ApiError, friendsApi, safetyApi } from '@/lib/api';
 
 type Params = { threadId: string; publicId: string; name: string };
 
@@ -55,10 +61,12 @@ export default function DmScreen() {
   const [outbox, dispatch] = useReducer(outboxReducer, []);
   const { typing, notifyTyping, clearTyping } = useDmTyping(threadId);
 
+  const markRead = useMarkThreadRead(threadId);
+  const sendDm = useSendDm(threadId);
   const refetch = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: friendKeys.dm(threadId) });
-    void dmApi.read(threadId).catch(() => undefined);
-  }, [queryClient, threadId]);
+    markRead();
+  }, [queryClient, threadId, markRead]);
   useBroadcast(dmChannel(threadId), BROADCAST.dmMessage, refetch);
   // A tick moved (delivered or read): only the page is read again.
   const rereadPage = useCallback(
@@ -77,21 +85,16 @@ export default function DmScreen() {
   }, [newestFromThem, clearTyping]);
 
   useEffect(() => {
-    void dmApi
-      .read(threadId)
-      .then(() => queryClient.invalidateQueries({ queryKey: friendKeys.list }))
-      .catch(() => undefined);
-  }, [queryClient, threadId]);
+    markRead();
+  }, [markRead]);
 
   const body = prepareDm(draft);
   // Sending is optimistic, as in the room chat (@shared/chatOutbox.ts): the message shows at once
-  // with the waiting state and is replaced by the server's copy.
+  // with the waiting state and is replaced by the server's copy on the reply, with the sent tick.
   const deliver = (localId: string, text: string) => {
-    dmApi
-      .send(threadId, text)
-      .then(async () => {
+    sendDm(text)
+      .then(() => {
         track('dm_sent', {});
-        await queryClient.invalidateQueries({ queryKey: friendKeys.dm(threadId) });
         dispatch({ type: 'sent', localId });
       })
       .catch((err: unknown) =>
@@ -147,9 +150,14 @@ export default function DmScreen() {
     (m) => m.created_at,
   );
   const openProfile = () => router.push({ pathname: '/people/[publicId]', params: { publicId } });
+  // The newest message, for following it (ChatScroll): one on its way, else the newest read.
+  const newestOut = outbox[outbox.length - 1];
+  const newestIn = list[list.length - 1];
   return (
     <ChatScreen
-      stickToEnd
+      startAtEnd
+      newestKey={newestOut?.localId ?? newestIn?.id}
+      newestMine={newestOut ? true : newestIn?.from_me}
       top={
         <ChatTopBar
           onBack={() => router.back()}
@@ -196,11 +204,14 @@ export default function DmScreen() {
             last={last}
             time={tr.chat.time(m.created_at)}
             delivery={m.from_me && isDelivery(m.status) ? m.status : undefined}
+            name={m.from_me ? undefined : name}
             avatar={
               m.from_me ? undefined : (
                 <Avatar kind="profile" name={name} size="sm" photoUrl={photoUrl} />
               )
             }
+            // The photo opens the profile ("Profili gör" left the menu).
+            onPressSender={m.from_me ? undefined : openProfile}
           />
         </View>
       ))}
@@ -228,15 +239,7 @@ export default function DmScreen() {
 
       <Sheet visible={menu} onClose={() => setMenu(false)} title={tr.friends.friendMenuTitle}>
         <Button
-          variant="secondary"
-          label={tr.friends.viewProfile}
-          onPress={() => {
-            setMenu(false);
-            openProfile();
-          }}
-        />
-        <Button
-          variant="secondary"
+          variant="neutral"
           label={tr.dm.report}
           onPress={() => {
             setMenu(false);
@@ -244,7 +247,7 @@ export default function DmScreen() {
           }}
         />
         <Button
-          variant="secondary"
+          variant="neutral"
           label={tr.friends.removeFriend}
           onPress={() => {
             setMenu(false);

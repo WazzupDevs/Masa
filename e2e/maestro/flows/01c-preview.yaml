@@ -1,5 +1,5 @@
 # Ayarlar → Tasarım (test) → Bileşen önizleme: the game components that screens wire later, with
-# sample props, photographed in the run's scheme. One block per set (Aşama 6, Aşama 7).
+# sample props, photographed in the run's scheme. One block per set (Aşama 6, Aşama 7, Aşama 8).
 appId: app.kabuk.mobile
 ---
 - tapOn:
@@ -16,6 +16,13 @@ appId: app.kabuk.mobile
       id: preview-games
     timeout: 10000
 - takeScreenshot: 04c-preview-games-1
+# Aşama 8 · Saha: the button roles with the 3D depth.
+- scrollUntilVisible:
+    element:
+      id: preview-buttons
+    centerElement: true
+    timeout: 30000
+- takeScreenshot: 04g-buttons
 - scrollUntilVisible:
     element:
       id: turn-start
@@ -199,6 +206,63 @@ appId: app.kabuk.mobile
     centerElement: true
     timeout: 30000
 - takeScreenshot: 04f-ibre-reveal
+# Aşama 8 · Saha → Sohbet: a sender's run, a reply's quote, the reactions and their bar (long
+# press), the reply strip, and "Yeni mesaj" for a message that comes in up the stream.
+- back
+- extendedWaitUntil:
+    visible:
+      id: preview-open
+    timeout: 10000
+- tapOn:
+    id: preview-open
+- extendedWaitUntil:
+    visible:
+      id: preview-set-chat
+    timeout: 10000
+- tapOn:
+    id: preview-set-chat
+- extendedWaitUntil:
+    visible:
+      id: preview-chat
+    timeout: 10000
+- takeScreenshot: 04i-chat-bubbles
+- longPressOn:
+    id: preview-bubble
+- extendedWaitUntil:
+    visible:
+      id: reaction-bar
+    timeout: 10000
+- takeScreenshot: 04i-chat-reaction-bar
+- tapOn:
+    id: react-5
+- extendedWaitUntil:
+    notVisible:
+      id: reaction-bar
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: reply-strip
+    centerElement: true
+    timeout: 30000
+- takeScreenshot: 04i-chat-reply
+- scrollUntilVisible:
+    element:
+      id: preview-incoming
+    centerElement: true
+    timeout: 30000
+- tapOn:
+    id: preview-incoming
+- extendedWaitUntil:
+    visible:
+      id: chat-new-messages
+    timeout: 10000
+- takeScreenshot: 04i-chat-new-message
+- tapOn:
+    id: chat-new-messages
+- extendedWaitUntil:
+    notVisible:
+      id: chat-new-messages
+    timeout: 10000
 # The preview and Ayarlar are scrolled down; the system back key leaves both without scrolling up.
 - back
 - extendedWaitUntil:
@@ -206,6 +270,36 @@ appId: app.kabuk.mobile
       id: preview-open
     timeout: 10000
 - back
+# Aşama 8 · Saha: Aktiviteler's game cards and a game's sheet (no table yet: "Oynamak için mekana
+# gir").
+- tapOn:
+    id: tab-activities
+- extendedWaitUntil:
+    visible:
+      id: activities-solo-card-tabu
+    timeout: 10000
+- takeScreenshot: 04h-activities
+# Centred: under the floating tab bar a tap would land on the bar.
+- scrollUntilVisible:
+    element:
+      id: activities-room-card-sahtekar
+    centerElement: true
+    timeout: 30000
+- tapOn:
+    id: activities-room-card-sahtekar
+# On the 320 dp screen the game's text is taller than the sheet: its action is scrolled to.
+- scrollUntilVisible:
+    element:
+      id: activities-venue-sahtekar
+    centerElement: true
+    timeout: 30000
+- takeScreenshot: 04h-activities-sheet
+- scrollUntilVisible:
+    element:
+      id: activities-sheet-close
+    timeout: 30000
+- tapOn:
+    id: activities-sheet-close
 - tapOn:
     id: tab-explore
 - extendedWaitUntil:

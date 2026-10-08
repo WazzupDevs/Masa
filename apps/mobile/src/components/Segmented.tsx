@@ -14,6 +14,8 @@ type Props<T extends string> = {
   value: T;
   onChange: (value: T) => void;
   accessibilityLabel: string;
+  // Each option shows only its icon in a 44 × 44 segment; its label is what the reader hears.
+  iconOnly?: boolean;
 };
 
 // A pill switch on a quiet track, no outline (Keşfet list/map, the design picker).
@@ -22,6 +24,7 @@ export function Segmented<T extends string>({
   value,
   onChange,
   accessibilityLabel,
+  iconOnly,
 }: Props<T>) {
   const { colors, shape } = useTheme();
   return (
@@ -44,24 +47,33 @@ export function Segmented<T extends string>({
             accessibilityRole="tab"
             testID={o.testID}
             accessibilityState={{ selected: on }}
+            accessibilityLabel={iconOnly ? o.label : undefined}
             onPress={() => onChange(o.value)}
             style={{
               flexDirection: 'row',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: SPACING[1],
               minHeight: TOUCH.min,
-              paddingHorizontal: SPACING[3],
+              minWidth: iconOnly ? TOUCH.min : undefined,
+              paddingHorizontal: iconOnly ? 0 : SPACING[3],
               borderRadius: shape.radius.pill,
               backgroundColor: on ? colors.surface : 'transparent',
               boxShadow: on ? shape.shadow.raised : undefined,
             }}
           >
             {o.icon ? (
-              <Ionicons name={o.icon} size={ICON.sm} color={on ? colors.text : colors.muted} />
+              <Ionicons
+                name={o.icon}
+                size={iconOnly ? ICON.md : ICON.sm}
+                color={on ? colors.text : colors.muted}
+              />
             ) : null}
-            <Text variant="tag" tone={on ? 'text' : 'muted'}>
-              {o.label}
-            </Text>
+            {iconOnly ? null : (
+              <Text variant="tag" tone={on ? 'text' : 'muted'}>
+                {o.label}
+              </Text>
+            )}
           </Pressable>
         );
       })}

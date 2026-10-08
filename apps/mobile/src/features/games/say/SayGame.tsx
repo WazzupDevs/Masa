@@ -72,18 +72,18 @@ export function SayRound({
       </View>
       <View className="flex-row gap-2.5">
         {(['owner', 'guest'] as const).map((side) => (
-          <View key={side} className="flex-1">
-            <TeamScore
-              name={sides.names[side]}
-              note={
-                side === sides.mine
-                  ? `${tr.games.you} · ${tr.say.objectionsShort(state.objectionsLeft[side])}`
-                  : tr.say.objectionsShort(state.objectionsLeft[side])
-              }
-              score={state.scores[side]}
-              active={side === turn}
-            />
-          </View>
+          // Straight in the row: TeamScore fills its half (a wrapper collapsed it to a strip).
+          <TeamScore
+            key={side}
+            name={sides.names[side]}
+            note={
+              side === sides.mine
+                ? `${tr.games.you} · ${tr.say.objectionsShort(state.objectionsLeft[side])}`
+                : tr.say.objectionsShort(state.objectionsLeft[side])
+            }
+            score={state.scores[side]}
+            active={side === turn}
+          />
         ))}
       </View>
       {result}

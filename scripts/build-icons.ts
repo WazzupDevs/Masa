@@ -25,20 +25,24 @@ import {
   GAME_GLYPHS,
   type GameGlyph,
   glyphSvg,
+  KIND_GLYPHS,
   LOCK,
   MARKERS,
   type MarkerKind,
   signedDistanceField,
   TAB_A,
   TAB_ICONS,
+  TABLE_AVATARS,
   tabSvg,
 } from './icon/glyphs.ts';
+import { ART_BOX, artSvg } from './icon/art.ts';
 import { previewHtml } from './icon/preview.ts';
 
 const root = resolve(import.meta.dirname, '..');
 const assets = resolve(root, 'apps/mobile/assets/icon');
 const brand = resolve(root, 'apps/mobile/assets/brand');
 const glyph = resolve(root, 'apps/mobile/assets/glyph');
+const art = resolve(root, 'apps/mobile/assets/art');
 const preview = resolve(root, 'dist/icon-preview');
 const tokens = JSON.parse(readFileSync(resolve(assets, 'tokens.json'), 'utf8')) as IconTokens;
 
@@ -53,6 +57,7 @@ async function png(svg: string, dir: string, file: string, opaque = false): Prom
 mkdirSync(assets, { recursive: true });
 mkdirSync(brand, { recursive: true });
 mkdirSync(glyph, { recursive: true });
+mkdirSync(art, { recursive: true });
 // Source drawing, for designers and the store.
 writeFileSync(resolve(assets, 'snail.svg'), `${foregroundSvg(tokens, 1024)}\n`);
 
@@ -106,6 +111,31 @@ await glyphPngs((px) => glyphSvg(LOCK, px), 'lock', 14);
 for (const id of Object.keys(GAME_GLYPHS) as GameGlyph[]) {
   const g = GAME_GLYPHS[id];
   await glyphPngs((px) => glyphSvg(g.solid, px, { cut: g.cut }), `game-${id}`, 32);
+}
+// Table avatars (src/components/Avatar.tsx): the icon on its disc, up to 40 dp (the 72 dp hero
+// avatar draws it at 56 %). Kinds for the Keşfet list (src/features/explore/VenueTags.tsx): 32 dp.
+for (const a of TABLE_AVATARS) {
+  await glyphPngs((px) => glyphSvg(a.solid, px, { cut: a.cut }), `avatar-${a.id}`, 40);
+}
+for (const kind of Object.keys(KIND_GLYPHS) as MarkerKind[]) {
+  await glyphPngs((px) => glyphSvg(KIND_GLYPHS[kind], px), `kind-${kind}`, 32);
+}
+// The live dot's halo (src/components/LiveDot.tsx): a blurred white disc, tinted by the app (no
+// native blur module). 36 dp: three times the 12 dp dot.
+const HALO_DP = 36;
+await glyphPngs(
+  (px) =>
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${px}" height="${px}" viewBox="0 0 ${HALO_DP} ${HALO_DP}">` +
+    `<defs><filter id="b" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${HALO_DP / 9}"/></filter></defs>` +
+    `<circle cx="${HALO_DP / 2}" cy="${HALO_DP / 2}" r="${HALO_DP / 4}" fill="#fff" filter="url(#b)"/></svg>`,
+  'halo',
+  HALO_DP,
+);
+// The games' pictures on the game cards (src/features/games/GameCard.tsx), in colour, not tinted:
+// 64 dp at 1×, 2× and 3×.
+for (const id of Object.keys(GAME_GLYPHS) as GameGlyph[]) {
+  for (const d of DENSITIES)
+    await png(artSvg(id, ART_BOX * d), art, d === 1 ? `${id}.png` : `${id}@${d}x.png`);
 }
 // The tab bar's fade (src/components/TabBar.tsx): white, transparent at the top, opaque at the
 // bottom, eased; tinted with the canvas colour and stretched to the band.

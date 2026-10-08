@@ -9,9 +9,14 @@ import { privateChannel, useChannel } from '@/lib/realtime';
 // app sends on itself; only the two members may join (realtime.messages policies). The event
 // carries an empty payload that is never read, and nothing is stored. The own sends are not echoed
 // back (broadcast `self` is off by default).
+//
+// The Mesajlar row and the open DM share one channel per thread (@/lib/realtime), and only the
+// first consumer builds it and sees its status: the joined channel is kept per topic, so the DM
+// can send while the list is mounted under it.
+const joinedChannels = new Map<string, RealtimeChannel>();
+
 export function useDmTyping(threadId: string) {
   const topic = dmTypingChannel(threadId);
-  const joined = useRef<RealtimeChannel | null>(null);
   const lastSent = useRef<number | null>(null);
   const [typingUntil, setTypingUntil] = useState<number | null>(null);
 
@@ -20,7 +25,8 @@ export function useDmTyping(threadId: string) {
     (emit) => ({
       channel: privateChannel(topic).on('broadcast', { event: TYPING_EVENT }, () => emit('typing')),
       onStatus: (status, channel) => {
-        joined.current = status === 'SUBSCRIBED' ? channel : null;
+        if (status === 'SUBSCRIBED') joinedChannels.set(topic, channel);
+        else if (joinedChannels.get(topic) === channel) joinedChannels.delete(topic);
       },
     }),
     () => setTypingUntil(Date.now() + TYPING.showMs),
@@ -36,10 +42,11 @@ export function useDmTyping(threadId: string) {
   // The composer's text changed: at most one event every SEND_MS.
   const notifyTyping = useCallback(() => {
     const now = Date.now();
-    if (!shouldSendTyping(lastSent.current, now)) return;
+    const channel = joinedChannels.get(topic);
+    if (!channel || !shouldSendTyping(lastSent.current, now)) return;
     lastSent.current = now;
-    void joined.current?.send({ type: 'broadcast', event: TYPING_EVENT, payload: {} });
-  }, []);
+    void channel.send({ type: 'broadcast', event: TYPING_EVENT, payload: {} });
+  }, [topic]);
 
   // A message from the other side arrived: the dots go at once.
   const clearTyping = useCallback(() => setTypingUntil(null), []);

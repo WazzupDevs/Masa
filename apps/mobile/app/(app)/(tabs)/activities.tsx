@@ -1,4 +1,4 @@
-import type { Intent } from '@shared/rooms.ts';
+import type { Concept, Intent } from '@shared/rooms.ts';
 import { hasActiveTable } from '@shared/navigation.ts';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -17,12 +17,14 @@ import { Text } from '@/components/Text';
 import { type RecentGame, useRecentGames } from '@/features/activities/useRecentGames';
 import { useActiveTable } from '@/features/checkin/useActiveTable';
 import { NotificationsBell } from '@/features/notifications/Bell';
+import { GAME_ORDER, GameCard, GameCell, GameGrid } from '@/features/games/GameCard';
 import { useCreateSolo } from '@/features/rooms/useCreateSolo';
 import { errorMessage } from '@/i18n/errors';
 import { tr } from '@/i18n/tr';
 import { useNow } from '@/lib/useNow';
 
-type Game = 'tabu' | 'sohbet' | 'sahtekar' | 'harf' | 'sarki' | 'ibre';
+type Game = Concept;
+type Mode = 'solo' | 'room';
 
 // The intent "Bu oyunla oda kur" opens the room form with (the room still starts without a game).
 const INTENT_OF: Record<Game, Intent> = {
@@ -34,73 +36,52 @@ const INTENT_OF: Record<Game, Intent> = {
   ibre: 'game',
 };
 
-// Aktiviteler, the game hub (docs/SPEC_V3.md §18.3; canvas: Aşama 5 · Geri bildirim): one card per
-// game with a short line and how it is played. At the venue: "Masanla oyna" (the one-table room
-// of the venue screen) and "Bu oyunla oda kur"; otherwise "Oynamak için mekana gir". Below, the
-// caller's own recent games; the section is left out when there are none. No new game or content.
+// Aktiviteler, the game hub (docs/SPEC_V3.md §18.3; canvas: Aşama 8 · Saha → Oyun listesi): the
+// games as cards under "Tek telefonla" (the one-table room of the venue screen) and "İki masayla"
+// ("Bu oyunla oda kur"). A card opens the game's sheet: what it is, how it is played and the action,
+// or "Oynamak için mekana gir" away from a venue. Below, the caller's own recent games; the section
+// is left out when there are none. No new game or content.
 export default function ActivitiesScreen() {
   const table = useActiveTable();
   const now = useNow(30_000);
   const atVenue = hasActiveTable(table.data, now);
   const solo = useCreateSolo();
   const recent = useRecentGames();
-  const [howTo, setHowTo] = useState<Game | null>(null);
+  const [open, setOpen] = useState<{ game: Game; mode: Mode } | null>(null);
 
-  const games: Game[] = ['tabu', 'sahtekar', 'harf', 'sarki', 'ibre', 'sohbet'];
+  const section = (mode: Mode) => (
+    <View className="gap-2.5">
+      <View className="flex-row items-baseline justify-between gap-3 px-1">
+        <Text variant="heading" accessibilityRole="header">
+          {mode === 'solo' ? tr.activities.oneTable : tr.activities.twoTables}
+        </Text>
+        <Text variant="fine">
+          {mode === 'solo' ? tr.rooms.playWithTable : tr.activities.createWith}
+        </Text>
+      </View>
+      <Card>
+        <GameGrid>
+          {GAME_ORDER.map((game) => (
+            <GameCell key={game}>
+              <GameCard
+                concept={game}
+                testID={`activities-${mode}-card-${game}`}
+                onPress={() => setOpen({ game, mode })}
+              />
+            </GameCell>
+          ))}
+        </GameGrid>
+      </Card>
+    </View>
+  );
 
   return (
     <Screen edges={['top']}>
       <ScreenHeader title={tr.tabs.activities} trailing={<NotificationsBell />} />
 
-      <View className="mt-3 gap-4">
-        {games.map((game, i) => (
-          <Rise key={game} index={i}>
-            <Card tone={game === 'tabu' ? 'feature' : 'card'}>
-              <View className="gap-3">
-                <Text variant="title" accessibilityRole="header">
-                  {tr.concepts[game]}
-                </Text>
-                <Text>{tr.activities[game].body}</Text>
-                <View className="self-start">
-                  <Button
-                    variant="ghost"
-                    tight
-                    icon="chevron-forward"
-                    label={tr.activities.howTo}
-                    onPress={() => setHowTo(game)}
-                  />
-                </View>
-                {atVenue ? (
-                  <View className="gap-2.5">
-                    <Button
-                      variant={game === 'tabu' ? 'primary' : 'secondary'}
-                      label={tr.rooms.playWithTable}
-                      loading={solo.isPending}
-                      disabled={solo.isPending}
-                      onPress={() => solo.mutate()}
-                      testID={`activities-solo-${game}`}
-                    />
-                    <Button
-                      variant="secondary"
-                      label={tr.activities.createWith}
-                      onPress={() =>
-                        router.push({ pathname: '/room/new', params: { intent: INTENT_OF[game] } })
-                      }
-                      testID={`activities-create-${game}`}
-                    />
-                  </View>
-                ) : (
-                  <Button
-                    variant="secondary"
-                    label={tr.activities.goToVenue}
-                    onPress={() => router.navigate('/explore')}
-                    testID={`activities-venue-${game}`}
-                  />
-                )}
-              </View>
-            </Card>
-          </Rise>
-        ))}
+      <View className="mt-3 gap-5">
+        <Rise>{section('solo')}</Rise>
+        <Rise index={1}>{section('room')}</Rise>
         {solo.isError ? (
           <Text variant="fine" tone="danger">
             {errorMessage(solo.error)}
@@ -120,16 +101,60 @@ export default function ActivitiesScreen() {
       </View>
 
       <Sheet
-        visible={howTo !== null}
-        onClose={() => setHowTo(null)}
-        title={howTo ? tr.concepts[howTo] : ''}
+        visible={open !== null}
+        onClose={() => setOpen(null)}
+        title={open ? tr.concepts[open.game] : ''}
       >
-        <View className="gap-2.5">
-          {(howTo ? tr.activities[howTo].steps : []).map((step) => (
-            <Text key={step}>{step}</Text>
-          ))}
-        </View>
-        <Button variant="ghost" label={tr.common.close} onPress={() => setHowTo(null)} />
+        {open ? (
+          <View className="gap-2.5">
+            <Text>{tr.activities[open.game].body}</Text>
+            <Text variant="label">{tr.activities.howTo}</Text>
+            {tr.activities[open.game].steps.map((step) => (
+              <Text key={step} variant="fine">
+                {step}
+              </Text>
+            ))}
+          </View>
+        ) : null}
+        {open && !atVenue ? (
+          <Button
+            variant="neutral"
+            label={tr.activities.goToVenue}
+            onPress={() => {
+              setOpen(null);
+              router.navigate('/explore');
+            }}
+            testID={`activities-venue-${open.game}`}
+          />
+        ) : open?.mode === 'solo' ? (
+          <Button
+            variant="secondary"
+            label={tr.rooms.playWithTable}
+            loading={solo.isPending}
+            disabled={solo.isPending}
+            onPress={() => {
+              setOpen(null);
+              solo.mutate();
+            }}
+            testID={`activities-solo-${open.game}`}
+          />
+        ) : open ? (
+          <Button
+            label={tr.activities.createWith}
+            onPress={() => {
+              const intent = INTENT_OF[open.game];
+              setOpen(null);
+              router.push({ pathname: '/room/new', params: { intent } });
+            }}
+            testID={`activities-create-${open.game}`}
+          />
+        ) : null}
+        <Button
+          variant="ghost"
+          label={tr.common.close}
+          onPress={() => setOpen(null)}
+          testID="activities-sheet-close"
+        />
       </Sheet>
     </Screen>
   );

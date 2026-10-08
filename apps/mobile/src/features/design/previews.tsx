@@ -1,9 +1,14 @@
 import { type ReactNode, useState } from 'react';
 import { View } from 'react-native';
 
+import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
+import { ChatBubble, type ChatQuote, type ChatReaction } from '@/components/ChatBubble';
+import { ChatScroll } from '@/components/ChatScreen';
+import { ChoiceChip } from '@/components/ChoiceChip';
 import { ConfirmSheet } from '@/components/ConfirmSheet';
 import { GameDisc, type GameGlyph } from '@/components/Glyph';
+import { Composer } from '@/components/Composer';
 import { Text } from '@/components/Text';
 import { FirstGameIntro } from '@/features/games/FirstGameIntro';
 import { ClockPill, TeamScore } from '@/features/games/GameBits';
@@ -70,12 +75,63 @@ export function PreviewBlock({ title, children }: { title: string; children: Rea
   );
 }
 
+// Aşama 8 · Saha: the button roles with the 3D depth, a disabled one, the small header size and
+// the choice chips (the chosen one stays pressed in).
+function ButtonsBlock() {
+  const [chip, setChip] = useState(1);
+  return (
+    <PreviewBlock title="Button · 3D">
+      <View className="gap-3" testID="preview-buttons">
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <Button tight label="Oda kur" onPress={() => undefined} />
+          </View>
+          <View className="flex-1">
+            <Button tight variant="secondary" label="Masanla oyna" onPress={() => undefined} />
+          </View>
+        </View>
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <Button tight variant="positive" label="Arkadaşlar" onPress={() => undefined} />
+          </View>
+          <View className="flex-1">
+            <Button tight variant="danger" label="Odayı bitir" onPress={() => undefined} />
+          </View>
+        </View>
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <Button tight variant="neutral" label="Vazgeç" onPress={() => undefined} />
+          </View>
+          <View className="flex-1">
+            <Button tight label="Oda kur" disabled onPress={() => undefined} />
+          </View>
+        </View>
+        <View className="flex-row flex-wrap items-center gap-3">
+          <Button size="sm" variant="danger" label="Mekandan ayrıl" onPress={() => undefined} />
+          <Button size="sm" variant="neutral" label="Değiştir" onPress={() => undefined} />
+        </View>
+        <View className="flex-row gap-3">
+          {['1', '2', '3', '4+'].map((label, i) => (
+            <ChoiceChip
+              key={label}
+              label={label}
+              selected={chip === i}
+              onPress={() => setChip(i)}
+            />
+          ))}
+        </View>
+      </View>
+    </PreviewBlock>
+  );
+}
+
 function GamesSet() {
   const [score, setScore] = useState(8);
   const [intro, setIntro] = useState(false);
   const [confirm, setConfirm] = useState(false);
   return (
     <View className="gap-4">
+      <ButtonsBlock />
       <PreviewBlock title="GameDisc">
         <View className="flex-row flex-wrap gap-3">
           {GAMES.map((g) => (
@@ -93,7 +149,7 @@ function GamesSet() {
           <TeamScore name="Yaratıcı Lokma" note="anlatıyor" score={score} active />
         </View>
         <Button
-          variant="secondary"
+          variant="neutral"
           testID="preview-score"
           label="+1"
           onPress={() => setScore((s) => s + 1)}
@@ -135,13 +191,13 @@ function GamesSet() {
       <PreviewBlock title="RematchButton · ConfirmSheet · FirstGameIntro">
         <RematchButton onPress={() => undefined} />
         <Button
-          variant="secondary"
+          variant="neutral"
           testID="preview-confirm"
           label={tr.games.endGame}
           onPress={() => setConfirm(true)}
         />
         <Button
-          variant="secondary"
+          variant="neutral"
           testID="preview-intro"
           label={tr.games.introTitle}
           onPress={() => setIntro(true)}
@@ -421,9 +477,105 @@ function IbreSet() {
   );
 }
 
+// Aşama 8 · Saha → Sohbet: a sender's run under one photo and name, a reply with its quote, the
+// reactions under a message (the bar opens on a long press), the reply strip over the message bar,
+// and "Yeni mesaj" when a message comes in while the reader is up the stream.
+function ChatSet() {
+  const [reactions, setReactions] = useState<ChatReaction[]>([
+    { emoji: '😂', count: 2, mine: true },
+    { emoji: '🔥', count: 1, mine: false },
+  ]);
+  const [replyTo, setReplyTo] = useState<ChatQuote | undefined>({
+    name: 'Deniz',
+    text: 'Yarın aynı yerde mi?',
+  });
+  const [incoming, setIncoming] = useState(0);
+  const toggle = (emoji: string) =>
+    setReactions((list) => {
+      const found = list.find((r) => r.emoji === emoji);
+      if (!found) return [...list, { emoji, count: 1, mine: true }];
+      const count = found.count + (found.mine ? -1 : 1);
+      return count === 0
+        ? list.filter((r) => r.emoji !== emoji)
+        : list.map((r) => (r.emoji === emoji ? { ...r, count, mine: !r.mine } : r));
+    });
+  const deniz = <Avatar kind="profile" name="Deniz Kaya" size="sm" />;
+  const stream = Array.from({ length: 8 + incoming }, (_, i) => i);
+  return (
+    <View className="gap-4">
+      <PreviewBlock title="ChatBubble">
+        <View className="gap-2" testID="preview-chat">
+          <ChatBubble
+            text="Harika oyundu!"
+            mine={false}
+            avatar={deniz}
+            name="Deniz Kaya"
+            onPressSender={() => undefined}
+            last={false}
+          />
+          <ChatBubble
+            text="Yarın aynı yerde mi?"
+            mine={false}
+            avatar={deniz}
+            first={false}
+            time="21:42"
+            reactions={reactions}
+            onToggleReaction={toggle}
+            onReply={() => setReplyTo({ name: 'Deniz', text: 'Yarın aynı yerde mi?' })}
+            onReact={toggle}
+            testID="preview-bubble"
+          />
+          <ChatBubble
+            text="Olur, 8 gibi oradayız"
+            mine
+            quote={{ name: 'Deniz', text: 'Yarın aynı yerde mi?' }}
+            time="21:44"
+            delivery="read"
+            onReply={() => setReplyTo({ name: 'Sen', text: 'Olur, 8 gibi oradayız' })}
+            onReact={toggle}
+          />
+        </View>
+      </PreviewBlock>
+      <PreviewBlock title="Composer · replyTo">
+        <Composer
+          value=""
+          onChangeText={() => undefined}
+          placeholder={tr.dm.placeholder}
+          maxLength={200}
+          onSend={() => undefined}
+          sendLabel={tr.dm.send}
+          sendDisabled
+          replyTo={replyTo}
+          onCancelReply={() => setReplyTo(undefined)}
+        />
+      </PreviewBlock>
+      <PreviewBlock title="ChatScroll · Yeni mesaj">
+        <View style={{ height: STAGE / 2 }} testID="preview-stream">
+          <ChatScroll
+            newestKey={String(stream.length)}
+            contentContainerStyle={{ gap: SPACING[2], padding: SPACING[2] }}
+          >
+            {stream.map((i) => (
+              <ChatBubble key={i} text={`Mesaj ${i + 1}`} mine={i % 3 === 0} />
+            ))}
+          </ChatScroll>
+        </View>
+        <Button
+          variant="neutral"
+          size="sm"
+          label={tr.design.previewIncoming}
+          testID="preview-incoming"
+          onPress={() => setIncoming((n) => n + 1)}
+        />
+      </PreviewBlock>
+    </View>
+  );
+}
+
 export const PREVIEW_SETS: PreviewSet[] = [
   { key: 'games', label: 'Oyun', render: () => <GamesSet /> },
   { key: 'sahtekar', label: 'Sahtekar', render: () => <SahtekarSet /> },
   { key: 'say', label: 'Harf · Şarkı', render: () => <SaySet /> },
   { key: 'ibre', label: 'İbre', render: () => <IbreSet /> },
+  { key: 'chat', label: 'Sohbet', render: () => <ChatSet /> },
 ];

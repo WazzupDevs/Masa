@@ -188,6 +188,7 @@ export const tr = {
     empty: 'Henüz mesajın yok.',
     emptyHint: 'Arkadaş olduğun kişilerle burada yazışırsın.',
     noMessage: 'Henüz mesaj yok',
+    typing: 'yazıyor…',
     yesterday: 'Dün',
     stamp: (iso: string, stamp: InboxStamp) =>
       stamp.kind === 'time'
@@ -204,6 +205,8 @@ export const tr = {
   // Aktiviteler: the game hub (docs/SPEC_V3.md §18.3). Same games and rules as the room.
   activities: {
     howTo: 'Nasıl oynanır',
+    oneTable: 'Tek telefonla',
+    twoTables: 'İki masayla',
     createWith: 'Bu oyunla oda kur',
     goToVenue: 'Oynamak için mekana gir',
     recent: 'Son oyunların',
@@ -347,7 +350,6 @@ export const tr = {
     removeConfirm: 'Çıkar',
     removeHint: 'Konuşmanız silinir. Karşı tarafa bildirilmez.',
     friendMenuTitle: 'Arkadaşlık',
-    viewProfile: 'Profili gör',
     done: 'Tamam',
     back: 'Geri',
   },
@@ -537,6 +539,19 @@ export const tr = {
       const d = new Date(iso);
       return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     },
+    // Aşama 8 · Saha: following the newest message, replies and reactions.
+    newMessages: (n: number) => (n > 1 ? `Yeni mesaj · ${n}` : 'Yeni mesaj'),
+    newMessagesLabel: (n: number) =>
+      n > 1 ? `${n} yeni mesaj, en alta in` : 'Yeni mesaj, en alta in',
+    reply: 'Yanıtla',
+    react: 'Tepki ver',
+    replyingTo: (name: string) => `Yanıtlanan: ${name}`,
+    cancelReply: 'Yanıtı kaldır',
+    quoteLabel: (name: string, text: string) => `${name} mesajına yanıt: ${text}`,
+    reactionChip: (emoji: string, n: number, mine: boolean) =>
+      `${emoji} ${n}${mine ? ', sizin tepkiniz' : ''}`,
+    reactWith: (emoji: string) => `${emoji} ile tepki ver`,
+    openProfile: (name: string) => `${name}, profili aç`,
   },
   // Mekan sohbet odası (docs/SPEC_V3.md §7).
   venueChat: {
@@ -552,7 +567,6 @@ export const tr = {
     profiled: 'profilli',
     you: 'Sen',
     messageMenu: 'Mesaj',
-    seeProfile: 'Profili gör',
     sendRequest: 'Arkadaşlık isteği gönder',
     requestConfirmTitle: 'İstek gönderilsin mi?',
     requestConfirmBody: 'İstek gönderirsen profilin ona görünür: adın, yaşın ve fotoğrafın.',
@@ -622,6 +636,8 @@ export const tr = {
     notAccepted: 'Öneri kabul edilmedi.',
     // One table: the games start at once.
     soloTitle: 'Masanla oyna',
+    soloHint: (n: number) => `Tek telefonla, masada elden ele. ${n} kişisiniz.`,
+    minPlayers: (n: number) => `En az ${n} kişi`,
     start: (game: string) => `${game} başlat`,
     endGame: 'Oyunu bitir',
     lastGameTabu: (owner: string, ownerScore: number, guest: string, guestScore: number) =>
@@ -736,7 +752,6 @@ export const tr = {
     roundNoPoint: 'Sekiz dize söylendi; puan yok.',
     readyHint: (s: number) => `Başlayınca her sıra ${s} saniye. İstem ekranda.`,
     readyWaitingHint: 'Onlar başlayınca ya da süre dolunca tur başlar.',
-    needsTwo: 'Bu oyun için masada en az 2 kişi olmalı.',
     pickLetter: 'Kelimeyi söyle, baş harfine dokun.',
   },
   // İbre (docs/SPEC_V3.md §20.5): a two-ended scale, values 0–100.
@@ -837,7 +852,6 @@ export const tr = {
     dealing: 'Yeni kelime geliyor…',
     votesDone: 'Masanızın oyları verildi. Diğer masa bekleniyor.',
     notEnough: 'Kartına bakmayanlar oyundan çıktı; 3 kişi kalmadı. Oyun bitti.',
-    needsThree: `Sahtekar için masada en az ${SAHTEKAR.minPlayers} kişi olmalı.`,
   },
   reveal: {
     question: 'Tanışalım mı?',
@@ -884,6 +898,7 @@ export const tr = {
     schemes: { light: 'Açık', dark: 'Koyu', system: 'Sistem' },
     previewTitle: 'Bileşen önizleme',
     previewOpen: 'Bileşen önizlemesini aç',
+    previewIncoming: 'Mesaj gelsin',
   },
   settings: {
     title: 'Ayarlar',

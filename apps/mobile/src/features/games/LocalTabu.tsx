@@ -126,14 +126,14 @@ export function LocalTabu({ roomId }: { roomId: string }) {
       <View className="flex-row gap-2">
         <View className="flex-1">
           <Button
-            variant="success"
+            variant="positive"
             label={tr.games.correct}
             onPress={() => dispatch({ type: 'correct' })}
           />
         </View>
         <View className="flex-1">
           <Button
-            variant="secondary"
+            variant="neutral"
             label={tr.games.pass}
             onPress={() => dispatch({ type: 'pass' })}
           />

@@ -51,7 +51,7 @@ export default function PersonScreen() {
           </View>
           <View className="mt-auto pt-4">
             <Button
-              variant="secondary"
+              variant="neutral"
               icon="flag-outline"
               label={tr.profile.report}
               onPress={() => setReporting(true)}

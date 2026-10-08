@@ -138,7 +138,7 @@ export default function NotificationsScreen() {
                 <View className="flex-row gap-2.5">
                   <View className="flex-1">
                     <Button
-                      variant="secondary"
+                      variant="neutral"
                       label={tr.friends.decline}
                       disabled={respond.isPending}
                       onPress={() => respond.mutate({ requestId: r.request_id, accept: false })}
@@ -231,7 +231,7 @@ export default function NotificationsScreen() {
                 <View>
                   <Button
                     testID="history-more"
-                    variant="secondary"
+                    variant="neutral"
                     label={tr.friends.more}
                     onPress={() => setMenuFor(h.id)}
                   />
@@ -253,7 +253,7 @@ export default function NotificationsScreen() {
         title={tr.friends.moreTitle}
       >
         <Button
-          variant="secondary"
+          variant="neutral"
           label={tr.friends.report}
           onPress={() => {
             setReporting(menuFor);

@@ -49,6 +49,8 @@ export type DmRequest =
   | { action: 'delivered' };
 
 export type DmOkResponse = { ok: true };
+// The message as written (adım 9.1): the app puts it into its page at once, with status 'sent'.
+export type DmSendResponse = { ok: true; messageId: string; createdAt: string };
 
 // Of the caller's own messages only: the other member's times never reach the client.
 export type DmStatus = 'sent' | 'delivered' | 'read';
