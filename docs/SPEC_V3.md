@@ -1539,3 +1539,12 @@ Ek kararlar: oyuncu sayısı yalnızca Sahtekar'da ve öneri/kabulle (§20.1); i
 2. Kendi mesajına tepki verilebilir.
 3. Mekan sohbetinde tepkiye hız sınırı: hesap başına 10 sn'de 10; aşılırsa `rate_limited`, arayüz sessizce yok sayar (§21.2).
 4. Oda sohbetinde tepki verenler masa takma adıyla görünür; oda bittiğinde oyun geçmişindeki oda sohbeti kapanır, tepki de görünmez kalır.
+
+### 21.6 Uygulamada netleşenler
+
+- **`replied` kolonu:** `reply_to_id` silinen mesajla boşaldığı için (`on delete set null`) her mesaj tablosunda bir de `replied boolean` var; "yanıttı ama alıntı gitti" ile "yanıt değildi" böyle ayrılır.
+- **Gönderme fonksiyonları:** `chat_send`, `dm_send`, `dm_send_message` ve `venue_chat_send` sonda `reply_to uuid default null` alır; yayındaki eski fonksiyonlar bu parametre olmadan çağırmayı sürdürür.
+- **Oda kanalı:** tepki yayını odanın sohbet kanalına, `messages:{room_id}`'ye gider (Postgres Changes'in geldiği kanal); istemci aynı abonelikte okur.
+- **Oda sohbetinde görünürlük:** misafir masa, odaya katılmadan önceki mesajı alıntılayamaz ve ona yapılmış yanıtı `{ gone: true }` görür (mesajların kendi politikası, `guest_joined_at`).
+- **Yeniden deneme:** `dm/react` ve `chat/react` `IDEMPOTENT_CALLS`'tadır. `venue-chat/react` değildir: her istek tepki sınırına sayılır, iki kez gönderilince durum (sayaç) aynı kalmaz.
+- **Alıntıya dokunma:** tasarımın `ChatBubble` alıntısı dokunmayı almıyor; "alıntıya dokununca mesaja kay" bu sürümde yok, bileşen desteklediğinde eklenir.
