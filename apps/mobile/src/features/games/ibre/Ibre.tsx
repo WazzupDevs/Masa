@@ -179,9 +179,14 @@ export function Dial({
         {cover}
         {touch}
       </View>
-      <View className="flex-row justify-between">
-        <Text variant="bodyStrong">{left}</Text>
-        <Text variant="bodyStrong">{right}</Text>
+      {/* Each end has half the row and wraps: long ends ran into each other at 320 dp. */}
+      <View className="flex-row gap-3">
+        <Text variant="bodyStrong" className="flex-1">
+          {left}
+        </Text>
+        <Text variant="bodyStrong" align="right" className="flex-1">
+          {right}
+        </Text>
       </View>
       {children}
     </View>

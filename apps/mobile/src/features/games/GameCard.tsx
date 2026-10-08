@@ -6,6 +6,7 @@ import { useDepth } from '@/components/Depth';
 import { GAME_TONES, type GameGlyph } from '@/components/Glyph';
 import { Text } from '@/components/Text';
 import { tr } from '@/i18n/tr';
+import { withAlpha } from '@/theme/contrast';
 import { useTheme } from '@/theme/ThemeProvider';
 import { SPACING, TOUCH } from '@/theme/tokens';
 
@@ -40,6 +41,7 @@ const ART: Record<GameGlyph, ImageSourcePropType> = {
 };
 
 const CARD_HEIGHT = TOUCH.large + SPACING[7];
+const FADED = 0.5;
 // Under the name's two lines (canvas: Aşama 8 · Saha → Oyun listesi).
 const ART_SIZE = SPACING[12] + SPACING[1];
 
@@ -85,9 +87,9 @@ export function GameCard({
             {
               height: CARD_HEIGHT,
               borderRadius: shape.radius.md,
-              backgroundColor: colors[bg],
+              // Faded when closed; the reason on it stays at full contrast.
+              backgroundColor: disabled ? withAlpha(colors[bg], FADED) : colors[bg],
               overflow: 'hidden',
-              opacity: disabled ? 0.5 : 1,
             },
             depth({ pressed, inactive: disabled }),
           ]}
@@ -96,6 +98,7 @@ export function GameCard({
             source={ART[glyph]}
             accessible={false}
             style={{
+              opacity: disabled ? FADED : 1,
               position: 'absolute',
               right: -SPACING[1],
               bottom: -SPACING[1.5],
@@ -104,7 +107,7 @@ export function GameCard({
             }}
           />
           {/* The whole width: a narrower box breaks "Sahtekar" inside the word at 320 dp. */}
-          <View style={{ padding: SPACING[2.5] }}>
+          <View style={{ padding: SPACING[2.5], opacity: disabled ? FADED : 1 }}>
             <Text variant="gameName" color={colors[fg]} numberOfLines={2}>
               {name}
             </Text>
