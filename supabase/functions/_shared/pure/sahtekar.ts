@@ -4,6 +4,8 @@
 // win. The SQL functions take the numbers from private.sahtekar_config() and apply the same rules
 // (clue order, tally, outcome); integration tests check that they agree with this file.
 
+import { GAME_CATALOG } from './gameCatalog.ts';
+
 export const SAHTEKAR = {
   viewSeconds: 120,
   clueSeconds: 15,
@@ -12,7 +14,7 @@ export const SAHTEKAR = {
   guessSeconds: 30,
   // The word and 5 others of its category.
   options: 6,
-  minPlayers: 3,
+  minPlayers: GAME_CATALOG.sahtekar.onePhone.minPlayers,
   maxPerTable: 4,
 } as const;
 
