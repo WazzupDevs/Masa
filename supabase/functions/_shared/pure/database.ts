@@ -1439,6 +1439,19 @@ export type Database = {
         };
         Returns: string;
       };
+      dm_send_message: {
+        Args: {
+          min_interval_ms: number;
+          new_body: string;
+          target_thread_id: string;
+          target_user_id: string;
+        };
+        Returns: {
+          created_at: string;
+          message_id: string;
+          other_user_id: string;
+        }[];
+      };
       end_table_session: { Args: { target_user_id: string }; Returns: boolean };
       explore_venues: {
         Args: { event_days?: number };

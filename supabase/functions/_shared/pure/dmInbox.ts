@@ -39,6 +39,19 @@ export function withThreadRead<T extends { threadId: string | null; unreadCount:
   );
 }
 
+// The caller's message as dm/send wrote it (adım 9.1), put into the cached page (newest first) so
+// its bubble shows the 'sent' tick on the reply, without reading the page again. A page that
+// already has it (read meanwhile) stays as it is.
+export type SentDm = { id: string; body: string; created_at: string };
+export type DmPageRow = SentDm & { from_me: boolean; status: string | null };
+
+export function withSentDm(page: readonly DmPageRow[], sent: SentDm): DmPageRow[] {
+  if (page.some((m) => m.id === sent.id)) return [...page];
+  const row: DmPageRow = { ...sent, from_me: true, status: 'sent' };
+  const at = page.findIndex((m) => m.created_at <= sent.created_at);
+  return at === -1 ? [...page, row] : [...page.slice(0, at), row, ...page.slice(at)];
+}
+
 // The DM's typing dots (§18.3): at most one `typing` every SEND_MS while the text changes; the
 // dots hide SHOW_MS after the last one, or when a message arrives.
 export const TYPING = { sendMs: 3000, showMs: 5000 } as const;
