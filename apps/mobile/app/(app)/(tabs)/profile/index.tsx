@@ -60,7 +60,7 @@ export default function ProfileScreen() {
             <View className="mt-1 flex-row gap-2.5">
               <View className="flex-1">
                 <Button
-                  variant="secondary"
+                  variant="neutral"
                   tight
                   icon="people-outline"
                   label={tr.profile.friends}

@@ -19,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { useDepth } from '@/components/Depth';
 import { Text } from '@/components/Text';
 import { roomKeys } from '@/features/rooms/queries';
 import { errorMessage } from '@/i18n/errors';
@@ -235,6 +236,7 @@ function Turn({
   aliases: Record<TableSide, string>;
 }) {
   const { colors, shape } = useTheme();
+  const depth = useDepth();
   const now = useNow(250);
   const role = roleOf(server, side);
   const { pending, push, error } = usePressQueue(roomId);
@@ -324,25 +326,29 @@ function Turn({
           {tr.games.coopCardHidden}
         </Text>
       ) : covered ? (
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => setRevealedTurn(server.turnNo)}
-          className="items-center justify-center gap-2"
-          style={{
-            minHeight: COVER_HEIGHT,
-            padding: SPACING[6],
-            borderRadius: shape.radius.lg,
-            backgroundColor: colors.accent,
-            boxShadow: shape.shadow.card,
-          }}
-        >
-          <Ionicons name="eye-outline" size={ICON.xl} color={colors.onAccent} />
-          <Text variant="title" tone="onAccent" align="center">
-            {tr.games.tapToReveal}
-          </Text>
-          <Text variant="fine" tone="onAccent" align="center">
-            {tr.games.hideFromTeam}
-          </Text>
+        <Pressable accessibilityRole="button" onPress={() => setRevealedTurn(server.turnNo)}>
+          {({ pressed }) => (
+            <View
+              className="items-center justify-center gap-2"
+              style={[
+                {
+                  minHeight: COVER_HEIGHT,
+                  padding: SPACING[6],
+                  borderRadius: shape.radius.lg,
+                  backgroundColor: colors.violet,
+                },
+                depth({ pressed }),
+              ]}
+            >
+              <Ionicons name="eye-outline" size={ICON.xl} color={colors.onViolet} />
+              <Text variant="title" tone="onViolet" align="center">
+                {tr.games.tapToReveal}
+              </Text>
+              <Text variant="fine" tone="onViolet" align="center">
+                {tr.games.hideFromTeam}
+              </Text>
+            </View>
+          )}
         </Pressable>
       ) : card ? (
         <TabuCardView testID="tabu-card" word={card.word} forbidden={card.forbidden} />
@@ -361,7 +367,7 @@ function Turn({
           {/* Three in a row (canvas: Tabu iş birliği): no icons, the points under each label. */}
           <View className="flex-1">
             <Button
-              variant="success"
+              variant="positive"
               testID="tabu-correct"
               size="lg"
               stack
@@ -373,7 +379,7 @@ function Turn({
           </View>
           <View className="flex-1">
             <Button
-              variant="secondary"
+              variant="neutral"
               testID="tabu-pass"
               size="lg"
               stack
@@ -401,7 +407,7 @@ function Turn({
         <View className="flex-row gap-2.5">
           <View className="flex-1">
             <Button
-              variant="success"
+              variant="positive"
               testID="tabu-correct"
               size="lg"
               icon="checkmark"
@@ -425,7 +431,7 @@ function Turn({
               />
             ) : (
               <Button
-                variant="secondary"
+                variant="neutral"
                 testID="tabu-pass"
                 size="lg"
                 icon="play-skip-forward-outline"

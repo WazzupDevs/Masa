@@ -260,7 +260,7 @@ function Retry({ error, onRetry }: { error: unknown; onRetry: () => void }) {
       <Text variant="fine" tone="danger">
         {errorMessage(error)}
       </Text>
-      <Button variant="secondary" label={tr.common.retry} onPress={onRetry} />
+      <Button variant="neutral" label={tr.common.retry} onPress={onRetry} />
     </View>
   );
 }

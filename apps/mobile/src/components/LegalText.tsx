@@ -14,7 +14,7 @@ export function LegalText({ title, body }: { title: string; body: string }) {
       <ScreenHeader title={title} subtitle={tr.legal.draftNotice} onBack={() => router.back()} />
       <Text className="mt-4">{body}</Text>
       <View className="mt-auto pt-8">
-        <Button variant="secondary" label={tr.common.continue} onPress={() => router.back()} />
+        <Button variant="neutral" label={tr.common.continue} onPress={() => router.back()} />
       </View>
     </Screen>
   );

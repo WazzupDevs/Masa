@@ -67,7 +67,7 @@ export function IncomingRequest({ roomId, ownerSessionId }: Props) {
       <View className="mt-1 flex-row gap-2.5">
         <View className="flex-1">
           <Button
-            variant="secondary"
+            variant="neutral"
             label={tr.rooms.decline}
             onPress={() => respond.mutate({ id: request.id, accept: false })}
             disabled={respond.isPending}

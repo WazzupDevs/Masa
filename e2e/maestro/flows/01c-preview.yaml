@@ -16,6 +16,13 @@ appId: app.kabuk.mobile
       id: preview-games
     timeout: 10000
 - takeScreenshot: 04c-preview-games-1
+# Aşama 8 · Saha: the button roles with the 3D depth.
+- scrollUntilVisible:
+    element:
+      id: preview-buttons
+    centerElement: true
+    timeout: 30000
+- takeScreenshot: 04g-buttons
 - scrollUntilVisible:
     element:
       id: turn-start

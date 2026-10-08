@@ -81,7 +81,7 @@ export default function ActivitiesScreen() {
                       testID={`activities-solo-${game}`}
                     />
                     <Button
-                      variant="secondary"
+                      variant="neutral"
                       label={tr.activities.createWith}
                       onPress={() =>
                         router.push({ pathname: '/room/new', params: { intent: INTENT_OF[game] } })
@@ -91,7 +91,7 @@ export default function ActivitiesScreen() {
                   </View>
                 ) : (
                   <Button
-                    variant="secondary"
+                    variant="neutral"
                     label={tr.activities.goToVenue}
                     onPress={() => router.navigate('/explore')}
                     testID={`activities-venue-${game}`}

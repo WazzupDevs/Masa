@@ -78,7 +78,7 @@ export function ProposalArea({ roomId, sessionId, gameRunning }: Props) {
           <View className="flex-row gap-2.5">
             <View className="flex-1">
               <Button
-                variant="secondary"
+                variant="neutral"
                 testID="proposal-decline"
                 label={tr.games.declineProposal}
                 onPress={() => answer.mutate({ accept: false, concept: view.concept })}

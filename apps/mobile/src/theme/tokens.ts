@@ -100,9 +100,9 @@ export type FontSet = {
 export type ShadowSet = {
   card: string | null; // every card: soft
   feature: string | null; // the one featured card per screen (and the Tabu card): hard
-  primaryButton: string | null;
-  button: string | null; // secondary, danger and success buttons
-  venueButton: string | null; // the raised Mekan tab
+  // Aşama 8 · Saha: the 3D look of every button and game control (src/components/Depth.tsx): an
+  // outline in `border` and this hard shadow; pressed, the shadow goes and the face moves into it.
+  depth: string | null;
   raised: string | null; // the selected segment of a switch
   pin: string | null; // map pins
   tabBar: string | null; // the floating tab bar
@@ -122,6 +122,8 @@ export type Shape = {
     venueRing: number;
   };
   shadow: ShadowSet;
+  // The 3D look: outline width and how far the face sinks when pressed (the shadow's offset).
+  depth: { stroke: number; offset: number };
   // The describing team in Tabu: an accent ring or a filled sticker.
   selectedTeam: 'ring' | 'fill';
   screenPadding: number;
@@ -154,6 +156,7 @@ export type TypeVariant =
   | 'button'
   | 'buttonLarge' // the Tabu judge buttons
   | 'buttonDetail'
+  | 'buttonSmall' // a small button in a header ("Masadan ayrıl", "Odayı bitir")
   | 'tag'
   | 'caption' // tab labels, small counters
   | 'overline' // "Söylenmeyecekler"
@@ -196,6 +199,20 @@ export const SPACING = {
   14: 56,
   16: 64,
 } as const;
+
+// The tab bar's colours (canvas: Aşama 8 · Saha → Sekme çubuğu): the selected tab's icon is drawn in
+// its own colour; the others are muted. Mekan is the raised disc: filled with its colour, the icon
+// in the colour's foreground. contrast.test.ts checks each against the bar and the icon's halo.
+export const TAB_TONES = {
+  explore: 'success',
+  activities: 'violet',
+  messages: 'read',
+  profile: 'danger',
+} as const satisfies Record<string, PaletteKey>;
+export const VENUE_TAB_TONE = { fill: 'event', icon: 'onEvent' } as const satisfies Record<
+  string,
+  PaletteKey
+>;
 
 // Icon sizes (Ionicons).
 export const ICON = { xs: 12, sm: 16, md: 20, lg: 24, xl: 28 } as const;
@@ -248,6 +265,7 @@ export function baseTypography(overrides: Partial<Typography> = {}): Typography 
     button: { font: 'bold', size: 16, lineHeight: 20 },
     buttonLarge: { font: 'bold', size: 18, lineHeight: 22 },
     buttonDetail: { font: 'semibold', size: 16, lineHeight: 20 },
+    buttonSmall: { font: 'bold', size: 14, lineHeight: 18 },
     tag: { font: 'bold', size: 13, lineHeight: 17 },
     caption: { font: 'bold', size: 12, lineHeight: 16 },
     overline: { font: 'extrabold', size: 12, lineHeight: 16, letterSpacing: 1, uppercase: true },

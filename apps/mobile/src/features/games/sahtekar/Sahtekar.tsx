@@ -3,6 +3,7 @@ import { Pressable, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { useDepth } from '@/components/Depth';
 import { GameIcon } from '@/components/Glyph';
 import { Text } from '@/components/Text';
 import { tr } from '@/i18n/tr';
@@ -128,7 +129,7 @@ export function HoldCard({
         <SeatCardFace card={holding ? card : null} loading={holding && !card} />
       </Pressable>
       <Button
-        variant="secondary"
+        variant="neutral"
         testID="sahtekar-seen"
         label={tr.sahtekar.seen}
         onPress={onDone}
@@ -313,6 +314,7 @@ export function VoteGrid({
   submitting?: boolean;
 }) {
   const { colors, shape } = useTheme();
+  const depth = useDepth();
   return (
     <View className="flex-1 gap-3" testID="sahtekar-vote">
       <View className="flex-row items-center justify-between">
@@ -344,32 +346,36 @@ export function VoteGrid({
                 accessibilityLabel={self ? tr.sahtekar.selfVote(seat) : seat}
                 disabled={self}
                 onPress={() => onSelect(seat)}
-                className="items-center justify-center gap-1"
-                style={{
-                  paddingVertical: SPACING[3],
-                  borderRadius: shape.radius.lg,
-                  backgroundColor: on ? colors.accent : colors.surface,
-                  borderWidth: on
-                    ? Math.max(shape.stroke.control, 2)
-                    : self
-                      ? shape.stroke.hairline * 2
-                      : 0,
-                  borderStyle: self ? 'dashed' : 'solid',
-                  borderColor: on ? colors.border : colors.divider,
-                  boxShadow: on
-                    ? (shape.shadow.primaryButton ?? undefined)
-                    : self
-                      ? undefined
-                      : shape.shadow.card,
-                  opacity: self ? 0.45 : 1,
-                }}
               >
-                <SeatBadge seat={seat} size={SPACING[14]} />
-                {self ? (
-                  <Text variant="caption" tone="muted">
-                    {tr.sahtekar.you}
-                  </Text>
-                ) : null}
+                {({ pressed }) => (
+                  // 3D like the buttons (canvas: Aşama 8 · Saha); the chosen seat stays pressed in,
+                  // the voter's own seat is dashed and flat.
+                  <View
+                    className="items-center justify-center gap-1"
+                    style={[
+                      {
+                        paddingVertical: SPACING[3],
+                        borderRadius: shape.radius.lg,
+                        backgroundColor: on ? colors.violet : colors.raised,
+                        opacity: self ? 0.45 : 1,
+                      },
+                      self
+                        ? {
+                            borderWidth: shape.stroke.hairline * 2,
+                            borderStyle: 'dashed',
+                            borderColor: colors.divider,
+                          }
+                        : depth({ pressed: pressed || on }),
+                    ]}
+                  >
+                    <SeatBadge seat={seat} size={SPACING[14]} />
+                    {self ? (
+                      <Text variant="caption" tone="muted">
+                        {tr.sahtekar.you}
+                      </Text>
+                    ) : null}
+                  </View>
+                )}
               </Pressable>
             </View>
           );
@@ -411,6 +417,7 @@ export function GuessOptions({
   submitting?: boolean;
 }) {
   const { colors, shape } = useTheme();
+  const depth = useDepth();
   return (
     <View className="flex-1 gap-3" testID="sahtekar-guess">
       <View className="flex-row items-center justify-between">
@@ -436,20 +443,25 @@ export function GuessOptions({
               accessibilityRole="radio"
               accessibilityState={{ selected: on }}
               onPress={() => onSelect(o)}
-              className="items-center justify-center"
-              style={{
-                width: '48.5%',
-                minHeight: TOUCH.large,
-                borderRadius: shape.radius.lg,
-                backgroundColor: on ? colors.accent : colors.surface,
-                borderWidth: on ? Math.max(shape.stroke.control, 2) : 0,
-                borderColor: colors.border,
-                boxShadow: on ? (shape.shadow.primaryButton ?? undefined) : shape.shadow.card,
-              }}
+              style={{ width: '48.5%' }}
             >
-              <Text variant="buttonLarge" tone={on ? 'onAccent' : 'text'}>
-                {o}
-              </Text>
+              {({ pressed }) => (
+                <View
+                  className="items-center justify-center"
+                  style={[
+                    {
+                      minHeight: TOUCH.large,
+                      borderRadius: shape.radius.lg,
+                      backgroundColor: on ? colors.violet : colors.raised,
+                    },
+                    depth({ pressed: pressed || on }),
+                  ]}
+                >
+                  <Text variant="buttonLarge" tone={on ? 'onViolet' : 'text'}>
+                    {o}
+                  </Text>
+                </View>
+              )}
             </Pressable>
           );
         })}

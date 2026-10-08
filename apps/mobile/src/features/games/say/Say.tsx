@@ -1,6 +1,7 @@
 import { Pressable, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { useDepth } from '@/components/Depth';
 import { Text } from '@/components/Text';
 import { tr } from '@/i18n/tr';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -108,6 +109,7 @@ export function LetterBoard({
   disabled?: boolean;
 }) {
   const { colors, shape } = useTheme();
+  const depth = useDepth();
   return (
     // Each sixth of the row is the touch area; the tile is drawn inside it, the gap split around it.
     <View
@@ -129,30 +131,35 @@ export function LetterBoard({
             onPress={() => onPick?.(letter)}
             style={{ width: `${100 / COLUMNS}%`, paddingHorizontal: GAP }}
           >
-            <View
-              className="items-center justify-center"
-              style={{
-                aspectRatio: 1,
-                borderRadius: shape.radius.md,
-                backgroundColor: on ? colors.accent : closed ? 'transparent' : colors.surface,
-                borderWidth: on
-                  ? Math.max(shape.stroke.control, 2)
-                  : closed
-                    ? shape.stroke.hairline * 2
-                    : 0,
-                borderStyle: closed ? 'dashed' : 'solid',
-                borderColor: on ? colors.border : colors.divider,
-                boxShadow: closed || on ? undefined : shape.shadow.card,
-              }}
-            >
-              <Text
-                variant="title"
-                tone={on ? 'onAccent' : closed ? 'muted' : 'text'}
-                strike={closed}
+            {({ pressed }) => (
+              // A 3D tile like the buttons (canvas: Aşama 8 · Saha); the picked letter stays pressed
+              // in, a closed one is dashed and flat.
+              <View
+                className="items-center justify-center"
+                style={[
+                  {
+                    aspectRatio: 1,
+                    borderRadius: shape.radius.md,
+                    backgroundColor: on ? colors.violet : closed ? 'transparent' : colors.raised,
+                  },
+                  closed
+                    ? {
+                        borderWidth: shape.stroke.hairline * 2,
+                        borderStyle: 'dashed',
+                        borderColor: colors.divider,
+                      }
+                    : depth({ pressed: pressed || on }),
+                ]}
               >
-                {letter}
-              </Text>
-            </View>
+                <Text
+                  variant="title"
+                  tone={on ? 'onViolet' : closed ? 'muted' : 'text'}
+                  strike={closed}
+                >
+                  {letter}
+                </Text>
+              </View>
+            )}
           </Pressable>
         );
       })}
@@ -256,7 +263,7 @@ export function SaidButton({
 }) {
   return (
     <Button
-      variant="success"
+      variant="positive"
       size="lg"
       testID="say-said"
       label={tr.say.said}

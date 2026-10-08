@@ -231,7 +231,7 @@ export default function DmScreen() {
 
       <Sheet visible={menu} onClose={() => setMenu(false)} title={tr.friends.friendMenuTitle}>
         <Button
-          variant="secondary"
+          variant="neutral"
           label={tr.friends.viewProfile}
           onPress={() => {
             setMenu(false);
@@ -239,7 +239,7 @@ export default function DmScreen() {
           }}
         />
         <Button
-          variant="secondary"
+          variant="neutral"
           label={tr.dm.report}
           onPress={() => {
             setMenu(false);
@@ -247,7 +247,7 @@ export default function DmScreen() {
           }}
         />
         <Button
-          variant="secondary"
+          variant="neutral"
           label={tr.friends.removeFriend}
           onPress={() => {
             setMenu(false);

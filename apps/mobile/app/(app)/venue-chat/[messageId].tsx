@@ -89,7 +89,7 @@ export default function VenueChatProfileScreen() {
             <View className="flex-row gap-2.5">
               <View className="flex-1">
                 <Button
-                  variant="secondary"
+                  variant="neutral"
                   tight
                   label={tr.profile.report}
                   onPress={() => setReporting(true)}
@@ -97,7 +97,7 @@ export default function VenueChatProfileScreen() {
               </View>
               <View className="flex-1">
                 <Button
-                  variant="secondary"
+                  variant="neutral"
                   tight
                   label={tr.safety.block}
                   onPress={() => setBlocking(true)}

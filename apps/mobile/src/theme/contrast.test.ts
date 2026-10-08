@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { AA_LARGE, AA_TEXT, contrastRatio, readableOn } from './contrast';
 import { REVEAL_FOREGROUNDS } from './reveal';
 import { THEME } from './theme';
-import type { Palette, PaletteKey } from './tokens';
+import { type Palette, type PaletteKey, TAB_TONES, VENUE_TAB_TONE } from './tokens';
 
 type Pair = [foreground: PaletteKey, background: PaletteKey, minimum: number];
 
@@ -41,8 +41,26 @@ const PAIRS: readonly Pair[] = [
   ['onEvent', 'event', AA_TEXT],
   ['accent', 'surface', AA_LARGE], // selected ring
   ['muted', 'surface', AA_LARGE], // input outline
-  ['border', 'canvas', AA_LARGE], // primary button and featured card outline
+  ['border', 'canvas', AA_LARGE], // featured card outline
   ['border', 'surface', AA_LARGE],
+  // Aşama 8 · Saha: the 3D depth (outline and hard shadow, both in `border`) stands out from every
+  // ground a button sits on, in the dark scheme too.
+  ['border', 'surface2', AA_LARGE],
+  ['border', 'raised', AA_LARGE],
+  // Button roles: the label on its fill.
+  ['onViolet', 'violet', AA_TEXT], // primary
+  ['onEvent', 'event', AA_TEXT], // secondary (orange)
+  ['onSuccess', 'success', AA_TEXT], // positive
+  ['onDanger', 'danger', AA_TEXT], // danger
+  ['text', 'raised', AA_TEXT], // neutral
+  ['muted', 'surface2', AA_TEXT], // disabled
+  // Tab bar: the selected tab's icon on the bar and on its halo; the Mekan disc's icon.
+  ...Object.values(TAB_TONES).flatMap((tone): Pair[] => [
+    [tone, 'surface', AA_LARGE],
+    [tone, 'surface2', AA_LARGE],
+  ]),
+  [VENUE_TAB_TONE.icon, VENUE_TAB_TONE.fill, AA_LARGE],
+  ['muted', 'surface', AA_LARGE], // the other tabs' icons
 ];
 
 function ratio(p: Palette, fg: PaletteKey, bg: PaletteKey): number {

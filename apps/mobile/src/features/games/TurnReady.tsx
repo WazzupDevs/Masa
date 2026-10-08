@@ -2,6 +2,7 @@ import { Pressable, View } from 'react-native';
 
 import { Card } from '@/components/Card';
 import { Avatar } from '@/components/Avatar';
+import { useDepth } from '@/components/Depth';
 import { Text } from '@/components/Text';
 import { tr } from '@/i18n/tr';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -46,6 +47,7 @@ export function TurnReady({
   testID,
 }: Props) {
   const { colors, shape } = useTheme();
+  const depth = useDepth();
   const fraction = totalSeconds > 0 ? Math.max(0, Math.min(1, secondsLeft / totalSeconds)) : 0;
   return (
     <View className="flex-1 gap-4" testID={testID}>
@@ -98,21 +100,20 @@ export function TurnReady({
             >
               {({ pressed }) => (
                 <View
-                  style={{
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: START,
-                    height: START,
-                    borderRadius: shape.radius.pill,
-                    backgroundColor: colors.accent,
-                    borderWidth: Math.max(shape.stroke.feature, 2),
-                    borderColor: colors.border,
-                    boxShadow: shape.shadow.primaryButton ?? undefined,
-                    opacity: starting ? 0.6 : 1,
-                    transform: [{ scale: pressed ? 0.97 : 1 }],
-                  }}
+                  style={[
+                    {
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: START,
+                      height: START,
+                      borderRadius: shape.radius.pill,
+                      backgroundColor: colors.violet,
+                      opacity: starting ? 0.6 : 1,
+                    },
+                    depth({ pressed }),
+                  ]}
                 >
-                  <Text variant="hero" tone="onAccent">
+                  <Text variant="hero" tone="onViolet">
                     {tr.games.turnReadyStart}
                   </Text>
                 </View>

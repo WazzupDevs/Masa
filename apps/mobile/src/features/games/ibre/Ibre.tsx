@@ -3,6 +3,7 @@ import { Pressable, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { GameIcon } from '@/components/Glyph';
+import { useDepth } from '@/components/Depth';
 import { Text } from '@/components/Text';
 import { tr } from '@/i18n/tr';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -436,6 +437,7 @@ function StepButton({
   disabled?: boolean;
 }) {
   const { colors, shape } = useTheme();
+  const depth = useDepth();
   return (
     <Pressable
       testID={testID}
@@ -447,17 +449,21 @@ function StepButton({
     >
       {({ pressed }) => (
         <View
-          style={{
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: TOUCH.button,
-            height: TOUCH.button,
-            borderRadius: shape.radius.pill,
-            backgroundColor: pressed ? colors.raised : colors.surface2,
-            opacity: disabled ? 0.45 : 1,
-          }}
+          style={[
+            {
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: TOUCH.button,
+              height: TOUCH.button,
+              borderRadius: shape.radius.pill,
+              backgroundColor: disabled ? colors.surface2 : colors.raised,
+            },
+            depth({ pressed, inactive: disabled }),
+          ]}
         >
-          <Text variant="title">{text}</Text>
+          <Text variant="title" tone={disabled ? 'muted' : 'text'}>
+            {text}
+          </Text>
         </View>
       )}
     </Pressable>
@@ -483,7 +489,7 @@ export function SideChoice({
       {(['left', 'right'] as const).map((side) => (
         <View key={side} className="flex-1">
           <Button
-            variant={selected === side ? 'primary' : 'secondary'}
+            variant={selected === side ? 'primary' : 'neutral'}
             size="lg"
             testID={`ibre-side-${side}`}
             label={side === 'left' ? tr.ibre.moreLeft : tr.ibre.moreRight}

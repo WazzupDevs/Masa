@@ -86,7 +86,7 @@ export function LocalSay({ roomId, kind }: Props) {
         <Text variant="fine" tone="danger">
           {errorMessage(deal.error)}
         </Text>
-        <Button variant="secondary" label={tr.common.retry} onPress={() => dealNow()} />
+        <Button variant="neutral" label={tr.common.retry} onPress={() => dealNow()} />
       </View>
     ) : (
       <Text tone="muted" align="center">
