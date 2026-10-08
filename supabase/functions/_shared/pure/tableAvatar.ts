@@ -1,7 +1,7 @@
 // An anonymous table's avatar (Aşama 8 · Saha): one of the game-night icons on one of the disc
-// colours, picked from the table session id. The same session always gets the same pair, so a table
-// keeps its face for the whole check-in, whatever screen draws it; a new check-in may get another.
-// No randomness at draw time: the pick is a hash of the id (FNV-1a, 32 bit).
+// colours, picked from the table's alias. The same alias always gets the same pair, so a table has
+// one face on every phone and every screen (its own one too); a new name may bring another.
+// No randomness at draw time: the pick is a hash of the alias (FNV-1a, 32 bit).
 
 export const TABLE_AVATAR_ICONS = 12;
 

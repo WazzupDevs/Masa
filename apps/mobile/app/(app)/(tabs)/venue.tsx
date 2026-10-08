@@ -126,7 +126,7 @@ export default function VenueScreen() {
       ) : null}
       <Card tone="feature" className="mt-3">
         <View className="flex-row items-center gap-4">
-          <Avatar kind="table" alias={table.data.alias} seed={table.data.id} size="lg" />
+          <Avatar kind="table" alias={table.data.alias} size="lg" />
           <View className="flex-1 gap-1">
             <Text variant="overline" tone="muted">
               {tr.venue.yourTable}

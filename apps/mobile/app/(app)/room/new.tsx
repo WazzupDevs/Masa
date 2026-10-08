@@ -89,12 +89,7 @@ export default function NewRoomScreen() {
             label={tr.participation[mode]}
             picture={
               mode === 'anonymous' ? (
-                <Avatar
-                  kind="table"
-                  alias={table.data?.alias ?? ''}
-                  seed={table.data?.id}
-                  size="xl"
-                />
+                <Avatar kind="table" alias={table.data?.alias ?? ''} size="xl" />
               ) : (
                 <Avatar
                   kind="profile"

@@ -6,11 +6,13 @@ appId: app.kabuk.mobile
     file: ../scripts/bot.js
     env:
       ACTION: backdate-encounter
+# By id: on the 320 dp emulator "Odayı bitir" is an icon (NARROW_SCREEN).
 - scrollUntilVisible:
     element:
-      text: Odayı bitir
+      id: end-room
     timeout: 20000
-- tapOn: Odayı bitir
+- tapOn:
+    id: end-room
 - extendedWaitUntil:
     visible: Tanışalım mı\?
     timeout: 15000

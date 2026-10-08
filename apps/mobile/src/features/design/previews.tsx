@@ -109,6 +109,15 @@ function ButtonsBlock() {
         <View className="flex-row flex-wrap items-center gap-3">
           <Button size="sm" variant="danger" label="Mekandan ayrıl" onPress={() => undefined} />
           <Button size="sm" variant="neutral" label="Değiştir" onPress={() => undefined} />
+          {/* "Odayı bitir" in the room's top bar on a narrow screen. */}
+          <Button
+            size="sm"
+            variant="danger"
+            icon="exit-outline"
+            iconOnly
+            label="Odayı bitir"
+            onPress={() => undefined}
+          />
         </View>
         <View className="flex-row gap-3">
           {['1', '2', '3', '4+'].map((label, i) => (
