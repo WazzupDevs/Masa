@@ -516,6 +516,7 @@ function ChatSet() {
           <ChatBubble
             text="Yarın aynı yerde mi?"
             mine={false}
+            avatar={deniz}
             first={false}
             time="21:42"
             reactions={reactions}

@@ -138,6 +138,7 @@ export function ChatBubble({
   const bar =
     picking && onReact ? (
       <ReactionBar
+        mine={mine}
         onPick={(emoji) => {
           setPicking(false);
           onReact(emoji);
@@ -215,8 +216,9 @@ export function ChatBubble({
   return (
     <View className="gap-1 self-start" style={{ maxWidth: '88%' }}>
       {head}
+      {/* Not under the photo's indent: the bar is wider than the column there. */}
+      {bar}
       <View className="items-start gap-1" style={{ paddingLeft: avatar ? INDENT : 0 }}>
-        {bar}
         <SwipeToReply onReply={onReply}>{bubble}</SwipeToReply>
         {chips}
         {stamp}
@@ -316,7 +318,7 @@ function SwipeToReply({ onReply, children }: { onReply?: () => void; children: R
 }
 
 // The long-press bar: the six reactions, 3D like the buttons.
-function ReactionBar({ onPick }: { onPick: (emoji: Reaction) => void }) {
+function ReactionBar({ onPick, mine }: { onPick: (emoji: Reaction) => void; mine: boolean }) {
   const { colors, shape } = useTheme();
   const depth = useDepth();
   return (
@@ -327,8 +329,9 @@ function ReactionBar({ onPick }: { onPick: (emoji: Reaction) => void }) {
       className="flex-row"
       style={[
         {
-          gap: SPACING[0.5],
-          padding: SPACING[1],
+          // Six 44 dp targets, tight: 272 dp, within a 320 dp screen's chat column.
+          padding: SPACING[0.5],
+          alignSelf: mine ? 'flex-end' : 'flex-start',
           borderRadius: shape.radius.pill,
           backgroundColor: colors.surface,
         },
