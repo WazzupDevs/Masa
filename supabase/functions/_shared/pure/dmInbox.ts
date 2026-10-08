@@ -28,6 +28,17 @@ export function totalUnread(threads: readonly { unreadCount: number }[]): number
   return threads.reduce((sum, t) => sum + Math.max(0, t.unreadCount), 0);
 }
 
+// A conversation the caller has just read (dm/read answered): its row in the cached inbox counts
+// nothing unread, so the badge drops at once, before the inbox is read again.
+export function withThreadRead<T extends { threadId: string | null; unreadCount: number }>(
+  threads: readonly T[],
+  threadId: string,
+): T[] {
+  return threads.map((t) =>
+    t.threadId === threadId && t.unreadCount > 0 ? { ...t, unreadCount: 0 } : t,
+  );
+}
+
 // The DM's typing dots (§18.3): at most one `typing` every SEND_MS while the text changes; the
 // dots hide SHOW_MS after the last one, or when a message arrives.
 export const TYPING = { sendMs: 3000, showMs: 5000 } as const;

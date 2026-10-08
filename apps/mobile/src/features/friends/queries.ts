@@ -1,4 +1,5 @@
-import { totalUnread } from '@shared/dmInbox.ts';
+import { totalUnread, withThreadRead } from '@shared/dmInbox.ts';
+import type { DmInboxThread } from '@shared/api/friends.ts';
 import { BROADCAST, inboxChannel } from '@shared/rooms.ts';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
@@ -108,6 +109,25 @@ export function useRequestCount(): number {
   const incoming = useIncomingFriendRequests();
   const chatIncoming = useVenueChatRequests();
   return (incoming.data?.length ?? 0) + (chatIncoming.data?.length ?? 0);
+}
+
+// dm/read for a conversation the caller is looking at, then the Mesajlar badge: the thread's row in
+// the cached inbox drops to nothing unread at once, and the inbox and the friends list are read
+// again (step 9: the badge stayed red because only the list was refreshed).
+export function useMarkThreadRead(threadId: string): () => void {
+  const queryClient = useQueryClient();
+  return useCallback(() => {
+    void dmApi
+      .read(threadId)
+      .then(() => {
+        queryClient.setQueryData<DmInboxThread[]>(friendKeys.inbox, (threads) =>
+          threads ? withThreadRead(threads, threadId) : threads,
+        );
+        void queryClient.invalidateQueries({ queryKey: friendKeys.inbox });
+        void queryClient.invalidateQueries({ queryKey: friendKeys.list });
+      })
+      .catch(() => undefined);
+  }, [queryClient, threadId]);
 }
 
 // Newest first, 50 at a time (dm_messages_page), with the status of the caller's own messages.
