@@ -74,8 +74,10 @@ appId: app.kabuk.mobile
     file: ../scripts/bot.js
     env:
       ACTION: say-hold
-- extendedWaitUntil:
-    visible:
+# As in Harf Kapmaca: on the 320 dp screen İtiraz can sit below the fold (the word card's height
+# depends on the word), so it is scrolled to.
+- scrollUntilVisible:
+    element:
       id: say-object
     timeout: 15000
 - tapOn:
