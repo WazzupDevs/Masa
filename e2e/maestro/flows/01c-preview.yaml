@@ -1,5 +1,5 @@
 # Ayarlar → Tasarım (test) → Bileşen önizleme: the game components that screens wire later, with
-# sample props, photographed in the run's scheme. One block per set (Aşama 6, Aşama 7).
+# sample props, photographed in the run's scheme. One block per set (Aşama 6, Aşama 7, Aşama 8).
 appId: app.kabuk.mobile
 ---
 - tapOn:
@@ -206,6 +206,63 @@ appId: app.kabuk.mobile
     centerElement: true
     timeout: 30000
 - takeScreenshot: 04f-ibre-reveal
+# Aşama 8 · Saha → Sohbet: a sender's run, a reply's quote, the reactions and their bar (long
+# press), the reply strip, and "Yeni mesaj" for a message that comes in up the stream.
+- back
+- extendedWaitUntil:
+    visible:
+      id: preview-open
+    timeout: 10000
+- tapOn:
+    id: preview-open
+- extendedWaitUntil:
+    visible:
+      id: preview-set-chat
+    timeout: 10000
+- tapOn:
+    id: preview-set-chat
+- extendedWaitUntil:
+    visible:
+      id: preview-chat
+    timeout: 10000
+- takeScreenshot: 04i-chat-bubbles
+- longPressOn:
+    id: preview-bubble
+- extendedWaitUntil:
+    visible:
+      id: reaction-bar
+    timeout: 10000
+- takeScreenshot: 04i-chat-reaction-bar
+- tapOn:
+    id: react-5
+- extendedWaitUntil:
+    notVisible:
+      id: reaction-bar
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: reply-strip
+    centerElement: true
+    timeout: 30000
+- takeScreenshot: 04i-chat-reply
+- scrollUntilVisible:
+    element:
+      id: preview-incoming
+    centerElement: true
+    timeout: 30000
+- tapOn:
+    id: preview-incoming
+- extendedWaitUntil:
+    visible:
+      id: chat-new-messages
+    timeout: 10000
+- takeScreenshot: 04i-chat-new-message
+- tapOn:
+    id: chat-new-messages
+- extendedWaitUntil:
+    notVisible:
+      id: chat-new-messages
+    timeout: 10000
 # The preview and Ayarlar are scrolled down; the system back key leaves both without scrolling up.
 - back
 - extendedWaitUntil:

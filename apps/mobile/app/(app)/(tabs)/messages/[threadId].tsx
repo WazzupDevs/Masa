@@ -150,9 +150,14 @@ export default function DmScreen() {
     (m) => m.created_at,
   );
   const openProfile = () => router.push({ pathname: '/people/[publicId]', params: { publicId } });
+  // The newest message, for following it (ChatScroll): one on its way, else the newest read.
+  const newestOut = outbox[outbox.length - 1];
+  const newestIn = list[list.length - 1];
   return (
     <ChatScreen
-      stickToEnd
+      startAtEnd
+      newestKey={newestOut?.localId ?? newestIn?.id}
+      newestMine={newestOut ? true : newestIn?.from_me}
       top={
         <ChatTopBar
           onBack={() => router.back()}
@@ -199,11 +204,14 @@ export default function DmScreen() {
             last={last}
             time={tr.chat.time(m.created_at)}
             delivery={m.from_me && isDelivery(m.status) ? m.status : undefined}
+            name={m.from_me ? undefined : name}
             avatar={
               m.from_me ? undefined : (
                 <Avatar kind="profile" name={name} size="sm" photoUrl={photoUrl} />
               )
             }
+            // The photo opens the profile ("Profili gör" left the menu).
+            onPressSender={m.from_me ? undefined : openProfile}
           />
         </View>
       ))}
@@ -230,14 +238,6 @@ export default function DmScreen() {
       ) : null}
 
       <Sheet visible={menu} onClose={() => setMenu(false)} title={tr.friends.friendMenuTitle}>
-        <Button
-          variant="neutral"
-          label={tr.friends.viewProfile}
-          onPress={() => {
-            setMenu(false);
-            openProfile();
-          }}
-        />
         <Button
           variant="neutral"
           label={tr.dm.report}

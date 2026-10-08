@@ -2,9 +2,9 @@ import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
+import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
-import { Segmented } from '@/components/Segmented';
 import { PREVIEW_SETS } from '@/features/design/previews';
 import { tr } from '@/i18n/tr';
 import { designPickerEnabled } from '@/theme/ThemeProvider';
@@ -20,16 +20,19 @@ export default function DesignPreviewScreen() {
       <ScreenHeader title={tr.design.previewTitle} onBack={() => router.back()} />
       <View className="mt-3 gap-4" testID={`preview-${current?.key ?? ''}`}>
         {PREVIEW_SETS.length > 1 ? (
-          <Segmented
-            accessibilityLabel={tr.design.previewTitle}
-            value={set}
-            onChange={setSet}
-            options={PREVIEW_SETS.map((s) => ({
-              value: s.key,
-              label: s.label,
-              testID: `preview-set-${s.key}`,
-            }))}
-          />
+          // Wrapped: five sets don't fit a segmented control at 320 dp.
+          <View className="flex-row flex-wrap gap-2">
+            {PREVIEW_SETS.map((s) => (
+              <Button
+                key={s.key}
+                size="sm"
+                variant={s.key === set ? 'primary' : 'neutral'}
+                label={s.label}
+                testID={`preview-set-${s.key}`}
+                onPress={() => setSet(s.key)}
+              />
+            ))}
+          </View>
         ) : null}
         {current?.render()}
       </View>

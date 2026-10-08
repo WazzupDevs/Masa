@@ -118,6 +118,7 @@ export default function VenueChatScreen() {
     );
   }
 
+  const newest = messages.data?.[messages.data.length - 1];
   const runs = toRuns(
     messages.data ?? [],
     (m) => (m.fromMe ? '' : `${m.profiled ? 'p' : 'a'}:${senderLabel(m)}`),
@@ -127,7 +128,9 @@ export default function VenueChatScreen() {
   return (
     <ChatScreen
       testID="venue-chat-messages"
-      stickToEnd
+      startAtEnd
+      newestKey={newest?.id}
+      newestMine={newest?.fromMe}
       top={
         <ChatTopBar
           onBack={() => router.back()}

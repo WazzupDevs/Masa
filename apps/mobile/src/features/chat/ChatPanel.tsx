@@ -1,6 +1,7 @@
 import { MAX_MESSAGE_LENGTH, prepareMessage } from '@shared/chat.ts';
 import { canRetry, type OutboxMessage, outboxReducer } from '@shared/chatOutbox.ts';
 import { useQueryClient } from '@tanstack/react-query';
+import { router } from 'expo-router';
 import { useReducer, useState } from 'react';
 import { View } from 'react-native';
 
@@ -11,6 +12,7 @@ import { ChatBubble } from '@/components/ChatBubble';
 import { DayLine, dayLabel } from '@/components/ChatScreen';
 import { Composer } from '@/components/Composer';
 import { Text } from '@/components/Text';
+import { useRoomMemberProfile } from '@/features/profile/queries';
 import { tr } from '@/i18n/tr';
 import { ApiError, chatApi } from '@/lib/api';
 
@@ -61,8 +63,23 @@ export function useRoomChat(roomId: string) {
 
 export type RoomChat = ReturnType<typeof useRoomChat>;
 
-// The room's messages in runs (canvas: Aşama 4 · Yenileme), then the ones still on their way.
-export function RoomMessages({ chat, sessionId }: { chat: RoomChat; sessionId: string }) {
+// The room's messages in runs (canvas: Aşama 4 · Yenileme), then the ones still on their way. In a
+// profiled room the other table's photo opens its profile, as the top bar's title does.
+export function RoomMessages({
+  chat,
+  sessionId,
+  roomId,
+  guestSessionId,
+}: {
+  chat: RoomChat;
+  sessionId: string;
+  roomId: string;
+  guestSessionId: string | null;
+}) {
+  const publicId = useRoomMemberProfile(roomId, guestSessionId).data;
+  const openProfile = publicId
+    ? () => router.push({ pathname: '/people/[publicId]', params: { publicId } })
+    : undefined;
   const list = chat.messages.data ?? [];
   const runs = toRuns(
     list,
@@ -89,6 +106,7 @@ export function RoomMessages({ chat, sessionId }: { chat: RoomChat; sessionId: s
               time={tr.chat.time(m.created_at)}
               name={mine ? undefined : m.sender_alias}
               avatar={mine ? undefined : <Avatar kind="table" alias={m.sender_alias} size="sm" />}
+              onPressSender={mine ? undefined : openProfile}
             />
           </View>
         );
