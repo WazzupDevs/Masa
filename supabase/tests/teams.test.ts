@@ -19,7 +19,6 @@ import {
 } from './fixtures/venues.ts';
 import { errorBody, onboarded, PHONES, waitForBroadcast, waitUntilBlocked } from './helpers.ts';
 import { admin, type Client, dbUrl, deleteUserByPhone, invoke, sql, userIdOf } from './local.ts';
-import { setTableEnd, windowOn } from './tableEndSwitch.ts';
 
 let venue: Record<string, string> = {};
 const V = 'at-anchor';
@@ -593,28 +592,6 @@ describe('blocking in a room (§22.D)', () => {
     // Two leaders and no members: the step 3 block, which closes the table (step 23.3).
     expect(await block(guest, roomId)).toEqual({ status: 200, body: { ok: true } });
     expect((await roomRow(roomId)).status).toBe('closed');
-  });
-
-  // The window's code stays until step 23.4: with the switch off (tableEndSwitch.ts).
-  it('writes "Hayır" for a member removed during the window, and nothing about the room changes', async () => {
-    const wasOn = await windowOn();
-    try {
-      const [owner, member, guest] = await tables(3);
-      const roomId = await room(owner, guest, { owner: [member] });
-      await rooms(owner, { action: 'end' });
-      const before = await roomRow(roomId);
-      expect(await block(owner, roomId, member)).toEqual({ status: 200, body: { ok: true } });
-      expect(await roomRow(roomId)).toEqual(before);
-      expect(
-        await sql`select session_id, wants_meet from public.reveal_decisions where room_id = ${roomId}`,
-      ).toEqual([{ session_id: member.sessionId, wants_meet: false }]);
-      // The phones of the window stay listed (rule 5).
-      expect((await phonesOf(owner, roomId)).map((p) => p.session_id).sort()).toEqual(
-        [owner.sessionId, member.sessionId, guest.sessionId].sort(),
-      );
-    } finally {
-      await setTableEnd(wasOn);
-    }
   });
 });
 

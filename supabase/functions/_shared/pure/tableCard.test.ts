@@ -2,48 +2,34 @@ import { describe, expect, it } from 'vitest';
 
 import { gameTag, lobbyActions, requestGone, tableState } from './tableCard.ts';
 
-const NOW = Date.parse('2026-10-16T20:00:00Z');
-const room = (status: string, visibility = 'open', revealEndsAt: string | null = null) => ({
-  status,
-  visibility,
-  reveal_ends_at: revealEndsAt,
-});
+const room = (status: string, visibility = 'open') => ({ status, visibility });
 
 describe('tableState', () => {
   it('is off without a room or with a closed one', () => {
-    expect(tableState(null, true, NOW)).toBe('off');
-    expect(tableState(room('closed'), true, NOW)).toBe('off');
+    expect(tableState(null, true)).toBe('off');
+    expect(tableState(room('closed'), true)).toBe('off');
   });
 
   it('is open for the leader of a waiting room and member for the other phones on its side', () => {
-    expect(tableState(room('waiting'), true, NOW)).toBe('open');
-    expect(tableState(room('waiting'), false, NOW)).toBe('member');
+    expect(tableState(room('waiting'), true)).toBe('open');
+    expect(tableState(room('waiting'), false)).toBe('member');
   });
 
   it('is merged for every phone of a two-sided room', () => {
-    expect(tableState(room('active'), true, NOW)).toBe('merged');
-    expect(tableState(room('active'), false, NOW)).toBe('merged');
+    expect(tableState(room('active'), true)).toBe('merged');
+    expect(tableState(room('active'), false)).toBe('merged');
   });
 
   it('is solo for "Masanla oyna"', () => {
-    expect(tableState(room('active', 'private'), true, NOW)).toBe('solo');
-    expect(tableState(room('waiting', 'private'), true, NOW)).toBe('solo');
+    expect(tableState(room('active', 'private'), true)).toBe('solo');
+    expect(tableState(room('waiting', 'private'), true)).toBe('solo');
   });
 
-  it('leads to the room while its reveal window is open, then lets the table go', () => {
-    expect(tableState(room('ending', 'open', '2026-10-16T20:01:00Z'), false, NOW)).toBe('merged');
-    expect(tableState(room('ending', 'open', '2026-10-16T20:00:00Z'), true, NOW)).toBe('off');
-    expect(tableState(room('ending', 'open', null), true, NOW)).toBe('off');
-    expect(tableState(room('ending', 'private', '2026-10-16T20:01:00Z'), true, NOW)).toBe('off');
-  });
-
-  it('lets a phone that said "Hayır" go while the window still runs for the others', () => {
-    const ending = room('ending', 'open', '2026-10-16T20:01:00Z');
-    expect(tableState(ending, true, NOW, true)).toBe('off');
-    expect(tableState(ending, false, NOW, true)).toBe('off');
-    expect(tableState(ending, true, NOW, false)).toBe('merged');
-    // Only the reveal window reads the answer.
-    expect(tableState(room('active'), true, NOW, true)).toBe('merged');
+  // Since step 23.3 nothing opens the "Tanışalım mı?" window (docs/SPEC_V3.md §23.G): a room left
+  // 'ending' from before it does not hold the table.
+  it('is off for any other status', () => {
+    expect(tableState(room('ending'), true)).toBe('off');
+    expect(tableState(room('ending'), false)).toBe('off');
   });
 });
 

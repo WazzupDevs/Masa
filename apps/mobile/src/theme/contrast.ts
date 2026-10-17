@@ -1,5 +1,5 @@
-// WCAG 2.x contrast. Pure, used by the token tests and by the reveal signal, whose background is a
-// server-chosen colour (@shared/reveal.ts) and needs a readable foreground.
+// WCAG 2.x contrast. Pure, used by the token tests and by components that pick a readable colour on
+// a computed background (the switch's thumb).
 
 function channels(hex: string): [number, number, number] {
   const m = /^#([0-9a-f]{6})$/i.exec(hex);

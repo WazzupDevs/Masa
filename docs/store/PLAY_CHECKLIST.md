@@ -68,9 +68,10 @@ can still use: Keşfet (venue list and map), a venue's page, Profil (name, photo
 bio), Ayarlar (legal texts, blocked tables, account deletion: Profil → gear icon
 → "Hesabımı sil") and Arkadaşlar.
 
-The in-venue flow (check-in, creating a room, another table joining, a voice
-Tabu turn, ending the room, "Tanışalım mı?", adding a friend, a direct message,
-blocking and reporting) is shown in this video: [video link]
+The in-venue flow (check-in, opening the table to the lobby, another table
+joining, a voice Tabu turn at the merged table, ending the table, "Arkadaş
+ekle", a direct message, blocking and reporting) is shown in this video:
+[video link]
 
 TR
 Giriş: ilk ekranda yukarıdaki numarayı girip "Kod gönder"e dokunun. Bu numaraya
@@ -85,10 +86,10 @@ dahil) ve Arkadaşlar kullanılabilir. Mekan içi akış videoda: [video bağlan
   1. Pilot mekanlardan birinde, mekanın içinde. İkinci masa için ikinci bir telefon ve gerçek bir numarayla açılmış ikinci bir hesap gerekir (karşı masa botu üretim projesini reddeder).
   2. Uygulamayı aç, inceleme hesabıyla giriş yap. Kod ekranında kodu yazarken kaydı durdur ya da sonra kodu buzla; kod videoda görünmemeli.
   3. Onaylar → Keşfet (liste ve harita) → mekanın sayfası → "Buraya giriş yap" → konum rızası ve izin → kişi sayısı → "Masayı aç" → masa takma adı.
-  4. "Oda kur" → Tabu → "Mekana açık". İkinci telefondan katılma isteği gelir → "Kabul".
-  5. "Oyunu başlat" → kartı aç → bir Doğru, bir Pas; ikinci telefon hakem olarak Tabu basar. Tur geçişini göster.
-  6. "Odayı bitir" → "Tanışalım mı?" → iki telefonda "Evet" → aynı renk ve işaret ekranı (iki telefon yan yana, kısa bir dış çekim).
-  7. "Arkadaş ekle" (iki taraf) → Arkadaşlar → DM gönder ve al.
+  4. "Masanı lobiye aç" → "Lobiye aç". İkinci telefondan "Katıl" isteği gelir → "Kabul". Masa kartında "… geliyor" satırı; ikinci telefonun kartında "Kabul edildi, … masasının yanına git". İkinci telefon masaya gelir → iki telefonda "Masaya git".
+  5. Birleşik masa: Oyun Seç → "Sesli Tabu öner" → ikinci telefonda "Oynayalım" → kartı aç → bir Doğru, bir Pas; ikinci telefon hakem olarak Tabu basar. Tur geçişini göster.
+  6. "Masayı bitir" → iki telefonda "Masa bitti" ve karşı taraf satırında "Arkadaş ekle".
+  7. "Arkadaş ekle" (iki taraf) → "Arkadaş oldunuz" → "Mesajlaş" → DM gönder ve al.
   8. Arkadaşlar → Geçmiş ve istekler → Diğer → "Şikayet et" ve "Engelle" pencerelerini göster (vazgeç).
   9. Profil → dişli → Ayarlar → "Hesabımı sil" onay penceresini göster (vazgeç).
   10. Yükle: YouTube'da **liste dışı** ya da Google Drive'da "bağlantıya sahip herkes". Bağlantıyı talimattaki [video bağlantısı] yerine yaz.

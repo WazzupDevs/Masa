@@ -8,7 +8,7 @@ skall: Masadan Masaya Oyun
 
 ## Kısa açıklama (Play, en fazla 80 karakter)
 
-Mekandaki masalarla Tabu ve sohbet kartları oyna, istersen tanış.
+Mekandaki masalarla tek masada oyna, istersen arkadaş ol.
 
 ## Alt başlık (App Store, en fazla 30 karakter)
 
@@ -19,10 +19,10 @@ Mekanda masalarla oyna
 Kafede, nargile kafede ya da barda misin? skall ile aynı mekandaki diğer masalarla oyun oynayabilir ve sohbet edebilirsin.
 
 - **Mekana giriş yap:** Konumun yalnızca o an, bir kez kullanılır ve saklanmaz. Masan "Mor Baykuş" gibi bir takma ad alır.
-- **Oda kur:** Tabu ya da Sohbet kartları. İster yalnızca kendi masanla oyna, ister odanı mekana aç.
-- **Katıl:** Mekandaki açık odaları gör, katılmak iste. Masalar birbirini yalnızca takma ad ve kişi sayısıyla görür.
-- **Birlikte oyna:** İki masalı Tabu'da bir masa anlatır, diğeri tahmin eder; ortak skor, rekabet yok.
-- **İstersen tanış:** Oyun sonunda karşı taraftan biriyle ikiniz de "Evet" derseniz ikinizin ekranında aynı renk ve işaret belirir. Kimin ne dediği hiçbir zaman gösterilmez.
+- **Masanı lobiye aç:** Mekandaki masalar seni lobide takma adın ve kişi sayınla görür. İstersen yalnızca kendi masanla da oynarsın.
+- **Katıl:** Lobideki bir masaya katılmak iste. Kabul edilirsen o masanın yanına gidersin.
+- **Tek masada oyna:** Sesli Tabu, Sahtekar, İbre, Harf Kapmaca, Şarkıda Geçsin ve sohbet kartları; masadaki herkes kendi telefonuyla.
+- **İstersen arkadaş ol:** Masa bitince karşı masadan biriyle ikiniz de "Arkadaş ekle"ye basarsanız arkadaş olursunuz. Yalnızca sen basarsan hiçbir şey olmaz ve o bunu görmez.
 
 Güvenlik: küfür filtresi, şikayet ve engelleme, uygulama içinden hesap silme. 18 yaş ve üzeri içindir.
 
@@ -42,7 +42,7 @@ Birincil: Sosyal ağ (iOS) / Sosyal (Android). İkincil: Oyunlar → Kelime.
 
 - Giriş: üretim projesindeki kalıcı inceleme hesabı. Numara ve kod yalnızca Play Console → Uygulama erişimi'nde (App Store için App Review Information'da) durur; repoya yazılmaz. Talimat metni: `docs/store/PLAY_CHECKLIST.md` §3.3.
 - Mekan içi akış bir mekanın 300 m içinde çalışır; inceleme için check-in'den sonraki akışı gösteren video verilir (senaryo PLAY_CHECKLIST §3.3). Ret gelirse incelemeye özel istisna ayrı PR'da.
-- Kullanıcı içeriği: sohbet ve ipuçları küfür filtresinden geçer; oda menüsünde "Şikayet et" ve "Engelle" var; Ayarlar'da Engellenenler, iletişim ve "Hesabımı sil".
+- Kullanıcı içeriği: sohbet ve ipuçları küfür filtresinden geçer; masada Masadakiler'den "Şikayet et" ve "Engelle" var; Ayarlar'da Engellenenler, iletişim ve "Hesabımı sil".
 
 ## Veri güvenliği (Play) / Uygulama gizliliği (Apple) özeti
 
@@ -56,7 +56,7 @@ Birincil: Sosyal ağ (iOS) / Sosyal (Android). İkincil: Oyunlar → Kelime.
 | ----------------------------------------------------------------------------------- | ------------------------------ | ------------ | -------------------------------------------------- | ------------------------ |
 | Telefon numarası                                                                    | Evet                           | Hayır        | Hesap yönetimi                                     | Evet                     |
 | Kesin konum (check-in anında)                                                       | Evet, anlık işlenir, saklanmaz | Hayır        | Uygulama işlevi                                    | Hayır                    |
-| Mesajlar (uygulama içi: oda sohbeti, mekan sohbet odası)                            | Evet                           | Hayır        | Uygulama işlevi, güvenlik                          | Evet                     |
+| Mesajlar (uygulama içi: masa sohbeti, mekan sohbet odası)                           | Evet                           | Hayır        | Uygulama işlevi, güvenlik                          | Evet                     |
 | Uygulama etkileşimi (analitik)                                                      | Evet                           | Hayır        | Analitik                                           | Evet (kullanıcı kimliği) |
 | Cihaz kimliği (push token)                                                          | Evet                           | Hayır        | Uygulama işlevi                                    | Evet                     |
 | Ad (görünen ad; zorunlu)                                                            | Evet                           | Hayır        | Uygulama işlevi                                    | Evet                     |
@@ -75,4 +75,4 @@ Birincil: Sosyal ağ (iOS) / Sosyal (Android). İkincil: Oyunlar → Kelime.
 
 ## Ekran görüntüleri (hazırlanacak)
 
-1. Mekanları keşfet 2. Mekan ekranı ve lobi 3. Katılma isteği 4. İki masalı Tabu 5. Sohbet kartı 6. "Tanışalım mı?" sinyali
+1. Mekanları keşfet 2. Mekan ekranı ve lobi 3. Katılma isteği 4. Tek masada Tabu 5. Masa sonunda "Arkadaş oldunuz" 6. Mesajlaşma (seçim ve başlıklar `docs/store/screenshots.json`)

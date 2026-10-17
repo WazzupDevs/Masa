@@ -12,13 +12,11 @@ import type {
 } from '../functions/_shared/pure/api/friends.ts';
 import type { ProfileUploadUrl } from '../functions/_shared/pure/api/profile.ts';
 import { PHOTO_BUCKET } from '../functions/_shared/pure/profile.ts';
-import { REVEAL } from '../functions/_shared/pure/reveal.ts';
 import {
   BROADCAST,
   dmChannel,
   dmTypingChannel,
   inboxChannel,
-  ROOM_IDLE_MINUTES,
   TYPING_EVENT,
 } from '../functions/_shared/pure/rooms.ts';
 import { DM_MIN_INTERVAL_MS } from '../functions/_shared/pure/friends.ts';
@@ -45,7 +43,6 @@ import {
   sql,
   userIdOf,
 } from './local.ts';
-import { withWindow } from './tableEndSwitch.ts';
 
 let venue: Record<string, string> = {};
 const V = 'at-anchor';
@@ -175,16 +172,6 @@ async function closeWindow(roomId: string): Promise<void> {
 async function endByGuestLeaving(b: Client, roomId: string): Promise<void> {
   expect((await invoke(b, 'checkin', { action: 'leave' })).status).toBe(200);
   await closeWindow(roomId);
-}
-
-async function endMutual(a: Client, b: Client, roomId: string): Promise<void> {
-  expect((await invoke(a, 'rooms', { action: 'end' })).status).toBe(200);
-  expect((await invoke(a, 'reveal', { action: 'decide', roomId, wantsMeet: true })).status).toBe(
-    200,
-  );
-  expect((await invoke(b, 'reveal', { action: 'decide', roomId, wantsMeet: true })).status).toBe(
-    200,
-  );
 }
 
 // Every column the app may read; the rest (other_user_id, other_profiled, encounter_id, user_id)
@@ -339,92 +326,6 @@ describe('play history', () => {
     `;
     expect(shared).toEqual({ encounters: 1, rows: 2 });
   });
-
-  it('writes the encounter on every ending transition', () =>
-    withWindow(async () => {
-      const [a, b] = await Promise.all([named(PHONES[0], 'Ayşe'), named(PHONES[1], 'Burak')]);
-      const count = async () =>
-        ((await sql`select count(*)::int as n from public.play_history`)[0]?.n as number) ?? 0;
-
-      // The owner's table leaves the venue.
-      await encounter(a, b);
-      await invoke(a, 'checkin', { action: 'leave' });
-      expect(await count()).toBe(2);
-
-      // The guest blocks (and leaves).
-      let roomId = await encounter(a, b);
-      await invoke(b, 'safety', { action: 'block', roomId });
-      expect(await count()).toBe(4);
-      await sql`delete from public.blocks`;
-
-      // The guest's table ends.
-      await encounter(a, b);
-      await invoke(b, 'checkin', { action: 'leave' });
-      expect(await count()).toBe(6);
-
-      // The room closes for inactivity.
-      roomId = await encounter(a, b);
-      await sql`
-        update public.rooms
-        set last_activity_at = now() - make_interval(mins => ${ROOM_IDLE_MINUTES + 1})
-        where id = ${roomId}
-      `;
-      await sql`select private.close_idle_rooms(${ROOM_IDLE_MINUTES}, ${REVEAL.decisionSeconds})`;
-      expect(await count()).toBe(8);
-
-      // "Odayı bitir": written at once, visible only when the window ends.
-      roomId = await encounter(a, b);
-      await invoke(a, 'rooms', { action: 'end' });
-      expect(await count()).toBe(10);
-      const [room] = await sql`select reveal_ends_at from public.rooms where id = ${roomId}`;
-      const [written] = await sql`
-        select available_at from public.play_history where room_id = ${roomId} limit 1
-      `;
-      expect(written?.available_at).toEqual(room?.reveal_ends_at);
-      expect((await history(a)).some((h) => h.room_id === roomId)).toBe(false);
-    }));
-
-  it('opens both rows at once as mutual after two "Evet"', () =>
-    withWindow(async () => {
-      const [a, b] = await Promise.all([named(PHONES[0], 'Ayşe'), named(PHONES[1], 'Burak')]);
-      const roomId = await encounter(a, b);
-      await endMutual(a, b, roomId);
-      const [rowA] = await history(a);
-      const [rowB] = await history(b);
-      expect(rowA).toMatchObject({ room_id: roomId, reveal_mutual: true });
-      expect(rowB).toMatchObject({ room_id: roomId, reveal_mutual: true });
-    }));
-});
-
-describe('the "Evet" side cannot tell no, leaving and no answer apart', () => {
-  it('sees the same history rows, timing and inbox events in all three', () =>
-    withWindow(async () => {
-      const [a, b] = await Promise.all([named(PHONES[0], 'Ayşe'), named(PHONES[1], 'Burak')]);
-      const inboxA = await join(a, inboxChannel(await userIdOf(a)));
-      const views: unknown[] = [];
-      for (const other of ['no', 'leave', 'silent'] as const) {
-        const roomId = await encounter(a, b);
-        await invoke(a, 'rooms', { action: 'end' });
-        await invoke(a, 'reveal', { action: 'decide', roomId, wantsMeet: true });
-        if (other === 'no')
-          await invoke(b, 'reveal', { action: 'decide', roomId, wantsMeet: false });
-        if (other === 'leave') await invoke(b, 'checkin', { action: 'leave' });
-        const [row] = await sql`
-          select reveal_mutual, available_at = r.reveal_ends_at as at_window_end
-          from public.play_history h join public.rooms r on r.id = h.room_id
-          where h.room_id = ${roomId} and h.user_id = ${await userIdOf(a)}
-        `;
-        views.push({ row, visible: (await history(a)).filter((h) => h.room_id === roomId) });
-        // Close the window so the next room can start.
-        await sql`update public.rooms set reveal_ends_at = now() - interval '1 second' where id = ${roomId}`;
-        await sql`select private.close_expired_reveals()`;
-        await sql`update public.play_history set available_at = now() where room_id = ${roomId}`;
-      }
-      expect(views).toEqual([views[0], views[0], views[0]]);
-      expect(views[0]).toEqual({ row: { reveal_mutual: false, at_window_end: true }, visible: [] });
-      await quiet();
-      expect(inboxA.events).toEqual([]);
-    }));
 });
 
 describe('friend requests', () => {
@@ -555,62 +456,6 @@ describe('friend requests', () => {
     expect(await friends(a, { action: 'request', historyId: randomUUID() })).toEqual(OK);
     expect(await sql`select 1 from public.friend_requests`).toHaveLength(0);
   });
-
-  it('cannot be sent from the history during the "Tanışalım mı?" window', () =>
-    withWindow(async () => {
-      const [a, b] = await Promise.all([named(PHONES[0], 'Ayşe'), named(PHONES[1], 'Burak')]);
-      const roomId = await encounter(a, b);
-      await invoke(a, 'rooms', { action: 'end' });
-      await invoke(b, 'reveal', { action: 'decide', roomId, wantsMeet: false });
-      const [row] = await sql`
-        select h.id from public.play_history h
-        join auth.users u on u.id = h.user_id where u.phone = ${PHONES[1].replace(/\D/g, '')}
-      `;
-      expect(await friends(b, { action: 'request', historyId: row?.id })).toEqual(OK);
-      expect(await sql`select 1 from public.friend_requests`).toHaveLength(0);
-      expect(await history(b)).toEqual([]);
-    }));
-});
-
-describe('"Arkadaş ekle" after a mutual Evet', () => {
-  it('does nothing when one side presses, and makes friends when both do', () =>
-    withWindow(async () => {
-      const [a, b] = await Promise.all([named(PHONES[0], 'Ayşe'), named(PHONES[1], 'Burak')]);
-      const roomId = await encounter(a, b);
-      await endMutual(a, b, roomId);
-      const historyA = await latestHistoryId(a);
-      const historyB = await latestHistoryId(b);
-
-      const inboxB = await join(b, inboxChannel(await userIdOf(b)));
-      expect(inboxB.status).toBe('SUBSCRIBED');
-      const beforeB = JSON.stringify(await history(b));
-      expect(await friends(a, { action: 'add-from-room', historyId: historyA })).toEqual(OK);
-      expect(await friends(a, { action: 'add-from-room', historyId: historyA })).toEqual(OK);
-      await quiet();
-      expect(inboxB.events).toEqual([]);
-      expect(JSON.stringify(await history(b))).toBe(beforeB);
-      expect(await incoming(b)).toEqual([]);
-      expect(await friendList(a)).toEqual([]);
-      expect(await friendList(b)).toEqual([]);
-
-      expect(await friends(b, { action: 'add-from-room', historyId: historyB })).toEqual(OK);
-      await expect
-        .poll(() => inboxB.events, { timeout: 8000 })
-        .toEqual([BROADCAST.friendshipChanged]);
-      expect((await friendList(a)).map((f) => f.publicId)).toEqual([await publicIdOf(b)]);
-      expect(await sql`select source from public.friendships`).toEqual([
-        { source: 'room_end_mutual' },
-      ]);
-    }));
-
-  it('writes nothing on an encounter without a mutual Evet', () =>
-    withWindow(async () => {
-      const { a, b, historyA, historyB } = await metOnce();
-      expect(await friends(a, { action: 'add-from-room', historyId: historyA })).toEqual(OK);
-      expect(await friends(b, { action: 'add-from-room', historyId: historyB })).toEqual(OK);
-      expect(await sql`select 1 from public.mutual_friend_intents`).toHaveLength(0);
-      expect(await sql`select 1 from public.friendships`).toHaveLength(0);
-    }));
 });
 
 describe('no profile id before a friendship', () => {

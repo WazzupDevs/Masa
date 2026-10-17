@@ -4,14 +4,13 @@
 // room after 30 minutes; "Arkadaş ekle" works on a friend_open record from the table's end and from
 // the play history alike.
 //
-// Staged (§23.N): private.table_end_on() is on since step 23.3's client PR (23.3b); the files about
-// the window turn it off for their own run (tableEndSwitch.ts). This file turns it on for its own
-// run and puts back what it found; files run one at a time (vitest.integration.config.ts).
+// private.table_end_on() is on since step 23.3's client PR (23.3b); step 23.4 took out the window's
+// tests and its switching (§23.M).
 import postgres from 'postgres';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { REVEAL } from '../functions/_shared/pure/reveal.ts';
-import { BROADCAST, sessionChannel } from '../functions/_shared/pure/rooms.ts';
+import { sessionChannel } from '../functions/_shared/pure/rooms.ts';
 import { deleteFixtureVenues, insertFixtureVenues } from './fixtures/venues.ts';
 import { waitUntilBlocked } from './helpers.ts';
 import { anonKey, apiUrl, dbUrl, deleteUserByPhone, invoke, sql } from './local.ts';
@@ -32,25 +31,10 @@ const TABLE_IDLE_MINUTES = 30;
 const OK = { status: 200, body: { ok: true } };
 
 let venue: Record<string, string> = {};
-let wasOn = false;
-
-async function setTableEnd(on: boolean) {
-  await sql.unsafe(`
-    create or replace function private.table_end_on()
-    returns boolean
-    language sql
-    stable
-    set search_path = ''
-    as $$ select ${on ? 'true' : 'false'}; $$
-  `);
-}
 
 beforeAll(async () => {
   await deleteFixtureVenues(sql);
   venue = await insertFixtureVenues(sql);
-  const [row] = await sql`select private.table_end_on() as on`;
-  wasOn = row?.on === true;
-  await setTableEnd(true);
 });
 
 afterEach(async () => {
@@ -58,7 +42,6 @@ afterEach(async () => {
 });
 
 afterAll(async () => {
-  await setTableEnd(wasOn);
   await deleteFixtureVenues(sql);
   await sql.end();
 });
@@ -246,19 +229,15 @@ describe('every road closes a two-sided room at once (§23.G)', { timeout: 90_00
     expect(await historyOf(roomId)).toEqual([]);
   });
 
-  it('opens no window afterwards: no answer is taken and no reveal_match is sent', async () => {
+  it('opens no window afterwards: no reveal_match is sent', async () => {
     const [owner, guest] = await tables(2);
     const roomId = await teamRoom(owner, guest);
     await backdate(roomId);
     const heard = await sessionEvents(owner);
 
     expect(await rooms(owner, { action: 'end' })).toEqual(OK);
-    for (const p of [owner, guest]) {
-      const res = await invoke(p.client, 'reveal', { action: 'decide', roomId, wantsMeet: true });
-      expect(res.status).not.toBe(200);
-    }
     await new Promise((resolve) => setTimeout(resolve, 1_000));
-    expect(heard.events).not.toContain(BROADCAST.revealMatch);
+    expect(heard.events).not.toContain('reveal_match');
     await heard.close();
     await expectClosedWithoutWindow(roomId);
   });
@@ -619,33 +598,5 @@ describe('locks (rule 10)', { timeout: 60_000 }, () => {
            or (user_a = ${guest.userId} and user_b = ${owner.userId})
       `,
     ).toHaveLength(1);
-  });
-});
-
-describe("staged: off until step 23.3's client (§23.N)", { timeout: 60_000 }, () => {
-  it('opens the window as before while table end is off, writing records without friend_open', async () => {
-    await setTableEnd(false);
-    try {
-      const [owner, guest, ownerMember, idleOwner, idleGuest] = await tables(5);
-      const roomId = await teamRoom(owner, guest, { owner: [ownerMember] });
-      await backdate(roomId);
-      expect(await leave(ownerMember, roomId)).toEqual(OK);
-      expect(await rooms(owner, { action: 'end' })).toEqual(OK);
-
-      const row = await roomRow(roomId);
-      expect(row.status).toBe('ending');
-      expect(row.reveal_ends_at).not.toBeNull();
-      const history = await historyOf(roomId);
-      expect(history.length).toBeGreaterThan(0);
-      expect(history.every((r) => !r.friend_open)).toBe(true);
-
-      // Inactivity: today's 10 minutes open the window of a two-sided room.
-      const idleRoom = await teamRoom(idleOwner, idleGuest);
-      await idleFor(idleRoom, 11);
-      await sql`select private.close_idle_rooms(10, ${REVEAL.decisionSeconds})`;
-      expect((await roomRow(idleRoom)).status).toBe('ending');
-    } finally {
-      await setTableEnd(true);
-    }
   });
 });

@@ -1,13 +1,13 @@
 // The second table for end-to-end tests. It plays through the same Edge Function API the app uses
 // (no shortcut into the database for game actions): sign in with a test number, check in, ask to
-// join the device's room, mark Tabu cards, end the room, answer "Tanışalım mı?", add the friend
-// and exchange DMs.
+// join the device's room, mark Tabu cards, end the room, press "Arkadaş ekle" at the table's end and
+// exchange DMs.
 //
 // Runs only against the local stack or the hosted dev project; any other URL is refused. Against
 // the dev project it uses only the public Edge Function API with the publishable key and a test
 // number: it never asks for a database password or a secret key. A few test hooks that move the
-// clock (backdate the encounter, expire a turn or a reveal window) and the fixture setup write to the database
-// directly; they run only on the local stack and are refused anywhere else.
+// clock (backdate the encounter, expire a turn) and the fixture setup write to the database directly;
+// they run only on the local stack and are refused anywhere else.
 //
 //   node --experimental-strip-types scripts/e2e/bot-table.ts serve     # HTTP for Maestro, port 8787
 //   BOT_PORT=8788 BOT_PHONE=+905550000004 BOT_NAME='Bot Üç' … serve     # the team flow's second bot
@@ -966,46 +966,6 @@ export const actions: Record<string, (args: Json) => Promise<Json>> = {
     return call('rooms', { action: 'end' });
   },
 
-  // "Tanışalım mı?" for the room that is ending.
-  async reveal(args) {
-    // The newest: an earlier room of this account may still be waiting for its window to close.
-    const { data, error } = await me()
-      .from('rooms')
-      .select('id')
-      .eq('status', 'ending')
-      .order('created_at', { ascending: false })
-      .limit(1);
-    if (error) throw error;
-    const roomId = data?.[0]?.id;
-    if (!roomId) throw new Error('no room is waiting for an answer');
-    return call('reveal', { action: 'decide', roomId, wantsMeet: args.yes !== false });
-  },
-
-  // Local only: closes the newest "Tanışalım mı?" window of the bot now instead of at
-  // reveal_ends_at (a window with a "Hayır" runs to its end; docs/SPEC_V3.md §22.F). Its phones,
-  // and the lobby (rule 5), see what they would see at reveal_ends_at.
-  async 'expire-reveal'() {
-    const { data, error } = await me()
-      .from('rooms')
-      .select('id')
-      .eq('status', 'ending')
-      .order('created_at', { ascending: false })
-      .limit(1);
-    if (error) throw error;
-    const roomId = data?.[0]?.id as string | undefined;
-    if (!roomId) throw new Error('no room is waiting for an answer');
-    const sql = db();
-    try {
-      await sql`
-        update public.rooms set reveal_ends_at = now() - interval '1 second'
-        where id = ${roomId} and status = 'ending'
-      `;
-    } finally {
-      await sql.end();
-    }
-    return call('reveal', { action: 'finalize', roomId });
-  },
-
   // "Arkadaş ekle" for the latest encounter.
   async 'add-friend'() {
     const { data, error } = await me()
@@ -1212,8 +1172,7 @@ async function askToJoinSide(
 // Sesli Tabu once and either table accepts the other's proposal (docs/SPEC_V3.md §5.3); it presses
 // Doğru on each card after a few seconds, ends turns when their time is up, presses "Arkadaş ekle"
 // on each record that offers it (a table's end, docs/SPEC_V3.md §23.G), accepts requests from the
-// venue chat and answers every new DM. Only the public API: the same calls the app makes. (What it
-// still does for a "Tanışalım mı?" window goes with the window's code in step 23.4.)
+// venue chat and answers every new DM. Only the public API: the same calls the app makes.
 //
 // BOT_ROLE=teammate (Faz 2, docs/SPEC_V3.md §22.N step 22.6): a second bot that joins a side as a
 // member with "Bu masadayım": the side whose leader goes by BOT_JOIN_ALIAS (the device's alias on
@@ -1251,7 +1210,6 @@ async function opponent() {
   const sessionId = session?.[0]?.id as string | undefined;
 
   const asked = new Set<string>();
-  const decided = new Set<string>();
   const befriended = new Set<string>();
   const answered = new Set<string>();
   const marked = new Set<string>();
@@ -1271,9 +1229,7 @@ async function opponent() {
     await quiet('tick', async () => {
       const { data: rooms, error } = await me()
         .from('rooms')
-        .select(
-          'id, status, concept, owner_session_id, guest_session_id, game_state, reveal_ends_at',
-        )
+        .select('id, status, concept, owner_session_id, guest_session_id, game_state')
         .neq('status', 'closed')
         .order('created_at', { ascending: false })
         .limit(1);
@@ -1417,24 +1373,12 @@ async function opponent() {
             say(`Doğru, turn ${state.turnNo} card ${(state.cardIndex ?? 0) + 1}`);
           });
         }
-        return;
-      }
-
-      if (room.status === 'ending') {
-        if (!decided.has(room.id)) {
-          decided.add(room.id);
-          await call('reveal', { action: 'decide', roomId: room.id, wantsMeet: true });
-          say('said yes to meeting');
-        }
-        if (room.reveal_ends_at && Date.now() >= Date.parse(room.reveal_ends_at)) {
-          await quiet('finalize', () => call('reveal', { action: 'finalize', roomId: room.id }));
-        }
       }
     });
 
     await quiet('friends', async () => {
-      // "Arkadaş ekle" on each record that offers it (one per pair since step 22.4, §22.F): a
-      // mutual "Evet", or a table that ended without the window (friend_open, §23.G).
+      // "Arkadaş ekle" on each record that offers it (one per pair, §23.G): a table's end
+      // (friend_open), or an older record with a mutual "Evet".
       const { data: history } = await me()
         .from('play_history')
         .select('id')

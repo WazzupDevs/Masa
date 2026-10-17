@@ -494,9 +494,6 @@ verify_jwt = false
 [functions.ping]
 verify_jwt = false
 
-[functions.reveal]
-verify_jwt = false
-
 [functions.friends]
 verify_jwt = false
 

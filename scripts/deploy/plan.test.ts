@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   appState,
+  deployedFunctions,
   deployedShas,
   devProjectRef,
   isDevProjectRef,
@@ -14,6 +15,7 @@ import {
   migrationRows,
   nativeChanges,
   planDeploy,
+  staleFunctions,
 } from './plan.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -210,6 +212,37 @@ describe('migration list', () => {
     ).toThrow();
     expect(() => migrationRows(out([]))).toThrow();
     expect(() => migrationRows('')).toThrow();
+  });
+});
+
+describe('functions list', () => {
+  // `supabase --output-format json functions list`, in the shape CLI 2.117.0 gives every listing
+  // (migration list above): the API's function objects under `functions`.
+  const out = (slugs: string[]) =>
+    `${JSON.stringify({
+      functions: slugs.map((slug, i) => ({ id: `id-${i}`, slug, name: slug, status: 'ACTIVE' })),
+      message: '',
+    })}\n`;
+
+  it('reads the slugs, sorted', () => {
+    expect(deployedFunctions(out(['rooms', 'account', 'reveal']))).toEqual([
+      'account',
+      'reveal',
+      'rooms',
+    ]);
+    expect(deployedFunctions(out([]))).toEqual([]);
+  });
+
+  it('names a function on the project that config.toml no longer has', () => {
+    expect(staleFunctions(['account', 'reveal', 'rooms'], ['account', 'rooms'])).toEqual([
+      'reveal',
+    ]);
+    expect(staleFunctions(['account', 'rooms'], ['account', 'rooms', 'dm'])).toEqual([]);
+  });
+
+  it('refuses output it cannot read', () => {
+    expect(() => deployedFunctions('{"_tag":"Error","error":{"message":"x"}}\n')).toThrow();
+    expect(() => deployedFunctions('')).toThrow();
   });
 });
 

@@ -169,7 +169,7 @@ appId: app.kabuk.mobile
 - assertVisible:
     id: end-room
 - takeScreenshot: 65-teams-new-leader
-# No window (docs/SPEC_V3.md §23.G): "Masayı bitir" closes the table at once for every phone, and
+# docs/SPEC_V3.md §23.G: "Masayı bitir" closes the table at once for every phone, and
 # this phone gets the table's end with the other side's phone it sat with.
 - tapOn:
     id: end-room
@@ -219,7 +219,6 @@ appId: app.kabuk.mobile
     timeout: 20000
 - assertVisible: ${output.aliasA}
 - assertVisible: ${output.aliasB}
-- assertNotVisible: Tanışalım mı\?
 - takeScreenshot: 67-teams-table-end
 - runFlow:
     file: table-end-close.yaml

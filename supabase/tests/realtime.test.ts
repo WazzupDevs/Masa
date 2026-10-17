@@ -13,7 +13,6 @@ import {
 import { deleteFixtureVenues, insertFixtureVenues } from './fixtures/venues.ts';
 import { checkInAt, onboarded, PHONES } from './helpers.ts';
 import { anonKey, apiUrl, type Client, deleteUserByPhone, invoke, sql } from './local.ts';
-import { withWindow } from './tableEndSwitch.ts';
 
 let venue: Record<string, string> = {};
 const V = 'at-anchor';
@@ -279,33 +278,4 @@ describe('room row changes', { timeout: 60_000 }, () => {
     expect(after?.status).toBe('closed');
     expect(roomCheckDiffers(before, after)).toBe(true);
   });
-
-  // Rule 5: during the "Tanışalım mı?" window the table that said yes learns nothing of the other
-  // table's no or leaving, neither from its channel nor from the re-reads added for this bug.
-  it('show the yes table nothing while the other table says no and leaves', () =>
-    withWindow(async () => {
-      const { owner, guest, roomId } = await roomWithGuest(false);
-      expect((await invoke(owner, 'rooms', { action: 'end' })).status).toBe(200);
-      expect(
-        (await invoke(owner, 'reveal', { action: 'decide', roomId, wantsMeet: true })).status,
-      ).toBe(200);
-
-      const watch = watchRoomRow(owner, roomId);
-      await untilLive(watch, roomId);
-      const before = await statusCheck(owner, roomId);
-      const fullBefore = (await owner.from('rooms').select('*').eq('id', roomId).single()).data;
-      expect(before?.status).toBe('ending');
-
-      await invoke(guest, 'reveal', { action: 'decide', roomId, wantsMeet: false });
-      await invoke(guest, 'rooms', { action: 'leave' });
-      await invoke(guest, 'checkin', { action: 'leave' });
-      await quiet();
-
-      expect(watch.rows).toEqual([]);
-      const after = await statusCheck(owner, roomId);
-      expect(after).toEqual(before);
-      expect(roomCheckDiffers(before, after)).toBe(false);
-      const fullAfter = (await owner.from('rooms').select('*').eq('id', roomId).single()).data;
-      expect(fullAfter).toEqual(fullBefore);
-    }));
 });

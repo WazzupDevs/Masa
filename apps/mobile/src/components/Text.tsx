@@ -8,7 +8,7 @@ import type { PaletteKey, TypeVariant } from '@/theme/tokens';
 type Props = Omit<TextProps, 'style'> & {
   variant?: TypeVariant;
   tone?: PaletteKey;
-  // A colour that is not a theme token: only the reveal signal's server colour.
+  // A colour already resolved from the theme (a button's label on its fill).
   color?: string;
   align?: 'left' | 'center' | 'right';
   // Equal-width digits for clocks and counters.

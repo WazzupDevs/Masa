@@ -2456,6 +2456,10 @@ Alt bölümler harfle numaralanır (§23.A, §23.B…); **adım** numaraları (a
   - 23.3b (istemci PR'ı): anahtarı açan migration, cron'un 30 dakikası ve `ROOM_IDLE_MINUTES = 30`. Pencereyi bekleyen mevcut test beklentileri bu PR'da değişir (§23.M); kural 4, 5 ve 9'un 23.3 değişiklikleri bu PR'da CLAUDE.md'ye işlenir.
   - 23.3a, 23.2b birleşmeden main'e girmez.
   - **Anahtar kapalıyken 23.3 bitmiş sayılmaz: 23.3, 23.3b anahtarı istemciyle birlikte açınca biter.**
+- **23.4 iki PR'dır** (proje sahibinin kararı, 23.4 başlarken; aynı a/b kalıbı):
+  - 23.4a: veriyi silmeyen temizlik, migration yok. Uygulama, Edge Function'lar ve scriptler `rooms.reveal_*` kolonlarını, `reveal_decisions`, `reveal_signals` ve `private.lobby_listed_from`'u okumaz ve yazmaz; bunu bir birim testi gösterir (`scripts/reveal-removed.test.ts`, üretilen `database.ts` hariç). `reveal` fonksiyonu repodan kalkar (17 fonksiyon); pencere testleri silinir; E2E, bot, `docs/FIELD_TEST.md` ve mağaza metinleri yeni akışa göre. `functions deploy` repodan kalkan fonksiyonu barındırılan projeden silmez: `pnpm supabase functions delete reveal` dev ve üretimde elle (CLAUDE.md → "main'den dev projesine yayın" adım 6).
+  - 23.4b: `…_reveal_cleanup.sql`. Reveal SQL fonksiyonları, `reveal_decisions`, `reveal_signals`, `rooms.reveal_*`, `private.lobby_listed_from`, hep açık olan `private.table_end_on()` ve dalları kalkar; Realtime politika metinleri sadeleşir; kural 9 ve 10'un metni güncellenir. Kapsam PR açıklamasında tek tek yazılır.
+  - 23.4b, 23.4a'nın OTA'sı telefonlarda doğrulanıp saha testi yapılmadan birleşmez: kolonları okuyan eski istemci ya da eski fonksiyon yayın sırasında kırılmasın; bulma yardımı (§23.P-2) geri gelirse neye ihtiyaç olduğu belli olsun.
 - **Açık kararlar bekletir:**
   - bulma yardımı → 23.3 saha testinden sonra;
   - analitikte cinsiyet → 23.2.

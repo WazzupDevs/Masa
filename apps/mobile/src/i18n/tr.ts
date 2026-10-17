@@ -12,7 +12,7 @@ import { capitalizeTr, inflectTr } from '@shared/trText.ts';
 import type { VenueKind } from '@shared/venueKind.ts';
 
 // Address (hitap): a person is "sen", a table "siz"; a sentence never mixes the two. What a phone
-// chooses for itself (a room's intent and participation, the reveal answer) is a person's: in Faz 2
+// chooses for itself (a room's intent and participation, "Arkadaş ekle") is a person's: in Faz 2
 // everyone chooses for themselves (canvas: Faz 2 · 22.5 → Metinler).
 // Numbers in the texts come from the game settings, never typed by hand.
 const NUMBER_WORDS = [
@@ -1031,27 +1031,6 @@ export const tr = {
     votesDone: 'Masanızın oyları verildi. Diğer masa bekleniyor.',
     notEnough: `Kartına bakmayanlar oyundan çıktı; ${SAHTEKAR.minPlayers} kişi kalmadı. Oyun bitti.`,
   },
-  reveal: {
-    question: 'Tanışalım mı?',
-    // Faz 2 (docs/SPEC_V3.md §22.F; canvas: Tanışalım mı? kişi başına): each phone for itself.
-    ownAnswer: 'Kendi adına cevap ver.',
-    hint: 'Karşı taraftan biriyle ikiniz de "Evet" derseniz ikinizin ekranında aynı renk ve işaret belirir. Kimin ne dediği gösterilmez.',
-    yes: 'Evet',
-    no: 'Hayır',
-    secondsLeft: (s: number) => `${s} sn`,
-    answered: 'Cevabın alındı. Sonuç birazdan.',
-    signal: 'Ekranını kaldır, eşleştiğini bul.',
-    signalMany: 'Ekranını kaldır, eşleştiklerini bul.',
-    signalTop: 'Tanışalım mı? · Eşleştin',
-    signalSame: 'Eşleştiğin kişide de aynı renk ve aynı işaret var.',
-    signalSameMany: 'Eşleşen herkes bu rengi görür; her eşleşmenin işareti ayrı.',
-    goodGame: 'Güzel oyundu',
-    backToVenue: 'Mekana dön',
-    score: (n: number) => `Ortak skor: ${n}`,
-    addFriend: 'Arkadaş ekle',
-    addFriendDone: 'Sen bastın. O da basarsa arkadaş olursunuz.',
-    addFriendBoth: 'İkiniz de "Arkadaş ekle"ye basarsanız arkadaş olursunuz.',
-  },
   venue: {
     here: 'Mekandasın',
     yourTable: 'Masanın adı',
@@ -1180,7 +1159,6 @@ export const tr = {
     no_passes_left: 'Pas hakkınız kalmadı.',
     too_soon: 'Biraz bekle.',
     no_cards: 'Kart kalmadı.',
-    reveal_closed: 'Süre doldu.',
     not_found: 'Bulunamadı.',
     reply_unavailable: 'Yanıtladığın mesaj artık yok.',
     photo_required: 'Profilinle görünmek için önce profil fotoğrafı ekle.',

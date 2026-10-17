@@ -128,7 +128,7 @@ export default function VenueScreen() {
   }
 
   const seat = room ? roomSeat(room, phones.data, table.data.id) : null;
-  const state = tableState(room, seat?.leader ?? false, now);
+  const state = tableState(room, seat?.leader ?? false);
   const minutesLeft = Math.max(0, Math.ceil((expiresAt - now) / 60_000));
 
   function confirmLeave() {

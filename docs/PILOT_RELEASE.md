@@ -99,8 +99,17 @@ pnpm supabase migration list
 ```
 
 - `--dry-run`: seed satırında `supabase/seeds/content-<id>.sql` görünmeli. `(hash update)` yazıyorsa seed çalışmaz: dosya elle değiştirilmiştir, `pnpm seed` ile yeniden üretip PR'la birleştir.
-- `functions:deploy`: `config.toml`'daki bütün fonksiyonları yayınlar; sonda yazdığı proje üretim ref'i olmalı, sayı `config.toml`'daki `[functions.*]` blok sayısı (şu an 18).
-- `functions list`: hepsi `ACTIVE`.
+- `functions:deploy`: `config.toml`'daki bütün fonksiyonları yayınlar; sonda yazdığı proje üretim ref'i olmalı, sayı `config.toml`'daki `[functions.*]` blok sayısı (şu an 17).
+- `functions list`: 17 fonksiyon, hepsi `ACTIVE`; listede başka fonksiyon yok. `functions deploy` repodan kalkan fonksiyonu projeden silmez: proje 23.4a'dan (adım 23.4'ün ilk PR'ı) önce kurulduysa listede `reveal` durur. Bir kez elle sil:
+
+  ```
+  pnpm supabase migration list
+  pnpm supabase functions delete reveal
+  pnpm supabase functions list
+  ```
+
+  `migration list` bağlı projenin üretim olduğunu gösterir; son komutta 17 fonksiyon, `reveal` yok.
+
 - `migration list`: her satırda Local ve Remote aynı.
 
 Fonksiyon sırları (hesap silmede PostHog kişi silme; üretim PostHog projesi):

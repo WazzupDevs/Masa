@@ -14,12 +14,11 @@ appId: app.kabuk.mobile
     timeout: 20000
 - tapOn:
     id: end-room
-# No "Tanışalım mı?" window: the table's end at once, one row for the bot's phone.
+# The table's end at once (docs/SPEC_V3.md §23.G), one row for the bot's phone.
 - extendedWaitUntil:
     visible:
       id: table-end-add-.*
     timeout: 20000
-- assertNotVisible: Tanışalım mı\?
 - takeScreenshot: 21-table-end
 - tapOn:
     id: table-end-add-.*

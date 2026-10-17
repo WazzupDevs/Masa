@@ -30,8 +30,6 @@ type Props = {
   icon?: IconName;
   // A short addition after the label ("+1", "2 hak").
   detail?: string;
-  // Colours that are not theme tokens: only the reveal signal, filled or outlined.
-  tint?: { background: string; foreground: string; outline?: boolean };
   accessibilityLabel?: string;
   testID?: string;
   // A text-only button that lines up with the content's left edge ("Tekrar gönder").
@@ -109,7 +107,6 @@ export function Button({
   size = 'md',
   icon,
   detail,
-  tint,
   accessibilityLabel,
   testID,
   flush,
@@ -124,24 +121,17 @@ export function Button({
 
   const textOnly = isTextOnly(variant);
   const fill = buttonFill(variant, !!disabled);
-  let bg = fill.bg ? colors[fill.bg] : 'transparent';
-  let fg = colors[fill.fg];
+  const bg = fill.bg ? colors[fill.bg] : 'transparent';
+  const fg = colors[fill.fg];
   // The raised capsules carry an outline: they sit on the canvas, on cards and on fills alike.
   // Disabled, every filled role is the same neutral fill, without one.
-  let edge: ViewStyle | null =
+  const edge: ViewStyle | null =
     !disabled && (variant === 'secondary' || variant === 'neutral')
       ? { borderWidth: shape.stroke.hairline * 1.5, borderColor: colors.border }
       : null;
-  if (tint && !disabled) {
-    bg = tint.outline ? 'transparent' : tint.background;
-    fg = tint.outline ? tint.background : tint.foreground;
-    edge = tint.outline
-      ? { borderWidth: shape.stroke.control, borderColor: tint.background }
-      : null;
-  }
   const small = size === 'sm';
   // The busy mark: one colour on a filled button, the logo's colours on a raised or clear one.
-  const filled = !textOnly && !edge && !tint?.outline;
+  const filled = !textOnly && !edge;
 
   const style: ViewStyle = {
     flexDirection: 'row',

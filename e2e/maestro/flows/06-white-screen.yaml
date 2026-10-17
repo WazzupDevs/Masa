@@ -1,5 +1,5 @@
 # V8: the bot table ends the room; this phone must move to the table's end without a blank screen
-# (docs/SPEC_V3.md §23.G: no "Tanışalım mı?" window). Before it, the Faz 3 venue (§23.C): the request
+# (docs/SPEC_V3.md §23.G). Before it, the Faz 3 venue (§23.C): the request
 # comes while the phone is on the venue screen, and after "Kabul" the table card says the bot's table
 # is coming (§23.E) until "Masaya git". Then "Masanla oyna": a private one-table room, its games
 # started directly, "Masayı bitir" closes it.

@@ -2,7 +2,6 @@ import { FunctionsHttpError } from '@supabase/supabase-js';
 import type { AccountRequest, AccountResponse } from '@shared/api/account.ts';
 import type { ChatResponse, ReactResponse, SafetyResponse } from '@shared/api/chat.ts';
 import type { Reaction } from '@shared/reactions.ts';
-import type { RevealMatchesResponse, RevealResponse } from '@shared/api/reveal.ts';
 import type {
   GameOkResponse,
   TabuStartResponse,
@@ -295,16 +294,6 @@ export const gamesApi = {
   ibreSide: (roomId: string, round: number, side: 'left' | 'right') =>
     invoke<GameOkResponse>('ibre', { action: 'side', roomId, round, side }),
   ibreAdvance: (roomId: string) => invoke<GameOkResponse>('ibre', { action: 'advance', roomId }),
-};
-
-export const revealApi = {
-  decide: (roomId: string, wantsMeet: boolean) =>
-    invoke<RevealResponse>('reveal', { action: 'decide', roomId, wantsMeet }),
-  finalize: (roomId: string) => invoke<RevealResponse>('reveal', { action: 'finalize', roomId }),
-  // This phone's matches in the window, and from reveal_ends_at the other side's phones it did
-  // not match (docs/SPEC_V3.md §22.F).
-  matches: (roomId: string) =>
-    invoke<RevealMatchesResponse>('reveal', { action: 'matches', roomId }),
 };
 
 type ProfileUpdate = Omit<Extract<ProfileRequest, { action: 'update' }>, 'action'>;

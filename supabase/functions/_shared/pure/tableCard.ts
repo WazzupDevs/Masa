@@ -6,32 +6,20 @@ import { CONCEPTS, type Concept } from './rooms.ts';
 // - 'off': not in the lobby ("Masanı lobiye aç", "Masanla oyna");
 // - 'open': in the lobby as the leader of its waiting room ("Lobiden çek", "Masaya git");
 // - 'member': a phone on that waiting room's side ("Masaya git", "Masadan çık");
-// - 'merged': two sides, or the reveal window that ends them ("Masaya git");
+// - 'merged': two sides ("Masaya git");
 // - 'solo': "Masanla oyna" ("Masaya git").
 export type TableState = 'off' | 'open' | 'member' | 'merged' | 'solo';
 
 export type TableRoom = {
   status: string;
   visibility: string;
-  reveal_ends_at: string | null;
 };
 
-// `leader`: this phone leads a side of the room (its session is the room's owner or guest).
-// `saidNo`: this phone answered "Hayır" in the room's reveal window.
-export function tableState(
-  room: TableRoom | null,
-  leader: boolean,
-  now: number,
-  saidNo = false,
-): TableState {
-  if (!room || room.status === 'closed') return 'off';
-  // Until 23.3 a two-sided room still ends with "Tanışalım mı?" on the room screen: the card keeps
-  // leading there while the window is open, now that nothing sends the phone back to the room. A
-  // phone that said "Hayır" already has its result ("Güzel oyundu") and is let go at once.
-  if (room.status === 'ending') {
-    const open = room.reveal_ends_at !== null && Date.parse(room.reveal_ends_at) > now;
-    return open && !saidNo && room.visibility === 'open' ? 'merged' : 'off';
-  }
+// `leader`: this phone leads a side of the room (its session is the room's owner or guest). Since
+// step 23.3 a two-sided room closes at once (§23.G): a room that is neither waiting nor active
+// does not hold the table.
+export function tableState(room: TableRoom | null, leader: boolean): TableState {
+  if (!room || (room.status !== 'waiting' && room.status !== 'active')) return 'off';
   if (room.visibility === 'private') return 'solo';
   if (room.status === 'waiting') return leader ? 'open' : 'member';
   return 'merged';

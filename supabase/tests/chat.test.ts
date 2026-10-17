@@ -15,7 +15,6 @@ import {
   waitUntilBlocked,
 } from './helpers.ts';
 import { type Client, dbUrl, deleteUserByPhone, invoke, sql, userIdOf } from './local.ts';
-import { withWindow } from './tableEndSwitch.ts';
 
 let venue: Record<string, string> = {};
 const V = 'at-anchor';
@@ -151,10 +150,8 @@ describe('chat/send', () => {
       status: 403,
       body: errorBody('not_in_room'),
     });
-    // "Odayı bitir", then the window closes: the room is closed for both tables.
+    // "Odayı bitir" closes the room for both tables (docs/SPEC_V3.md §23.G).
     await invoke(owner, 'rooms', { action: 'end' });
-    await sql`update public.rooms set reveal_ends_at = now() where id = ${roomId}`;
-    await invoke(owner, 'reveal', { action: 'finalize', roomId });
     expect(await send(owner, roomId, 'selam')).toEqual({
       status: 403,
       body: errorBody('not_in_room'),
@@ -352,42 +349,38 @@ describe('safety/report', () => {
 });
 
 describe('safety/block and unblock', () => {
-  it('blocks the other account, ends the room like "Hayır", and can be undone', () =>
-    withWindow(async () => {
-      const { owner, guest, third, roomId } = await roomWithGuest();
-      const [room] = await sql`select guest_alias from public.rooms where id = ${roomId}`;
-      expect(await invoke(owner, 'safety', { action: 'block', roomId })).toEqual({
-        status: 200,
-        body: { ok: true },
-      });
+  it('blocks the other account, ends the room at once, and can be undone', async () => {
+    const { owner, guest, third, roomId } = await roomWithGuest();
+    const [room] = await sql`select guest_alias from public.rooms where id = ${roomId}`;
+    expect(await invoke(owner, 'safety', { action: 'block', roomId })).toEqual({
+      status: 200,
+      body: { ok: true },
+    });
 
-      const [row] = await sql`select id, blocked_id from public.blocks`;
-      expect(row?.blocked_id).toBe(await userIdOf(guest));
-      const { data: blocks } = await owner.from('blocks').select('id, blocked_alias, created_at');
-      expect(blocks).toEqual([
-        { id: row?.id, blocked_alias: room?.guest_alias, created_at: expect.any(String) },
-      ]);
-      expect((await guest.from('blocks').select('id')).data).toEqual([]);
-      // docs/SPEC_V3.md §5.5 (S5): the window opens and the blocker's answer is "Hayır".
-      const [after] = await sql`select status from public.rooms where id = ${roomId}`;
-      expect(after?.status).toBe('ending');
-      expect(
-        await sql`select wants_meet from public.reveal_decisions where room_id = ${roomId}`,
-      ).toEqual([{ wants_meet: false }]);
+    const [row] = await sql`select id, blocked_id from public.blocks`;
+    expect(row?.blocked_id).toBe(await userIdOf(guest));
+    const { data: blocks } = await owner.from('blocks').select('id, blocked_alias, created_at');
+    expect(blocks).toEqual([
+      { id: row?.id, blocked_alias: room?.guest_alias, created_at: expect.any(String) },
+    ]);
+    expect((await guest.from('blocks').select('id')).data).toEqual([]);
+    // docs/SPEC_V3.md §23.G: blocking closes the room at once, without a "Tanışalım mı?" window.
+    const [after] = await sql`select status from public.rooms where id = ${roomId}`;
+    expect(after?.status).toBe('closed');
 
-      // Someone else's block id does nothing.
-      expect(await invoke(third, 'safety', { action: 'unblock', blockId: row?.id })).toEqual({
-        status: 200,
-        body: { ok: true },
-      });
-      expect(await sql`select 1 from public.blocks`).toHaveLength(1);
+    // Someone else's block id does nothing.
+    expect(await invoke(third, 'safety', { action: 'unblock', blockId: row?.id })).toEqual({
+      status: 200,
+      body: { ok: true },
+    });
+    expect(await sql`select 1 from public.blocks`).toHaveLength(1);
 
-      expect(await invoke(owner, 'safety', { action: 'unblock', blockId: row?.id })).toEqual({
-        status: 200,
-        body: { ok: true },
-      });
-      expect((await owner.from('blocks').select('id')).data).toEqual([]);
-    }));
+    expect(await invoke(owner, 'safety', { action: 'unblock', blockId: row?.id })).toEqual({
+      status: 200,
+      body: { ok: true },
+    });
+    expect((await owner.from('blocks').select('id')).data).toEqual([]);
+  });
 
   // Rule 4: the blocked account's id never reaches the blocker's client.
   it('never shows the blocked account id to the client', async () => {
@@ -415,8 +408,6 @@ describe('cleanup jobs', () => {
     await send(owner, roomId, 'silinecek');
     await invoke(guest, 'safety', { action: 'report', roomId, reason: 'spam' });
     await invoke(owner, 'rooms', { action: 'end' });
-    await sql`update public.rooms set reveal_ends_at = now() where id = ${roomId}`;
-    await invoke(owner, 'reveal', { action: 'finalize', roomId });
 
     await sql`update public.rooms set closed_at = now() - interval '23 hours' where id = ${roomId}`;
     await sql`select private.delete_old_messages()`;

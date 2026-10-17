@@ -53,7 +53,7 @@ function peopleChanged(a: RoomRow | null | undefined, b: RoomRow): boolean {
 
 // What the table card shows of the table's room (docs/SPEC_V3.md §23.C).
 export const TABLE_ROOM_COLUMNS =
-  'id, status, visibility, owner_session_id, guest_session_id, owner_alias, guest_alias, owner_headcount, guest_headcount, owner_phones, guest_phones, intent, game_tag, reveal_ends_at';
+  'id, status, visibility, owner_session_id, guest_session_id, owner_alias, guest_alias, owner_headcount, guest_headcount, owner_phones, guest_phones, intent, game_tag';
 export type TableRoomRow = Pick<
   RoomRow,
   | 'id'
@@ -69,13 +69,11 @@ export type TableRoomRow = Pick<
   | 'guest_phones'
   | 'intent'
   | 'game_tag'
-  | 'reveal_ends_at'
 >;
 
 // The table's latest room, as a leader or a member of a side: RLS lets a phone read only the rooms
-// it leads or is in (docs/SPEC_V3.md §22.I), so no filter on the session is needed. An 'ending' room
-// does not hold the table (a table that answered "Hayır" goes on at once, MVP_SPEC §4.6, and its
-// new room is the latest); the card still leads to it while its window is open (@shared/tableCard.ts).
+// it leads or is in (docs/SPEC_V3.md §22.I), so no filter on the session is needed. A closed room does
+// not hold the table (since step 23.3 a two-sided room closes at once, §23.G).
 export function useCurrentRoom(sessionId: string | undefined) {
   return useQuery({
     queryKey: roomKeys.current,
@@ -84,7 +82,7 @@ export function useCurrentRoom(sessionId: string | undefined) {
       const { data, error } = await supabase
         .from('rooms')
         .select(TABLE_ROOM_COLUMNS)
-        .in('status', ['waiting', 'active', 'ending'])
+        .in('status', ['waiting', 'active'])
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -157,8 +155,7 @@ export function useRoom(roomId: string) {
 
   // Status check (@shared/rooms.ts): every few seconds and when the app comes to the foreground,
   // the few columns that decide what the screen shows; the full row is read again only when they
-  // differ, so a check never overwrites a newer row from the channel. During the reveal window the
-  // row does not change until reveal_ends_at (rule 5), so the check shows nothing early either.
+  // differ, so a check never overwrites a newer row from the channel.
   useQuery({
     queryKey: roomKeys.roomCheck(roomId),
     enabled: query.isSuccess,
@@ -204,8 +201,8 @@ export function useGameProposal(roomId: string) {
   });
 }
 
-// The phones in the room, both sides (docs/SPEC_V3.md §22.I): only for a phone in the room; in the
-// reveal window the list as the window opened. Read again when the room's people change (useRoom).
+// The phones in the room, both sides (docs/SPEC_V3.md §22.I): only for a phone in the room. Read
+// again when the room's people change (useRoom).
 export type RoomPhone = {
   sessionId: string;
   side: Side;

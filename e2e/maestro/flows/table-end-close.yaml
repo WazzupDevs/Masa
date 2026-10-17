@@ -1,5 +1,5 @@
-# The merged table ended (docs/SPEC_V3.md §23.G): no "Tanışalım mı?" window; this phone sees the
-# table's end, and "Kapat" goes back to the venue.
+# The merged table ended (docs/SPEC_V3.md §23.G): this phone sees the table's end, and "Kapat"
+# goes back to the venue.
 appId: app.kabuk.mobile
 ---
 - extendedWaitUntil:

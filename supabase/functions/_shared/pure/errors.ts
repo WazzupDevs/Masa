@@ -42,7 +42,6 @@ export type ErrorCode =
   | 'no_passes_left'
   | 'too_soon'
   | 'no_cards'
-  | 'reveal_closed'
   | 'not_found'
   | 'reply_unavailable'
   | 'photo_required'
@@ -125,7 +124,6 @@ export const DOMAIN_ERROR_CODES: readonly ErrorCode[] = [
   'no_passes_left',
   'too_soon',
   'no_cards',
-  'reveal_closed',
   'not_friends',
   'not_judge',
   // Replies and reactions (docs/SPEC_V3.md §21): a quoted message out of reach, a reacted one gone.

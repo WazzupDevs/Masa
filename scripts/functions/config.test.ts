@@ -35,6 +35,14 @@ describe('functionNames', () => {
     expect(names).toEqual(folders);
     expect(names.length).toBeGreaterThan(0);
   });
+
+  // Step 23.4 (docs/SPEC_V3.md §23.J): the `reveal` function left the repo, 18 → 17. CLAUDE.md and
+  // docs/PILOT_RELEASE.md give the same count; a new function changes all three.
+  it('lists 17 functions, without reveal', () => {
+    const names = functionNames(readFileSync(resolve(root, 'supabase/config.toml'), 'utf8'));
+    expect(names).toHaveLength(17);
+    expect(names).not.toContain('reveal');
+  });
 });
 
 describe('linkedProjectRef', () => {

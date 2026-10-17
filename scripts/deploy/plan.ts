@@ -142,6 +142,32 @@ export function migrationMismatches(rows: readonly MigrationRow[]): string[] {
     .map((r) => (r.local ? `${r.local} (yalnızca Local)` : `${r.remote} (yalnızca Remote)`));
 }
 
+// `functions deploy` publishes config.toml's functions and deletes none: a function that left the repo
+// (reveal, step 23.4) stays ACTIVE on the project until `supabase functions delete <name>`.
+// `--output-format json functions list` prints `{"functions":[{"slug","name","status",…}],"message"}`
+// on one line, as `migration list` does. The run only reads it: a person deletes (CLAUDE.md →
+// "main'den dev projesine yayın" step 6).
+export function deployedFunctions(stdout: string): string[] {
+  const line = stdout
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.startsWith('{'))
+    .at(-1);
+  const parsed = JSON.parse(line ?? '{}') as { functions?: unknown };
+  if (!Array.isArray(parsed.functions)) throw new Error('supabase functions list okunamadı');
+  return parsed.functions
+    .map((f: { slug?: unknown; name?: unknown }) =>
+      typeof f.slug === 'string' ? f.slug : typeof f.name === 'string' ? f.name : '',
+    )
+    .filter((s) => s !== '')
+    .sort();
+}
+
+// The project's functions that config.toml no longer names.
+export function staleFunctions(deployed: readonly string[], inRepo: readonly string[]): string[] {
+  return deployed.filter((name) => !inRepo.includes(name));
+}
+
 export function appState(appJson: string, packageJson: string): AppState {
   const app = JSON.parse(appJson) as { expo?: { version?: unknown } };
   const pkg = JSON.parse(packageJson) as { dependencies?: Record<string, string> };

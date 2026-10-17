@@ -241,7 +241,7 @@ Deno.serve(
     if (error) throw dbError('safety_block', error);
     // Blocking in a two-table room is "Odayı bitir" with "Hayır" (docs/SPEC_V3.md §5.5): the same
     // announcement as rooms/end, so the other table cannot tell them apart (rule 5).
-    if (data.visibility === 'open') lobbyChanged(db, data);
+    if (data.visibility === 'open') lobbyChanged(data);
     return { ok: true };
   }),
 );

@@ -118,9 +118,6 @@ export const BROADCAST = {
   // docs/SPEC_V3.md §21.3: a reaction moved; no data. dm:{thread_id} and messages:{room_id}.
   dmReaction: 'dm_reaction',
   reaction: 'reaction',
-  // session:{session_id}: this phone has a new match in its room's reveal window (docs/SPEC_V3.md
-  // §22.F); no data, the phone reads reveal/matches.
-  revealMatch: 'reveal_match',
 } as const;
 
 // The room screen's status check (apps/mobile/src/features/rooms/queries.ts): Realtime delivers a

@@ -1,10 +1,8 @@
-import { REVEAL_COLORS } from '../../../../supabase/functions/_shared/pure/reveal.ts';
 import { describe, expect, it } from 'vitest';
 
 import { BUTTON_VARIANTS, buttonFill } from './buttonFill';
 import { AA_LARGE, AA_TEXT, contrastRatio, readableOn } from './contrast';
 import { featurePalette } from './feature';
-import { REVEAL_FOREGROUNDS } from './reveal';
 import { THEME } from './theme';
 import { type Palette, type PaletteKey, TAB_TONE } from './tokens';
 
@@ -150,19 +148,17 @@ describe('palette values', () => {
   });
 });
 
-describe('reveal signal', () => {
-  // The full-screen colour is chosen by the server and is the same on both phones; the text on it
-  // must stay readable whatever the theme.
-  it.each(REVEAL_COLORS)('text on %s is AA', (color) => {
-    const fg = readableOn(color, REVEAL_FOREGROUNDS);
-    expect(contrastRatio(color, fg)).toBeGreaterThanOrEqual(AA_TEXT);
-  });
-});
-
 describe('contrastRatio', () => {
   it('matches the WCAG reference values', () => {
     expect(contrastRatio('#000000', '#FFFFFF')).toBeCloseTo(21, 5);
     expect(contrastRatio('#FFFFFF', '#FFFFFF')).toBeCloseTo(1, 5);
     expect(contrastRatio('#767676', '#FFFFFF')).toBeCloseTo(4.54, 2);
+  });
+});
+
+describe('readableOn', () => {
+  it('picks the candidate with the most contrast on the background', () => {
+    expect(readableOn('#FFFFFF', ['#FFFFFF', '#14100C'])).toBe('#14100C');
+    expect(readableOn('#14100C', ['#FFFFFF', '#14100C'])).toBe('#FFFFFF');
   });
 });

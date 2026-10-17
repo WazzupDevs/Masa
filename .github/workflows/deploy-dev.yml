@@ -166,6 +166,17 @@ jobs:
           pnpm functions:deploy
           echo "- Edge Function'lar yayınlandı." | tee -a "$GITHUB_STEP_SUMMARY"
 
+      # `functions deploy` deletes nothing: a function that left config.toml (reveal, step 23.4)
+      # stays ACTIVE on the project. Read-only: the summary names it as a warning and a person
+      # deletes it (CLAUDE.md → "main'den dev projesine yayın" step 6). Never fails the run.
+      - name: Functions not in config.toml (warning only)
+        if: steps.link.outcome == 'success'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          pnpm exec supabase --output-format json functions list > "$RUNNER_TEMP/functions.json" || true
+          node --experimental-strip-types scripts/deploy/cli.ts check-functions "$RUNNER_TEMP/functions.json"
+
       # The bundle takes EXPO_PUBLIC_* from the EAS preview environment: it must point at the dev
       # project. EXPO_PUBLIC_APP_ENV is the preview build profile's (eas.json), which an update
       # does not read: Sentry reports the update under the same environment as the build.

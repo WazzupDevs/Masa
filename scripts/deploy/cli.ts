@@ -5,6 +5,9 @@
 //   check-migrations <file>
 //                    `supabase --output-format json migration list`'s output: fails unless Local
 //                    and Remote are the same on every row (a dry run only lists the difference)
+//   check-functions <file>
+//                    `supabase --output-format json functions list`'s output: names, as a warning,
+//                    the project's functions that config.toml no longer has; never fails
 //   plan             what to publish since the last successful deploy (plan.ts), as step outputs
 // `plan` reads SHA (the commit to deploy), RUN_TITLES (names of earlier successful runs, one per
 // line), EVERYTHING and FORCE_OTA ('true' from a manual run). Every summary line goes to the log too:
@@ -14,8 +17,10 @@ import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { functionNames } from '../functions/config.ts';
 import {
   appState,
+  deployedFunctions,
   deployedShas,
   devProjectRef,
   isDevProjectRef,
@@ -24,6 +29,7 @@ import {
   migrationRows,
   nativeChanges,
   planDeploy,
+  staleFunctions,
 } from './plan.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -158,12 +164,36 @@ switch (command) {
     if (process.env.DRY_RUN !== 'true') process.exit(1);
     break;
   }
+  case 'check-functions': {
+    // Read-only and never failing: a missing or unreadable list is a note, not a broken deploy.
+    let deployed: string[];
+    try {
+      deployed = deployedFunctions(readFileSync(arg ?? '', 'utf8'));
+    } catch {
+      summary('- `functions list` okunamadı; projedeki fonksiyonlar denetlenmedi.');
+      break;
+    }
+    const inRepo = functionNames(readFileSync(resolve(root, 'supabase/config.toml'), 'utf8'));
+    const stale = staleFunctions(deployed, inRepo);
+    if (stale.length === 0) {
+      summary(`- Projedeki fonksiyonlar \`config.toml\` ile aynı (${inRepo.length}).`);
+      break;
+    }
+    const names = stale.map((s) => `\`${s}\``).join(', ');
+    console.log(
+      `::warning::Projede olup config.toml'da olmayan fonksiyon: ${stale.join(', ')}. Elle sil: pnpm supabase functions delete <ad>.`,
+    );
+    summary(
+      `- ⚠️ Projede olup \`config.toml\`'da olmayan fonksiyon: ${names}. \`functions deploy\` silmez; elle sil (CLAUDE.md → "main'den dev projesine yayın" adım 6).`,
+    );
+    break;
+  }
   case 'plan':
     plan();
     break;
   default:
     console.error(
-      'Kullanım: cli.ts ref | check-link | check-url <url> | check-migrations <dosya> | plan',
+      'Kullanım: cli.ts ref | check-link | check-url <url> | check-migrations <dosya> | check-functions <dosya> | plan',
     );
     process.exit(1);
 }

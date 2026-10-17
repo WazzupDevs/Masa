@@ -169,7 +169,7 @@ Deno.serve(
             ...(body.gameTag ? { new_game_tag: body.gameTag } : {}),
           });
           if (error) throw dbError('rooms_create', error);
-          lobbyChanged(db, data);
+          lobbyChanged(data);
           return { roomId: data.id };
         }
 
@@ -228,7 +228,7 @@ Deno.serve(
               .eq('id', data.room_id)
               .single();
             if (room.error) throw dbError('rooms', room.error);
-            lobbyChanged(db, room.data);
+            lobbyChanged(room.data);
             inBackground(
               broadcast(sessionChannel(data.requester_session_id), BROADCAST.joinAccepted),
             );
@@ -259,7 +259,7 @@ Deno.serve(
               ]);
               if (closed.error) throw dbError('rooms', closed.error);
               if (moved.error) throw dbError('room_members', moved.error);
-              if (closed.data) lobbyChanged(db, closed.data);
+              if (closed.data) lobbyChanged(closed.data);
               for (const m of moved.data) {
                 inBackground(broadcast(sessionChannel(m.session_id), BROADCAST.joinAccepted));
               }
@@ -318,27 +318,26 @@ Deno.serve(
 
         // "Odayı bitir" (§5.5), a leader only (§22.D: a member is not_leader): the room closes and a
         // two-sided one writes its pairs' records (§23.G). decision_seconds is the "Tanışalım mı?"
-        // window's, opened only while private.table_end_on() is off (until step 23.4).
+        // window's: unused since step 23.3, the argument goes with step 23.4b's migration.
         case 'end': {
           const { data, error } = await db.rpc('rooms_end', {
             target_user_id: user.id,
             decision_seconds: REVEAL.decisionSeconds,
           });
           if (error) throw dbError('rooms_end', error);
-          if (data?.id && data.visibility === 'open') lobbyChanged(db, data);
+          if (data?.id && data.visibility === 'open') lobbyChanged(data);
           return { ok: true };
         }
 
         // "Odadan çık" (§22.D): the phone leaves; a leader hands its side over; the side's last
-        // phone ends the room as leaving the venue does. The lobby hears of it unless the room is
-        // held (in the window, while private.table_end_on() is off, a phone's leaving must not show).
+        // phone ends the room as leaving the venue does, and the lobby hears of it.
         case 'leave': {
           const { data, error } = await db.rpc('rooms_leave', {
             target_user_id: user.id,
             target_room_id: body.roomId,
           });
           if (error) throw dbError('rooms_leave', error);
-          if (data.visibility === 'open') lobbyChanged(db, data);
+          if (data.visibility === 'open') lobbyChanged(data);
           return { ok: true };
         }
 
