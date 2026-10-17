@@ -8,6 +8,7 @@ describe('tableState', () => {
   it('is off without a room or with a closed one', () => {
     expect(tableState(null, true)).toBe('off');
     expect(tableState(room('closed'), true)).toBe('off');
+    expect(tableState(room('closed'), false)).toBe('off');
   });
 
   it('is open for the leader of a waiting room and member for the other phones on its side', () => {
@@ -23,13 +24,6 @@ describe('tableState', () => {
   it('is solo for "Masanla oyna"', () => {
     expect(tableState(room('active', 'private'), true)).toBe('solo');
     expect(tableState(room('waiting', 'private'), true)).toBe('solo');
-  });
-
-  // Since step 23.3 nothing opens the "Tanışalım mı?" window (docs/SPEC_V3.md §23.G): a room left
-  // 'ending' from before it does not hold the table.
-  it('is off for any other status', () => {
-    expect(tableState(room('ending'), true)).toBe('off');
-    expect(tableState(room('ending'), false)).toBe('off');
   });
 });
 

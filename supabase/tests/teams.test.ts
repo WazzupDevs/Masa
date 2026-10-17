@@ -484,9 +484,6 @@ describe('leaving (§22.D)', () => {
     const roomId = await room(owner, guest);
     expect(await leave(guest, roomId)).toEqual({ status: 200, body: { ok: true } });
     expect((await roomRow(roomId)).status).toBe('closed');
-    expect(await sql`select 1 from public.reveal_decisions where room_id = ${roomId}`).toHaveLength(
-      0,
-    );
 
     const solo = await room(member, null);
     expect(await leave(member, solo)).toEqual({ status: 200, body: { ok: true } });

@@ -1,7 +1,6 @@
 import postgres from 'postgres';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { REVEAL } from '../functions/_shared/pure/reveal.ts';
 import {
   ROOM_IDLE_MINUTES,
   sessionChannel,
@@ -366,14 +365,6 @@ describe('leaving', () => {
     return row;
   }
 
-  async function decisionsOf(roomId: string) {
-    return sql`
-      select ts.user_id, d.wants_meet from public.reveal_decisions d
-      join public.table_sessions ts on ts.id = d.session_id
-      where d.room_id = ${roomId}
-    `;
-  }
-
   // "Odayı bitir" is the only way out (docs/SPEC_V3.md §5.5).
   it('has no rooms/leave', async () => {
     const { guest, roomId } = await roomWithGuest();
@@ -388,7 +379,6 @@ describe('leaving', () => {
       const tables = await roomWithGuest();
       await invoke(tables[leaver], 'checkin', { action: 'leave' });
       expect(await roomRow(tables.roomId)).toMatchObject({ status: 'closed' });
-      expect(await decisionsOf(tables.roomId)).toEqual([]);
       for (const phone of PHONES) await deleteUserByPhone(phone);
     }
   });
@@ -412,8 +402,7 @@ describe('leaving', () => {
     const [owner] = await threeTables();
     const roomId = await createRoom(owner, 'private');
     await rooms(owner, { action: 'end' });
-    const [row] = await sql`select status, reveal_result from public.rooms where id = ${roomId}`;
-    expect(row).toMatchObject({ status: 'closed', reveal_result: null });
+    expect(await roomRow(roomId)).toMatchObject({ status: 'closed' });
   });
 
   it('closes the room when the guest is deleted by admin:delete, as when the table leaves', async () => {
@@ -742,7 +731,7 @@ describe('scheduled jobs', () => {
     expect(jr?.status).toBe('expired');
 
     await sql`update public.rooms set last_activity_at = now() - make_interval(mins => ${ROOM_IDLE_MINUTES + 1}) where id = ${roomId}`;
-    await sql`select private.close_idle_rooms(${ROOM_IDLE_MINUTES}, ${REVEAL.decisionSeconds})`;
+    await sql`select private.close_idle_rooms(${ROOM_IDLE_MINUTES})`;
     const [room] = await sql`select status from public.rooms where id = ${roomId}`;
     expect(room?.status).toBe('closed');
 
@@ -766,7 +755,7 @@ describe('scheduled jobs', () => {
         const [ran] = await job.begin(async (jtx) => {
           await jtx`set local lock_timeout = '2s'`;
           return jtx`
-            select private.close_idle_rooms(${ROOM_IDLE_MINUTES}, ${REVEAL.decisionSeconds}) as rooms,
+            select private.close_idle_rooms(${ROOM_IDLE_MINUTES}) as rooms,
                    private.expire_join_requests() as requests
           `;
         });
@@ -777,7 +766,7 @@ describe('scheduled jobs', () => {
     }
     // The next run takes them.
     const [next] = await sql`
-      select private.close_idle_rooms(${ROOM_IDLE_MINUTES}, ${REVEAL.decisionSeconds}) as rooms,
+      select private.close_idle_rooms(${ROOM_IDLE_MINUTES}) as rooms,
              private.expire_join_requests() as requests
     `;
     expect(next).toEqual({ rooms: 1, requests: 1 });
@@ -792,9 +781,9 @@ describe('scheduled jobs', () => {
     const [requestId] = await pendingRequestIds(owner, roomId);
     await rooms(owner, { action: 'respond', requestId, accept: true });
     await sql`update public.rooms set last_activity_at = now() - make_interval(mins => ${ROOM_IDLE_MINUTES + 1}) where id = ${roomId}`;
-    await sql`select private.close_idle_rooms(${ROOM_IDLE_MINUTES}, ${REVEAL.decisionSeconds})`;
-    const [room] = await sql`select status, reveal_ends_at from public.rooms where id = ${roomId}`;
-    expect(room).toEqual({ status: 'active', reveal_ends_at: null });
+    await sql`select private.close_idle_rooms(${ROOM_IDLE_MINUTES})`;
+    const [room] = await sql`select status from public.rooms where id = ${roomId}`;
+    expect(room).toEqual({ status: 'active' });
   });
 
   it('runs the idle job and the proposal job every minute with the numbers of pure/', async () => {
@@ -806,7 +795,7 @@ describe('scheduled jobs', () => {
       {
         jobname: 'close-idle-rooms',
         schedule: '* * * * *',
-        command: `select private.close_idle_rooms(${ROOM_IDLE_MINUTES}, ${REVEAL.decisionSeconds})`,
+        command: `select private.close_idle_rooms(${ROOM_IDLE_MINUTES})`,
       },
       {
         jobname: 'expire-game-proposals',
@@ -814,8 +803,6 @@ describe('scheduled jobs', () => {
         command: 'select private.expire_game_proposals()',
       },
     ]);
-    const [fixed] = await sql`select private.reveal_decision_seconds() as seconds`;
-    expect(fixed?.seconds).toBe(REVEAL.decisionSeconds);
   });
 });
 
@@ -862,7 +849,7 @@ describe('push tokens and closed helpers', () => {
         },
       ],
       ['rooms_end_game', { target_user_id: id, target_room_id: roomId }],
-      ['rooms_end', { target_user_id: id, decision_seconds: 60 }],
+      ['rooms_end', { target_user_id: id }],
       ['reroll_table_alias', { target_user_id: id, new_alias: 'Mor Simit', max_rerolls: 3 }],
     ] as const) {
       const { error } = await client.rpc(fn, args as never);

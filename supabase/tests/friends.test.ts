@@ -154,24 +154,12 @@ async function encounter(
   return roomId;
 }
 
-// The window of an ending room closes now, with its history rows available.
-async function closeWindow(roomId: string): Promise<void> {
-  await sql`
-    update public.rooms set reveal_ends_at = now() - interval '1 second'
-    where id = ${roomId} and status = 'ending'
-  `;
-  await sql`
-    update public.play_history set available_at = now() - interval '1 second'
-    where room_id = ${roomId} and available_at > now()
-  `;
-  await sql`select private.close_expired_reveals()`;
-}
-
-// The guest's table leaves the venue: the window opens with its "Hayır" (docs/SPEC_V3.md §5.5) and is
-// closed here at once, so the history rows are available.
+// The guest's table leaves the venue: the table closes at once and its history rows are available
+// (docs/SPEC_V3.md §23.G).
 async function endByGuestLeaving(b: Client, roomId: string): Promise<void> {
   expect((await invoke(b, 'checkin', { action: 'leave' })).status).toBe(200);
-  await closeWindow(roomId);
+  const [room] = await sql`select status from public.rooms where id = ${roomId}`;
+  expect(room?.status).toBe('closed');
 }
 
 // Every column the app may read; the rest (other_user_id, other_profiled, encounter_id, user_id)

@@ -4,12 +4,12 @@
 // room after 30 minutes; "Arkadaş ekle" works on a friend_open record from the table's end and from
 // the play history alike.
 //
-// private.table_end_on() is on since step 23.3's client PR (23.3b); step 23.4 took out the window's
-// tests and its switching (§23.M).
+// The switch (private.table_end_on()) was on from step 23.3's client PR (23.3b); step 23.4a took out
+// the window's tests and their switching (§23.M), and 23.4b's migration the switch, the window's
+// functions and its data (the last describe here).
 import postgres from 'postgres';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { REVEAL } from '../functions/_shared/pure/reveal.ts';
 import { sessionChannel } from '../functions/_shared/pure/rooms.ts';
 import { deleteFixtureVenues, insertFixtureVenues } from './fixtures/venues.ts';
 import { waitUntilBlocked } from './helpers.ts';
@@ -79,8 +79,7 @@ async function idleFor(roomId: string, minutes: number) {
   `;
 }
 
-const closeIdle = () =>
-  sql`select private.close_idle_rooms(${TABLE_IDLE_MINUTES}, ${REVEAL.decisionSeconds})`;
+const closeIdle = () => sql`select private.close_idle_rooms(${TABLE_IDLE_MINUTES})`;
 
 type HistoryRow = {
   id: string;
@@ -103,16 +102,10 @@ const pairsOf = (rows: HistoryRow[]) => rows.map((r) => `${r.user_id}>${r.other_
 
 const pair = (a: Phone, b: Phone) => [`${a.userId}>${b.userId}`, `${b.userId}>${a.userId}`];
 
-async function expectClosedWithoutWindow(roomId: string) {
+async function expectClosed(roomId: string) {
   const row = await roomRow(roomId);
   expect(row.status).toBe('closed');
   expect(row.closed_at).not.toBeNull();
-  expect(row.reveal_ends_at).toBeNull();
-  expect(row.reveal_result).toBeNull();
-  expect(await sql`select 1 from public.reveal_signals where room_id = ${roomId}`).toHaveLength(0);
-  expect(await sql`select 1 from public.reveal_decisions where room_id = ${roomId}`).toHaveLength(
-    0,
-  );
   expect(
     await sql`select 1 from public.room_members where room_id = ${roomId} and left_at is null`,
   ).toHaveLength(0);
@@ -164,7 +157,7 @@ describe('every road closes a two-sided room at once (§23.G)', { timeout: 90_00
       await backdate(roomId);
 
       expect((await take(road, owner, guest, roomId)).status).toBe(200);
-      await expectClosedWithoutWindow(roomId);
+      await expectClosed(roomId);
 
       const history = await historyOf(roomId);
       expect(pairsOf(history)).toEqual(pair(owner, guest).sort());
@@ -194,7 +187,7 @@ describe('every road closes a two-sided room at once (§23.G)', { timeout: 90_00
     expect(early.every((r) => r.friend_open && r.available)).toBe(true);
 
     expect(await rooms(owner, { action: 'end' })).toEqual(OK);
-    await expectClosedWithoutWindow(roomId);
+    await expectClosed(roomId);
     const history = await historyOf(roomId);
     expect(pairsOf(history)).toEqual(
       [
@@ -214,7 +207,7 @@ describe('every road closes a two-sided room at once (§23.G)', { timeout: 90_00
     await backdate(roomId);
 
     expect(await leave(guest, roomId)).toEqual(OK);
-    await expectClosedWithoutWindow(roomId);
+    await expectClosed(roomId);
     expect(pairsOf(await historyOf(roomId))).toEqual(
       [...pair(owner, guest), ...pair(ownerMember, guest)].sort(),
     );
@@ -225,7 +218,7 @@ describe('every road closes a two-sided room at once (§23.G)', { timeout: 90_00
     const roomId = await teamRoom(owner, guest);
 
     expect(await rooms(owner, { action: 'end' })).toEqual(OK);
-    await expectClosedWithoutWindow(roomId);
+    await expectClosed(roomId);
     expect(await historyOf(roomId)).toEqual([]);
   });
 
@@ -239,7 +232,7 @@ describe('every road closes a two-sided room at once (§23.G)', { timeout: 90_00
     await new Promise((resolve) => setTimeout(resolve, 1_000));
     expect(heard.events).not.toContain('reveal_match');
     await heard.close();
-    await expectClosedWithoutWindow(roomId);
+    await expectClosed(roomId);
   });
 });
 
@@ -532,7 +525,7 @@ describe('locks (rule 10)', { timeout: 60_000 }, () => {
   const leaving = (p: Phone, roomId: string) => async (db: postgres.Sql) =>
     (await db`select (public.rooms_leave(${p.userId}, ${roomId})).status`)[0]?.status;
   const ending = (p: Phone) => async (db: postgres.Sql) =>
-    (await db`select (public.rooms_end(${p.userId}, ${REVEAL.decisionSeconds})).status`)[0]?.status;
+    (await db`select (public.rooms_end(${p.userId})).status`)[0]?.status;
 
   it("closes once when both sides' last phones leave at once", async () => {
     const [owner, guest] = await tables(2);
@@ -547,7 +540,7 @@ describe('locks (rule 10)', { timeout: 60_000 }, () => {
     // One closes the table; the other then finds itself already out of it.
     expect(outcomes).toContainEqual({ ok: 'closed' });
     expect(outcomes).toContainEqual({ err: 'not_in_room' });
-    await expectClosedWithoutWindow(roomId);
+    await expectClosed(roomId);
     expect(pairsOf(await historyOf(roomId))).toEqual(pair(owner, guest).sort());
   });
 
@@ -565,7 +558,7 @@ describe('locks (rule 10)', { timeout: 60_000 }, () => {
     // of it if the end came first.
     expect(ended).toEqual({ ok: 'closed' });
     expect([{ ok: 'closed' }, { err: 'not_in_room' }]).toContainEqual(left);
-    await expectClosedWithoutWindow(roomId);
+    await expectClosed(roomId);
     expect(pairsOf(await historyOf(roomId))).toEqual(
       [...pair(owner, guest), ...pair(ownerMember, guest)].sort(),
     );
@@ -598,5 +591,62 @@ describe('locks (rule 10)', { timeout: 60_000 }, () => {
            or (user_a = ${guest.userId} and user_b = ${owner.userId})
       `,
     ).toHaveLength(1);
+  });
+});
+
+// Step 23.4b (docs/SPEC_V3.md §23.H, §23.I): the window's functions, tables, columns, job and
+// status are gone from the database, item by item as in its migration; what the play history still
+// reads of old windows stays.
+describe('step 23.4b: the window is gone from the database', () => {
+  it('has none of its tables, columns, functions or job, and no ending status', async () => {
+    expect(
+      await sql`select to_regclass('public.reveal_decisions') as d, to_regclass('public.reveal_signals') as s`,
+    ).toEqual([{ d: null, s: null }]);
+    expect(
+      await sql`
+        select column_name from information_schema.columns
+        where table_schema = 'public' and table_name = 'rooms' and column_name like 'reveal%'
+      `,
+    ).toEqual([]);
+    const gone = [
+      'table_end_on',
+      'start_reveal',
+      'finish_reveal',
+      'close_expired_reveals',
+      'reveal_participants',
+      'reveal_colors',
+      'reveal_emojis',
+      'reveal_decision_seconds',
+      'lobby_listed_from',
+      'room_listed_from',
+      'rooms_lobby_held',
+      'reveal_decide',
+      'reveal_finalize',
+      'reveal_matches',
+    ];
+    expect(
+      await sql`
+        select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+        where n.nspname in ('public', 'private') and p.proname = any(${gone})
+      `,
+    ).toEqual([]);
+    expect(await sql`select jobname from cron.job where jobname = 'close-expired-reveals'`).toEqual(
+      [],
+    );
+    const [table] = await tables(1);
+    const roomId = await teamRoom(table, null);
+    await expect(
+      sql`update public.rooms set status = 'ending' where id = ${roomId}`,
+    ).rejects.toMatchObject({ code: '23514' });
+  });
+
+  it('keeps reveal_mutual on the play history for records written by a window', async () => {
+    expect(
+      await sql`
+        select column_name from information_schema.columns
+        where table_schema = 'public' and table_name = 'play_history'
+          and column_name = 'reveal_mutual'
+      `,
+    ).toEqual([{ column_name: 'reveal_mutual' }]);
   });
 });

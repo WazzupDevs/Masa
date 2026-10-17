@@ -3,11 +3,11 @@ import { join, relative, resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-// Step 23.4 (docs/SPEC_V3.md §23.H): the "Tanışalım mı?" window's data goes in two PRs. 23.4a takes
-// every reader out of the app, the Edge Functions and the scripts; 23.4b's migration then drops the
-// tables, the columns and their functions. This shows the first half, so the migration breaks no
-// caller: nothing outside the generated types (database.ts) names them, and nothing calls the
-// `reveal` Edge Function.
+// Step 23.4 (docs/SPEC_V3.md §23.H): the "Tanışalım mı?" window's data went in two PRs. 23.4a took
+// every reader out of the app, the Edge Functions and the scripts; 23.4b's migration
+// (…_reveal_cleanup.sql) then dropped the tables, the columns and their functions. This showed the
+// first half before the migration, and keeps them from coming back: nothing outside the generated
+// types (database.ts) names them, and nothing calls the `reveal` Edge Function.
 const root = resolve(import.meta.dirname, '..');
 const SOURCES = ['apps/mobile/app', 'apps/mobile/src', 'supabase/functions', 'scripts'];
 const SKIP_DIRS = new Set(['node_modules', 'android', 'ios', '.expo', 'dist']);

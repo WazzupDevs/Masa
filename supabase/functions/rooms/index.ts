@@ -28,7 +28,6 @@ import { ageOn, istanbulToday, parseIsoDate } from '../_shared/pure/age.ts';
 import { type Gender, participationError } from '../_shared/pure/gender.ts';
 import { PHOTO_BUCKET, PHOTO_URL_SECONDS } from '../_shared/pure/profile.ts';
 import { joinAcceptedPush, joinRequestPush } from '../_shared/pure/push.ts';
-import { REVEAL } from '../_shared/pure/reveal.ts';
 import {
   BROADCAST,
   CONCEPTS,
@@ -317,13 +316,9 @@ Deno.serve(
         }
 
         // "Odayı bitir" (§5.5), a leader only (§22.D: a member is not_leader): the room closes and a
-        // two-sided one writes its pairs' records (§23.G). decision_seconds is the "Tanışalım mı?"
-        // window's: unused since step 23.3, the argument goes with step 23.4b's migration.
+        // two-sided one writes its pairs' records (§23.G).
         case 'end': {
-          const { data, error } = await db.rpc('rooms_end', {
-            target_user_id: user.id,
-            decision_seconds: REVEAL.decisionSeconds,
-          });
+          const { data, error } = await db.rpc('rooms_end', { target_user_id: user.id });
           if (error) throw dbError('rooms_end', error);
           if (data?.id && data.visibility === 'open') lobbyChanged(data);
           return { ok: true };
